@@ -3,9 +3,10 @@
 #if defined NONLINEAR && defined SOLVE3D
 # define NEUMANN
 !
-!svn $Id: pre_step3d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: pre_step3d.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -71,12 +72,13 @@
      &                      GRID(ng) % rmask,                           &
      &                      GRID(ng) % umask,                           &
      &                      GRID(ng) % vmask,                           &
-#  if defined WET_DRY
+#  if defined SOLAR_SOURCE && defined WET_DRY
      &                      GRID(ng) % rmask_wet,                       &
      &                      GRID(ng) % umask_wet,                       &
      &                      GRID(ng) % vmask_wet,                       &
 #  endif
 # endif
+
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      GRID(ng) % Hz,                              &
@@ -130,7 +132,7 @@
      &                            nrhs, nstp, nnew,                     &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
-#  if defined WET_DRY
+#  if defined SOLAR_SOURCE && defined WET_DRY
      &                            rmask_wet, umask_wet, vmask_wet,      &
 #  endif
 # endif
@@ -170,9 +172,6 @@
       USE mp_exchange_mod, ONLY : mp_exchange4d
 # endif
       USE t3dbc_mod, ONLY : t3dbc_tile
-# ifdef T_PASSIVE
-      USE pt3dbc_mod, ONLY : pt3dbc_tile
-# endif
 !
 !  Imported variable declarations.
 !
@@ -186,7 +185,7 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#   if defined WET_DRY
+#   if defined SOLAR_SOURCE && defined WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
@@ -246,7 +245,7 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#   if defined WET_DRY
+#   if defined SOLAR_SOURCE && defined WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
@@ -557,6 +556,9 @@
 !  Apply tracers point sources to the horizontal advection terms,
 !  if any.
 !
+!    Dsrc(is) = 0,  flow across grid cell u-face (positive or negative)
+!    Dsrc(is) = 1,  flow across grid cell v-face (positive or negative)
+!
           IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
@@ -566,26 +568,14 @@
                 IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
                   IF (LtracerSrc(itrc,ng)) THEN
                     FX(Isrc,Jsrc)=Huon(Isrc,Jsrc,k)*                    &
-#  ifdef ONE_TRACER_SOURCE
-     &                    SOURCES(ng)%Tsrc(itrc)
-#  elif defined TWO_D_TRACER_SOURCE
-     &                    SOURCES(ng)%Tsrc(is,itrc)
-#  else
-     &                    SOURCES(ng)%Tsrc(is,k,itrc)
-#  endif
+     &                            SOURCES(ng)%Tsrc(is,k,itrc)
                   ELSE
                     FX(Isrc,Jsrc)=0.0_r8
                   END IF
-                ELSE
+                ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
                   IF (LtracerSrc(itrc,ng)) THEN
                     FE(Isrc,Jsrc)=Hvom(Isrc,Jsrc,k)*                    &
-#  ifdef ONE_TRACER_SOURCE
-     &                    SOURCES(ng)%Tsrc(itrc)
-#  elif defined TWO_D_TRACER_SOURCE
-     &                    SOURCES(ng)%Tsrc(is,itrc)
-#  else
-     &                    SOURCES(ng)%Tsrc(is,k,itrc)
-#  endif
+     &                            SOURCES(ng)%Tsrc(is,k,itrc)
                   ELSE
                      FE(Isrc,Jsrc)=0.0_r8
                   END IF
@@ -990,9 +980,9 @@
 # else
           FC(i,0)=dt(ng)*bustr(i,j)
           FC(i,N(ng))=dt(ng)*sustr(i,j)
-#  ifdef WET_DRY
-          FC(i,N(ng))=FC(i,N(ng))*umask_wet(i,j)
-#  endif
+!#  ifdef WET_DRY
+!          FC(i,N(ng))=FC(i,N(ng))*umask_wet(i,j)
+!#  endif
 # endif
         END DO
 !
@@ -1098,9 +1088,9 @@
 # else
             FC(i,0)=dt(ng)*bvstr(i,j)
             FC(i,N(ng))=dt(ng)*svstr(i,j)
-#  ifdef WET_DRY
-            FC(i,N(ng))=FC(i,N(ng))*vmask_wet(i,j)
-#  endif
+!#  ifdef WET_DRY
+!            FC(i,N(ng))=FC(i,N(ng))*vmask_wet(i,j)
+!#  endif
 # endif
           END DO
 !

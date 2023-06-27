@@ -33,10 +33,11 @@
           Vinfo(20)='mask_rho'
 #   endif
 #  endif
-!          Vinfo(22)='coordinates'
+!         Vinfo(22)='coordinates'
+          Vinfo(21)=Vname(6,idvprp(i))
           Aval(5)=REAL(Iinfo(1,idvprp(i),ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idvprp(i)),&
-     &                  NF_FRST, nvd4, v3pgrd, Aval, Vinfo, ncname)
+     &                   NF_FRST, nvd4, v3pgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 #endif
@@ -53,13 +54,14 @@
 # if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 # endif
+          Vinfo(21)=Vname(6,idWdvg)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWdvg,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idWdvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-!  Define spectral Cd due to veg on waves.  
+!  Define spectral Cd due to veg on waves.
 !
           Vinfo( 1)=Vname(1,idCdvg)
           Vinfo( 2)=Vname(2,idCdvg)
@@ -69,6 +71,7 @@
 # if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 # endif
+          Vinfo(21)=Vname(6,idCdvg)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idCdvg,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idCdvg),   &
@@ -94,6 +97,7 @@
           Vinfo(20)='mask_rho'
 #    endif
 #  endif
+          Vinfo(21)=Vname(6,idTims)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTims,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTims),   &
@@ -117,6 +121,7 @@
           Vinfo(20)='mask_rho'
 #    endif
 #  endif
+          Vinfo(21)=Vname(6,idTtot)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTtot,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTtot),   &
@@ -141,6 +146,7 @@
           Vinfo(20)='mask_rho'
 #    endif
 #   endif
+          Vinfo(21)=Vname(6,idTmfo(i))
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmfo(i),ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid,                        &
@@ -166,6 +172,7 @@
           Vinfo(20)='mask_rho'
 #     endif
 #    endif
+          Vinfo(21)=Vname(6,idTmmr)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmmr,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmmr),   &

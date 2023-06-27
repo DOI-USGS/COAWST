@@ -2,9 +2,8 @@
 
 local_sub  := InWave/Utility
 
-local_lib  := libInWave_Utility.a
 local_src  := $(wildcard $(local_sub)/*.F)
 
-$(eval $(call make-library,$(local_lib),$(local_src)))
+sources    += $(local_src)
 
 $(eval $(compile-rules))

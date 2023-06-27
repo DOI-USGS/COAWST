@@ -1,11 +1,12 @@
-      SUBROUTINE uv3dmix4 (ng, tile)
+      MODULE uv3dmix4_mod
 !
-!svn $Id: uv3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: uv3dmix4_s.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes biharmonic mixing of momentum, along       !
 !  constant  S-surfaces, from the  horizontal divergence  of the       !
@@ -29,6 +30,17 @@
 !         use in large-scale eddy-permitting ocean models,             !
 !         Monthly Weather Rev., 128, 8, 2935-2946.                     !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC uv3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE uv3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -55,48 +67,48 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 32, __LINE__, MyFile)
 #endif
-      CALL uv3dmix4_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    IminS, ImaxS, JminS, JmaxS,                   &
-     &                    nrhs(ng), nnew(ng),                           &
+      CALL uv3dmix4_s_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
+     &                      nrhs(ng), nnew(ng),                         &
 #ifdef MASKING
-     &                    GRID(ng) % pmask,                             &
+     &                      GRID(ng) % pmask,                           &
 #endif
 #ifdef WET_DRY
-     &                    GRID(ng) % pmask_wet,                         &
+     &                      GRID(ng) % pmask_wet,                       &
 #endif
-     &                    GRID(ng) % Hz,                                &
-     &                    GRID(ng) % om_p,                              &
-     &                    GRID(ng) % om_r,                              &
-     &                    GRID(ng) % on_p,                              &
-     &                    GRID(ng) % on_r,                              &
-     &                    GRID(ng) % pm,                                &
-     &                    GRID(ng) % pmon_p,                            &
-     &                    GRID(ng) % pmon_r,                            &
-     &                    GRID(ng) % pn,                                &
-     &                    GRID(ng) % pnom_p,                            &
-     &                    GRID(ng) % pnom_r,                            &
+     &                      GRID(ng) % Hz,                              &
+     &                      GRID(ng) % om_p,                            &
+     &                      GRID(ng) % om_r,                            &
+     &                      GRID(ng) % on_p,                            &
+     &                      GRID(ng) % on_r,                            &
+     &                      GRID(ng) % pm,                              &
+     &                      GRID(ng) % pmon_p,                          &
+     &                      GRID(ng) % pmon_r,                          &
+     &                      GRID(ng) % pn,                              &
+     &                      GRID(ng) % pnom_p,                          &
+     &                      GRID(ng) % pnom_r,                          &
 #ifdef VISC_3DCOEF
 # ifdef UV_U3ADV_SPLIT
-     &                    MIXING(ng) % Uvis3d_r,                        &
-     &                    MIXING(ng) % Vvis3d_r,                        &
+     &                      MIXING(ng) % Uvis3d_r,                      &
+     &                      MIXING(ng) % Vvis3d_r,                      &
 # else
-     &                    MIXING(ng) % visc3d_r,                        &
+     &                      MIXING(ng) % visc3d_r,                      &
 # endif
 #else
-     &                    MIXING(ng) % visc4_p,                         &
-     &                    MIXING(ng) % visc4_r,                         &
+     &                      MIXING(ng) % visc4_p,                       &
+     &                      MIXING(ng) % visc4_r,                       &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                    DIAGS(ng) % DiaRUfrc,                         &
-     &                    DIAGS(ng) % DiaRVfrc,                         &
-     &                    DIAGS(ng) % DiaU3wrk,                         &
-     &                    DIAGS(ng) % DiaV3wrk,                         &
+     &                      DIAGS(ng) % DiaRUfrc,                       &
+     &                      DIAGS(ng) % DiaRVfrc,                       &
+     &                      DIAGS(ng) % DiaU3wrk,                       &
+     &                      DIAGS(ng) % DiaV3wrk,                       &
 #endif
-     &                    COUPLING(ng) % rufrc,                         &
-     &                    COUPLING(ng) % rvfrc,                         &
-     &                    OCEAN(ng) % u,                                &
-     &                    OCEAN(ng) % v)
+     &                      COUPLING(ng) % rufrc,                       &
+     &                      COUPLING(ng) % rvfrc,                       &
+     &                      OCEAN(ng) % u,                              &
+     &                      OCEAN(ng) % v)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 32, __LINE__, MyFile)
 #endif
@@ -105,34 +117,34 @@
       END SUBROUTINE uv3dmix4
 !
 !***********************************************************************
-      SUBROUTINE uv3dmix4_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          IminS, ImaxS, JminS, JmaxS,             &
-     &                          nrhs, nnew,                             &
+      SUBROUTINE uv3dmix4_s_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
+     &                            nrhs, nnew,                           &
 #ifdef MASKING
-     &                          pmask,                                  &
+     &                            pmask,                                &
 #endif
 #ifdef WET_DRY
-     &                          pmask_wet,                              &
+     &                            pmask_wet,                            &
 #endif
-     &                          Hz,                                     &
-     &                          om_p, om_r, on_p, on_r,                 &
-     &                          pm, pmon_p, pmon_r,                     &
-     &                          pn, pnom_p, pnom_r,                     &
+     &                            Hz,                                   &
+     &                            om_p, om_r, on_p, on_r,               &
+     &                            pm, pmon_p, pmon_r,                   &
+     &                            pn, pnom_p, pnom_r,                   &
 #ifdef VISC_3DCOEF
 # ifdef UV_U3ADV_SPLIT
-     &                          Uvis3d_r, Vvis3d_r,                     &
+     &                            Uvis3d_r, Vvis3d_r,                   &
 # else
-     &                          visc3d_r,                               &
+     &                            visc3d_r,                             &
 # endif
 #else
-     &                          visc4_p, visc4_r,                       &
+     &                            visc4_p, visc4_r,                     &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                          DiaRUfrc, DiaRVfrc,                     &
-     &                          DiaU3wrk, DiaV3wrk,                     &
+     &                            DiaRUfrc, DiaRVfrc,                   &
+     &                            DiaU3wrk, DiaV3wrk,                   &
 #endif
-     &                          rufrc, rvfrc, u, v)
+     &                            rufrc, rvfrc, u, v)
 !***********************************************************************
 !
       USE mod_param
@@ -613,4 +625,6 @@
       END DO K_LOOP
 !
       RETURN
-      END SUBROUTINE uv3dmix4_tile
+      END SUBROUTINE uv3dmix4_s_tile
+
+      END MODULE uv3dmix4_mod

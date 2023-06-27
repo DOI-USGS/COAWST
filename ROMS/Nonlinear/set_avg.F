@@ -2,9 +2,10 @@
       MODULE set_avg_mod
 #ifdef AVERAGES
 !
-!svn $Id: set_avg.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: set_avg.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -846,19 +847,6 @@
         END IF
 # endif
 # ifdef SOLVE3D
-#  if defined RUNOFF
-        IF (Aout(idRunoff,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgRunoff(i,j)=FORCES(ng)%Runoff(i,j)
-#   ifdef WET_DRY
-              AVERAGE(ng)%avgRunoff(i,j)=AVERAGE(ng)%avgRunoff(i,j)*    &
-     &                                   GRID(ng)%rmask_full(i,j)
-#   endif
-            END DO
-          END DO
-        END IF
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
         IF (Aout(idPair,ng)) THEN
           DO j=JstrR,JendR
@@ -949,15 +937,6 @@
           END DO
         END IF
 #  endif
-#  ifdef SSSFLX
-        IF (Aout(idSSSf,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgsssflx(i,j)=FORCES(ng)%sssflx(i,j,isalt)
-            END DO
-          END DO
-        END IF
-#  endif
 #  ifdef SHORTWAVE
         IF (Aout(idSrad,ng)) THEN
           DO j=JstrR,JendR
@@ -983,6 +962,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idLrad,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -994,6 +974,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idShea,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -1017,6 +998,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idrain,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -1030,14 +1012,6 @@
         END IF
 #   endif
 #  endif
-# endif
-# ifdef BIOFLUX
-        DO itrc=1,NT(ng)
-          DO itrc2=1,NT(ng)
-            AVERAGE(ng)%avgbflx(itrc,itrc2)=                            &
-     &                      OCEAN(ng)%bflx(itrc,itrc2)
-          END DO
-        END DO
 # endif
 # ifdef WEC
 !
@@ -2276,9 +2250,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUbrs(i,j)=AVERAGE(ng)%avgUbrs(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                 GRID(ng)%rmask_full(i,j)*        &
-# endif
+#  endif
      &                                 FORCES(ng)%bustrc(i,j)
             END DO
           END DO
@@ -2287,9 +2261,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgVbrs(i,j)=AVERAGE(ng)%avgVbrs(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                 GRID(ng)%rmask_full(i,j)*        &
-# endif
+#  endif
      &                                 FORCES(ng)%bvstrc(i,j)
             END DO
           END DO
@@ -2298,9 +2272,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUbws(i,j)=AVERAGE(ng)%avgUbws(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                FORCES(ng)%bustrw(i,j)
             END DO
           END DO
@@ -2309,9 +2283,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgVbws(i,j)=AVERAGE(ng)%avgVbws(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                FORCES(ng)%bvstrw(i,j)
             END DO
           END DO
@@ -2320,9 +2294,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUbcs(i,j)=AVERAGE(ng)%avgUbcs(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                FORCES(ng)%bustrcwmax(i,j)
             END DO
           END DO
@@ -2331,9 +2305,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgVbcs(i,j)=AVERAGE(ng)%avgVbcs(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                FORCES(ng)%bvstrcwmax(i,j)
             END DO
           END DO
@@ -2346,9 +2320,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUVwc(i,j)=AVERAGE(ng)%avgUVwc(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                wrk(i,j)
             END DO
           END DO
@@ -2358,9 +2332,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUbot(i,j)=AVERAGE(ng)%avgUbot(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                BBL(ng)%Ubot(i,j)
             END DO
           END DO
@@ -2369,9 +2343,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgVbot(i,j)=AVERAGE(ng)%avgVbot(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                BBL(ng)%Vbot(i,j)
             END DO
           END DO
@@ -2380,9 +2354,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgUbur(i,j)=AVERAGE(ng)%avgUbur(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                BBL(ng)%Ubur(i,j)
             END DO
           END DO
@@ -2391,9 +2365,9 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgVbvr(i,j)=AVERAGE(ng)%avgVbvr(i,j)+        &
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-# endif
+#  endif
      &                                BBL(ng)%Vbur(i,j)
             END DO
           END DO
@@ -2401,19 +2375,6 @@
 # endif
 # ifdef SOLVE3D
 
-#  if defined RUNOFF
-        IF (Aout(idRunoff,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgRunoff(i,j)=AVERAGE(ng)%avgRunoff(i,j)+    &
-#   ifdef WET_DRY
-     &                                 GRID(ng)%rmask_full(i,j)*        &
-#   endif
-     &                                 FORCES(ng)%Runoff(i,j)
-            END DO
-          END DO
-        END IF
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
         IF (Aout(idPair,ng)) THEN
           DO j=JstrR,JendR
@@ -2504,16 +2465,6 @@
           END DO
         END IF
 #  endif
-#  ifdef SSSFLX
-        IF (Aout(idSSSf,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgsssflx(i,j)=AVERAGE(ng)%avgsssflx(i,j)+    &
-     &                                FORCES(ng)%sssflx(i,j,isalt)
-            END DO
-          END DO
-        END IF
-#  endif
 #  ifdef SHORTWAVE
         IF (Aout(idSrad,ng)) THEN
           DO j=JstrR,JendR
@@ -2539,6 +2490,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idShea,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -2550,6 +2502,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idLrad,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -2573,6 +2526,7 @@
             END DO
           END DO
         END IF
+
         IF (Aout(idrain,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -2588,94 +2542,6 @@
 #  endif
 # endif
 
-# ifdef BEST_NPZ
-!--------------------------------------------
-! values are accumulated in the bestnpz.h file
-! so do not sum them here
-!--------------------------------------------
-#  ifdef STATIONARY
-         DO itrc=1,NTS(ng)
-           DO k=1,N(ng)
-             DO j=JstrR,JendR
-               DO i=IstrR,IendR
-                 AVERAGE(ng)%avgst(i,j,k,itrc)=                         &
-#  ifdef WET_DRY
-     &                     GRID(ng)%rmask_full(i,j)*                    &
-#  endif
-     &                     OCEAN(ng)%st(i,j,k,Nout,itrc)
-               END DO
-             END DO
-           END DO
-         END DO
-# endif
-# ifdef PROD3
-         DO itrc=1,NPT3(ng)
-           DO k=1,N(ng)
-             DO j=JstrR,JendR
-               DO i=IstrR,IendR
-                 AVERAGE(ng)%avgpt3(i,j,k,itrc)=                        &
-#  ifdef WET_DRY
-     &                     GRID(ng)%rmask_full(i,j)*                    &
-#  endif
-     &                     OCEAN(ng)%pt3(i,j,k,Nout,itrc)
-               END DO
-             END DO
-           END DO
-         END DO
-# endif
-# ifdef PROD2
-         DO itrc=1,NPT2(ng)
-             DO j=JstrR,JendR
-               DO i=IstrR,IendR
-                 AVERAGE(ng)%avgpt2(i,j,itrc)=                          &
-#  ifdef WET_DRY
-     &                     GRID(ng)%rmask_full(i,j)*                    &
-#  endif
-     &                     OCEAN(ng)%pt2(i,j,Nout,itrc)
-               END DO
-             END DO
-         END DO
-# endif
-# ifdef STATIONARY2
-         DO itrc=1,NTS2(ng)
-!          DO k=1,N(ng)
-             DO j=JstrR,JendR
-               DO i=IstrR,IendR
-                 AVERAGE(ng)%avgst2(i,j,itrc)=                          &
-#  ifdef WET_DRY
-     &                     GRID(ng)%rmask_full(i,j)*                    &
-#  endif
-     &                     OCEAN(ng)%st2(i,j,Nout,itrc)
-               END DO
-             END DO
-!          END DO
-         END DO
-# endif
-# ifdef BENTHIC
-          DO itrc=1,NBeT(ng)
-            DO k=1,NBL(ng)
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  AVERAGE(ng)%avgbt(i,j,k,itrc)=                        &
-     &                   AVERAGE(ng)%avgbt(i,j,k,itrc)+                 &
-#  ifdef WET_DRY
-     &                   GRID(ng)%rmask_full(i,j)*                      &
-#  endif
-     &                   OCEAN(ng)%bt(i,j,k,Nout,itrc)
-                END DO
-              END DO
-            END DO
-          END DO
-
-# endif
-#  ifdef BIOFLUX
-         DO itrc=1,NT(ng)
-           DO itrc2=1,NT(ng)
-            AVERAGE(ng)%avgbflx(itrc,itrc2)=OCEAN(ng)%bflx(itrc,itrc2)
-           END DO
-         END DO
-#  endif
-# endif
 
 # ifdef WEC
         IF (Aout(idU2Sd,ng)) THEN
@@ -3390,7 +3256,8 @@
                   AVERAGE(ng)%avgHuonT(i,j,k,it)=AVERAGE(ng)%avgHuonT(i,&
      &                                                       j,k,it)+   &
 #  ifdef WET_DRY
-     &                                         GRID(ng)%umask_full(i,j)*&
+     &                                           GRID(ng)%umask_full(i, &
+     &                                                            j)*   &
 #  endif
      &                                           0.5_r8*                &
      &                                           GRID(ng)%Huon(i,j,k)*  &
@@ -3409,7 +3276,8 @@
                   AVERAGE(ng)%avgHvomT(i,j,k,it)=AVERAGE(ng)%avgHvomT(i,&
      &                                                       j,k,it)+   &
 #  ifdef WET_DRY
-     &                                         GRID(ng)%vmask_full(i,j)*&
+     &                                           GRID(ng)%vmask_full(i, &
+     &                                                            j)*   &
 #  endif
      &                                           0.5_r8*                &
      &                                           GRID(ng)%Hvom(i,j,k)*  &
@@ -3976,9 +3844,7 @@
           END IF
         END IF
 #   endif
-#  endif
-
-#  ifdef TS_VAR
+#   ifdef TS_VAR
 !        IF (Aout(idSdif,ng)) THEN
           DO k=0,N(ng)
             DO j=JstrR,JendR
@@ -3992,15 +3858,14 @@
             CALL exchange_w3d_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj, 0, N(ng),       &
      &                              AVERAGE(ng)%avgAKr)
-#   ifdef DISTRIBUTE
+#    ifdef DISTRIBUTE
             CALL mp_exchange3d (ng, tile, iNLM, 1,                      &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgAKr)
+#    endif
 #   endif
-          END IF
-!        END IF
 #  endif
 
 #  ifdef LMD_SKPP
@@ -4447,28 +4312,6 @@
         END IF
 # endif
 # ifdef SOLVE3D
-#  if defined RUNOFF
-        IF (Aout(idRunoff,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgRunoff(i,j)=rfac(i,j)*                     &
-     &                                 AVERAGE(ng)%avgRunoff(i,j)
-            END DO
-          END DO
-          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-            CALL exchange_r2d_tile (ng, tile,                           &
-     &                              LBi, UBi, LBj, UBj,                 &
-     &                              AVERAGE(ng)%avgRunoff)
-#   ifdef DISTRIBUTE
-            CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          NghostPoints,                           &
-     &                          EWperiodic(ng), NSperiodic(ng),         &
-     &                          AVERAGE(ng)%avgRunoff)
-#   endif
-          END IF
-        END IF
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
         IF (Aout(idPair,ng)) THEN
           DO j=JstrR,JendR
@@ -4629,16 +4472,6 @@
           END IF
         END IF
 #  endif
-#  ifdef SSSFLX
-        IF (Aout(idSSSf,ng)) THEN
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgsssflx(i,j)=rfac(i,j)*                     &
-     &                  AVERAGE(ng)%avgsssflx(i,j)
-            END DO
-          END DO
-        END IF
-#  endif
 
 #  ifdef SHORTWAVE
         IF (Aout(idSrad,ng)) THEN
@@ -4770,80 +4603,8 @@
         END IF
 #   endif
 #  endif
-
-#  ifdef BEST_NPZ
-#   ifdef BENTHIC
-        DO itrc=1,NBeT(ng)
-          DO k=1,NBL(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
-                AVERAGE(ng)%avgbt(i,j,k,itrc)=                          &
-     &                     rfac(i,j)*AVERAGE(ng)%avgbt(i,j,k,itrc)
-              END DO
-            END DO
-          END DO
-          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-            CALL exchange_r2d_tile (ng, tile,                           &
-     &                              LBi, UBi, LBj, UBj, 1, NBL(ng),     &
-     &                              AVERAGE(ng)%avgbt(:,:,:,itrc))
-#    ifdef DISTRIBUTE
-            CALL mp_exchange3d (ng, tile, iNLM, 1,                      &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          NghostPoints,                           &
-     &                          EWperiodic(ng), NSperiodic(ng),         &
-     &                          AVERAGE(ng)%avgbt(:,:,:,itrc))
-#    endif
-          END IF
-        END DO
-#   endif
-#   ifdef STATIONARY
-        DO itrc=1,NTS(ng)
-          DO k=1,N(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
-                AVERAGE(ng)%avgst(i,j,k,itrc)=                          &
-     &                     rfac(i,j)*AVERAGE(ng)%avgst(i,j,k,itrc)
-              END DO
-            END DO
-          END DO
-          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-            CALL exchange_r2d_tile (ng, tile,                           &
-     &                              LBi, UBi, LBj, UBj, 1, N(ng),       &
-     &                              AVERAGE(ng)%avgst(:,:,:,itrc))
-#    ifdef DISTRIBUTE
-            CALL mp_exchange3d (ng, tile, iNLM, 1,                      &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          NghostPoints,                           &
-     &                          EWperiodic(ng), NSperiodic(ng),         &
-     &                          AVERAGE(ng)%avgst(:,:,:,itrc))
-#    endif
-          END IF
-        END DO
-#   endif
-#   ifdef STATIONARY2
-        DO itrc=1,NTS2(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AVERAGE(ng)%avgst2(i,j,itrc)=                             &
-     &                     rfac(i,j)*AVERAGE(ng)%avgst2(i,j,itrc)
-            END DO
-          END DO
-        END DO
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj, 1, NTS2(ng),      &
-     &                            AVERAGE(ng)%avgst2)
-#    ifdef DISTRIBUTE
-          CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
-     &                        LBi, UBi, LBj, UBj, 1, NTS2(ng),          &
-     &                        NghostPoints,                             &
-     &                        EWperiodic(ng), NSperiodic(ng),           &
-     &                        AVERAGE(ng)%avgst2)
-#    endif
-        END IF
-#   endif
-#  endif
 # endif
+
 
 # ifdef WEC
 !
@@ -6104,7 +5865,7 @@
 #  endif
       USE mod_ocean
       USE mod_scalars
-      USE mod_tides, only: TIDES
+      USE mod_tides
 !
       implicit none
 !
@@ -6438,7 +6199,7 @@
                     TIDES(ng)%t_tide(i,j,k,nk,it)=TIDES(ng)%t_tide(i,j, &
      &                                                        k,nk,it)+ &
 #   ifdef WET_DRY
-     &                                         GRID(ng)%umask_full(i,j)*&
+     &                                        GRID(ng)%umask_full(i,j)* &
 #   endif
      &                                            OCEAN(ng)%t(i,j,k,    &
      &                                                        Nout,it)* &

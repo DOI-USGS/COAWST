@@ -76,29 +76,29 @@
 
       IF (LBC(iwest,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(iwest),                        &
-     &                  ncBRYid(idACbc(iwest),ng),                      &
-     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  BRYncid(idACbc(iwest),ng),                      &
+     &                  nBCfiles(ng), BRY(1,ng), .FALSE., update(1),    &
      &                  JLB, JUB, ND_bnd, 2, 0, Mm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_west(JLB,1,1))
       END IF
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(ieast),                        &
-     &                  ncBRYid(idACbc(ieast),ng),                      &
-     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  BRYncid(idACbc(ieast),ng),                      &
+     &                  nBCfiles(ng), BRY(1,ng), .FALSE., update(1),    &
      &                  JLB, JUB, ND_bnd, 2, 0, Mm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_east(JLB,1,1))
       END IF
       IF (LBC(inorth,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(inorth),                       &
-     &                  ncBRYid(idACbc(inorth),ng),                     &
-     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  BRYncid(idACbc(inorth),ng),                     &
+     &                  nBCfiles(ng), BRY(1,ng), .FALSE., update(1),    &
      &                  ILB, IUB, ND_bnd, 2, 0, Lm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_north(ILB,1,1))
       END IF
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(isouth),                       &
-     &                  ncBRYid(idACbc(isouth),ng),                     &
-     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  BRYncid(idACbc(isouth),ng),                     &
+     &                  nBCfiles(ng), BRY(1,ng), .FALSE., update(1),    &
      &                  ILB, IUB, ND_bnd, 2, 0, Lm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_south(ILB,1,1))
       END IF

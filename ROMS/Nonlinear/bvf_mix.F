@@ -2,9 +2,10 @@
       MODULE bvf_mix_mod
 #if defined NONLINEAR && defined BVF_MIXING
 !
-!svn $Id: bvf_mix.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: bvf_mix.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

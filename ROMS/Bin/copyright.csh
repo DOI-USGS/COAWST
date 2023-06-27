@@ -1,8 +1,9 @@
 #!/bin/csh -f
 #
-# svn $Id: copyright.csh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: copyright.csh 1152 2023-02-09 03:12:48Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -27,16 +28,12 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set search = "2002-2020 The ROMS/TOMS"
-set replace = "2002-2021 The ROMS/TOMS"
+set search = "2002-2022 The ROMS/TOMS"
+set replace = "2002-2023 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
 set c_dirs = "Compilers ESM Master ROMS User"
-
-# Specific files not in the "c_dirs".
-
-set special_files = "makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F Waves/SWAN/Src/swancpp.h"
 
 set setsvn = 1
 
@@ -99,30 +96,18 @@ foreach FILE ( `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f 
 
 end
 
-# Replace the string in the "special_files" separately.
-
-foreach FILE ( $special_files )
-  if ( $verb == 1 ) then
-    grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
-  else
-    grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
-  endif
-end
-
 echo ""
 echo "Done."
 echo ""
 
 if ( $setsvn == 1 ) then
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Compilers
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Data
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' ESM
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Master
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' ROMS
-  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' User
-  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' . makefile
-  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
-  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' Compilers
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' Data
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' ESM
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' Master
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' ROMS
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' User
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' . makefile CMakeLists.txt
 else
   echo ""
   echo "Not updating svn properties."

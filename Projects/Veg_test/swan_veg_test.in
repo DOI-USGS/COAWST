@@ -38,7 +38,11 @@ INPGRID NPLANTS CURVILINEAR 0 0 91 99 EXC 9.999000e+003
 && VEGEtation  < [height] [diamtr] [nstems] [drag] >
 && Vegetation parameters set here are to be consistent
 && with the ones in ROMS input file 
-VEGETATION 0.3 0.003 2500 1.0 
+&& New for SWAN 41.45 need to have an iveg number
+VEGETATION 1 0.3 0.003 2500 1.0 
+&&  to use coawst you need
+&VEGCETATION 3 0.3 0.003 2500 1.0 
+
 
 && BOUNDARY FORCING &&
 BOUN SHAP BIN PEAK DSPR DEGR

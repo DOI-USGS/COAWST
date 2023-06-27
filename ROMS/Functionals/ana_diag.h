@@ -1,8 +1,10 @@
+!!
       SUBROUTINE ana_diag (ng, tile, model)
 !
-!! svn $Id: ana_diag.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_diag.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -92,9 +94,11 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, k
+      integer :: i, io_error, j, k
 !
       real(r8) :: umax, ubarmax, vmax, vbarmax
+!
+      character (len=256) :: io_errmsg
 
 #include "set_bounds.h"
 !
@@ -108,12 +112,14 @@
 !
       IF (iic(ng).eq.ntstart(ng)) THEN
         OPEN (usrout,file=USRname,form='formatted',status='unknown',    &
-     &        err=40)
-        GO TO 60
-  40    WRITE (stdout,50) USRname
-  50    FORMAT (' ANA_DIAG - unable to open output file: ',a)
-        exit_flag=2
-  60    CONTINUE
+     &        IOSTAT=io_err, IOMSG=io_errmsg)
+        IF (io_err.ne.0) THEN
+          WRITE (stdout,10) USRname, TRIM(io_errmsg)
+          exit_flag=5
+          RETURN
+  10      FORMAT (' ANA_DIAG - unable to open output file: ',a,         &
+                  /12x,'ERROR: ',a)
+        END IF
       END IF
 !
 !  Write out maximum values of velocity.
@@ -147,8 +153,8 @@
 !
 !  Write out maximum values on velocity.
 !
-      WRITE (usrout,70) tdays(ng), ubarmax, vbarmax, umax, vmax
-  70  FORMAT (2x,f13.6,2x,1pe13.6,2x,1pe13.6,2x,1pe13.6,2x,1pe13.6)
+      WRITE (usrout,20) tdays(ng), ubarmax, vbarmax, umax, vmax
+  20  FORMAT (2x,f13.6,2x,1pe13.6,2x,1pe13.6,2x,1pe13.6,2x,1pe13.6)
 #endif
 !
       RETURN

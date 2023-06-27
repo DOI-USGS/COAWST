@@ -1,22 +1,25 @@
 #include "cppdefs.h"
       MODULE strings_mod
 !
-!svn $Id: strings.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: strings.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  This module contains several string manipulation functions:         !
 !                                                                      !
-!    FoundError    check execution flag against no-error code          !
-!    GlobalError   global check execution flag against no-error code   !
-!    TaskError     task check execution flag against no-error code     !
-!    find_string   scans a character array for a specified string      !
-!    join_string   concatenate character array into a single string    !
-!    lowercase     converts input string characters to lowercase       !
-!    uppercase     converts input string characters to uppercase       !
+!    FoundError       checks action flag against no-error code         !
+!    GlobalError      global check action flag against no-error code   !
+!    StandardName     sets standard_name attribute                     !
+!    TaskError        task check action flag against no-error code     !
+!    assign_string    allocates and assign string                      !
+!    find_string      scans a character array for a specified string   !
+!    join_string      concatenate character array into a single string !
+!    lowercase        converts input string characters to lowercase    !
+!    uppercase        converts input string characters to uppercase    !
 !                                                                      !
 !  Examples:                                                           !
 !                                                                      !
@@ -36,7 +39,9 @@
 !
       PUBLIC :: FoundError
       PUBLIC :: GlobalError
+      PUBLIC :: StandardName
       PUBLIC :: TaskError
+      PUBLIC :: assign_string
       PUBLIC :: find_string
       PUBLIC :: join_string
       PUBLIC :: lowercase
@@ -290,6 +295,124 @@
 
       RETURN
       END FUNCTION TaskError
+!
+      SUBROUTINE StandardName (Sname, variable, prefix, suffix)
+!
+!=======================================================================
+!                                                                      !
+!  This routine concatenates prefix and suffix strings to generate the !
+!  'standard_name' attribute. Blank spaces in the prefix are replaced  !
+!  with underscore.                                                    !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     variable     Standard name main variable (character)             !
+!     prefix       Standard name prefix (OPTIONAL, character)          !
+!     suffix       Standard name suffix (OPTIONAL, character)          !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Sname        concatenated standard name (character)              !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      character (len=*), intent(in) :: variable
+      character (len=*), optional, intent(in) :: prefix
+      character (len=*), optional, intent(in) :: suffix
+      character (len=*), intent(out) :: Sname
+!
+!  Local variable declarations.
+!
+      integer :: Icomma, Lstr, i
+!
+!-----------------------------------------------------------------------
+!  Generate 'standard_name' attribute.
+!-----------------------------------------------------------------------
+!
+      DO i=1,LEN(Sname)
+        Sname(i:i)=CHAR(32)
+      END DO
+!
+!  Replace blank space with underscore, CHAR(95).
+!
+      Lstr=LEN_TRIM(variable)
+      Icomma=INDEX(variable,CHAR(44),BACK=.FALSE.)
+      IF (Icomma.gt.0) THEN                               ! remove comma
+        Sname=variable(1:Icomma-1) // variable(Icomma+1:Lstr)
+        Lstr=LEN_TRIM(Sname)
+      ELSE
+        Sname(1:Lstr)=variable(1:Lstr)
+      END IF
+!
+      DO i=1,Lstr
+        IF (Sname(i:i).eq.CHAR(32)) THEN
+          Sname(i:i)=CHAR(95)
+        END IF
+      END DO
+!
+!  Append prefix and or suffix string(s).
+
+      IF (PRESENT(prefix)) THEN
+        Sname=TRIM(ADJUSTL(prefix)) // TRIM(ADJUSTL(Sname))
+      END IF
+!
+      IF (PRESENT(suffix)) THEN
+        Sname=TRIM(ADJUSTL(Sname)) // TRIM(ADJUSTL(suffix))
+      END IF
+!
+      RETURN
+      END SUBROUTINE StandardName
+!
+      FUNCTION assign_string (A, string) RESULT (ErrFlag)
+!
+!=======================================================================
+!                                                                      !
+!  This routine assigns allocatable strings.  It allocates/reallocates !
+!  output string variable.                                             !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     string       String to be assigned (character)                   !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A            Assigned allocatable string (character)             !
+!     ErrFlag      Error flag (integer)                                !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      character (len=:), allocatable, intent(inout) :: A
+      character (len=*), intent(in) :: string
+!
+!  Local variable declarations.
+!
+      integer :: lstr
+      integer :: ErrFlag
+!
+!-----------------------------------------------------------------------
+!  Allocate output string to the size of input string.
+!-----------------------------------------------------------------------
+!
+      ErrFlag=-1
+!
+      lstr=LEN_TRIM(string)
+      IF (.not.allocated(A)) THEN
+        allocate ( character(LEN=lstr) :: A, STAT=ErrFlag)
+      ELSE
+        deallocate (A)
+        allocate ( character(LEN=lstr) :: A, STAT=ErrFlag)
+      END IF
+!
+!  Assign requested value.
+!
+      A=string
+!
+      RETURN
+      END FUNCTION assign_string
 !
       FUNCTION find_string (A, Asize, string, Aindex) RESULT (foundit)
 !

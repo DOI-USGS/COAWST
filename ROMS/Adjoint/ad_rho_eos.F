@@ -3,9 +3,10 @@
       MODULE ad_rho_eos_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_rho_eos.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_rho_eos.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -371,12 +372,12 @@
 !
 #  ifdef DISTRIBUTE
 #   ifdef BV_FREQUENCY_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_bvf)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_bvf)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
@@ -384,12 +385,12 @@
      &                       ad_bvf)
 #   endif
 #   ifdef VAR_RHO_2D
-!>    CALL mp_exchange2d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_rhoA, tl_rhoS)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_rhoA, tl_rhoS)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
@@ -398,24 +399,24 @@
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
        defined BULK_FLUXES_NOT_YET
-!>    CALL mp_exchange2d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_alpha, tl_beta)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_alpha, tl_beta)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alpha, ad_beta)
 #    ifdef LMD_DDMIX_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_alfaobeta)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_alfaobeta)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
@@ -424,24 +425,24 @@
 #    endif
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_pden)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_pden)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_pden)
 #   endif
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_rho)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_rho)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
@@ -452,69 +453,69 @@
 
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 #  ifdef BV_FREQUENCY_NOT_YET
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          tl_bvf)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          tl_bvf)
+!^
         CALL ad_exchange_w3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
      &                             ad_bvf)
 #  endif
 #  ifdef VAR_RHO_2D
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_rhoS)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_rhoS)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_rhoS)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_rhoA)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_rhoA)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_rhoA)
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
       defined BULK_FLUXES_NOT_YET
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_beta)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_beta)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_beta)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_alpha)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_alpha)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_alpha)
 #   ifdef LMD_DDMIX_NOT_YET
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          tl_alfaobeta)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          tl_alfaobeta)
+!^
         CALL ad_exchange_w3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
      &                             ad_alfaobeta)
 #   endif
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_pden)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_pden)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_pden)
 #  endif
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_rho)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_rho)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_rho)
@@ -677,17 +678,17 @@
           DO i=IstrT,IendT
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
 #   ifdef MASKING
-!>          tl_pden(i,j,k)=tl_pden(i,k)*rmask(i,j)
-!>
+!^          tl_pden(i,j,k)=tl_pden(i,k)*rmask(i,j)
+!^
             ad_pden(i,j,k)=ad_pden(i,k)*rmask(i,j)
 #   endif
-!>          tl_pden(i,j,k)=tl_den1(i,k)             ! This gives a fatal
-!>                                                  ! result in 4D-Var
+!^          tl_pden(i,j,k)=tl_den1(i,k)             ! This gives a fatal
+!^                                                  ! result in 4D-Var
             ad_den1(i,k)=ad_den1(i,k)+ad_pden(i,j,k)! posterior error...
             ad_pden(i,j,k)=0.0_r8
 #  endif
-!>          tl_rho(i,j,k)=tl_den(i,k)
-!>
+!^          tl_rho(i,j,k)=tl_den(i,k)
+!^
             ad_den(i,k)=ad_den(i,k)+ad_rho(i,j,k)
             ad_rho(i,j,k)=0.0_r8
           END DO
@@ -702,8 +703,8 @@
 !-----------------------------------------------------------------------
 !
 #   ifdef LMD_DDMIX_NOT_YET
-!>      DO k=1,N(ng)
-!>
+!^      DO k=1,N(ng)
+!^
         DO k=N(ng),1,-1
 #   else
         DO k=N(ng),N(ng)
@@ -711,17 +712,17 @@
           IF (k.eq.N(ng)) THEN
             DO i=IstrT,IendT
               cff=1.0_r8/wrk(i,N(ng))
-!>            tl_beta (i,j)=tl_cff*Scof(i,N(ng))+cff*tl_Scof(i,N(ng))
-!>            tl_alpha(i,j)=tl_cff*Tcof(i,N(ng))+cff*tl_Tcof(i,N(ng))
-!>
+!^            tl_beta (i,j)=tl_cff*Scof(i,N(ng))+cff*tl_Scof(i,N(ng))
+!^            tl_alpha(i,j)=tl_cff*Tcof(i,N(ng))+cff*tl_Tcof(i,N(ng))
+!^
               ad_Scof(i,N(ng))=ad_Scof(i,N(ng))+cff*ad_beta (i,j)
               ad_Tcof(i,N(ng))=ad_Tcof(i,N(ng))+cff*ad_alpha(i,j)
               ad_cff=ad_beta (i,j)*Scof(i,N(ng))+                       &
      &               ad_alpha(i,j)*Tcof(i,N(ng))
               ad_beta (i,j)=0.0_r8
               ad_alpha(i,j)=0.0_r8
-!>            tl_cff=-cff*cff*tl_wrk(i,N(ng))
-!>
+!^            tl_cff=-cff*cff*tl_wrk(i,N(ng))
+!^
               ad_wrk(i,N(ng))=ad_wrk(i,N(ng))-cff*cff*ad_cff
               ad_cff=0.0_r8
             END DO
@@ -732,59 +733,59 @@
             cff1=Tpr10*den1(i,k)
             cff2=bulk(i,k)*cff
 #   ifdef LMD_DDMIX_NOT_YET
-!>          tl_alfaobeta(i,j,k)=(tl_Tcof(i,k)*Scof(i,k)-                &
-!>   &                           Tcof(i,k)*tl_Scof(i,k))/               &
-!>   &                          (Scof(i,k)*Scof(i,k))
-!>
+!^          tl_alfaobeta(i,j,k)=(tl_Tcof(i,k)*Scof(i,k)-                &
+!^   &                           Tcof(i,k)*tl_Scof(i,k))/               &
+!^   &                          (Scof(i,k)*Scof(i,k))
+!^
             adfac=ad_alfaobeta(i,j,k)/(Scof(i,k)*Scof(i,k))
             ad_Tcof(i,k)=ad_Tcof(i,k)+Scof(i,k)*adfac
             ad_Scof(i,k)=ad_Scof(i,k)-Tcof(i,k)*adfac
             ad_alfaobeta(i,j,k)=0.0_r8
 #   endif
-!>          tl_Scof(i,k)= (tl_DbulkDS(i,k)*cff1+                        &
-!>   &                     DbulkDS(i,k)*tl_cff1+                        &
-!>   &                     tl_Dden1DS(i,k)*cff2+                        &
-!>   &                     Dden1DS(i,k)*tl_cff2)
-!>
+!^          tl_Scof(i,k)= (tl_DbulkDS(i,k)*cff1+                        &
+!^   &                     DbulkDS(i,k)*tl_cff1+                        &
+!^   &                     tl_Dden1DS(i,k)*cff2+                        &
+!^   &                     Dden1DS(i,k)*tl_cff2)
+!^
             ad_DbulkDS(i,k)=ad_DbulkDS(i,k)+ad_Scof(i,k)*cff1
             ad_Dden1DS(i,k)=ad_Dden1DS(i,k)+ad_Scof(i,k)*cff2
             ad_cff1=DbulkDS(i,k)*ad_Scof(i,k)
             ad_cff2=Dden1DS(i,k)*ad_Scof(i,k)
             ad_Scof(i,k)=0.0_r8
-!>          tl_Tcof(i,k)=-(tl_DbulkDT(i,k)*cff1+                        &
-!>   &                     DbulkDT(i,k)*tl_cff1+                        &
-!>   &                     tl_Dden1DT(i,k)*cff2+                        &
-!>   &                     Dden1DT(i,k)*tl_cff2)
-!>
+!^          tl_Tcof(i,k)=-(tl_DbulkDT(i,k)*cff1+                        &
+!^   &                     DbulkDT(i,k)*tl_cff1+                        &
+!^   &                     tl_Dden1DT(i,k)*cff2+                        &
+!^   &                     Dden1DT(i,k)*tl_cff2)
+!^
             ad_DbulkDT(i,k)=ad_DbulkDT(i,k)-ad_Tcof(i,k)*cff1
             ad_Dden1DT(i,k)=ad_Dden1DT(i,k)-ad_Tcof(i,k)*cff2
             ad_cff1=ad_cff1-DbulkDT(i,k)*ad_Tcof(i,k)
             ad_cff2=ad_cff2-Dden1DT(i,k)*ad_Tcof(i,k)
             ad_Tcof(i,k)=0.0_r8
-!>          tl_wrk(i,k)=cff*(cff*tl_den(i,k)+                           &
-!>   &                       2.0_r8*tl_cff*(den(i,k)+1000.0_r8))
-!>
+!^          tl_wrk(i,k)=cff*(cff*tl_den(i,k)+                           &
+!^   &                       2.0_r8*tl_cff*(den(i,k)+1000.0_r8))
+!^
             adfac=cff*ad_wrk(i,k)
             ad_den(i,k)=ad_den(i,k)+cff*adfac
             ad_cff=ad_cff+2.0_r8*(den(i,k)+1000.0_r8)*adfac
             ad_wrk(i,k)=0.0_r8
-!>          tl_cff2=tl_bulk(i,k)*cff+bulk(i,k)*tl_cff
-!>
+!^          tl_cff2=tl_bulk(i,k)*cff+bulk(i,k)*tl_cff
+!^
             ad_bulk(i,k)=ad_bulk(i,k)+ad_cff2*cff
             ad_cff=ad_cff+bulk(i,k)*ad_cff2
             ad_cff2=0.0_r8
-!>          tl_cff1=tl_Tpr10*den1(i,k)+Tpr10*tl_den1(i,k)
-!>
+!^          tl_cff1=tl_Tpr10*den1(i,k)+Tpr10*tl_den1(i,k)
+!^
             ad_Tpr10=ad_Tpr10+ad_cff1*den1(i,k)
             ad_den1(i,k)=ad_den1(i,k)+Tpr10*ad_cff1
             ad_cff1=0.0_r8
-!>          tl_cff=tl_bulk(i,k)+tl_Tpr10
-!>
+!^          tl_cff=tl_bulk(i,k)+tl_Tpr10
+!^
             ad_bulk(i,k)=ad_bulk(i,k)+ad_cff
             ad_Tpr10=ad_Tpr10+ad_cff
             ad_cff=0.0_r8
-!>          tl_Tpr10=0.1_r8*tl_z_r(i,j,k)
-!>
+!^          tl_Tpr10=0.1_r8*tl_z_r(i,j,k)
+!^
             ad_z_r(i,j,k)=ad_z_r(i,j,k)+0.1_r8*ad_Tpr10
             ad_Tpr10=0.0_r8
           END DO
@@ -799,11 +800,11 @@
 !-----------------------------------------------------------------------
 !
         DO i=IstrT,IendT
-!>        tl_bvf(i,j,N(ng))=0.0_r8
-!>
+!^        tl_bvf(i,j,N(ng))=0.0_r8
+!^
           ad_bvf(i,j,N(ng))=0.0_r8
-!>        tl_bvf(i,j,0)=0.0_r8
-!>
+!^        tl_bvf(i,j,0)=0.0_r8
+!^
           ad_bvf(i,j,0)=0.0_r8
         END DO
         DO k=1,N(ng)-1
@@ -820,21 +821,21 @@
             den_dn=cff2*(den1(i,k  )*bulk_dn)
             cff3=1.0_r8/(0.5_r8*(den_up+den_dn)*                        &
      &                   (z_r(i,j,k+1)-z_r(i,j,k)))
-!>          tl_bvf(i,j,k)=-g*((tl_den_up-tl_den_dn)*cff3+               &
-!>   &                        (den_up-den_dn)*tl_cff3)
-!>
+!^          tl_bvf(i,j,k)=-g*((tl_den_up-tl_den_dn)*cff3+               &
+!^   &                        (den_up-den_dn)*tl_cff3)
+!^
             adfac=-g*ad_bvf(i,j,k)
             adfac1=adfac*cff3
             ad_cff3=ad_cff3+(den_up-den_dn)*adfac
             ad_den_up=ad_den_up+adfac1
             ad_den_dn=ad_den_dn-adfac1
             ad_bvf(i,j,k)=0.0_r8
-!>          tl_cff3=-cff3*cff3*                                         &
-!>   &               0.5_r8*((tl_den_up+tl_den_dn)*                     &
-!>   &                       (z_r(i,j,k+1)-z_r(i,j,k))+                 &
-!>   &                       (den_up+den_dn)*                           &
-!>   &                       (tl_z_r(i,j,k+1)-tl_z_r(i,j,k)))
-!>
+!^          tl_cff3=-cff3*cff3*                                         &
+!^   &               0.5_r8*((tl_den_up+tl_den_dn)*                     &
+!^   &                       (z_r(i,j,k+1)-z_r(i,j,k))+                 &
+!^   &                       (den_up+den_dn)*                           &
+!^   &                       (tl_z_r(i,j,k+1)-tl_z_r(i,j,k)))
+!^
             adfac=-cff3*cff3*0.5_r8*ad_cff3
             adfac1=adfac*(z_r(i,j,k+1)-z_r(i,j,k))
             adfac2=adfac*(den_up+den_dn)
@@ -843,13 +844,13 @@
             ad_den_up=ad_den_up+adfac1
             ad_den_dn=ad_den_dn+adfac1
             ad_cff3=0.0_r8
-!>          tl_den_dn=tl_cff2*(den1(i,k  )*bulk_dn)+                    &
-!>   &                cff2*(tl_den1(i,k  )*bulk_dn+                     &
-!>   &                      den1(i,k  )*tl_bulk_dn)
-!>          tl_den_up=tl_cff1*(den1(i,k+1)*bulk_up)+                    &
-!>   &                cff1*(tl_den1(i,k+1)*bulk_up+                     &
-!>   &                      den1(i,k+1)*tl_bulk_up)
-!>
+!^          tl_den_dn=tl_cff2*(den1(i,k  )*bulk_dn)+                    &
+!^   &                cff2*(tl_den1(i,k  )*bulk_dn+                     &
+!^   &                      den1(i,k  )*tl_bulk_dn)
+!^          tl_den_up=tl_cff1*(den1(i,k+1)*bulk_up)+                    &
+!^   &                cff1*(tl_den1(i,k+1)*bulk_up+                     &
+!^   &                      den1(i,k+1)*tl_bulk_up)
+!^
             adfac1=cff2*ad_den_dn
             adfac2=cff1*ad_den_up
             ad_cff2=ad_cff2+(den1(i,k  )*bulk_dn)*ad_den_dn
@@ -860,9 +861,9 @@
             ad_bulk_up=ad_bulk_up+den1(i,k+1)*adfac2
             ad_den_dn=0.0_r8
             ad_den_up=0.0_r8
-!>          tl_cff2=-cff2*cff2*(tl_bulk_dn+0.1_r8*tl_z_w(i,j,k))
-!>          tl_cff1=-cff1*cff1*(tl_bulk_up+0.1_r8*tl_z_w(i,j,k))
-!>
+!^          tl_cff2=-cff2*cff2*(tl_bulk_dn+0.1_r8*tl_z_w(i,j,k))
+!^          tl_cff1=-cff1*cff1*(tl_bulk_up+0.1_r8*tl_z_w(i,j,k))
+!^
             adfac1=-cff2*cff2*ad_cff2
             adfac2=-cff1*cff1*ad_cff1
             ad_bulk_dn=ad_bulk_dn+adfac1
@@ -871,19 +872,19 @@
      &                    0.1_r8*(adfac1+adfac2)
             ad_cff2=0.0_r8
             ad_cff1=0.0_r8
-!>          tl_bulk_dn=tl_bulk0(i,k  )-                                 &
-!>   &                 tl_z_w(i,j,k)*(bulk1(i,k  )-                     &
-!>   &                                bulk2(i,k  )*z_w(i,j,k))-         &
-!>   &                 z_w(i,j,k)*(tl_bulk1(i,k  )-                     &
-!>   &                             tl_bulk2(i,k  )*z_w(i,j,k)-          &
-!>   &                             bulk2(i,k  )*tl_z_w(i,j,k))
-!>          tl_bulk_up=tl_bulk0(i,k+1)-                                 &
-!>   &                 tl_z_w(i,j,k)*(bulk1(i,k+1)-                     &
-!>   &                                bulk2(i,k+1)*z_w(i,j,k))-         &
-!>   &                 z_w(i,j,k)*(tl_bulk1(i,k+1)-                     &
-!>   &                             tl_bulk2(i,k+1)*z_w(i,j,k)-          &
-!>   &                             bulk2(i,k+1)*tl_z_w(i,j,k))
-!>
+!^          tl_bulk_dn=tl_bulk0(i,k  )-                                 &
+!^   &                 tl_z_w(i,j,k)*(bulk1(i,k  )-                     &
+!^   &                                bulk2(i,k  )*z_w(i,j,k))-         &
+!^   &                 z_w(i,j,k)*(tl_bulk1(i,k  )-                     &
+!^   &                             tl_bulk2(i,k  )*z_w(i,j,k)-          &
+!^   &                             bulk2(i,k  )*tl_z_w(i,j,k))
+!^          tl_bulk_up=tl_bulk0(i,k+1)-                                 &
+!^   &                 tl_z_w(i,j,k)*(bulk1(i,k+1)-                     &
+!^   &                                bulk2(i,k+1)*z_w(i,j,k))-         &
+!^   &                 z_w(i,j,k)*(tl_bulk1(i,k+1)-                     &
+!^   &                             tl_bulk2(i,k+1)*z_w(i,j,k)-          &
+!^   &                             bulk2(i,k+1)*tl_z_w(i,j,k))
+!^
             adfac1=z_w(i,j,k)*ad_bulk_dn
             adfac2=z_w(i,j,k)*ad_bulk_up
             ad_bulk0(i,k  )=ad_bulk0(i,k  )+ad_bulk_dn
@@ -931,20 +932,20 @@
         cff2=1.0_r8/rho0
         DO i=IstrT,IendT
           cff1=1.0_r8/(z_w(i,j,N(ng))-z_w(i,j,0))
-!>        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
-!>   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
-!>   &                       cff1*tl_rhoS(i,j))
-!>
+!^        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
+!^   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
+!^   &                       cff1*tl_rhoS(i,j))
+!^
           adfac=2.0_r8*cff2*cff1*ad_rhoS(i,j)
           ad_cff1=2.0_r8*rhoS1(i,j)*adfac
           ad_rhoS(i,j)=cff1*adfac
-!>        tl_rhoA(i,j)=cff2*(tl_cff1*rhoA1(i,j)+cff1*tl_rhoA(i,j))
-!>
+!^        tl_rhoA(i,j)=cff2*(tl_cff1*rhoA1(i,j)+cff1*tl_rhoA(i,j))
+!^
           adfac=cff2*ad_rhoA(i,j)
           ad_cff1=ad_cff1+rhoA1(i,j)*adfac
           ad_rhoA(i,j)=cff1*adfac
-!>        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))
-!>
+!^        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))
+!^
           adfac=-cff1*cff1*ad_cff1
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac
           ad_z_w(i,j,0    )=ad_z_w(i,j,0    )-adfac
@@ -960,21 +961,21 @@
         DO k=N(ng)-1,1,-1
           DO i=IstrT,IendT
             cff1=den(i,k)*Hz(i,j,k)
-!>          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
-!>
+!^          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
+!^
             ad_cff1=ad_rhoA(i,j)
-!>          tl_rhoS(i,j)=tl_rhoS(i,j)+                                  &
-!>   &                   tl_Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)+         &
-!>   &                   Hz(i,j,k)*(tl_rhoA(i,j)+0.5_r8*tl_cff1)
-!>
+!^          tl_rhoS(i,j)=tl_rhoS(i,j)+                                  &
+!^   &                   tl_Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)+         &
+!^   &                   Hz(i,j,k)*(tl_rhoA(i,j)+0.5_r8*tl_cff1)
+!^
             adfac=Hz(i,j,k)*ad_rhoS(i,j)
             ad_rhoA(i,j)=ad_rhoA(i,j)+adfac
             ad_cff1=ad_cff1+0.5_r8*adfac
             ad_Hz(i,j,k)=ad_Hz(i,j,k)+                                  &
      &                   (rhoA1(i,j)+0.5_r8*cff1)*ad_rhoS(i,j)
-!>          tl_cff1=tl_den(i,k)*Hz(i,j,k)+                              &
-!>   &              den(i,k)*tl_Hz(i,j,k)
-!>
+!^          tl_cff1=tl_den(i,k)*Hz(i,j,k)+                              &
+!^   &              den(i,k)*tl_Hz(i,j,k)
+!^
             ad_den(i,k)=ad_den(i,k)+Hz(i,j,k)*ad_cff1
             ad_Hz(i,j,k)=ad_Hz(i,j,k)+den(i,k)*ad_cff1
             ad_cff1=0.0_r8
@@ -983,20 +984,20 @@
         END DO
         DO i=IstrT,IendT
           cff1=den(i,N(ng))*Hz(i,j,N(ng))
-!>        tl_rhoA(i,j)=tl_cff1
-!>
+!^        tl_rhoA(i,j)=tl_cff1
+!^
           ad_cff1=ad_rhoA(i,j)
           ad_rhoA(i,j)=0.0_r8
-!>        tl_rhoS(i,j)=0.5_r8*(tl_cff1*Hz(i,j,N(ng))+                   &
-!>   &                         cff1*tl_Hz(i,j,N(ng)))
-!>
+!^        tl_rhoS(i,j)=0.5_r8*(tl_cff1*Hz(i,j,N(ng))+                   &
+!^   &                         cff1*tl_Hz(i,j,N(ng)))
+!^
           adfac=0.5_r8*ad_rhoS(i,j)
           ad_cff1=ad_cff1+Hz(i,j,N(ng))*adfac
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))+cff1*adfac
           ad_rhoS(i,j)=0.0_r8
-!>        tl_cff1=tl_den(i,N(ng))*Hz(i,j,N(ng))+                        &
-!>   &            den(i,N(ng))*tl_Hz(i,j,N(ng))
-!>
+!^        tl_cff1=tl_den(i,N(ng))*Hz(i,j,N(ng))+                        &
+!^   &            den(i,N(ng))*tl_Hz(i,j,N(ng))
+!^
           ad_den(i,N(ng))=ad_den(i,N(ng))+Hz(i,j,N(ng))*ad_cff1
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))+den(i,N(ng))*ad_cff1
           ad_cff1=0.0_r8
@@ -1072,44 +1073,44 @@
 !
             cff=1.0_r8/(bulk(i,k)+Tpr10)
 #  ifdef MASKING
-!>          tl_den(i,k)=tl_den(i,k)*rmask(i,j)
-!>
+!^          tl_den(i,k)=tl_den(i,k)*rmask(i,j)
+!^
             ad_den(i,k)=ad_den(i,k)*rmask(i,j)
 #  endif
 #  if defined SEDIMENT_NOT_YET && defined SED_DENS_NOT_YET
-!>          tl_den(i,k)=tl_den(i,k)+tl_SedDen
-!>
+!^          tl_den(i,k)=tl_den(i,k)+tl_SedDen
+!^
             ad_SedDen=ad_SedDen+ad_den(i,k)
             DO ised=1,NST
               itrc=idsed(ised)
               cff1=1.0_r8/Srho(ised,ng)
-!>            tl_SedDen=tl_SedDen+                                      &
-!>   &                  (tl_t(i,j,k,nrhs,itrc)*                         &
-!>   &                   (Srho(ised,ng)-den(i,k))-                      &
-!>   &                   t(i,j,k,nrhs,itrc)*                            &
-!>   &                   tl_den(i,k))*cff1
-!>
+!^            tl_SedDen=tl_SedDen+                                      &
+!^   &                  (tl_t(i,j,k,nrhs,itrc)*                         &
+!^   &                   (Srho(ised,ng)-den(i,k))-                      &
+!^   &                   t(i,j,k,nrhs,itrc)*                            &
+!^   &                   tl_den(i,k))*cff1
+!^
               adfac=cff1*ad_SedDen
               ad_den(i,k)=ad_den(i,k)-                                  &
      &                    t(i,j,k,nrhs,idsed(ised))*adfac
               ad_t(i,j,k,nrhs,itrc)=ad_t(i,j,k,nrhs,itrc)+              &
      &                              (Srho(ised,ng)-den(i,k))*adfac
             END DO
-!>          tl_SedDen=0.0_r8
-!>
+!^          tl_SedDen=0.0_r8
+!^
             ad_SedDen=0.0_r8
 #  endif
-!>          tl_den(i,k)=tl_den1(i,k)*bulk(i,k)*cff+                     &
-!>   &                  den1(i,k)*(tl_bulk(i,k)*cff+                    &
-!>   &                             bulk(i,k)*tl_cff)
-!>
+!^          tl_den(i,k)=tl_den1(i,k)*bulk(i,k)*cff+                     &
+!^   &                  den1(i,k)*(tl_bulk(i,k)*cff+                    &
+!^   &                             bulk(i,k)*tl_cff)
+!^
             adfac1=den1(i,k)*ad_den(i,k)
             ad_den1(i,k)=ad_den1(i,k)+bulk(i,k)*cff*ad_den(i,k)
             ad_bulk(i,k)=ad_bulk(i,k)+cff*adfac1
             ad_cff=ad_cff+bulk(i,k)*adfac1
             ad_den(i,k)=0.0_r8
-!>          tl_cff=-cff*cff*(tl_bulk(i,k)+tl_Tpr10)
-!>
+!^          tl_cff=-cff*cff*(tl_bulk(i,k)+tl_Tpr10)
+!^
             adfac=-cff*cff*ad_cff
             ad_bulk(i,k)=ad_bulk(i,k)+adfac
             ad_Tpr10=ad_Tpr10+adfac
@@ -1122,17 +1123,17 @@
 !  in the computation of thermal expansion and saline contraction
 !  coefficients.
 !
-!>          tl_DbulkDT(i,k)=tl_dCdT(3)+                                 &
-!>   &                      tl_Ts*(dCdT(4)+sqrtTs*dCdT(5))+             &
-!>   &                      Ts*(tl_dCdT(4)+tl_sqrtTs*dCdT(5)+           &
-!>   &                                     sqrtTs*tl_dCdT(5))-          &
-!>   &                      tl_Tp*(dCdT(6)+Ts*dCdT(7)-                  &
-!>   &                             Tp*(dCdT(8)+Ts*dCdT(9)))-            &
-!>   &                      Tp*(tl_dCdT(6)+tl_Ts*dCdT(7)+Ts*tl_dCdT(7)- &
-!>   &                          tl_Tp*(dCdT(8)+Ts*dCdT(9))-             &
-!>   &                          Tp*(tl_dCdT(8)+tl_Ts*dCdT(9)+           &
-!>   &                                         Ts*tl_dCdT(9)))
-!>
+!^          tl_DbulkDT(i,k)=tl_dCdT(3)+                                 &
+!^   &                      tl_Ts*(dCdT(4)+sqrtTs*dCdT(5))+             &
+!^   &                      Ts*(tl_dCdT(4)+tl_sqrtTs*dCdT(5)+           &
+!^   &                                     sqrtTs*tl_dCdT(5))-          &
+!^   &                      tl_Tp*(dCdT(6)+Ts*dCdT(7)-                  &
+!^   &                             Tp*(dCdT(8)+Ts*dCdT(9)))-            &
+!^   &                      Tp*(tl_dCdT(6)+tl_Ts*dCdT(7)+Ts*tl_dCdT(7)- &
+!^   &                          tl_Tp*(dCdT(8)+Ts*dCdT(9))-             &
+!^   &                          Tp*(tl_dCdT(8)+tl_Ts*dCdT(9)+           &
+!^   &                                         Ts*tl_dCdT(9)))
+!^
             adfac1=Ts*ad_DbulkDT(i,k)
             adfac2=Tp*ad_DbulkDT(i,k)
             adfac3=adfac2*Tp
@@ -1153,14 +1154,14 @@
      &            (dCdT(6)+Ts*dCdT(7)-                                  &
      &             2.0_r8*Tp*(dCdT(8)+Ts*dCdT(9)))
             ad_DbulkDT(i,k)=0.0_r8
-!>          tl_DbulkDS(i,k)=tl_C(4)+                                    &
-!>   &                      1.5_r8*(tl_sqrtTs*C(5)+                     &
-!>   &                              sqrtTs*tl_C(5))-                    &
-!>   &                      tl_Tp*(C(7)+sqrtTs*1.5_r8*G00-              &
-!>   &                             Tp*C(9))-                            &
-!>   &                      Tp*(tl_C(7)+tl_sqrtTs*1.5_r8*G00-           &
-!>   &                          tl_Tp*C(9)-Tp*tl_C(9))
-!>
+!^          tl_DbulkDS(i,k)=tl_C(4)+                                    &
+!^   &                      1.5_r8*(tl_sqrtTs*C(5)+                     &
+!^   &                              sqrtTs*tl_C(5))-                    &
+!^   &                      tl_Tp*(C(7)+sqrtTs*1.5_r8*G00-              &
+!^   &                             Tp*C(9))-                            &
+!^   &                      Tp*(tl_C(7)+tl_sqrtTs*1.5_r8*G00-           &
+!^   &                          tl_Tp*C(9)-Tp*tl_C(9))
+!^
             adfac1=1.5_r8*ad_DbulkDS(i,k)
             adfac2=Tp*ad_DbulkDS(i,k)
             ad_C(4)=ad_C(4)+ad_DbulkDS(i,k)
@@ -1174,14 +1175,14 @@
      &            (C(7)+sqrtTs*1.5_r8*G00-Tp*C(9)-                      &
      &             Tp*C(9))
             ad_DbulkDS(i,k)=0.0_r8
-!>          tl_dCdT(9)=tl_Tt*d2Cd2T(9)
-!>          tl_dCdT(8)=tl_Tt*d2Cd2T(8)
-!>          tl_dCdT(7)=tl_Tt*d2Cd2T(7)
-!>          tl_dCdT(6)=tl_Tt*d2Cd2T(6)
-!>          tl_dCdT(5)=tl_Tt*d2Cd2T(5)
-!>          tl_dCdT(4)=tl_Tt*d2Cd2T(4)
-!>          tl_dCdT(3)=tl_Tt*d2Cd2T(3)
-!>
+!^          tl_dCdT(9)=tl_Tt*d2Cd2T(9)
+!^          tl_dCdT(8)=tl_Tt*d2Cd2T(8)
+!^          tl_dCdT(7)=tl_Tt*d2Cd2T(7)
+!^          tl_dCdT(6)=tl_Tt*d2Cd2T(6)
+!^          tl_dCdT(5)=tl_Tt*d2Cd2T(5)
+!^          tl_dCdT(4)=tl_Tt*d2Cd2T(4)
+!^          tl_dCdT(3)=tl_Tt*d2Cd2T(3)
+!^
             ad_Tt=ad_Tt+d2Cd2T(9)*ad_dCdT(9)+                           &
      &                  d2Cd2T(8)*ad_dCdT(8)+                           &
      &                  d2Cd2T(7)*ad_dCdT(7)+                           &
@@ -1200,12 +1201,12 @@
 !
 !  Compute adjoint secant bulk modulus.
 !
-!>          tl_bulk (i,k)=tl_bulk0(i,k)-                                &
-!>   &                     tl_Tp*(bulk1(i,k)-Tp*bulk2(i,k))-            &
-!>   &                     Tp*(tl_bulk1(i,k)-                           &
-!>   &                         tl_Tp*bulk2(i,k)-                        &
-!>   &                         Tp*tl_bulk2(i,k))
-!>
+!^          tl_bulk (i,k)=tl_bulk0(i,k)-                                &
+!^   &                     tl_Tp*(bulk1(i,k)-Tp*bulk2(i,k))-            &
+!^   &                     Tp*(tl_bulk1(i,k)-                           &
+!^   &                         tl_Tp*bulk2(i,k)-                        &
+!^   &                         Tp*tl_bulk2(i,k))
+!^
             adfac=Tp*ad_bulk(i,k)
             ad_bulk0(i,k)=ad_bulk0(i,k)+ad_bulk(i,k)
             ad_bulk1(i,k)=ad_bulk1(i,k)-adfac
@@ -1214,27 +1215,27 @@
      &            ad_bulk(i,k)*(bulk1(i,k)-Tp*bulk2(i,k))+              &
      &            adfac*bulk2(i,k)
             ad_bulk(i,k)=0.0_r8
-!>          tl_bulk2(i,k)=tl_C(8)+tl_Ts*C(9)+Ts*tl_C(9)
-!>
+!^          tl_bulk2(i,k)=tl_C(8)+tl_Ts*C(9)+Ts*tl_C(9)
+!^
             ad_C(8)=ad_C(8)+ad_bulk2(i,k)
             ad_C(9)=ad_C(9)+Ts*ad_bulk2(i,k)
             ad_Ts=ad_Ts+ad_bulk2(i,k)*C(9)
             ad_bulk2(i,k)=0.0_r8
-!>          tl_bulk1(i,k)=tl_C(6)+                                      &
-!>   &                    tl_Ts*(C(7)+sqrtTs*G00)+                      &
-!>   &                    Ts*(tl_C(7)+tl_sqrtTs*G00)
-!>
+!^          tl_bulk1(i,k)=tl_C(6)+                                      &
+!^   &                    tl_Ts*(C(7)+sqrtTs*G00)+                      &
+!^   &                    Ts*(tl_C(7)+tl_sqrtTs*G00)
+!^
             adfac=Ts*ad_bulk1(i,k)
             ad_C(6)=ad_C(6)+ad_bulk1(i,k)
             ad_C(7)=ad_C(7)+adfac
             ad_Ts=ad_Ts+ad_bulk1(i,k)*(C(7)+sqrtTs*G00)
             ad_sqrtTs=ad_sqrtTs+adfac*G00
             ad_bulk1(i,k)=0.0_r8
-!>          tl_bulk0(i,k)=tl_C(3)+                                      &
-!>   &                    tl_Ts*(C(4)+sqrtTs*C(5))+                     &
-!>   &                    Ts*(tl_C(4)+tl_sqrtTs*C(5)+                   &
-!>   &                        sqrtTs*tl_C(5))
-!>
+!^          tl_bulk0(i,k)=tl_C(3)+                                      &
+!^   &                    tl_Ts*(C(4)+sqrtTs*C(5))+                     &
+!^   &                    Ts*(tl_C(4)+tl_sqrtTs*C(5)+                   &
+!^   &                        sqrtTs*tl_C(5))
+!^
             adfac=Ts*ad_bulk0(i,k)
             ad_C(3)=ad_C(3)+ad_bulk0(i,k)
             ad_C(4)=ad_C(4)+adfac
@@ -1242,14 +1243,14 @@
             ad_Ts=ad_Ts+ad_bulk0(i,k)*(C(4)+sqrtTs*C(5))
             ad_sqrtTs=ad_sqrtTs+C(5)*adfac
             ad_bulk0(i,k)=0.0_r8
-!>          tl_C(9)=tl_Tt*dCdT(9)
-!>          tl_C(8)=tl_Tt*dCdT(8)
-!>          tl_C(7)=tl_Tt*dCdT(7)
-!>          tl_C(6)=tl_Tt*dCdT(6)
-!>          tl_C(5)=tl_Tt*dCdT(5)
-!>          tl_C(4)=tl_Tt*dCdT(4)
-!>          tl_C(3)=tl_Tt*dCdT(3)
-!>
+!^          tl_C(9)=tl_Tt*dCdT(9)
+!^          tl_C(8)=tl_Tt*dCdT(8)
+!^          tl_C(7)=tl_Tt*dCdT(7)
+!^          tl_C(6)=tl_Tt*dCdT(6)
+!^          tl_C(5)=tl_Tt*dCdT(5)
+!^          tl_C(4)=tl_Tt*dCdT(4)
+!^          tl_C(3)=tl_Tt*dCdT(3)
+!^
             ad_Tt=ad_Tt+ad_C(9)*dCdT(9)+                                &
      &                  ad_C(8)*dCdT(8)+                                &
      &                  ad_C(7)*dCdT(7)+                                &
@@ -1271,11 +1272,11 @@
 !  computation of thermal expansion and saline contraction
 !  coefficients.
 !
-!>          tl_Dden1DT(i,k)=tl_dCdT(0)+                                 &
-!>   &                      tl_Ts*(dCdT(1)+sqrtTs*dCdT(2))+             &
-!>   &                      Ts*(tl_dCdT(1)+tl_sqrtTs*dCdT(2)+           &
-!>   &                                     sqrtTs*tl_dCdT(2))
-!>
+!^          tl_Dden1DT(i,k)=tl_dCdT(0)+                                 &
+!^   &                      tl_Ts*(dCdT(1)+sqrtTs*dCdT(2))+             &
+!^   &                      Ts*(tl_dCdT(1)+tl_sqrtTs*dCdT(2)+           &
+!^   &                                     sqrtTs*tl_dCdT(2))
+!^
             adfac1=Ts*ad_Dden1DT(i,k)
             ad_dCdT(0)=ad_dCdT(0)+ad_Dden1DT(i,k)
             ad_dCdT(1)=ad_dCdT(1)+adfac1
@@ -1284,21 +1285,21 @@
      &            (dCdT(1)+sqrtTs*dCdT(2))*ad_Dden1DT(i,k)
             ad_sqrtTs=ad_sqrtTs+dCdT(2)*adfac1
             ad_Dden1DT(i,k)=0.0_r8
-!>          tl_Dden1DS(i,k)=tl_C(1)+                                    &
-!>   &                      1.5_r8*(tl_C(2)*sqrtTs+                     &
-!>   &                              C(2)*tl_sqrtTs)+                    &
-!>   &                      2.0_r8*W00*tl_Ts
-!>
+!^          tl_Dden1DS(i,k)=tl_C(1)+                                    &
+!^   &                      1.5_r8*(tl_C(2)*sqrtTs+                     &
+!^   &                              C(2)*tl_sqrtTs)+                    &
+!^   &                      2.0_r8*W00*tl_Ts
+!^
             adfac1=1.5_r8*ad_Dden1DS(i,k)
             ad_C(1)=ad_C(1)+ad_Dden1DS(i,k)
             ad_C(2)=ad_C(2)+sqrtTs*adfac1
             ad_Ts=ad_Ts+2.0_r8*W00*ad_Dden1DS(i,k)
             ad_sqrtTs=ad_sqrtTs+C(2)*adfac1
             ad_Dden1DS(i,k)=0.0_r8
-!>          tl_dCdT(2)=tl_Tt*d2Cd2T(2)
-!>          tl_dCdT(1)=tl_Tt*d2Cd2T(1)
-!>          tl_dCdT(0)=tl_Tt*d2Cd2T(0)
-!>
+!^          tl_dCdT(2)=tl_Tt*d2Cd2T(2)
+!^          tl_dCdT(1)=tl_Tt*d2Cd2T(1)
+!^          tl_dCdT(0)=tl_Tt*d2Cd2T(0)
+!^
             ad_Tt=ad_Tt+d2Cd2T(2)*ad_dCdT(2)+                           &
      &                  d2Cd2T(1)*ad_dCdT(1)+                           &
      &                  d2Cd2T(0)*ad_dCdT(0)
@@ -1310,11 +1311,11 @@
 !  Compute basic state and tangent linear density (kg/m3) at standard
 !  one atmosphere pressure.
 !
-!>          tl_den1(i,k)=tl_C(0)+                                       &
-!>   &                   tl_Ts*(C(1)+sqrtTs*C(2)+Ts*W00)+               &
-!>   &                   Ts*(tl_C(1)+tl_sqrtTs*C(2)+                    &
-!>   &                       sqrtTs*tl_C(2)+tl_Ts*W00)
-!>
+!^          tl_den1(i,k)=tl_C(0)+                                       &
+!^   &                   tl_Ts*(C(1)+sqrtTs*C(2)+Ts*W00)+               &
+!^   &                   Ts*(tl_C(1)+tl_sqrtTs*C(2)+                    &
+!^   &                       sqrtTs*tl_C(2)+tl_Ts*W00)
+!^
             adfac=Ts*ad_den1(i,k)
             ad_C(0)=ad_C(0)+ad_den1(i,k)
             ad_C(1)=ad_C(1)+adfac
@@ -1324,10 +1325,10 @@
      &            adfac*W00
             ad_sqrtTs=ad_sqrtTs+adfac*C(2)
             ad_den1(i,k)=0.0_r8
-!>          tl_C(2)=tl_Tt*dCdT(2)
-!>          tl_C(1)=tl_Tt*dCdT(1)
-!>          tl_C(0)=tl_Tt*dCdT(0)
-!>
+!^          tl_C(2)=tl_Tt*dCdT(2)
+!^          tl_C(1)=tl_Tt*dCdT(1)
+!^          tl_C(0)=tl_Tt*dCdT(0)
+!^
             ad_Tt=ad_Tt+ad_C(2)*dCdT(2)+                                &
      &                  ad_C(1)*dCdT(1)+                                &
      &                  ad_C(0)*dCdT(0)
@@ -1338,45 +1339,45 @@
 !  Check temperature and salinity minimum valid values. Assign depth
 !  to the pressure.
 !
-!>          tl_Tpr10=0.1_r8*tl_Tp
-!>
+!^          tl_Tpr10=0.1_r8*tl_Tp
+!^
             ad_Tp=ad_Tp+0.1_r8*ad_Tpr10
             ad_Tpr10=0.0_r8
-!>          tl_Tp=tl_z_r(i,j,k)
-!>
+!^          tl_Tp=tl_z_r(i,j,k)
+!^
             ad_z_r(i,j,k)=ad_z_r(i,j,k)+ad_Tp
             ad_Tp=0.0_r8
 
 #  ifdef SALINITY
             IF (Ts.ne.0.0_r8) THEN
-!>            tl_sqrtTs=0.5_r8*tl_Ts/SQRT(Ts)
-!>
+!^            tl_sqrtTs=0.5_r8*tl_Ts/SQRT(Ts)
+!^
               ad_Ts=ad_Ts+0.5_r8*ad_sqrtTs/SQRT(Ts)
               ad_sqrtTs=0.0_r8
             ELSE
-!>            tl_sqrtTs=0.0_r8
-!>
+!^            tl_sqrtTs=0.0_r8
+!^
               ad_sqrtTs=0.0_r8
             END IF
-!>          tl_Ts=(0.5_r8-SIGN(0.5_r8,-t(i,j,k,nrhs,isalt)))*
-!>   &            tl_t(i,j,k,nrhs,isalt)
-!>
+!^          tl_Ts=(0.5_r8-SIGN(0.5_r8,-t(i,j,k,nrhs,isalt)))*
+!^   &            tl_t(i,j,k,nrhs,isalt)
+!^
             ad_t(i,j,k,nrhs,isalt)=ad_t(i,j,k,nrhs,isalt)+              &
      &                             (0.5_r8-SIGN(0.5_r8,                 &
      &                                          -t(i,j,k,nrhs,isalt)))* &
      &                             ad_Ts
             ad_Ts=0.0_r8
 #  else
-!>          tl_sqrtTs=0.0_r8
-!>
+!^          tl_sqrtTs=0.0_r8
+!^
             ad_sqrtTs=0.0_r8
-!>          tl_Ts=0.0_r8
-!>
+!^          tl_Ts=0.0_r8
+!^
             ad_Ts=0.0_r8
 #  endif
-!>          tl_Tt=(0.5_r8-SIGN(0.5_r8,-2.0_r8-t(i,j,k,nrhs,itemp)))*
-!>   &            tl_t(i,j,k,nrhs,itemp)
-!>
+!^          tl_Tt=(0.5_r8-SIGN(0.5_r8,-2.0_r8-t(i,j,k,nrhs,itemp)))*
+!^   &            tl_t(i,j,k,nrhs,itemp)
+!^
             ad_t(i,j,k,nrhs,itemp)=ad_t(i,j,k,nrhs,itemp)+              &
      &                             (0.5_r8-SIGN(0.5_r8,-2.0_r8-         &
      &                                          t(i,j,k,nrhs,itemp)))*  &
@@ -1556,12 +1557,12 @@
 !
 #  ifdef DISTRIBUTE
 #   ifdef BV_FREQUENCY_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_bvf)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_bvf)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
@@ -1569,12 +1570,12 @@
      &                       ad_bvf)
 #   endif
 #   ifdef VAR_RHO_2D
-!>    CALL mp_exchange2d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_rhoA, tl_rhoS)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_rhoA, tl_rhoS)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
@@ -1583,24 +1584,24 @@
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
        defined BULK_FLUXES_NOT_YET
-!>    CALL mp_exchange2d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_alpha, tl_beta)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_alpha, tl_beta)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alpha, ad_beta)
 #    ifdef LMD_DDMIX_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_alfaobeta)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_alfaobeta)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
@@ -1609,24 +1610,24 @@
 #    endif
 #   endif
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_pden)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_pden)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_pden)
 #   endif
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_rho)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_rho)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
@@ -1637,69 +1638,69 @@
 
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 #  ifdef BV_FREQUENCY_NOT_YET
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          tl_bvf)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          tl_bvf)
+!^
         CALL ad_exchange_w3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
      &                             ad_bvf)
 #  endif
 #  ifdef VAR_RHO_2D
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_rhoS)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_rhoS)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_rhoS)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_rhoA)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_rhoA)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_rhoA)
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
       defined BULK_FLUXES_NOT_YET
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_beta)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_beta)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_beta)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_alpha)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_alpha)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_alpha)
 #   ifdef LMD_DDMIX_NOT_YET
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          tl_alfaobeta)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          tl_alfaobeta)
+!^
         CALL ad_exchange_w3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
      &                             ad_alfaobeta)
 #   endif
 #  endif
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_pden)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_pden)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_pden)
 #  endif
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_rho)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_rho)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_rho)
@@ -1727,8 +1728,8 @@
         END IF
         DO k=1,N(ng)
           DO i=IstrT,IendT
-!>          tl_alfaobeta(i,j,k)=0.0_r8
-!>
+!^          tl_alfaobeta(i,j,k)=0.0_r8
+!^
             ad_alfaobeta(i,j,k)=0.0_r8
           END DO
         END DO
@@ -1738,16 +1739,16 @@
 !
         DO i=IstrT,IendT
 #   ifdef SALINITY
-!>        tl_beta(i,j)=0.0_r8
-!>
+!^        tl_beta(i,j)=0.0_r8
+!^
           ad_beta(i,j)=0.0_r8
 #   else
-!>        beta(i,j)=0.0_r8
-!>
+!^        beta(i,j)=0.0_r8
+!^
           ad_beta(i,j)=0.0_r8
 #   endif
-!>        tl_alpha(i,j)=0.0_r8
-!>
+!^        tl_alpha(i,j)=0.0_r8
+!^
           ad_alpha(i,j)=0.0_r8
         END DO
 #  endif
@@ -1763,18 +1764,18 @@
         DO k=1,N(ng)
           DO i=IstrT,IendT
             cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-!>          tl_bvf(i,j,k)=-gorho0*                                      &
-!>   &                    (cff*(tl_rho(i,j,k+1)-tl_rho(i,j,k))+         &
-!>   &                     tl_cff*(rho(i,j,k+1)-rho(i,j,k)))
-!>
+!^          tl_bvf(i,j,k)=-gorho0*                                      &
+!^   &                    (cff*(tl_rho(i,j,k+1)-tl_rho(i,j,k))+         &
+!^   &                     tl_cff*(rho(i,j,k+1)-rho(i,j,k)))
+!^
             adfac=-gorho0*ad_bvf(i,j,k)
             adfac1=adfac*cff
             ad_rho(i,j,k+1)=ad_rho(i,j,k+1)+adfac1
             ad_rho(i,j,k  )=ad_rho(i,j,k  )-adfac1
             ad_cff=ad_cff+(rho(i,j,k+1)-rho(i,j,k))*adfac
             ad_bvf(i,j,k)=0.0_r8
-!>          tl_cff=-cff*cff*(tl_z_r(i,j,k+1)-tl_z_r(i,j,k))
-!>
+!^          tl_cff=-cff*cff*(tl_z_r(i,j,k+1)-tl_z_r(i,j,k))
+!^
             adfac=-cff*cff*ad_cff
             ad_z_r(i,j,k+1)=ad_z_r(i,j,k+1)+adfac
             ad_z_r(i,j,k  )=ad_z_r(i,j,k  )-adfac
@@ -1809,20 +1810,20 @@
         cff2=1.0_r8/rho0
         DO i=IstrT,IendT
           cff1=1.0_r8/(z_w(i,j,N(ng))-z_w(i,j,0))
-!>        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
-!>   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
-!>   &                       cff1*tl_rhoS(i,j))
-!>
+!^        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
+!^   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
+!^   &                       cff1*tl_rhoS(i,j))
+!^
           adfac=2.0_r8*cff2*cff1*ad_rhoS(i,j)
           ad_cff1=2.0_r8*rhoS1(i,j)*adfac
           ad_rhoS(i,j)=cff1*adfac
-!>        tl_rhoA(i,j)=cff2*(tl_cff1*rhoA1(i,j)+cff1*tl_rhoA(i,j))
-!>
+!^        tl_rhoA(i,j)=cff2*(tl_cff1*rhoA1(i,j)+cff1*tl_rhoA(i,j))
+!^
           adfac=cff2*ad_rhoA(i,j)
           ad_cff1=ad_cff1+rhoA1(i,j)*adfac
           ad_rhoA(i,j)=cff1*adfac
-!>        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))
-!>
+!^        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))
+!^
           adfac=-cff1*cff1*ad_cff1
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac
           ad_z_w(i,j,0    )=ad_z_w(i,j,0    )-adfac
@@ -1838,21 +1839,21 @@
         DO k=N(ng)-1,1,-1
           DO i=IstrT,IendT
             cff1=rho(i,j,k)*Hz(i,j,k)
-!>          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
-!>
+!^          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
+!^
             ad_cff1=ad_rhoA(i,j)
-!>          tl_rhoS(i,j)=tl_rhoS(i,j)+                                  &
-!>   &                   tl_Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)+         &
-!>   &                   Hz(i,j,k)*(tl_rhoA(i,j)+0.5_r8*tl_cff1)
-!>
+!^          tl_rhoS(i,j)=tl_rhoS(i,j)+                                  &
+!^   &                   tl_Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)+         &
+!^   &                   Hz(i,j,k)*(tl_rhoA(i,j)+0.5_r8*tl_cff1)
+!^
             adfac=Hz(i,j,k)*ad_rhoS(i,j)
             ad_rhoA(i,j)=ad_rhoA(i,j)+adfac
             ad_cff1=ad_cff1+0.5_r8*adfac
             ad_Hz(i,j,k)=ad_Hz(i,j,k)+                                  &
      &                   (rhoA1(i,j)+0.5_r8*cff1)*ad_rhoS(i,j)
-!>          tl_cff1=tl_rho(i,j,k)*Hz(i,j,k)+                            &
-!>   &              rho(i,j,k)*tl_Hz(i,j,k)
-!>
+!^          tl_cff1=tl_rho(i,j,k)*Hz(i,j,k)+                            &
+!^   &              rho(i,j,k)*tl_Hz(i,j,k)
+!^
             ad_rho(i,j,k)=ad_rho(i,j,k)+Hz(i,j,k)*ad_cff1
             ad_Hz(i,j,k)=ad_Hz(i,j,k)+rho(i,j,k)*ad_cff1
             ad_cff1=0.0_r8
@@ -1861,20 +1862,20 @@
         END DO
         DO i=IstrT,IendT
           cff1=rho(i,j,N(ng))*Hz(i,j,N(ng))
-!>        tl_rhoA(i,j)=tl_cff1
-!>
+!^        tl_rhoA(i,j)=tl_cff1
+!^
           ad_cff1=ad_rhoA(i,j)
           ad_rhoA(i,j)=0.0_r8
-!>        tl_rhoS(i,j)=0.5_r8*(tl_cff1*Hz(i,j,N(ng))+
-!>   &                         cff1*tl_Hz(i,j,N(ng)))
-!>
+!^        tl_rhoS(i,j)=0.5_r8*(tl_cff1*Hz(i,j,N(ng))+
+!^   &                         cff1*tl_Hz(i,j,N(ng)))
+!^
           adfac=0.5_r8*ad_rhoS(i,j)
           ad_cff1=ad_cff1+Hz(i,j,N(ng))*adfac
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))+cff1*adfac
           ad_rhoS(i,j)=0.0_r8
-!>        tl_cff1=tl_rho(i,j,N(ng))*Hz(i,j,N(ng))+
-!>   &            rho(i,j,N(ng))*tl_Hz(i,j,N(ng))
-!>
+!^        tl_cff1=tl_rho(i,j,N(ng))*Hz(i,j,N(ng))+
+!^   &            rho(i,j,N(ng))*tl_Hz(i,j,N(ng))
+!^
           ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))+Hz(i,j,N(ng))*ad_cff1
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))+rho(i,j,N(ng))*ad_cff1
           ad_cff1=0.0_r8
@@ -1889,48 +1890,48 @@
         DO k=1,N(ng)
           DO i=IstrT,IendT
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>          tl_pden(i,j,k)=tl_rho(i,j,k)
-!>
+!^          tl_pden(i,j,k)=tl_rho(i,j,k)
+!^
             ad_rho(i,j,k)=ad_rho(i,j,k)+ad_pden(i,j,k)
             ad_pden(i,j,k)=0.0
 #  endif
 #  ifdef MASKING
-!>          tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
-!>
+!^          tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
+!^
             ad_rho(i,j,k)=ad_rho(i,j,k)*rmask(i,j)
 #  endif
 #  if defined SEDIMENT_NOT_YET && defined SED_DENS_NOT_YET
-!>          tl_rho(i,j,k)=tl_rho(i,j,k)+tl_SedDen
-!>
+!^          tl_rho(i,j,k)=tl_rho(i,j,k)+tl_SedDen
+!^
             ad_SedDen=ad_SedDen+tl_rho(i,j,k)
             DO ised=1,NST
               itrc=idsed(ised)
               cff1=1.0_r8/Srho(ised,ng)
-!>            tl_SedDen=tl_SedDen+                                      &
-!>   &                  (tl_t(i,j,k,nrhs,itrc)*                         &
-!>   &                   (Srho(ised,ng)-rho(i,j,k))-                    &
-!>   &                   t(i,j,k,nrhs,itrc)*                            &
-!>   &                   tl_rho(i,j,k))*cff1
-!>
+!^            tl_SedDen=tl_SedDen+                                      &
+!^   &                  (tl_t(i,j,k,nrhs,itrc)*                         &
+!^   &                   (Srho(ised,ng)-rho(i,j,k))-                    &
+!^   &                   t(i,j,k,nrhs,itrc)*                            &
+!^   &                   tl_rho(i,j,k))*cff1
+!^
               adfac=cff1*ad_SedDen
               ad_rho(i,j,k)=ad_rho(i,j,k)-                              &
      &                      t(i,j,k,nrhs,itrc)*adfac
               tl_t(i,j,k,nrhs,itrc)=tl_t(i,j,k,nrhs,itrc)+              &
      &                              (Srho(ised,ng)-rho(i,j,k))*adfac
             END DO
-!>          tl_SedDen=0.0_r8
-!>
+!^          tl_SedDen=0.0_r8
+!^
             ad_SedDen=0.0_r8
 #  endif
 #  ifdef SALINITY
-!>          tl_rho(i,j,k)=tl_rho(i,j,k)+                                &
-!>   &                    R0(ng)*Scoef(ng)*t(i,j,k,nrhs,isalt)
-!>
+!^          tl_rho(i,j,k)=tl_rho(i,j,k)+                                &
+!^   &                    R0(ng)*Scoef(ng)*t(i,j,k,nrhs,isalt)
+!^
             ad_t(i,j,k,nrhs,isalt)=ad_t(i,j,k,nrhs,isalt)+              &
      &                             R0(ng)*Scoef(ng)*ad_rho(i,j,k)
 #  endif
-!>          tl_rho(i,j,k)=-R0(ng)*Tcoef*tl_t(i,j,k,nrhs,itemp)
-!>
+!^          tl_rho(i,j,k)=-R0(ng)*Tcoef*tl_t(i,j,k,nrhs,itemp)
+!^
             ad_t(i,j,k,nrhs,itemp)=ad_t(i,j,k,nrhs,itemp)-              &
      &                             R0(ng)*Tcoef(ng)*ad_rho(i,j,k)
             ad_rho(i,j,k)=0.0_r8

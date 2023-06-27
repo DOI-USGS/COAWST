@@ -18,9 +18,9 @@ function [status]=c_bath(Im, Jm, Bname)
 %    status      Error flag.
 %
 
-% svn $Id: c_bath.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: c_bath.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -29,9 +29,11 @@ function [status]=c_bath(Im, Jm, Bname)
 %  Inquire dimensions from a existing NeTCDF file.
 %--------------------------------------------------------------------------
 
-Dname.lon ='lon';   Dsize.lon =Im;
-Dname.lat ='lat';   Dsize.lat =Jm;
-Dname.bath='bath';  Dsize.bath=nc_constant('nc_unlimited');
+Dname = {'lon', 'lat', 'bath'};
+	 
+Dsize.lon =Im;
+Dsize.lat =Jm;
+Dsize.bath=nc_constant('nc_unlimited');
 
 Vname.lon ='lon';
 Vname.lat ='lat';
@@ -41,61 +43,30 @@ Vname.bath='hraw';
 %  Create topography NetCDF file.
 %--------------------------------------------------------------------------
 
-[ncid,status]=mexnc('nccreate',Bname,'nc_write');
-if (ncid == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BATH: nccreate - unable to create file: ', Bname]);
-end
+mode = netcdf.getConstant('CLOBBER');
+mode = bitor(mode, netcdf.getConstant('64BIT_OFFSET'));
+ncid = netcdf.create(Bname, mode);
 
 %--------------------------------------------------------------------------
 %  Create global attribute(s).
 %--------------------------------------------------------------------------
 
-type='GRID file';
-lstr=max(size(type));
-[status]=mexnc('ncattput',ncid,nc_constant('nc_global'),'type',         ...
-               nc_constant('nc_char'),lstr,type);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_BATH: ncattput - unable to global attribure: type.');
-end
+varid = netcdf.getConstant('nc_global');
 
-history=['GRID file using Matlab script: c_bath, ', date_stamp];
-lstr=max(size(history));
-[status]=mexnc('ncattput',ncid,nc_constant('nc_global'),'history',      ...
-               nc_constant('nc_char'),lstr,history);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_BATH: ncattput - unable to global attribure: history.');
-end
+type = 'GRID file';
+netcdf.putAtt(ncid, varid, 'type', type);
+
+history = ['GRID file using Matlab script: c_bath, ', date_stamp];
+netcdf.putAtt(ncid, varid, 'history', history);
 
 %--------------------------------------------------------------------------
 %  Define dimensions.
 %--------------------------------------------------------------------------
 
-[did.lon]=mexnc('ncdimdef',ncid,Dname.lon,Dsize.lon);
-if (did.lon == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BATH: ncdimdef - unable to define dimension: ',Dname.lon]);
-end,
-
-[did.lat]=mexnc('ncdimdef',ncid,Dname.lat,Dsize.lat);
-if (did.lat == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BATH: ncdimdef - unable to define dimension: ',Dname.lat]);
-end,
-
-[did.bath]=mexnc('ncdimdef',ncid,Dname.bath,Dsize.bath);
-if (did.bath == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BATH: ncdimdef - unable to define dimension: ',Dname.bath]);
-end,
+for value = Dname
+  field = char(value);
+  did.(field) = netcdf.defDim(ncid, field, Dsize.(field));
+end
 
 %--------------------------------------------------------------------------
 %  Define variables.
@@ -154,19 +125,8 @@ clear Var
 %  Leave definition mode and close NetCDF file.
 %---------------------------------------------------------------------------
 
-[status]=mexnc('ncendef',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_BATH: ncendef - unable to leave definition mode.');
-end
-
-[status]=mexnc('ncclose',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BATH: ncclose - unable to close GRID NetCDF file: ', Bname]);
-end
+netcdf.endDef(ncid);
+netcdf.close(ncid);
 
 return
 

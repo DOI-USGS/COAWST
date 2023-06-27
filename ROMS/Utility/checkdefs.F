@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE checkdefs
 !
-!svn $Id: checkdefs.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: checkdefs.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,23 +26,29 @@
 !
 !  Local variable declarations.
 !
-      integer :: iatms = 0
-      integer :: ibbl = 0
-      integer :: ibiology = 0
-      integer :: idriver = 0
-      integer :: itrcHadv = 0
-      integer :: itrcVadv = 0
-      integer :: itrcHadvtl = 0
-      integer :: itrcVadvtl = 0
-      integer :: ivelHadv = 0
-      integer :: ivelVadv = 0
-      integer :: ivmix = 0
-      integer :: nearshore = 0
+      integer :: iatms, ibbl, ibiology, idriver
+      integer :: ivelHadv, ivelVadv, ivmix, nearshore
 #ifdef SEDIMENT
-      integer :: sbed_load = 0
-      integer :: sbed_type = 0
+      integer :: sbed_load, sbed_type
 #endif
       integer :: is, lstr, ng
+!
+!-----------------------------------------------------------------------
+!  Initialze counters
+!-----------------------------------------------------------------------
+!
+      iatms = 0
+      ibbl = 0
+      ibiology = 0
+      idriver = 0
+      ivelHadv = 0
+      ivelVadv = 0
+      ivmix = 0
+      nearshore = 0
+#ifdef SEDIMENT
+      sbed_load = 0
+      sbed_type = 0
+#endif
 !
 !-----------------------------------------------------------------------
 !  Report activated C-preprocessing options.
@@ -67,6 +74,13 @@
      &   'Writing out time-averaged adjoint model fields'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' AD_AVERAGES,'
+#endif
+#if defined AD_OUTPUT_STATE && defined ADJOINT
+!
+      IF (Master) WRITE (stdout,20) 'AD_OUTPUT_STATE',                  &
+     &   'Writing full adjoint state solution by adding time levels'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' AD_OUTPUT_STATE,'
 #endif
 #if defined ADD_FSOBC && defined SSH_TIDES
 !
@@ -350,12 +364,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ANA_PSOURCE,'
 #endif
-#if defined ANA_PTOBC && defined SOLVE3D
-      IF (Master) WRITE (stdout,20) 'ANA_PTOBC',                        &
-     &   'Analytical passive tracers boundary conditions.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' ANA_PTOBC,'
-#endif
 #if defined ANA_RAIN && defined BULK_FLUXES
 !
       IF (Master) WRITE (stdout,20) 'ANA_RAIN',                         &
@@ -401,12 +409,6 @@
      &   'Analytical kinematic surface momentum flux'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' ANA_SMFLUX,'
-#endif
-#if defined ANA_SNOW
-      IF (Master) WRITE (stdout,20) 'ANA_SNOW',                         &
-     &   'Analytical snowfall rate.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+10)=' ANA_SNOW,'
 #endif
 #if defined BIOLOGY || defined SEDIMENT || defined T_PASSIVE
 # ifdef ANA_SPFLUX
@@ -547,12 +549,12 @@
      &   'Using mpi_allreduce in mp_assemble routine'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+20)=' ASSEMBLE_ALLGATHER,'
-# else
+# elif defined ASSEMBLE_SENDRECV
 !
-      IF (Master) WRITE (stdout,20) '!ASSEMBLE_ALL...',                 &
+      IF (Master) WRITE (stdout,20) 'ASSEMBLE_SENDRECV',                &
      &   'Using mpi_isend/mpi_recv in mp_assemble routine'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+18)=' !ASSEMBLE_ALL...,'
+      Coptions(is:is+19)=' ASSEMBLE_SENDRECV,'
 # endif
 #endif
 #ifdef ASSUMED_SHAPE
@@ -562,10 +564,24 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' ASSUMED_SHAPE,'
 #endif
+#if defined ASYNCHRONOUS_PIO && defined PIO_LIB && defined DISTRIBUTE
+!
+      IF (Master) WRITE (stdout,20) 'ASYNCHRONOUS_PIO',                 &
+     &   'PIO library with disjointed dedicated I/O processes'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' ASYNCHRONOUS_PIO,'
+#endif
+#if defined ASYNCHRONOUS_SCORPIO && defined PIO_LIB && defined DISTRIBUTE
+!
+      IF (Master) WRITE (stdout,20) 'ASYNCHRONOUS_SCORPIO',             &
+     &   'SCORPIO library with disjointed dedicated I/O processes'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+22)=' ASYNCHRONOUS_SCORPIO,'
+#endif
 #ifdef ATM_PRESS
 !
       IF (Master) WRITE (stdout,20) 'ATM_PRESS',                        &
-     &   'Impose atmospheric pressure onto sea surface'
+     &   'Impose inverse barometer effect in pressure gradient term'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' ATM_PRESS,'
 #endif
@@ -740,7 +756,7 @@
 #ifdef CHECKSUM
 !
       IF (Master) WRITE (stdout,20) 'CHECKSUM',                         &
-     &   'Report checksum (hash) values when processing I/O'
+     &   'Report order-invariant checksum (hash) when processing I/O'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' CHECKSUM,'
 #endif
@@ -751,11 +767,11 @@
      &   'Using mpi_allgather in mp_boundary routine'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+20)=' BOUNDARY_ALLGATHER,'
-# else
-      IF (Master) WRITE (stdout,20) '!BOUNDARY_ALLGATHER',              &
+# elif defined BOUNDARY_ALLREDUCE
+      IF (Master) WRITE (stdout,20) 'BOUNDARY_ALLREDUCE',               &
      &   'Using mpi_allreduce in mp_boundary routine'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+21)=' !BOUNDARY_ALLGATHER,'
+      Coptions(is:is+20)=' BOUNDARY_ALLREDUCE,'
 # endif
 #endif
 #ifdef BULK_FLUXES
@@ -764,12 +780,6 @@
      &   'Surface bulk fluxes parameterization'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' BULK_FLUXES,'
-#endif
-#ifdef BULK_FLUXES2D
-      IF (Master) WRITE (stdout,20) 'BULK_FLUXES2D',                    &
-     &   'Surface bulk fluxes parameterization.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+15)=' BULK_FLUXES2D,'
 #endif
 #ifdef BVF_MIXING
 !
@@ -863,12 +873,12 @@
      &   'Using mpi_allreduce in mp_collect routine'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+19)=' COLLECT_ALLGATHER,'
-# else
+# elif defined COLLECT_SENDRECV
 !
-      IF (Master) WRITE (stdout,20) '!COLLECT_ALL...',                  &
+      IF (Master) WRITE (stdout,20) 'COLLECT_SENDRECV',                 &
      &   'Using mpi_isend/mpi_recv in mp_collect routine'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' !COLLECT_ALL...,'
+      Coptions(is:is+18)=' COLLECT_SENDRECV,'
 # endif
 #endif
 #if defined CONCURRENT_KERNEL && defined DISJOINTED && \
@@ -904,7 +914,7 @@
 #if defined GLS_MIXING && defined CHARNOK
 !
       IF (Master) WRITE (stdout,20) 'CHARNOK',                          &
-     &   'Charnok surface roughness from wind stress'
+     &   'Charnock surface roughness from wind stress'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' CHARNOK,'
 #endif
@@ -914,13 +924,6 @@
      &   'Processing checkpointing NetCDF for GST analysis'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' CHECKPOINTING,'
-#endif
-#if defined CLIMA_TS_MIX && defined SOLVE3D && \
-   (defined TS_DIF2      || defined TS_DIF4)
-      IF (Master) WRITE (stdout,20) 'CLIMA_TS_MIX',                     &
-     &   'Horizontal diffusion of tracer perturbation (T-Tclm).'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' CLIMA_TS_MIX,'
 #endif
 #if defined GLS_MIXING && defined CRAIG_BANNER
 !
@@ -1098,12 +1101,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' DIAGNOSTICS_UV,'
 #endif
-#ifdef DIAPAUSE
-      IF (Master) WRITE (stdout,20) 'DIAPAUSE',                   &
-     &   'Floats moving vertically to simulate diapause.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+10)=' DIAPAUSE,'
-#endif
 #if defined DIFF_3DCOEF
 !
       IF (Master) WRITE (stdout,20) 'DIFF_3DCOEF',                      &
@@ -1189,6 +1186,14 @@
      &   'Ensemble Forecasting Propagator'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ENSEMBLE,'
+#endif
+#if defined ESM_SETRUNCLOCK && defined MODEL_COUPLING && \
+    defined ESMF_LIB
+!
+      IF (Master) WRITE (stdout,20) 'ESM_SETRUNCLOCK',                     &
+     &   'Sets coupled component specialized SetRunClock method'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' ESM_SETRUNCLOCK,'
 #endif
 #if defined EVOLVED_LCZ && defined FOUR_DVAR
 !
@@ -1341,12 +1346,6 @@
      &   'Horizontal convolutions along geopetential surfaces'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+20)=' GEOPOTENTIAL_HCONV,'
-#endif
-#ifdef GLOBAL_PERIODIC
-      IF (Master) WRITE (stdout,20) 'GLOBAL_PERIODIC',                  &
-     &   'Globally periodic domain when interpolating forcing.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' GLOBAL_PERIODIC,'
 #endif
 #ifdef GLS_MIXING
 !
@@ -1625,26 +1624,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' LONGWAVE_OUT,'
 #endif
-#if defined MIX_ISO_TS && (defined TS_DIF2 || defined TS_DIF4)
-# ifdef MAX_SLOPE
-      IF (Master) WRITE (stdout,20) 'MAX_SLOPE',                        &
-     &   'Maximum density slope in isopycnic diffusion.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' MAX_SLOPE,'
-# endif
-# ifdef MIN_STRAT
-      IF (Master) WRITE (stdout,20) 'MIN_STRAT',                        &
-     &   'Minimum density stratification in isopycnic diffusion.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' MIN_STRAT,'
-# endif
-#endif
-#ifdef M2TIDE_DIFF
-      IF (Master) WRITE (stdout,20) 'M2TIDE_DIFF',                      &
-     &   'Add barotropic tidal mixing parameterization.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' M2TIDE_DIFF,'
-#endif
 #ifdef MASKING
 !
       IF (Master) WRITE (stdout,20) 'MASKING',                          &
@@ -1700,6 +1679,13 @@
      &   'Using Model Coupling Toolkit library'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' MCT_LIB,'
+#endif
+#ifdef METADATA_REPORT
+!
+      IF (Master) WRITE (stdout,20) 'METADATA_REPORT',                  &
+     &   'Reports/dumps YAML metadata dictionary'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' METADATA_REPORT,'
 #endif
 #if defined MINRES && defined FOUR_DVAR
 !
@@ -1903,12 +1889,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+19)=' NO_CORRECT_TRACER,'
 #endif
-#ifdef NO_HIS
-      IF (Master) WRITE (stdout,20) 'NO_HIS',                           &
-     &   'Turn off writing of history files.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+8)=' NO_HIS,'
-#endif
 #ifdef NO_LBC_ATT
 !
       IF (Master) WRITE (stdout,20) 'NO_LBC_ATT',                       &
@@ -1922,18 +1902,6 @@
      &   'Not including ghost points during scattering read data'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' NO_READ_GHOST,'
-#endif
-#if defined NO_SCORRECTION_ICE
-      IF (Master) WRITE (stdout,20) 'NO_SCORRECTION_ICE',               &
-     &   'Not including SCORRECTION under the ice.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' NO_SCORRECTION_ICE,'
-#endif
-#ifdef NO_SNOW
-      IF (Master) WRITE (stdout,20) 'NO_SNOW',                           &
-     &   'Turn off snow in sea-ice model.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+9)=' NO_SNOW,'
 #endif
 #ifdef NO_WRITE_GRID
 !
@@ -2001,23 +1969,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' OBS_SPACE,'
 #endif
-#ifdef OCLIMATOLOGY
-      IF (Master) WRITE (stdout,20) 'OCLIMATOLOGY',                     &
-     &   'Processing omega climatology data.'
+#if defined OMEGA_IMPLICIT && defined SOLVE3D
+!
+      IF (Master) WRITE (stdout,20) 'OMEGA_IMPLICIT',                   &
+     &   'Adaptive, Courant-number based implicit vertical advection'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' OCLIMATOLOGY,'
-#endif
-#if defined OFFLINE_FLOATS && defined CLIMATOLOGY
-      IF (Master) WRITE (stdout,20) 'OFFLINE_FLOATS',                   &
-     &   'Offline run (use model fields from history files).'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' OFFLINE_FLOATS,'
-#endif
-#if defined ONE_TRACER_SOURCE
-      IF (Master) WRITE (stdout,20) 'ONE_TRACER_SOURCE',                &
-     &   'One value per tracer for all sources.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+19)=' ONE_TRACER_SOURCE,'
+      Coptions(is:is+16)=' OMEGA_IMPLICIT,'
 #endif
 #ifdef NESTING
 # ifdef ONE_WAY
@@ -2040,12 +1997,6 @@
      &   'Double precision output fields in NetCDF files'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' OUT_DOUBLE,'
-#endif
-#ifdef OUTFLOW_MASK
-      IF (Master) WRITE (stdout,20) 'OUTFLOW_MASK',                     &
-     &   'Hibler-style outflow ice cells.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' OUTFLOW_MASK,'
 #endif
 #ifdef _OPENMP
 !
@@ -2110,18 +2061,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' OXYGEN,'
 #endif
-#if defined PARALLEL_IN && defined DISTRIBUTE
-      IF (Master) WRITE (stdout,20) 'PARALLEL_IN',                      &
-     &   'Parallel I/O processing.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' PARALLEL_IN,'
-#endif
-#if defined PARALLEL_OUT && defined DISTRIBUTE
-      IF (Master) WRITE (stdout,20) 'PARALLEL_OUT',                      &
-     &   'Parallel I/O processing.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' PARALLEL_OUT,'
-#endif
 #if defined PARALLEL_IO && defined DISTRIBUTE
 !
       IF (Master) WRITE (stdout,20) 'PARALLEL_IO',                      &
@@ -2130,7 +2069,7 @@
       Coptions(is:is+13)=' PARALLEL_IO,'
 #endif
 #if defined CARBON && defined BIO_FENNEL
-# if defined PC02AIR_DATA
+# if defined PCO2AIR_DATA
 !
       IF (Master) WRITE (stdout,20) 'PCO2AIR_DATA',                     &
      &   'CO2 gas exchange from Laurent et al. (2017)'
@@ -2158,6 +2097,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' PICARD TEST,'
       idriver=idriver+1
+#endif
+#if defined PIO_LIB && defined DISTRIBUTE
+!
+      IF (Master) WRITE (stdout,20) 'PIO_LIB',                          &
+     &   'Using Parallel-IO from the PIO library'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' PIO_LIB,'
 #endif
 #ifdef PJ_GRADP
 !
@@ -2230,13 +2176,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' POSTERIOR_ERROR_F,'
 #endif
-#ifdef POT_TIDES
-!
-      IF (Master) WRITE (stdout,20) 'POT_TIDES',                        &
-     &   'Add tidal potential terms to the forcing.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' POT_TIDES,'
-#endif
 #if defined POWER_LAW && defined SOLVE3D
 !
       IF (Master) WRITE (stdout,20) 'POWER_LAW',                        &
@@ -2292,18 +2231,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+24)=' !RADIAL_ANGLE_CCW_EAST,'
 # endif
-#endif
-#if defined RUNOFF
-      IF (Master) WRITE (stdout,20) 'RUNOFF',                           &
-     &   'Surface flux of ungauged river runoff'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+8)=' RUNOFF,'
-#endif
-#if defined RUNOFF_SSH
-      IF (Master) WRITE (stdout,20) 'RUNOFF_SSH',                       &
-     &   'Surface flux of ungauged river runoff affecting SSH'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+12)=' RUNOFF_SSH,'
 #endif
 #if defined OXYGEN && defined BIO_FENNEL
 # if defined OCMIP_OXYGEN_SC
@@ -2426,12 +2353,12 @@
      &   'Using mpi_allreduce in mp_reduce routine'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' REDUCE_ALLREDUCE,'
-# else
+# elif defined REDUCE_SENDRECV
 !
-      IF (Master) WRITE (stdout,20) '!REDUCE_ALL...',                   &
+      IF (Master) WRITE (stdout,20) 'REDUCE_SENDRECV',                  &
      &   'Using mpi_isend/mpi_recv in mp_reduce routine'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' !REDUCE_ALL...,'
+      Coptions(is:is+17)=' REDUCE_SENDRECV,'
 # endif
 #endif
 #ifdef REGCM_COUPLING
@@ -2475,7 +2402,7 @@
 #ifdef ROMS_STDOUT
 !
       IF (Master) WRITE (stdout,20) 'ROMS_STDOUT',                      &
-     &   'Red tide biological model'
+     &   "Writes ROMS standard output into 'log.roms' file"
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ROMS_STDOUT,'
 #endif
@@ -2744,18 +2671,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' SKIP_NLM,'
 #endif
-#ifdef SNOWFALL
-      IF (Master) WRITE (stdout,20) 'SNOWFALL',                         &
-     &   'Surface snow accumulation on ice.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+10)=' SNOWFALL,'
-#endif
-#ifdef SNOW_FROM_RAIN
-      IF (Master) WRITE (stdout,20) 'SNOW_FROM_RAIN',                   &
-     &   'Subtract snow from total precip (rain).'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' SNOW_FROM_RAIN,'
-#endif
 #ifdef SPECTRUM_STOKES
 !
       IF (Master) WRITE (stdout,20) 'SPECTRUM_STOKES',                  &
@@ -2883,24 +2798,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' SPLINES_VVISC,'
 #endif
-#ifdef SRELAXATION
-      IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &
-     &   'Surface salinity relaxation as surface flux.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' SRELAXATION,'
-#endif
 #if defined SSH_TIDES
 !
       IF (Master) WRITE (stdout,20) 'SSH_TIDES',                        &
-     &   'Add tidal elevation to SSH climatology'
+     &   'Adding tidal elevation to SSH climatology'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' SSH_TIDES,'
-#endif
-#if defined SSSC_THRESHOLD
-      IF (Master) WRITE (stdout,20) 'SSSC_THRESHOLD',                   &
-     &   'Limit to SCORRECTION nudging.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' SSSC_THRESHOLD,'
 #endif
 #ifdef SSW_BBL
 !
@@ -3015,6 +2918,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+23)=' SURFACE_DO_SATURATION,'
 #endif
+#if defined SUBOBJECT_DEALLOCATION
+!
+      IF (Master) WRITE (stdout,20) 'SUBOBJECT_DEALLOCATION',           &
+     &   'Deallocate each variable in structure objects separately'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+24)=' SUBOBJECT_DEALLOCATION,'
+#endif
 #if defined SUPPRESS_REPORT && defined SPLIT_4DVAR
 !
       IF (Master) WRITE (stdout,20) 'SUPPRESS_REPORT',                  &
@@ -3084,12 +2994,6 @@
      &   'Time interpolation from imported coupling snapshots data'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' TIME_INTERP,'
-#endif
-#if defined TIDES_ASTRO
-      IF (Master) WRITE (stdout,20) 'TIDES_ASTRO',                      &
-     &   'Compute astronomical (long-period tide) corrections.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' TIDES_ASTRO,'
 #endif
 #if defined TIME_INTERP_FLUX && defined NESTING && defined SOLVE3D
 !
@@ -3216,13 +3120,6 @@
      &   'Smagorinksy-like time-dependent diffusion coefficients'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' TS_SMAGORINSKY,'
-#endif
-#if defined TWO_D_TRACER_SOURCE
-!
-      IF (Master) WRITE (stdout,20) 'TWO_D_TRACER_SOURCE',              &
-     &   'One value per tracer per source.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+19)=' TWO_D_TRACER_SOURCE,'
 #endif
 #ifdef UV_ADV
 !
@@ -3842,7 +3739,7 @@
         END DO
  260    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,            &
      &          /,13x,'in serial with partitions or shared-memory...',  &
-     &          /,13x,'There bugs in shared-memory that need fixing.',  &
+     &          /,13x,'We have bugs in shared-memory that need fixing.',&
      &          /,13x,'Use distributed-memory (MPI) in parallel runs.')
       END IF
 #endif

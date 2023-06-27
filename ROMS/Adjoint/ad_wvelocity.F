@@ -2,9 +2,10 @@
       MODULE ad_wvelocity_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_wvelocity.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_wvelocity.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                            Hernan G. Arango  !
 !=================================================== Andrew M. Moore ===
@@ -224,16 +225,16 @@
         DO i=Istr,Iend
           slope=(z_w(i,j,N(ng))-z_r(i,j,N(ng)  ))/                      &
      &          (z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))  ! extrapolation slope
-!>        tl_wvel(i,j,N(ng)-1)=pm(i,j)*pn(i,j)*                         &
-!>   &                         (tl_W(i,j,N(ng)-1)+                      &
-!>   &                          tl_wrk(i,j)*                            &
-!>   &                          (z_w(i,j,N(ng)-1)-z_w(i,j,0))+          &
-!>   &                          wrk(i,j)*                               &
-!>   &                          (tl_z_w(i,j,N(ng)-1)-tl_z_w(i,j,0)))+   &
-!>   &                         cff1*tl_vert(i,j,N(ng)  )+               &
-!>   &                         cff2*tl_vert(i,j,N(ng)-1)-               &
-!>   &                         cff3*tl_vert(i,j,N(ng)-2)
-!>
+!^        tl_wvel(i,j,N(ng)-1)=pm(i,j)*pn(i,j)*                         &
+!^   &                         (tl_W(i,j,N(ng)-1)+                      &
+!^   &                          tl_wrk(i,j)*                            &
+!^   &                          (z_w(i,j,N(ng)-1)-z_w(i,j,0))+          &
+!^   &                          wrk(i,j)*                               &
+!^   &                          (tl_z_w(i,j,N(ng)-1)-tl_z_w(i,j,0)))+   &
+!^   &                         cff1*tl_vert(i,j,N(ng)  )+               &
+!^   &                         cff2*tl_vert(i,j,N(ng)-1)-               &
+!^   &                         cff3*tl_vert(i,j,N(ng)-2)
+!^
           adfac=pm(i,j)*pn(i,j)*ad_wvel(i,j,N(ng)-1)
           adfac1=wrk(i,j)*adfac
           ad_W(i,j,N(ng)-1)=ad_W(i,j,N(ng)-1)+adfac
@@ -247,19 +248,19 @@
           ad_vert(i,j,N(ng)-2)=ad_vert(i,j,N(ng)-2)-                    &
      &                         cff3*ad_wvel(i,j,N(ng)-1)
           ad_wvel(i,j,N(ng)-1)=0.0_r8
-!>        tl_wvel(i,j,N(ng))=pm(i,j)*pn(i,j)*                           &
-!>   &                       (tl_wrk(i,j)*                              &
-!>   &                        (z_w(i,j,N(ng))-z_w(i,j,0))+              &
-!>   &                        wrk(i,j)*                                 &
-!>   &                        (tl_z_w(i,j,N(ng))-tl_z_w(i,j,0)))+       &
-!>   &                       cff1*(tl_vert(i,j,N(ng))+                  &
-!>   &                             tl_slope*(vert(i,j,N(ng)  )-         &
-!>   &                                       vert(i,j,N(ng)-1))+        &
-!>   &                             slope*(tl_vert(i,j,N(ng)  )-         &
-!>   &                                    tl_vert(i,j,N(ng)-1)))+       &
-!>   &                       cff2*tl_vert(i,j,N(ng)  )-                 &
-!>   &                       cff3*tl_vert(i,j,N(ng)-1)
-!>
+!^        tl_wvel(i,j,N(ng))=pm(i,j)*pn(i,j)*                           &
+!^   &                       (tl_wrk(i,j)*                              &
+!^   &                        (z_w(i,j,N(ng))-z_w(i,j,0))+              &
+!^   &                        wrk(i,j)*                                 &
+!^   &                        (tl_z_w(i,j,N(ng))-tl_z_w(i,j,0)))+       &
+!^   &                       cff1*(tl_vert(i,j,N(ng))+                  &
+!^   &                             tl_slope*(vert(i,j,N(ng)  )-         &
+!^   &                                       vert(i,j,N(ng)-1))+        &
+!^   &                             slope*(tl_vert(i,j,N(ng)  )-         &
+!^   &                                    tl_vert(i,j,N(ng)-1)))+       &
+!^   &                       cff2*tl_vert(i,j,N(ng)  )-                 &
+!^   &                       cff3*tl_vert(i,j,N(ng)-1)
+!^
           adfac=pm(i,j)*pn(i,j)*ad_wvel(i,j,N(ng))
           adfac1=wrk(i,j)*adfac
           adfac2=cff1*ad_wvel(i,j,N(ng))
@@ -275,11 +276,11 @@
           ad_vert(i,j,N(ng)-1)=ad_vert(i,j,N(ng)-1)-                    &
      &                         adfac3-cff3*ad_wvel(i,j,N(ng))
           ad_wvel(i,j,N(ng))=0.0_r8
-!>        tl_slope=(tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)  ))/             &
-!>   &             (z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))-                   &
-!>   &             (tl_z_r(i,j,N(ng))-tl_z_r(i,j,N(ng)-1))*slope/       &
-!>   &             (z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
-!>
+!^        tl_slope=(tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)  ))/             &
+!^   &             (z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))-                   &
+!^   &             (tl_z_r(i,j,N(ng))-tl_z_r(i,j,N(ng)-1))*slope/       &
+!^   &             (z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
+!^
           adfac1=ad_slope/(z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
           adfac2=slope*adfac1
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac1
@@ -289,13 +290,13 @@
         END DO
         DO k=2,N(ng)-2
           DO i=Istr,Iend
-!>          tl_wvel(i,j,k)=pm(i,j)*pn(i,j)*                             &
-!>   &                     (tl_W(i,j,k)+                                &
-!>   &                      tl_wrk(i,j)*(z_w(i,j,k)-z_w(i,j,0))+        &
-!>   &                      wrk(i,j)*(tl_z_w(i,j,k)-tl_z_w(i,j,0)))+    &
-!>   &                     cff4*(tl_vert(i,j,k  )+tl_vert(i,j,k+1))-    &
-!>   &                     cff5*(tl_vert(i,j,k-1)+tl_vert(i,j,k+2))
-!>
+!^          tl_wvel(i,j,k)=pm(i,j)*pn(i,j)*                             &
+!^   &                     (tl_W(i,j,k)+                                &
+!^   &                      tl_wrk(i,j)*(z_w(i,j,k)-z_w(i,j,0))+        &
+!^   &                      wrk(i,j)*(tl_z_w(i,j,k)-tl_z_w(i,j,0)))+    &
+!^   &                     cff4*(tl_vert(i,j,k  )+tl_vert(i,j,k+1))-    &
+!^   &                     cff5*(tl_vert(i,j,k-1)+tl_vert(i,j,k+2))
+!^
             adfac=pm(i,j)*pn(i,j)*ad_wvel(i,j,k)
             adfac1=wrk(i,j)*adfac
             adfac2=cff4*ad_wvel(i,j,k)
@@ -314,14 +315,14 @@
         DO i=Istr,Iend
           slope=(z_r(i,j,1)-z_w(i,j,0))/                                &
      &          (z_r(i,j,2)-z_r(i,j,1))            ! extrapolation slope
-!>        tl_wvel(i,j,1)=pm(i,j)*pn(i,j)*                               &
-!>   &                   (tl_W(i,j,1)+                                  &
-!>   &                    tl_wrk(i,j)*(z_w(i,j,1)-z_w(i,j,0))+          &
-!>   &                    wrk(i,j)*(tl_z_w(i,j,1)-tl_z_w(i,j,0)))+      &
-!>   &                   cff1*tl_vert(i,j,1)+                           &
-!>   &                   cff2*tl_vert(i,j,2)-                           &
-!>   &                   cff3*tl_vert(i,j,3)
-!>
+!^        tl_wvel(i,j,1)=pm(i,j)*pn(i,j)*                               &
+!^   &                   (tl_W(i,j,1)+                                  &
+!^   &                    tl_wrk(i,j)*(z_w(i,j,1)-z_w(i,j,0))+          &
+!^   &                    wrk(i,j)*(tl_z_w(i,j,1)-tl_z_w(i,j,0)))+      &
+!^   &                   cff1*tl_vert(i,j,1)+                           &
+!^   &                   cff2*tl_vert(i,j,2)-                           &
+!^   &                   cff3*tl_vert(i,j,3)
+!^
           adfac=pm(i,j)*pn(i,j)*ad_wvel(i,j,1)
           adfac1=wrk(i,j)*adfac
           ad_W(i,j,1)=ad_W(i,j,1)+adfac
@@ -332,14 +333,14 @@
           ad_vert(i,j,2)=ad_vert(i,j,2)+cff2*ad_wvel(i,j,1)
           ad_vert(i,j,3)=ad_vert(i,j,3)-cff3*ad_wvel(i,j,1)
           ad_wvel(i,j,1)=0.0_r8
-!>        tl_wvel(i,j,0)=cff1*(tl_vert(i,j,1)-                          &
-!>   &                         tl_slope*(vert(i,j,2)-                   &
-!>   &                                   vert(i,j,1))-                  &
-!>   &                         slope*(tl_vert(i,j,2)-                   &
-!>   &                                tl_vert(i,j,1)))+                 &
-!>   &                   cff2*tl_vert(i,j,1)-                           &
-!>   &                   cff3*tl_vert(i,j,2)
-!>
+!^        tl_wvel(i,j,0)=cff1*(tl_vert(i,j,1)-                          &
+!^   &                         tl_slope*(vert(i,j,2)-                   &
+!^   &                                   vert(i,j,1))-                  &
+!^   &                         slope*(tl_vert(i,j,2)-                   &
+!^   &                                tl_vert(i,j,1)))+                 &
+!^   &                   cff2*tl_vert(i,j,1)-                           &
+!^   &                   cff3*tl_vert(i,j,2)
+!^
           adfac=cff1*ad_wvel(i,j,0)
           adfac1=slope*adfac
           ad_vert(i,j,1)=ad_vert(i,j,1)+adfac
@@ -349,11 +350,11 @@
           ad_vert(i,j,1)=ad_vert(i,j,1)+cff2*ad_wvel(i,j,0)
           ad_vert(i,j,2)=ad_vert(i,j,2)-cff3*ad_wvel(i,j,0)
           ad_wvel(i,j,0)=0.0_r8
-!>        tl_slope=(tl_z_r(i,j,1)-tl_z_w(i,j,0))/                       &
-!>   &             (z_r(i,j,2)-z_r(i,j,1))-                             &
-!>   &             (tl_z_r(i,j,2)-tl_z_r(i,j,1))*slope/                 &
-!>   &             (z_r(i,j,2)-z_r(i,j,1))
-!>
+!^        tl_slope=(tl_z_r(i,j,1)-tl_z_w(i,j,0))/                       &
+!^   &             (z_r(i,j,2)-z_r(i,j,1))-                             &
+!^   &             (tl_z_r(i,j,2)-tl_z_r(i,j,1))*slope/                 &
+!^   &             (z_r(i,j,2)-z_r(i,j,1))
+!^
           adfac=ad_slope/(z_r(i,j,2)-z_r(i,j,1))
           adfac1=slope*adfac
           ad_z_r(i,j,1)=ad_z_r(i,j,1)+adfac
@@ -363,12 +364,12 @@
           ad_slope=0.0_r8
         END DO
         DO i=Istr,Iend
-!>        tl_wrk(i,j)=(tl_DU_avg1(i,j)-tl_DU_avg1(i+1,j)+               &
-!>   &                 tl_DV_avg1(i,j)-tl_DV_avg1(i,j+1))/              &
-!>   &                (z_w(i,j,N(ng))-z_w(i,j,0))-                      &
-!>   &                (tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))*wrk(i,j)/       &
-!>   &                (z_w(i,j,N(ng))-z_w(i,j,0))
-!>
+!^        tl_wrk(i,j)=(tl_DU_avg1(i,j)-tl_DU_avg1(i+1,j)+               &
+!^   &                 tl_DV_avg1(i,j)-tl_DV_avg1(i,j+1))/              &
+!^   &                (z_w(i,j,N(ng))-z_w(i,j,0))-                      &
+!^   &                (tl_z_w(i,j,N(ng))-tl_z_w(i,j,0))*wrk(i,j)/       &
+!^   &                (z_w(i,j,N(ng))-z_w(i,j,0))
+!^
           adfac=ad_wrk(i,j)/(z_w(i,j,N(ng))-z_w(i,j,0))
           adfac1=wrk(i,j)*adfac
           ad_DU_avg1(i  ,j)=ad_DU_avg1(i  ,j)+adfac
@@ -384,9 +385,9 @@
       DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_vert(i,j,k)=tl_vert(i,j,k)+                              &
-!>   &                      0.25_r8*(tl_wrk(i,j)+tl_wrk(i,j+1))
-!>
+!^          tl_vert(i,j,k)=tl_vert(i,j,k)+                              &
+!^   &                      0.25_r8*(tl_wrk(i,j)+tl_wrk(i,j+1))
+!^
             adfac=0.25_r8*ad_vert(i,j,k)
             ad_wrk(i,j  )=ad_wrk(i,j  )+adfac
             ad_wrk(i,j+1)=ad_wrk(i,j+1)+adfac
@@ -394,10 +395,10 @@
         END DO
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-!>          tl_wrk(i,j)=(pn(i,j-1)+pn(i,j))*                            &
-!>   &                  (tl_v(i,j,k,Ninp)*(z_r(i,j,k)-z_r(i,j-1,k))+    &
-!>   &                   v(i,j,k,Ninp)*(tl_z_r(i,j,k)-tl_z_r(i,j-1,k)))
-!>
+!^          tl_wrk(i,j)=(pn(i,j-1)+pn(i,j))*                            &
+!^   &                  (tl_v(i,j,k,Ninp)*(z_r(i,j,k)-z_r(i,j-1,k))+    &
+!^   &                   v(i,j,k,Ninp)*(tl_z_r(i,j,k)-tl_z_r(i,j-1,k)))
+!^
             adfac=(pn(i,j-1)+pn(i,j))*ad_wrk(i,j)
             adfac1=v(i,j,k,Ninp)*adfac
             ad_v(i,j,k,Ninp)=ad_v(i,j,k,Ninp)+                          &
@@ -409,18 +410,18 @@
         END DO
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_vert(i,j,k)=0.25_r8*(tl_wrk(i,j)+tl_wrk(i+1,j))
-!>
+!^          tl_vert(i,j,k)=0.25_r8*(tl_wrk(i,j)+tl_wrk(i+1,j))
+!^
             adfac=0.25_r8*ad_vert(i,j,k)
             ad_wrk(i  ,j)=ad_wrk(i  ,j)+adfac
             ad_wrk(i+1,j)=ad_wrk(i+1,j)+adfac
             ad_vert(i,j,k)=0.0_r8
           END DO
           DO i=Istr,Iend+1
-!>          tl_wrk(i,j)=(pm(i-1,j)+pm(i,j))*                            &
-!>   &                  (tl_u(i,j,k,Ninp)*(z_r(i,j,k)-z_r(i-1,j,k))+    &
-!>   &                   u(i,j,k,Ninp)*(tl_z_r(i,j,k)-tl_z_r(i-1,j,k)))
-!>
+!^          tl_wrk(i,j)=(pm(i-1,j)+pm(i,j))*                            &
+!^   &                  (tl_u(i,j,k,Ninp)*(z_r(i,j,k)-z_r(i-1,j,k))+    &
+!^   &                   u(i,j,k,Ninp)*(tl_z_r(i,j,k)-tl_z_r(i-1,j,k)))
+!^
             adfac=(pm(i-1,j)+pm(i,j))*ad_wrk(i,j)
             adfac1=u(i,j,k,Ninp)*adfac
             ad_u(i,j,k,Ninp)=ad_u(i,j,k,Ninp)+                          &

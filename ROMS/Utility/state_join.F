@@ -1,9 +1,8 @@
 #include "cppdefs.h"
-      SUBROUTINE state_join (ng, model, InpName, OutName, InpStrRec,    &
-     &                       InpEndRec, OutStrRec)
+      MODULE state_join_mod
 !
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,9 +45,24 @@
 #endif
       USE strings_mod,     ONLY : FoundError
 !
+      implicit none
+!
+      PUBLIC  :: state_join
+      PRIVATE :: state_join_nf90
+# if defined PIO_LIB && defined DISTRIBUTE
+      PRIVATE :: state_join_pio
+# endif
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE state_join (ng, tile, model, InpName, OutName, IOtype, &
+     &                       InpStrRec, InpEndRec, OutStrRec)
+!***********************************************************************
+!
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, model
+      integer, intent(in) :: ng, tile, model, IOtype
       integer, intent(in) :: InpStrRec, InpEndRec
 
       integer, intent(inout) :: OutStrRec
@@ -58,8 +72,63 @@
 !  Local variable declarations.
 !
       integer :: LBi, UBi, LBj, UBj
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+!-----------------------------------------------------------------------
+!  Create a new history file according to IO type.
+!-----------------------------------------------------------------------
+!
+      LBi=BOUNDS(ng)%LBi(tile)
+      UBi=BOUNDS(ng)%UBi(tile)
+      LBj=BOUNDS(ng)%LBj(tile)
+      UBj=BOUNDS(ng)%UBj(tile)
+!
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL state_join_nf90 (ng, tile, model, InpName, OutName,      &
+     &                          InpStrRec, InpEndRec, OutStrRec,        &
+     &                          LBi, UBi, LBj, UBj)
+
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL state_join_pio (ng, tile, model, InpName, OutName,       &
+     &                         InpStrRec, InpEndRec, OutStrRec,         &
+     &                         LBi, UBi, LBj, UBj)
+#endif
+        CASE DEFAULT
+          IF (Master) WRITE (stdout,10) IOtype
+          exit_flag=2
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (' STATE_JOIN - Illegal input file type, io_type = ',i0,   &
+     &        /,14x,'Check KeyWord ''INP_LIB'' in ''roms.in''.')
+!
+      RETURN
+      END SUBROUTINE state_join
+!
+!***********************************************************************
+      SUBROUTINE state_join_nf90 (ng, tile, model, InpName, OutName,    &
+     &                            InpStrRec, InpEndRec, OutStrRec,      &
+     &                            LBi, UBi, LBj, UBj)
+!***********************************************************************
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, model
+      integer, intent(in) :: InpStrRec, InpEndRec
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+
+      integer, intent(inout) :: OutStrRec
+!
+      character (len=*) :: InpName, OutName
+!
+!  Local variable declarations.
+!
       integer :: InpId, InpRec, OutId, OutRec, Tindex
-      integer :: gtype, i, ic, status
+      integer :: gtype, i, ic, itrc, status
 
       integer :: Vsize(4)
 !
@@ -70,12 +139,7 @@
       character (len=22) :: t_code
 
       character (len=*), parameter :: MyFile =                          &
-     &  __FILE__
-!
-      LBi=LBOUND(GRID(ng)%h,DIM=1)
-      UBi=UBOUND(GRID(ng)%h,DIM=1)
-      LBj=LBOUND(GRID(ng)%h,DIM=2)
-      UBj=UBOUND(GRID(ng)%h,DIM=2)
+     &  __FILE__//", state_join_nf90"
 !
       SourceFile=MyFile
 !
@@ -1053,18 +1117,1407 @@
       CALL netcdf_close (ng, iNLM, OutId, OutName, .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-  10  FORMAT (/,' STATE_JOIN - unable to open grid NetCDF file: ',a)
-  20  FORMAT ('NLM: STATE_JOIN - Concatenating state fields,',t75,a,    &
-     &        /,19x,'(Grid ',i2.2,', t = ',a,', InpRec=',i4.4,          &
+  10  FORMAT (/,' STATE_JOIN_NF90 - unable to open grid NetCDF file:',  &
+     &        1x,a)
+  20  FORMAT ('NLM: STATE_JOIN_NF90 - Concatenating state fields,',     &
+     &        t75,a,/,23x,'(Grid ',i2.2,', t = ',a,', InpRec=',i4.4,    &
      &         ', Index=',i1,', InpFile: ',a,')',                       &
      &        /,19x,'(Grid ',i2.2,', t = ',a,', OutRec=',i4.4,          &
      &         ', Index=',i1,', OutFile: ',a,')')
-  30  FORMAT (/,' STATE_JOIN - error while reading variable: ',a,2x,    &
-     &        'at time record = ',i0,/,14x,'in input NetCDF file: ',a)
-  40  FORMAT (/,' STATE_JOIN - error while writing variable: ',a,2x,    &
-     &        'at time record = ',i0,/,14x,'in output NetCDF file: ',a)
-  50  FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+  30  FORMAT (/,' STATE_JOIN_NF90 - error while reading variable: ',    &
+     &        a,2x,'at time record = ',i0,                              &
+     &        /,19x,'in input NetCDF file: ',a)
+  40  FORMAT (/,' STATE_JOIN_NF90 - error while writing variable: ',    &
+     &        a,2x,'at time record = ',i0,                              &
+     &        /,19x,'in output NetCDF file: ',a)
+  50  FORMAT (21x,'- ',a,/,23x,'(Min = ',1p,e15.8,                      &
      &        ' Max = ',1p,e15.8,')')
 !
       RETURN
-      END SUBROUTINE state_join
+      END SUBROUTINE state_join_nf90
+
+#if defined PIO_LIB && defined DISTRIBUTE
+!
+!***********************************************************************
+      SUBROUTINE state_join_pio (ng, tile, model, InpName, OutName,     &
+     &                           InpStrRec, InpEndRec, OutStrRec,       &
+     &                           LBi, UBi, LBj, UBj)
+!***********************************************************************
+!
+      USE mod_pio_netcdf
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, model
+      integer, intent(in) :: InpStrRec, InpEndRec
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+
+      integer, intent(inout) :: OutStrRec
+!
+      character (len=*) :: InpName, OutName
+!
+!  Local variable declarations.
+!
+      integer :: InpRec, OutRec, Tindex
+      integer :: i, ic, itrc, status
+
+      integer :: Vsize(4)
+!
+      real(r8) :: Fmin, Fmax
+      real(dp) :: Fscl, stime
+!
+      character (len=15) :: Tstring
+      character (len=22) :: t_code
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", state_join_pio"
+!
+      TYPE (IO_Desc_t),  pointer :: ioDesc
+      TYPE (My_VarDesc), pointer :: pioVar
+
+      TYPE (File_desc_t) :: pioFileInp, pioFileOut
+!
+      SourceFile=MyFile
+!
+!-----------------------------------------------------------------------
+!  Process forward background solution.
+!-----------------------------------------------------------------------
+!
+!  Open Input NetCDF file for reading.
+!
+      CALL pio_netcdf_open (ng, model, InpName, 0, pioFileInp)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+        WRITE (stdout,10) TRIM(InpName)
+        RETURN
+      END IF
+!
+!  Open Output NetCDF file for writing.
+!
+      CALL pio_netcdf_open (ng, model, OutName, 1, pioFileOut)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+        WRITE (stdout,10) TRIM(InpName)
+        RETURN
+      END IF
+!
+!  Inquire about the input variables.
+!
+      CALL pio_netcdf_inq_var (ng, model, InpName,                      &
+     &                         pioFile = pioFileInp)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Set Vsize to zero to deativate interpolation of input data to model
+!  grid in "nf_fread2d".
+!
+      DO i=1,4
+        Vsize(i)=0
+      END DO
+!
+!  Scan the variable list and read in needed variables.
+!
+      OutRec=OutStrRec-1
+      Tindex=1
+      Fscl=1.0_dp
+!
+      REC_LOOP : DO InpRec=InpStrRec,InpEndRec
+        OutRec=OutRec+1
+        VAR_LOOP : DO i=1,n_var
+!
+!  Time.
+!
+          CHECK1 : IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
+            CALL pio_netcdf_get_time (ng, model, InpName,               &
+     &                                TRIM(var_name(i)),                &
+     &                                Rclock%DateNumber, stime,         &
+     &                                pioFile = pioFileInp,             &
+     &                                start = (/InpRec/),               &
+     &                                total = (/1/))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idtime)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              RETURN
+            END IF
+!
+            CALL pio_netcdf_put_fvar (ng, model, OutName,               &
+     &                                TRIM(var_name(i)), stime,         &
+     &                                (/OutRec/), (/1/),                &
+     &                                pioFile = pioFileOut,             &
+     &                                pioVar = var_desc(i))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idtime)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              RETURN
+            ELSE
+              CALL time_string (stime, t_code)
+              WRITE (Tstring,'(f15.4)') stime*sec2day
+              IF (Master) THEN
+                WRITE (stdout,20) t_code,                               &
+     &                            ng, TRIM(ADJUSTL(Tstring)), InpRec,   &
+     &                            Tindex, TRIM(InpName),                &
+     &                            ng, TRIM(ADJUSTL(Tstring)), OutRec,   &
+     &                            Tindex, TRIM(OutName)
+              END IF
+            END IF
+!
+!  Free-surface.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%zeta).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+            pioVar%gtype=r2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+# ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+# endif
+     &                        OCEAN(ng) % zeta(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idFsur)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+# ifdef MASKING
+     &                         GRID(ng) % rmask,                        &
+# endif
+     &                         OCEAN(ng) % zeta(:,:,Tindex),            &
+     &                         SetFillVal = .FALSE.)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idFsur)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idFsur)), Fmin, Fmax
+              END IF
+            END IF
+
+# ifdef FORWARD_RHS
+!
+!  Free-surface equation right-hand-side term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRzet))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rzeta).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+            pioVar%gtype=r2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+     &                        OCEAN(ng) % rzeta(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRzet)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % rmask,                        &
+#  endif
+     &                         OCEAN(ng) % rzeta(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRzet)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRzet)), Fmin, Fmax
+              END IF
+            END IF
+# endif
+!
+!  2D U-momentum component.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%ubar).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+            pioVar%gtype=u2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+# ifdef MASKING
+     &                        GRID(ng) % umask_full,                    &
+# endif
+     &                        OCEAN(ng) % ubar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idUbar)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+# ifdef MASKING
+     &                         GRID(ng) % umask_full,                   &
+# endif
+     &                         OCEAN(ng) % ubar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idUbar)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idUbar)), Fmin, Fmax
+              END IF
+            END IF
+
+# ifdef FORWARD_RHS
+!
+!  2D U-equation right-hand-side term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRu2d))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rubar).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+            pioVar%gtype=u2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask_full,                    &
+#  endif
+     &                        OCEAN(ng) % rubar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRu2d)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % umask_full,                   &
+#  endif
+     &                         OCEAN(ng) % rubar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRu2d)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRu2d)), Fmin, Fmax
+              END IF
+            END IF
+# endif
+!
+!  2D V-momentum component.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbar))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%vbar).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+            pioVar%gtype=v2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+# ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+# endif
+     &                        OCEAN(ng) % vbar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idVbar)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+# ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+# endif
+     &                         OCEAN(ng) % vbar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idVbar)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idVbar)), Fmin, Fmax
+              END IF
+            END IF
+
+# ifdef FORWARD_RHS
+!
+!  2D V-equation right-hand-side term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRv2d))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rvbar).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+            pioVar%gtype=v2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#  endif
+     &                        OCEAN(ng) % rvbar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRv2d)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#  endif
+     &                         OCEAN(ng) % rvbar(:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRv2d)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRv2d)), Fmin, Fmax
+              END IF
+            END IF
+# endif
+# ifdef SOLVE3D
+#  ifdef FORWARD_RHS
+!
+!  2D U-equation right-hand-side forcing term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRuct))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rufrc).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+            pioVar%gtype=u2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask_full,                    &
+#   endif
+     &                        OCEAN(ng) % rufrc)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRuct)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#   ifdef MASKING
+     &                         GRID(ng) % umask_full,                   &
+#   endif
+     &                         OCEAN(ng) % rufrc)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRuct)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRuct)), Fmin, Fmax
+              END IF
+            END IF
+#  endif
+!
+!  Time-averaged U-flux component for 2D equations.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUfx1))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(COUPLING(ng)%DU_avg1).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+            pioVar%gtype=u2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+     &                        COUPLING(ng) % DU_avg1)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idUfx1)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % umask,                        &
+#  endif
+     &                         COUPLING(ng) % DU_avg1)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idUfx1)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idUfx1)), Fmin, Fmax
+              END IF
+            END IF
+!
+!  Time-averaged U-flux component for 3D equations.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUfx2))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(COUPLING(ng)%DU_avg2).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+            pioVar%gtype=u2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+     &                        COUPLING(ng) % DU_avg2)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idUfx2)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % umask,                        &
+#  endif
+     &                         COUPLING(ng) % DU_avg2)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idUfx2)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idUfx2)), Fmin, Fmax
+              END IF
+            END IF
+
+#  ifdef FORWARD_RHS
+!
+!  2D V-equation right-hand-side forcing term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRvct))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rvfrc).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+            pioVar%gtype=v2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#   endif
+     &                        OCEAN(ng) % rvfrc)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRvct)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#   ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#   endif
+     &                         OCEAN(ng) % rvfrc)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRvct)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRvct)), Fmin, Fmax
+              END IF
+            END IF
+#  endif
+!
+!  Time-averaged V-flux component for 2D equations.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVfx1))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(COUPLING(ng)%DV_avg1).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+            pioVar%gtype=v2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#  endif
+     &                        COUPLING(ng) % DV_avg1)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idVfx1)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#  endif
+     &                         COUPLING(ng) % DV_avg1)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idVfx1)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idVfx1)), Fmin, Fmax
+              END IF
+            END IF
+!
+!  Time-averaged U-flux component for 3D equations.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVfx2))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(COUPLING(ng)%DV_avg2).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+            pioVar%gtype=v2dvar
+!
+            status=nf_fread2d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#  endif
+     &                        COUPLING(ng) % DV_avg2)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idVfx2)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fwrite2d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, Fscl,                &
+#  ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#  endif
+     &                         COUPLING(ng) % DV_avg2)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idVfx2)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idVfx2)), Fmin, Fmax
+              END IF
+            END IF
+!
+!  3D U-momentum component.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUvel))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%u).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+            pioVar%gtype=u3dvar
+!
+            status=nf_fread3d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask_full,                    &
+#  endif
+     &                        OCEAN(ng) % u(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idUvel)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fwrite3d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), Fscl,      &
+#  ifdef MASKING
+     &                         GRID(ng) % umask_full,                   &
+#  endif
+     &                         OCEAN(ng) % u(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idUvel)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idUvel)), Fmin, Fmax
+              END IF
+            END IF
+
+#  ifdef FORWARD_RHS
+!
+!  3D U-momentum right-hand-side term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRu3d))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%ru).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+            pioVar%gtype=u3dvar
+!
+            status=nf_fread3d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask_full,                    &
+#   endif
+     &                        OCEAN(ng) % ru(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRu3d)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fwrite3d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), Fscl,      &
+#   ifdef MASKING
+     &                         GRID(ng) % umask_full,                   &
+#   endif
+     &                         OCEAN(ng) % ru(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRu3d)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRu3d)), Fmin, Fmax
+              END IF
+            END IF
+#  endif
+!
+!  3D V-momentum component.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvel))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%v).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+            pioVar%gtype=v3dvar
+!
+            status=nf_fread3d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#  endif
+     &                        OCEAN(ng) % v(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idVvel)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fwrite3d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), Fscl,      &
+#  ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#  endif
+     &                         OCEAN(ng) % v(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idVvel)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idVvel)), Fmin, Fmax
+              END IF
+            END IF
+
+#  ifdef FORWARD_RHS
+!
+!  3D V-momentum right-hand-side term.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRv3d))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(OCEAN(ng)%rv).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+            pioVar%gtype=v3dvar
+!
+            status=nf_fread3d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask_full,                    &
+#   endif
+     &                        OCEAN(ng) % rv(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idRv3d)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fwrite3d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), Fscl,      &
+#   ifdef MASKING
+     &                         GRID(ng) % vmask_full,                   &
+#   endif
+     &                         OCEAN(ng) % rv(:,:,:,Tindex))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idRv3d)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idRv3d)), Fmin, Fmax
+              END IF
+            END IF
+#  endif
+#  ifdef FORWARD_MIXING
+!
+!  Vertical viscosity.
+!
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvis))) THEN
+
+            pioVar%vd=var_desc(i)
+            IF (KIND(MIXING(ng)%Akv).eq.8) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+            pioVar%gtype=w3dvar
+!
+            status=nf_fread3d(ng, model, InpName, pioFileInp,           &
+     &                        var_name(i), pioVar,                      &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#   endif
+     &                        MIXING(ng) % Akv)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,30) TRIM(Vname(1,idVvis)), InpRec,        &
+     &                            TRIM(InpName)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            END IF
+!
+            IF (var_type(i).eq.PIO_double) THEN
+              pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fwrite3d(ng, model, pioFileOut,                   &
+     &                         pioVar, OutRec, ioDesc,                  &
+     &                         LBi, UBi, LBj, UBj, 0, N(ng), Fscl,      &
+#   ifdef MASKING
+     &                         GRID(ng) % rmask,                        &
+#   endif
+     &                         MIXING(ng) % Akv)
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,40) TRIM(Vname(1,idVvis)), OutRec,        &
+     &                            TRIM(OutName)
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,50) TRIM(Vname(2,idVvis)), Fmin, Fmax
+              END IF
+            END IF
+#  endif
+# endif
+          END IF CHECK1
+
+# ifdef SOLVE3D
+!
+!  Tracer type variables.
+!
+          TRACER1_LOOP : DO itrc=1,NT(ng)
+!
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
+
+              pioVar%vd=var_desc(i)
+              IF (KIND(OCEAN(ng)%t).eq.8) THEN
+                pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+              pioVar%gtype=r3dvar
+!
+              status=nf_fread3d(ng, model, InpName, pioFileInp,         &
+     &                          var_name(i), pioVar,                    &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#  endif
+     &                          OCEAN(ng) % t(:,:,:,Tindex,itrc))
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,30) TRIM(Vname(1,idTvar(itrc))),        &
+     &                              InpRec, TRIM(InpName)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+!
+              IF (var_type(i).eq.PIO_double) THEN
+                pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fwrite3d(ng, model, pioFileOut,                 &
+     &                           pioVar, OutRec, ioDesc,                &
+     &                           LBi, UBi, LBj, UBj, 1, N(ng), Fscl,    &
+#  ifdef MASKING
+     &                           GRID(ng) % rmask,                      &
+#  endif
+     &                           OCEAN(ng) % t(:,:,:,Tindex,itrc))
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,40) TRIM(Vname(1,idTvar(itrc))),        &
+     &                              OutRec, TRIM(OutName)
+                END IF
+                exit_flag=3
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,50) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+                END IF
+              END IF
+            END IF
+          END DO TRACER1_LOOP
+!
+!  Tracer type variables vertical diffusion.
+!
+          TRACER2_LOOP : DO itrc=1,NAT
+            pioVar%vd=var_desc(i)
+            pioVar%dkind=PIO_TYPE
+            pioVar%gtype=w3dvar
+!
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idDiff(itrc)))) THEN
+
+              pioVar%vd=var_desc(i)
+              IF (KIND(MIXING(ng)%Akt).eq.8) THEN
+                pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_w3dvar(ng)
+              ELSE
+                pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_w3dvar(ng)
+              END IF
+              pioVar%gtype=w3dvar
+!
+              status=nf_fread3d(ng, model, InpName, pioFileInp,         &
+     &                          var_name(i), pioVar,                    &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#  endif
+     &                          MIXING(ng) % Akt(:,:,:,itrc))
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,30) TRIM(Vname(1,idDiff(itrc))),        &
+     &                              InpRec, TRIM(InpName)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+!
+              IF (var_type(i).eq.PIO_double) THEN
+                pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_w3dvar(ng)
+              ELSE
+                pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_w3dvar(ng)
+              END IF
+!
+              status=nf_fwrite3d(ng, model, pioFileOut,                 &
+     &                           pioVar, OutRec, ioDesc,                &
+     &                           LBi, UBi, LBj, UBj, 0, N(ng), Fscl,    &
+#  ifdef MASKING
+     &                           GRID(ng) % rmask,                      &
+#  endif
+     &                           MIXING(ng) % Akt(:,:,:,itrc))
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,40) TRIM(Vname(1,idDiff(itrc))),        &
+     &                              OutRec, TRIM(OutName)
+                END IF
+                exit_flag=3
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,50) TRIM(Vname(2,idDiff(itrc))),        &
+     &                              Fmin, Fmax
+                END IF
+              END IF
+            END IF
+          END DO TRACER2_LOOP
+# endif
+
+        END DO VAR_LOOP
+
+      END DO REC_LOOP
+!
+!  Update output record value.
+!
+      OutStrRec=OutRec
+!
+!  Close input and output files for compleate synchronization.
+!
+      CALL pio_netcdf_close (ng, iNLM, pioFileInp, InpName, .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+      CALL pio_netcdf_close (ng, iNLM, pioFileOut, OutName, .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (/,' STATE_JOIN_PIO - unable to open grid NetCDF file:',   &
+     &        1x,a)
+  20  FORMAT ('NLM: STATE_JOIN_PIO  - Concatenating state fields,',     &
+     &        t75,a,/,23x,'(Grid ',i2.2,', t = ',a,', InpRec=',i4.4,    &
+     &         ', Index=',i1,', InpFile: ',a,')',                       &
+     &        /,19x,'(Grid ',i2.2,', t = ',a,', OutRec=',i4.4,          &
+     &         ', Index=',i1,', OutFile: ',a,')')
+  30  FORMAT (/,' STATE_JOIN_PIO - error while reading variable: ',     &
+     &        a,2x,'at time record = ',i0,                              &
+     &        /,18x,'in input NetCDF file: ',a)
+  40  FORMAT (/,' STATE_JOIN_PIO - error while writing variable: ',     &
+     &        a,2x,'at time record = ',i0,                              &
+     &        /,18x,'in output NetCDF file: ',a)
+  50  FORMAT (21x,'- ',a,/,23x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,')')
+!
+      RETURN
+      END SUBROUTINE state_join_pio
+#endif
+
+      END MODULE state_join_mod

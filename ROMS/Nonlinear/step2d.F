@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-      MODULE step2d_mod
 #ifdef NONLINEAR
 !
-!svn $Id: step2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: step2d.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -18,14 +18,8 @@
 !                                                                      !
 !=======================================================================
 !
-      implicit none
-!
-      PRIVATE
-      PUBLIC  :: step2d
-!
-      CONTAINS
-!
 # include "step2d_LF_AM3.h"
-
-#endif
+#else
+      MODULE step2d_mod
       END MODULE step2d_mod
+#endif

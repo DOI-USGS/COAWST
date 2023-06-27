@@ -1,26 +1,16 @@
 #include "cppdefs.h"
-      MODULE tl_biology_mod
 #if defined TANGENT && defined BIOLOGY
-!
-!svn $Id: tl_biology.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!  This routine computes the tangent linear source and sink terms for  !
-!  the selected biology model.                                         !
-!                                                                      !
-!=======================================================================
-!
-      implicit none
-!
-      PRIVATE
-      PUBLIC  :: tl_biology
-!
-      CONTAINS
-!
+
+/*
+** svn $Is$
+************************************************************************
+**                                                                    **
+** This routine computes the tangent linear source and sink terms for **
+** the selected biology model.                                        **
+**                                                                    **
+************************************************************************
+*/
+
 # if defined BIO_FENNEL
 !!#  include <tl_fennel.h>
 # elif defined NEMURO
@@ -32,6 +22,7 @@
 # elif defined NPZD_POWELL
 #  include <tl_npzd_Powell.h>
 # endif
-
-#endif
+#else
+      MODULE tl_biology_mod
       END MODULE tl_biology_mod
+#endif

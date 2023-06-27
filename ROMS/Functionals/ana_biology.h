@@ -1,8 +1,10 @@
+!!
       SUBROUTINE ana_biology (ng, tile, model)
 !
-!! svn $Id: ana_biology.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_biology.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -15,15 +17,6 @@
       USE mod_param
       USE mod_ncparam
       USE mod_ocean
-
-#ifdef BEST_NPZ
-# if defined CLIM_ICE_1D
-      USE mod_clima
-# endif
-# ifdef  ICE_BIO
-      USE mod_ice
-# endif
-#endif
 
 #if defined BIO_GOANPZ || defined BEST_NPZ
       USE mod_grid
@@ -44,52 +37,6 @@
       CALL ana_biology_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
-#ifdef BEST_NPZ
-     &                       GRID(ng) % z_r,                            &
-     &                       GRID(ng) % h,                              &
-# ifdef BENTHIC
-     &                       OCEAN(ng) % bt,                            &
-# endif
-# ifdef ICE_BIO
-     &                       OCEAN(ng) % it,                            &
-     &                       OCEAN(ng) % itL,                           &
-#  ifdef CLIM_ICE_1D
-     &                       CLIMA(ng) % tclmG,                         &
-     &                       CLIMA(ng) % tclm,                          &
-#  else
-     &                       ICE(ng) % IcePhL,                          &
-     &                       ICE(ng) % IceNO3,                          &
-     &                       ICE(ng) % IceNH4,                          &
-     &                       ICE(ng) % IceLog,                          &
-     &                       ICE(ng) % ti,                              &
-     &                       ICE(ng) % hi,                              &
-     &                       ICE(ng) % ai,                              &
-     &                       ICE(ng) % ageice,                          &
-#  endif
-# endif
-# ifdef STATIONARY
-     &                       OCEAN(ng) % st,                            &
-     &                       NTS(ng),                                   &
-# endif
-# ifdef STATIONARY2
-     &                       OCEAN(ng) % st2,                           &
-     &                       NTS2(ng),                                  &
-# endif
-# ifdef PROD3R
-     &                       OCEAN(ng) % pt3,                           &
-     &                       NPT3(ng),                                  &
-# endif
-# ifdef PROD2R
-     &                       OCEAN(ng) % pt2,                           &
-     &                       NPT2(ng),                                  &
-# endif
-# ifdef BIOFLUX
-     &                       OCEAN(ng) % bflx,                          &
-# endif
-#endif
-# ifdef BIO_GOANPZ
-     &                       GRID(ng) % z_r,                            &
-# endif
      &                       OCEAN(ng) % t)
 !
 ! Set analytical header file name used.
@@ -109,45 +56,6 @@
       SUBROUTINE ana_biology_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             IminS, ImaxS, JminS, JmaxS,          &
-#ifdef BEST_NPZ
-     &                             z_r, h,                              &
-# ifdef BENTHIC
-     &                             bt,                                  &
-# endif
-# ifdef ICE_BIO
-     &                             it, itL,                             &
-#  ifdef CLIM_ICE_1D
-     &                             tclmG,                               &
-     &                             tclm,                                &
-#  else
-     &                             IcePhL, IceNO3, IceNH4, IceLog,      &
-     &                             ti, hi, ai,                          &
-     &                             ageice ,                             &
-#  endif
-# endif
-# ifdef STATIONARY
-     &                             st,                                  &
-     &                             UBst ,                               &
-# endif
-# ifdef STATIONARY2
-     &                             st2,                                 &
-     &                             UBst2 ,                              &
-# endif
-# ifdef PROD3R
-     &                             pt3,                                 &
-     &                             UBpt3 ,                              &
-# endif
-# ifdef PROD2R
-     &                             pt2,                                 &
-     &                             UBpt2,                               &
-# endif
-# ifdef BIOFLUX
-     &                             bflx,                                &
-# endif
-#endif
-# ifdef BIO_GOANPZ
-     &                             z_r,                                 &
-# endif
      &                             t)
 !***********************************************************************
 !
@@ -167,102 +75,8 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
-# if defined BEST_NPZ
-      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
-      real(r8), intent(in) :: h(LBi:,LBj:)
-#  ifdef BENTHIC
-      real(r8), intent(inout) :: bt(LBi:,LBj:,:,:,:)
-#  endif
-#  ifdef STATIONARY
-      real(r8), intent(inout) :: st(LBi:,LBj:,:,:,:)
-      integer, intent(in) :: UBst
-#  endif
-#  ifdef STATIONARY2
-      real(r8), intent(inout) :: st2(LBi:,LBj:,:,:)
-      integer, intent(in) :: UBst2
-#  endif
-#  ifdef PROD3R
-      real(r8), intent(inout) :: pt3(LBi:,LBj:,:,:,:)
-      integer, intent(in) :: UBpt3
-#  endif
-#  ifdef PROD2R
-      real(r8), intent(inout) :: pt2(LBi:,LBj:,:,:)
-      integer, intent(in) :: UBpt2
-#  endif
-
-#  ifdef BIOFLUX
-      real(r8), intent(inout) :: bflx(:,:)
-#  endif
-
-#  ifdef ICE_BIO
-      real(r8), intent(inout) :: it(LBi:,LBj:,:,:)
-      real(r8), intent(inout) :: itL(LBi:,LBj:,:,:)
-#    ifdef CLIM_ICE_1D
-      real(r8), intent(inout) ::tclmG(LBi:,LBj:,:,:,:)
-      real(r8), intent(inout) ::tclm(LBi:,LBj:,:,:)
-#    else
-      real(r8), intent(inout) :: IcePhL(LBi:,LBj:,:)
-      real(r8), intent(inout) :: IceNO3(LBi:,LBj:,:)
-      real(r8), intent(inout) :: IceNH4(LBi:,LBj:,:)
-      integer, intent(inout)  :: IceLog(LBi:,LBj:,:)
-      real(r8), intent(in) :: ti(LBi:,LBj:,:)
-      real(r8), intent(in) :: hi(LBi:,LBj:,:)
-      real(r8), intent(in) :: ai(LBi:,LBj:,:)
-      real(r8), intent(in) :: ageice(LBi:,LBj:,:)
-#    endif
-#  endif
-# endif
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
 #else
-# if defined BEST_NPZ
-      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
-#   ifdef BENTHIC
-      real(r8), intent(inout) :: bt(LBi:UBi,LBj:UBj,NBL(ng),3,NBeT(ng))
-#   endif
-#  ifdef STATIONARY
-      real(r8), intent(inout) :: st(LBi:UBi,LBj:UBj,UBk,3,UBst)
-      integer, intent(in) :: UBst
-#  endif
-#   ifdef STATIONARY2
-      real(r8), intent(inout) :: st2(LBi:UBi,LBj:UBj,3,UBst2)
-      integer, intent(in) :: UBst2
-#   endif
-#   ifdef PROD3R
-      real(r8), intent(inout) :: pt3(LBi:UBi,LBj:UBj,UBk,3,UBpt3)
-      integer, intent(in) :: UBpt3
-#   endif
-#   ifdef PROD2R
-      real(r8), intent(inout) :: pt2(LBi:UBi,LBj:UBj,3,UBpt2)
-      integer, intent(in) :: UBpt2
-#   endif
-
-#   ifdef BIOFLUX
-      real(r8), intent(inout) :: bflx(NT(ng),NT(ng))
-#   endif
-
-#  ifdef ICE_BIO
-      real(r8), intent(inout) :: it(LBi:UBi,LBj:UBj,3,NIceT(ng))
-      real(r8), intent(inout) :: itL(LBi:UBi,LBj:UBj,3,NIceLog(ng))
-#    ifdef CLIM_ICE_1D
-      real(r8), intent(inout) ::tclmG(LBi:UBi,LBj:UBj,UBk,3,UBt+1)
-      real(r8), intent(inout) ::tclm(LBi:UBi,LBj:UBj,UBk,UBt+1)
-#    else
-      real(r8), intent(inout) :: IcePhL(LBi:UBi,LBj:UBJ,2)
-      real(r8), intent(inout) :: IceNO3(LBi:UBi,LBj:UBJ,2)
-      real(r8), intent(inout) :: IceNH4(LBi:UBi,LBj:UBJ,2)
-      integer, intent(inout)  :: IceLog(LBi:UBi,LBj:UBJ,2)
-      real(r8), intent(in) :: ti(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(in) :: hi(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(in) :: ageice(LBi:UBi,LBj:UBj,2)
-#   endif
-#  endif
-# endif
-
-# if defined BIO_GOANPZ
-      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-# endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #endif
 !
@@ -278,15 +92,6 @@
       real(r8) :: cff1, cff2, cff3, cff4, cff5, cff6, cff7, cff8, cff9
       real(r8) :: cff10, cff11, cff12, cff13, cff14, cff15
       real(r8) :: salt, sftm, temp
-#elif defined BIO_GOANPZ || defined BEST_NPZ
-      real(r8) :: var1, var2, var3, var4, var5, var6, var7
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: biod
-      real(r8), dimension(NT(ng)) :: deepval
-      real(r8), dimension(NT(ng)) :: loval
-# ifdef IRON_LIMIT
-      real(r8) :: FeSurf, FeDeep
-# endif
-      real(r8), parameter :: eps = 1.0E-20_r8
 #endif
 !
 !   Maximum 80 biological tracers consider for field statistics.
@@ -413,24 +218,6 @@
       DO k=1,N(ng)
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-#ifdef CGOA_ANABIO
-            t(i,j,k,1,iNO3_)=15.0_r8
-            t(i,j,k,1,iSphy)=0.1_r8
-            t(i,j,k,1,iLphy)=0.1_r8
-            t(i,j,k,1,iSzoo)=0.1_r8
-            t(i,j,k,1,iLzoo)=0.1_r8
-            t(i,j,k,1,iPzoo)=0.1_r8
-            t(i,j,k,1,iNH4_)=0.0_r8
-            t(i,j,k,1,iPON_)=0.0_r8
-            t(i,j,k,1,iDON_)=0.0_r8
-            t(i,j,k,1,iSiOH)=25.0_r8
-            t(i,j,k,1,iopal)=0.0_r8
-# ifdef IRON_LIMIT
-            t(i,j,k,1,iFeD_)=0.2_r8
-            t(i,j,k,1,iFeSp)=0.0_r8
-            t(i,j,k,1,iFeLp)=0.0_r8
-# endif
-#else
             temp=t(i,j,k,1,itemp)
             IF (temp.lt.8.0_r8) THEN
               SiO4=30.0_r8
@@ -456,12 +243,6 @@
             t(i,j,k,1,iDON_)=0.001_r8
             t(i,j,k,1,iSiOH)=SiO4
             t(i,j,k,1,iopal)=0.001_r8
-# ifdef IRON_LIMIT
-            t(i,j,k,1,iFeD_)=2.0_r8
-            t(i,j,k,1,iFeSp)=0.001_r8
-            t(i,j,k,1,iFeLp)=0.001_r8
-# endif
-#endif
           END DO
         END DO
       END DO
@@ -662,8 +443,6 @@
           END DO
         END DO
       END DO
-#elif defined BEST_NPZ
-# include "ana_biology_BESTnpz.h"
 #elif defined BIO_GOANPZ
 # include "ana_biology_goanpz.h"
 #endif

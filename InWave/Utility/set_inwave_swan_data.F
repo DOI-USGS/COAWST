@@ -88,7 +88,7 @@
 !     To compute the time index for the BC data, the Ampzeta array
 !     is Insteps long (1000sec), but it repeats every 1/df.
 !
-      ratio=WAVES(ng)%idt/(dt(ng)*WAVES(ng)%dtifac)
+      ratio=WAVES(ng)%idt/(dt(ng)*WAVEG(ng)%dtifac)
       tidx=REAL(MOD(iic(ng),INT((WAVES(ng)%Insteps-1)*ratio)),r8)/ratio+&
      &     1.0_r8
       tidx1=INT(tidx)

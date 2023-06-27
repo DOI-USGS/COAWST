@@ -20,9 +20,9 @@ function [status]=c_biology(S);
 %    status      Error flag.
 %
 
-% svn $Id: c_biology.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: c_biology.m 1156 2023-02-18 01:44:37Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%
@@ -34,7 +34,7 @@ if (isfield(S,'ncname')),
 else,
   error([ 'C_BIOLOGY - cannot NetCDF file name field: ncname, ', ...
           'in structure array S']);
-end,
+end
 
 %  Set variables type.
 
@@ -70,32 +70,15 @@ if (spherical),
   Vname.coord='lon_rho lat_rho s_rho ocean_time';
 else,
   Vname.coord='x_rho y_rho s_rho ocean_time';
-end,
-
-%---------------------------------------------------------------------------
-%  Open existing initial conditions or climatology file.
-%---------------------------------------------------------------------------
-
-%  Open NetCDF file.
-
-[ncid]=mexnc('open',fname,'nc_write');
-if (ncid < 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BIOLOGY: open - unable to open file: ', fname]);
-  return
 end
 
-%  Put open file into define mode.
+%---------------------------------------------------------------------------
+%  Open existing initial conditions or climatology file and put in
+%  definition mode.
+%---------------------------------------------------------------------------
 
-[status]=mexnc('redef',ncid);
-if (status < 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  [status]=mexnc('close',ncid);
-  error(['C_BIOLOGY: redef - unable to put in definition mode: ',fname]);
-  return
-end,
+ncid  = netcdf.open(Gname, 'nc_write');
+netcdf.reDef(ncid);
 
 %---------------------------------------------------------------------------
 %  Define variables according to biology model.
@@ -113,7 +96,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'NH4';
@@ -124,7 +107,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'chlorophyll';
@@ -135,7 +118,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'phytoplankton';
@@ -146,7 +129,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'zooplankton';
@@ -157,7 +140,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'SdetritusN';
@@ -168,7 +151,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'LdetritusN';
@@ -179,7 +162,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'SdetritusC';
@@ -190,7 +173,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'LdetritusC';
@@ -201,7 +184,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'TIC';
@@ -212,7 +195,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'alkalinity';
@@ -223,7 +206,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'SdetritusN';
@@ -234,7 +217,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'oxygen';
@@ -245,7 +228,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
  case {'NEMURO'}
@@ -258,7 +241,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'NH4';
@@ -269,7 +252,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'PON';
@@ -280,7 +263,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'DON';
@@ -291,7 +274,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'SiOH4';
@@ -302,7 +285,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'opal';
@@ -313,7 +296,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'nanophytoplankton';
@@ -324,7 +307,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'diatom';
@@ -335,7 +318,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'microzooplankton';
@@ -346,7 +329,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'mesozooplankton';
@@ -357,7 +340,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'Pzooplankton';
@@ -368,7 +351,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
   case {'NPZD_FRANKS', 'NPZD_POWELL'}
@@ -381,7 +364,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'phytoplankton';
@@ -392,7 +375,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'zooplankton';
@@ -403,7 +386,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'phytoplankton';
@@ -414,7 +397,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'detritus';
@@ -425,7 +408,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
   case {'NPZD_IRON'}
@@ -438,7 +421,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'iron';
@@ -449,7 +432,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'phytoplankton';
@@ -460,7 +443,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'phytoplanktonFe';
@@ -471,7 +454,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
     
     Var.name        = 'zooplankton';
@@ -482,7 +465,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'phytoplankton';
@@ -493,7 +476,7 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
     Var.name        = 'detritus';
@@ -504,32 +487,16 @@ switch S.biomodel,
     Var.time        = Vname.time;
     Var.coordinates = Vname.coordinates;
     [varid,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end,
+    if (status ~= 0), return, end
     clear Var
 
-end,
-
-%---------------------------------------------------------------------------
-%  Close NetCDF file.
-%---------------------------------------------------------------------------
-
-%  Exit definition mode.
-
-[status]=mexnc('enddef',ncid);
-if (status < 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BIOLOGY: enddef - unable to exit definition mode: ',fname]);
-  return
-end,
-
-%  Close NetCDF file.
-
-[cstatus]=mexnc('ncclose',ncid);
-if (cstatus < 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_BIOLOGY: ncclose - unable to close NetCDF file: ', fname]);
 end
+
+%--------------------------------------------------------------------------
+%  Leave definition mode and close NetCDF file.
+%--------------------------------------------------------------------------
+
+netcdf.endDef(ncid);
+netcdf.close(ncid);
 
 return

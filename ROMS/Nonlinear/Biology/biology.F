@@ -1,18 +1,9 @@
 #include "cppdefs.h"
-      MODULE biology_mod
 #if defined NONLINEAR && defined BIOLOGY
-!
-!svn $Id: biology.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!  This routine computes the source and sink terms for selected        !
-!  biology model.                                                      !
-!                                                                      !
-/*                                                                    **
+/*
+** svn $Is$
+************************************************************************
+**                                                                    **
 ** The current design allows the user to have a lot of latitude for   **
 ** customizing or adding any particular ecosystem model.              **
 **                                                                    **
@@ -63,7 +54,7 @@
 **         red_tide_inp.h                                             **
 **                                                                    **
 **   (5) Code to assign indices to model variables during the         **
-**       reading of metadata information from "varinfo.dat":          **
+**       reading of metadata information from "varinfo.yaml":         **
 **                                                                    **
 **         ecosim_var.h                                               **
 **         fennel_var.h                                               **
@@ -103,15 +94,9 @@
 ** and included within  <...>  to allow the user to customize any of  **
 ** them in the project directory  while keeping the distributed code  **
 ** intact (check the build script for details).                       **
+**                                                                    **
+************************************************************************
 */
-!=======================================================================
-!
-      implicit none
-!
-      PRIVATE
-      PUBLIC  :: biology
-!
-      CONTAINS
 
 # if defined BEST_NPZ
 #  include <bestnpz.h>
@@ -137,11 +122,8 @@
 #  include <goanpz.h>
 # elif defined RED_TIDE
 #  include <red_tide.h>
-# else
-      SUBROUTINE biology(ng, tile)
-        integer ng, tile
-      END subroutine biology
 # endif
-
-#endif
+#else
+      MODULE biology_mod
       END MODULE biology_mod
+#endif

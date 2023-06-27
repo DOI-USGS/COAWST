@@ -3,9 +3,10 @@
 
 #ifdef RPCG
 !
-!svn $Id: comp_Jb0.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: comp_Jb0.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -15,18 +16,6 @@
 !                                                                      !
 !=======================================================================
 !
-      implicit none
-!
-      PRIVATE
-      PUBLIC comp_Jb0
-      PUBLIC aug_oper
-!
-      CONTAINS
-!
-!***********************************************************************
-      SUBROUTINE comp_Jb0 (ng, tile, model, outLoop, LTLM, LADJ)
-!***********************************************************************
-!
       USE mod_param
 # ifdef ADJUST_BOUNDARY
       USE mod_boundary
@@ -34,9 +23,31 @@
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_forces
 # endif
-      USE mod_grid
-      USE mod_ocean
       USE mod_fourdvar
+      USE mod_grid
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_netcdf
+# if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+# endif
+      USE mod_ocean
+      USE mod_scalars
+!
+      USE state_dotprod_mod, ONLY : state_dotprod
+      USE strings_mod,       ONLY : FoundError
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: comp_Jb0
+      PUBLIC  :: aug_oper
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE comp_Jb0 (ng, tile, model, outLoop, LTLM, LADJ)
+!***********************************************************************
 !
 !  Imported variable declarations.
 !
@@ -158,19 +169,6 @@
 # endif
      &                          ad_zeta)
 !***********************************************************************
-!
-      USE mod_param
-      USE mod_ncparam
-      USE mod_fourdvar
-      USE mod_iounits
-      USE mod_netcdf
-      USE mod_scalars
-# ifdef ADJUST_BOUNDARY
-      USE mod_boundary
-# endif
-!
-      USE state_dotprod_mod, ONLY : state_dotprod
-      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -338,11 +336,21 @@
 !  Write out outer loop background cost function into 4D-Var NetCDF
 !  (DAV struc) file.  Recall that Jb0(0:Nouter)
 !
-      CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                    &
-     &                      'Jb0', Jb0(0:),                             &
-     &                      (/1/), (/Nouter+1/),                        &
-     &                      ncid = DAV(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      SELECT CASE (DAV(ng)%IOtype)
+        CASE (io_nf90)
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
+     &                          'Jb0', Jb0(0:),                         &
+     &                          (/1/), (/Nouter+1/),                    &
+     &                          ncid = DAV(ng)%ncid)
+# if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_put_fvar (ng, model, DAV(ng)%name,            &
+     &                              'Jb0', Jb0(0:),                     &
+     &                              (/1/), (/Nouter+1/),                &
+     &                              pioFile = DAV(ng)%pioFile)
+# endif
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
       RETURN
       END SUBROUTINE comp_Jb0_tile
@@ -428,17 +436,6 @@
 # endif
      &                          tl_zeta)
 !***********************************************************************
-!
-      USE mod_param
-      USE mod_ncparam
-# if defined ADJUST_STFLUX || defined ADJUST_WSTRESS || \
-     defined ADJUST_BOUNDARY
-      USE mod_scalars
-# endif
-# ifdef ADJUST_BOUNDARY
-      USE mod_boundary
-# endif
-      USE mod_fourdvar
 !
 !  Imported variable declarations.
 !

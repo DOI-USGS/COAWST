@@ -3,7 +3,8 @@ function F=plot_field(Gname, Hname, Vname, Tindex, varargin)
 %
 % PLOT_FIELD:  Plot requested ROMS variable from input NetCDF file
 %
-% F=plot_field(Gname, Hname, Vname, Tindex, Level, Caxis, Mmap, wrtPNG)
+% F=plot_field(Gname, Hname, Vname, Tindex, Level, Caxis, Mmap, ptype,
+%              wrtPNG)
 %
 % This function plots requested ROMS variable from input history
 % NetCDF file. This function is very useful when debugging a ROMS
@@ -39,6 +40,12 @@ function F=plot_field(Gname, Hname, Vname, Tindex, varargin)
 %    Mmap          Switch to use m_map utility (true or false)
 %                    (Optional, default: false)
 %
+%    ptype         Plot type (scalar)
+%                    (Optional, default: 0)
+%
+%                     ptype = 0     use pcolor
+%                     ptype < 0     use contourf with abs(ptype) colors
+%
 %    wrtPNG        Switch to write out PNG file (true or false)
 %                    (Optional, default: false)
 %
@@ -47,37 +54,43 @@ function F=plot_field(Gname, Hname, Vname, Tindex, varargin)
 %    F             Requested 2D or 3D variable (array)
 %
 
-% svn $Id: plot_field.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: plot_field.m 1162 2023-03-27 21:08:44Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
 
 % Initialize.
 
-got.coast = false;
+F = struct('ncname'     , [], 'Vname'     , [],                         ...
+           'Tindex'     , [], 'Tname'     , [], 'Tstring'   , [],       ...
+	   'Level'      , [], 'is3d'      , [],                         ...
+           'X'          , [], 'Y'         , [],                         ...
+           'value'      , [], 'min'       , [], 'max'       , [],       ...
+	   'Caxis'      , [], 'doMap'     , [], 'projection', [],       ...
+           'ptype'      , [],                                           ...
+           'gotCoast'   , [], 'lon_coast' , [], 'lat_coast' , [],       ...
+           'pltHandle'  , [], 'wrtPNG'    , []);
+
+F.projection = 'mercator';
+
+F.ncname = Hname;
+F.Vname = Vname;
+F.gotCoast = false;
+
 got.Mname = false;
 got.Xname = false;
 got.Yname = false;
 got.Zname = false;
 
+is3d  = false;
 isr3d = false;
 isw3d = false;
-isvec = false;
 
-Tname = [];
+F.Tname = [];
 Tsize = 0;
 recordless = true;
-MyProjection = 'mercator';
-
-fill_land = true;                 % use patch (true) or draw coast (false)
-
-%Land = [0.3412 0.2549 0.1843];   % dark brown
-%Land = [0.4745 0.3765 0.2980];   % medium brown
-%Land = [0.6706 0.5841 0.5176];   % light brown
- Land = [0.6 0.65 0.6];           % gray-green
- Lake = Land;
  
 D = nc_dinfo(Hname);
 N = D(strcmp({D.Name}, 's_rho')).Length;
@@ -89,6 +102,7 @@ switch numel(varargin)
     Level  = N;
     Caxis  = [-Inf Inf];
     Mmap   = false;
+    ptype  = 0;
     wrtPNG = false;
   case 1
     if (~isinf(varargin{1}))
@@ -98,6 +112,7 @@ switch numel(varargin)
     end
     Caxis  = [-Inf Inf];
     Mmap   = false;
+    ptype  = 0;
     wrtPNG = false;
   case 2
     if (~isinf(varargin{1}))
@@ -107,6 +122,7 @@ switch numel(varargin)
     end
     Caxis  = varargin{2};
     Mmap   = false;
+    ptype  = 0;
     wrtPNG = false;
   case 3
     if (~isinf(varargin{1}))
@@ -116,6 +132,7 @@ switch numel(varargin)
     end
     Caxis  = varargin{2};
     Mmap   = varargin{3};
+    ptype  = 0;
     wrtPNG = false;
   case 4
     if (~isinf(varargin{1}))
@@ -125,52 +142,32 @@ switch numel(varargin)
     end
     Caxis  = varargin{2};
     Mmap   = varargin{3};
-    wrtPNG = varargin{4};
+    ptype  = varargin{4};
+    wrtPNG = false;
+  case 5
+    if (~isinf(varargin{1}))
+      Level = varargin{1};
+    else
+      Level = N;
+    end
+    Caxis  = varargin{2};
+    Mmap   = varargin{3};
+    ptype  = varargin{4};
+    wrtPNG = varargin{5};
 end
+
+F.Level = Level;
+F.Caxis = Caxis;
+F.doMap = Mmap;
+F.ptype = ptype;
+F.wrtPNG = wrtPNG;
 
 % Set ROMS Grid structure.
   
-if (~isstruct(Gname)),
+if (~isstruct(Gname))
   G = get_roms_grid(Gname);
 else
   G = Gname;
-end
-
-% Set colormap.
-
-switch Vname
-  case {'temp', 'temp-sur'}
-    Cmap = cm_balance(512);
-  case {'salt', 'salt_sur'}
-    Cmap = cm_delta(512);
-  case {'u_sur', 'u_sur_eastward', 'v_sur', 'v_sur_northward'}
-    Cmap = cm_curl(512);
-  case {'ubar', 'ubar_eastward', 'vbar', 'vbar_northward'}
-    Cmap = cm_speed(512);
-  case 'zeta'
-    Cmap = cm_delta(512);
-  case 'swrad'
-    Cmap = cm_thermal(512);
-  case 'lwrad'
-    Cmap = flipud(cm_thermal(512));
-  case {'latent', 'sensible', 'shflux'}
-    Cmap = cm_balance(512);
-  case {'EminusP', 'evaporation', 'ssflux'}
-    Cmap = cm_delta(512);
-  case 'rain'
-    Cmap = flipud(cm_haline(512));
-  case {'Uwind', 'Vwind'}
-    Cmap = cm_curl(512);
-  case {'sustr', 'svstr'}
-    Cmap = cm_curl(512);
-  case 'Pair'
-    Cmap = cm_haline(512);
-  case 'Qair'
-    Cmap = cm_delta(512);
-  case 'Hair'
-    Cmap = cm_delta(512);
-  otherwise
-    Cmap = cm_balance(512);
 end
 
 %--------------------------------------------------------------------------
@@ -184,8 +181,8 @@ I = nc_vinfo(Hname, Vname);
 
 nvdims = length(I.Dimensions);
 
-if (nvdims > 0),
-  for n=1:nvdims,
+if (nvdims > 0)
+  for n=1:nvdims
     dimnam = char(I.Dimensions(n).Name);
     switch dimnam
       case {'s_rho', 'level'}
@@ -195,8 +192,8 @@ if (nvdims > 0),
       case {'xi_rho','lon_rho', 'lon'}
         Mname = 'mask_rho';
         got.Mname = true;
-        if (~(got.Xname || got.Yname)),
-          if (G.spherical),
+        if (~(got.Xname || got.Yname))
+          if (G.spherical)
             Xname = 'lon_rho';
             Yname = 'lat_rho';
           else
@@ -211,8 +208,8 @@ if (nvdims > 0),
       case {'xi_psi','lon_psi'}
         Mname = 'mask_psi';
         got.Mname = true;
-        if (~(got.Xname || got.Yname)),
-          if (G.spherical),
+        if (~(got.Xname || got.Yname))
+          if (G.spherical)
             Xname = 'lon_psi';
             Yname = 'lat_psi';
           else
@@ -227,8 +224,8 @@ if (nvdims > 0),
       case {'xi_u','lon_u'}
         Mname = 'mask_u';
         got.Mname = true;
-        if (~(got.Xname || got.Yname)),
-          if (G.spherical),
+        if (~(got.Xname || got.Yname))
+          if (G.spherical)
             Xname = 'lon_u';
             Yname = 'lat_u';
           else
@@ -240,12 +237,11 @@ if (nvdims > 0),
           got.Yname = true;        
           got.Zname = true;
         end
-        isvec = true;
       case {'xi_v','lon_v'}
         Mname = 'mask_v';
         got.Mname = true;
-        if (~(got.Xname || got.Yname)),
-          if (G.spherical),
+        if (~(got.Xname || got.Yname))
+          if (G.spherical)
             Xname = 'lon_v';
             Yname = 'lat_v';
           else
@@ -257,31 +253,32 @@ if (nvdims > 0),
           got.Yname = true;        
           got.Zname = true;
         end
-        isvec = true;
       case {'ocean_time', 'time', ~isempty(strfind(dimnam,'time'))}
         recordless = false;    
         Tsize = I.Dimensions(n).Length;
     end
   end
-  if (isw3d),
+  if (isw3d)
     Zname = 'z_w';
   end  
 end
 
 is3d = isr3d || isw3d;
 
+F.is3d = is3d;
+
 % Check if 'time' attribute is available.
 
 itime = strcmp({I.Attributes.Name}, 'time');
-if (any(itime)),
-  Tname = I.Attributes(itime).Value;
+if (any(itime))
+  F.Tname = I.Attributes(itime).Value;
 end
 
 %--------------------------------------------------------------------------
 % Get coordinates.
 %--------------------------------------------------------------------------
 
-if (isfield(G,Xname)),
+if (isfield(G,Xname))
   if (~isempty(G.(Xname)))  
     X = G.(Xname);
   else
@@ -293,7 +290,7 @@ else
          ' in receiver grid structure: G']);
 end
 
-if (isfield(G,Yname)),
+if (isfield(G,Yname))
   if (~isempty(G.(Yname)))
     Y = G.(Yname);
   else
@@ -305,8 +302,8 @@ else
          ' in receiver grid structure: G']);
 end
 
-if (is3d),
-  if (isfield(G,Zname)),
+if (is3d)
+  if (isfield(G,Zname))
     if (~isempty(G.(Zname)))
       Z = G.(Zname);
     else
@@ -319,22 +316,22 @@ if (is3d),
   end
 end
   
-if (isfield(G,Mname)),
+if (isfield(G,Mname))
   if (~isempty(G.(Mname)))
     mask = G.(Mname);
   else
     error([' PLOT_FIELD - field '', Mname, ''',                          ...
-           ' is empty in receiver grid structure: G']);
+          ' is empty in receiver grid structure: G']);
   end
 else
   error([' PLOT_FIELD - unable to find field '', Mname, ''',             ...
          ' in receiver grid structure: G']);
 end
 
-if (isfield(G,'lon_coast') && isfield(G,'lat_coast')),
-  Clon = G.lon_coast;
-  Clat = G.lat_coast;
-  got.coast = true;
+if (isfield(G,'lon_coast') && isfield(G,'lat_coast'))
+  F.lon_coast = G.lon_coast;
+  F.lat_coast = G.lat_coast;
+  F.gotCoast = true;
 end
 
 if (~G.spherical)
@@ -342,24 +339,28 @@ if (~G.spherical)
   Y = 0.001 .* Y;                 % km
 end
 
+F.X = X;
+F.Y = Y;
+
 %--------------------------------------------------------------------------
 % Read in requested variable from NetCDF file.
 %--------------------------------------------------------------------------
 
-if (~recordless && Tindex > Tsize),
+if (~recordless && Tindex > Tsize)
   Tindex = Tsize;                     % process last time record available
 end 
+F.Tindex = Tindex;
 
-if (~isempty(Tname)),
-  Tvalue = nc_read(Hname,Tname,Tindex);
-  Tattr  = nc_getatt(Hname,'units',Tname);
+if (~isempty(F.Tname))
+  Tvalue = nc_read(Hname,F.Tname,Tindex);
+  Tattr  = nc_getatt(Hname,'units',F.Tname);
   Tdays  = true;
-  if (~isempty(strfind(Tattr, 'second'))),
+  if (~isempty(strfind(Tattr, 'second')))
     Tvalue = Tvalue/86400;                    % seconds to days
     Tdays  = false;
   end  
   iatt = strfind(Tattr, 'since');
-  if (~isempty(iatt)),
+  if (~isempty(iatt))
     Torigin = Tattr(iatt+6:end);
     epoch   = datenum(Torigin,31);            % 'yyyy-mm-dd HH:MM:SS' 
     Tstring = datestr(epoch+Tvalue);
@@ -367,126 +368,29 @@ if (~isempty(Tname)),
     Tstring = num2str(Tvalue);    
   end
 end
+F.Tstring = Tstring;
 
 ReplaceValue = NaN;
 PreserveType = false;
 
 field = nc_read(Hname,Vname,Tindex,ReplaceValue,PreserveType);
 
-if (is3d),
-  if (Level > 0),
-    F = squeeze(field(:,:,Level));
+if (is3d)
+  if (Level > 0)
+    value = squeeze(field(:,:,Level));
   else
-    [~,~,F] = nc_slice(G,Hname,Vname,Level,Tindex);
+    [~,~,value] = nc_slice(G,Hname,Vname,Level,Tindex);
   end
 else
-  F = field;
+  value = field;
 end
 
-Fmin = min(F(:));  [Imin,Jmin] = find(F == min(F(:))); 
-Fmax = max(F(:));  [Imax,Jmax] = find(F == max(F(:))); 
-
-if (length(Imin) > 1 && length(Jmin > 1)),
-  Imin = Imin(1);
-  Jmin = Jmin(1);
-end
-
-if (length(Imax) > 1 && length(Jmax > 1)),
-  Imax = Imax(1);
-  Jmax = Jmax(1);
-end
+F.value = value;
 
 %--------------------------------------------------------------------------
-% Plot requested field.
+% Plot requested field
 %--------------------------------------------------------------------------
 
-figure;
-
-if (Mmap)
-  LonMin=min(X(:));   LonMax=max(X(:));
-  LatMin=min(Y(:));   LatMax=max(Y(:));
-  m_proj(MyProjection,'longitudes',[LonMin,LonMax],                     ...
-                      'latitudes' ,[LatMin,LatMax]); 
-  m_grid('tickdir','out','yaxisloc','left');
-  hold on;
-  m_pcolor(X, Y, nanland(F,G));
-else
-  pcolorjw(X, Y, nanland(F,G));
-  hold on;
-end
-
-shading interp;
-colorbar;
-colormap(Cmap);
-caxis(Caxis);
-
-if (is3d),
-  if (~isempty(Tname)),
-    ht = title([Vname, ':', blanks(4),                                  ...
-                'Level = ', num2str(Level), ',', blanks(4),             ...
-                'Record = ', num2str(Tindex), ',', blanks(4),           ...
-                'time = ', Tstring],                                    ...
-               'FontSize', 14, 'FontWeight', 'bold' );
-  else
-    ht = title([Vname, ':', blanks(4),                                  ...
-                'Level = ', num2str(Level), ',', blanks(4),             ...
-                'Record = ', num2str(Tindex)],                          ...
-               'FontSize', 14, 'FontWeight', 'bold' );
-  end
-else
-  if (~isempty(Tname)),
-    ht = title([Vname, ':', blanks(4),                                  ... 
-                'Record = ', num2str(Tindex), ',', blanks(4),           ...
-                'time = ', Tstring],                                    ...
-               'FontSize', 14, 'FontWeight', 'bold' );
-  else
-    ht = title([Vname, ':', blanks(4),                                  ... 
-                'Record = ', num2str(Tindex)],                          ...
-               'FontSize', 14, 'FontWeight', 'bold' );
-  end
-end
-
-hx = xlabel(['Min = ', num2str(Fmin), blanks(4),                        ...
-             '(', num2str(Imin), ', ', num2str(Jmin), '),', blanks(8),  ...
-             'Max = ', num2str(Fmax), blanks(4),                        ...
-             '(', num2str(Imax), ', ', num2str(Jmax), ')'],             ...
-            'FontSize', 14, 'FontWeight', 'bold' );
-
-%  Mark minimum (down triangle) and maximum (up triangle) locations.
-
-if (Mmap)
-  if (fill_land)
-    m_gshhs_i('patch', Land, 'edgecolor', Lake);
-  else
-    m_gshhs_i('color','k');
-  end
-  m_plot(X(Imin,Jmin), Y(Imin,Jmin), 'v',                               ...
-         'MarkerEdgeColor','none','MarkerFaceColor','k','MarkerSize',12);
-  m_plot(X(Imax,Jmax), Y(Imax,Jmax), '^',                               ...
-         'MarkerEdgeColor','none','MarkerFaceColor','k','MarkerSize',12);
-  m_plot(X(Imin,Jmin), Y(Imin,Jmin), 'kv',                              ...
-         'MarkerSize',12);
-  m_plot(X(Imax,Jmax), Y(Imax,Jmax), 'k^',                              ...
-         'MarkerSize',12);
-else
-  plot(X(Imin,Jmin), Y(Imin,Jmin), 'v',                                 ...
-       X(Imax,Jmax), Y(Imax,Jmax), '^',                                 ...
-       'MarkerEdgeColor','none','MarkerFaceColor','k','MarkerSize',12);
-  plot(X(Imin,Jmin), Y(Imin,Jmin), 'wv',                                ...
-       X(Imax,Jmax), Y(Imax,Jmax), 'w^',                                ...
-       'MarkerSize',12);
-  if (got.coast),
-    hc = plot(Clon,Clat,'k-');
-  end
-end
-
-%  Write out PNG file.
-
-if (wrtPNG)
-  png_file=strcat(Vname,'_',num2str(Tindex, '%4.4i'),'.png');
-  print(png_file, '-dpng', '-r300');
-end
-
-hold off;
+F = hplot(G, F);
 
 return

@@ -1,11 +1,12 @@
-      SUBROUTINE rp_biology (ng,tile)
+      MODULE rp_biology_mod
 !
-!svn $Id: rp_npzd_Powell.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: rp_npzd_Powell.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Nutrient-Phytoplankton-Zooplankton-Detritus Model.                  !
 !                                                                      !
@@ -20,6 +21,17 @@
 !      California Current System: Comparisons with Statistics          !
 !      from Satellite Imagery, J. Geophys. Res.                        !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: rp_biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE rp_biology (ng,tile)
 !***********************************************************************
 !
       USE mod_param
@@ -54,23 +66,23 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iRPM, 15, __LINE__, MyFile)
 #endif
-      CALL rp_biology_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nstp(ng), nnew(ng),                         &
+      CALL rp_npzd_powell_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, N(ng), NT(ng),      &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nstp(ng), nnew(ng),                     &
 #ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
+     &                          GRID(ng) % rmask,                       &
 #endif
-     &                      GRID(ng) % Hz,                              &
-     &                      GRID(ng) % tl_Hz,                           &
-     &                      GRID(ng) % z_r,                             &
-     &                      GRID(ng) % tl_z_r,                          &
-     &                      GRID(ng) % z_w,                             &
-     &                      GRID(ng) % tl_z_w,                          &
-     &                      FORCES(ng) % srflx,                         &
-     &                      FORCES(ng) % tl_srflx,                      &
-     &                      OCEAN(ng) % t,                              &
-     &                      OCEAN(ng) % tl_t)
+     &                          GRID(ng) % Hz,                          &
+     &                          GRID(ng) % tl_Hz,                       &
+     &                          GRID(ng) % z_r,                         &
+     &                          GRID(ng) % tl_z_r,                      &
+     &                          GRID(ng) % z_w,                         &
+     &                          GRID(ng) % tl_z_w,                      &
+     &                          FORCES(ng) % srflx,                     &
+     &                          FORCES(ng) % tl_srflx,                  &
+     &                          OCEAN(ng) % t,                          &
+     &                          OCEAN(ng) % tl_t)
 
 #ifdef PROFILE
       CALL wclock_off (ng, iRPM, 15, __LINE__, MyFile)
@@ -80,18 +92,18 @@
       END SUBROUTINE rp_biology
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE rp_biology_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj, UBk, UBt,         &
-     &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            nstp, nnew,                           &
+      SUBROUTINE rp_npzd_powell_tile (ng, tile,                         &
+     &                                LBi, UBi, LBj, UBj, UBk, UBt,     &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
+     &                                nstp, nnew,                       &
 #ifdef MASKING
-     &                            rmask,                                &
+     &                                rmask,                            &
 #endif
-     &                            Hz, tl_Hz,                            &
-     &                            z_r, tl_z_r,                          &
-     &                            z_w, tl_z_w,                          &
-     &                            srflx, tl_srflx,                      &
-     &                            t, tl_t)
+     &                                Hz, tl_Hz,                        &
+     &                                z_r, tl_z_r,                      &
+     &                                z_w, tl_z_w,                      &
+     &                                srflx, tl_srflx,                  &
+     &                                t, tl_t)
 !-----------------------------------------------------------------------
 !
       USE mod_param
@@ -300,12 +312,12 @@
 !
             DO itrc=1,NBT
               ibio=idbio(itrc)
-!>            BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>
+!^            BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
+!^
               BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
               tl_BioTrc(ibio,nstp)=tl_t(i,j,k,nstp,ibio)
-!>            BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
-!>
+!^            BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
+!^
               BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)
               tl_BioTrc(ibio,nnew)=tl_t(i,j,k,nnew,ibio)*               &
      &                             Hz_inv(i,k)+                         &
@@ -471,11 +483,11 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-!>              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>
+!^              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
+!^
                 BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
-!>
+!^              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
+!^
                 BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)
               END DO
 !
@@ -874,8 +886,8 @@
 #ifdef TL_IOMS
      &                 Itop/Att
 #endif
-!>              Light(i,k)=PAR
-!>
+!^              Light(i,k)=PAR
+!^
                 tl_Light(i,k)=tl_PAR
 !
 !  Light attenuation at the bottom of the grid cell. It is the starting
@@ -889,8 +901,8 @@
               END DO
             ELSE                                       ! night time
               DO k=1,N(ng)
-!>              Light(i,k)=0.0_r8
-!>
+!^              Light(i,k)=0.0_r8
+!^
                 tl_Light(i,k)=0.0_r8
               END DO
             END IF
@@ -925,8 +937,8 @@
      &               cff*(2.0_r8*K_NO3(ng)+Bio1(i,k,iNO3_))/            &
      &               (K_NO3(ng)+Bio1(i,k,iNO3_))
 #endif
-!>            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff)
-!>
+!^            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff)
+!^
               tl_Bio(i,k,iNO3_)=(tl_Bio(i,k,iNO3_)-                     &
      &                           tl_cff*Bio(i,k,iNO3_))/                &
      &                          (1.0_r8+cff)+                           &
@@ -934,9 +946,9 @@
      &                          cff*Bio(i,k,iNO3_)/                     &
      &                          (1.0_r8+cff)
 #endif
-!>            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)+                            &
-!>   &                       Bio(i,k,iNO3_)*cff
-!>
+!^            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)+                            &
+!^   &                       Bio(i,k,iNO3_)*cff
+!^
               tl_Bio(i,k,iPhyt)=tl_Bio(i,k,iPhyt)+                      &
      &                          tl_Bio(i,k,iNO3_)*cff+                  &
      &                          Bio(i,k,iNO3_)*tl_cff-                  &
@@ -964,11 +976,11 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-!>              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>
+!^              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
+!^
                 BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
-!>
+!^              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
+!^
                 BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)
               END DO
 !
@@ -1353,8 +1365,8 @@
      &                     1.0_r8)/                                     &
      &               Bio1(i,k,iPhyt)
 #endif
-!>            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)/(1.0_r8+cff)
-!>
+!^            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)/(1.0_r8+cff)
+!^
               tl_Bio(i,k,iPhyt)=(tl_Bio(i,k,iPhyt)-                     &
      &                           tl_cff*Bio(i,k,iPhyt))/                &
      &                          (1.0_r8+cff)+                           &
@@ -1362,27 +1374,27 @@
      &                          cff*Bio(i,k,iPhyt)/                     &
      &                          (1.0_r8+cff)
 #endif
-!>            Bio(i,k,iZoop)=Bio(i,k,iZoop)+                            &
-!>   &                       Bio(i,k,iPhyt)*cff2*cff
-!>
+!^            Bio(i,k,iZoop)=Bio(i,k,iZoop)+                            &
+!^   &                       Bio(i,k,iPhyt)*cff2*cff
+!^
               tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)+                      &
      &                          cff2*(tl_Bio(i,k,iPhyt)*cff+            &
      &                                Bio(i,k,iPhyt)*tl_cff)-           &
 #ifdef TL_IOMS
      &                          Bio(i,k,iPhyt)*cff2*cff
 #endif
-!>            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
-!>   &                       Bio(i,k,iPhyt)*ZooEEN(ng)*cff
-!>
+!^            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
+!^   &                       Bio(i,k,iPhyt)*ZooEEN(ng)*cff
+!^
               tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
      &                          ZooEEN(ng)*(tl_Bio(i,k,iPhyt)*cff+      &
      &                                      Bio(i,k,iPhyt)*tl_cff)-     &
 #ifdef TL_IOMS
      &                          Bio(i,k,iPhyt)*ZooEEN(ng)*cff
 #endif
-!>            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
-!>   &                       Bio(i,k,iPhyt)*ZooEED(ng)*cff
-!>
+!^            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
+!^   &                       Bio(i,k,iPhyt)*ZooEED(ng)*cff
+!^
               tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
      &                          ZooEED(ng)*(tl_Bio(i,k,iPhyt)*cff+      &
      &                                      Bio(i,k,iPhyt)*tl_cff)-     &
@@ -1400,17 +1412,17 @@
           cff1=1.0_r8/(1.0_r8+cff2+cff3)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)*cff1
-!>
+!^            Bio(i,k,iPhyt)=Bio(i,k,iPhyt)*cff1
+!^
               tl_Bio(i,k,iPhyt)=tl_Bio(i,k,iPhyt)*cff1
-!>            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
-!>   &                       Bio(i,k,iPhyt)*cff2
-!>
+!^            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
+!^   &                       Bio(i,k,iPhyt)*cff2
+!^
               tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
      &                          tl_Bio(i,k,iPhyt)*cff2
-!>            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
-!>   &                       Bio(i,k,iPhyt)*cff3
-!>
+!^            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
+!^   &                       Bio(i,k,iPhyt)*cff3
+!^
               tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
      &                          tl_Bio(i,k,iPhyt)*cff3
             END DO
@@ -1424,17 +1436,17 @@
           cff1=1.0_r8/(1.0_r8+cff2+cff3)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            Bio(i,k,iZoop)=Bio(i,k,iZoop)*cff1
-!>
+!^            Bio(i,k,iZoop)=Bio(i,k,iZoop)*cff1
+!^
               tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)*cff1
-!>            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
-!>   &                       Bio(i,k,iZoop)*cff2
-!>
+!^            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
+!^   &                       Bio(i,k,iZoop)*cff2
+!^
               tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
      &                          tl_Bio(i,k,iZoop)*cff2
-!>            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
-!>   &                       Bio(i,k,iZoop)*cff3
-!>
+!^            Bio(i,k,iSDet)=Bio(i,k,iSDet)+                            &
+!^   &                       Bio(i,k,iZoop)*cff3
+!^
               tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
      &                          tl_Bio(i,k,iZoop)*cff3
             END DO
@@ -1446,12 +1458,12 @@
           cff1=1.0_r8/(1.0_r8+cff2)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            Bio(i,k,iSDet)=Bio(i,k,iSDet)*cff1
-!>
+!^            Bio(i,k,iSDet)=Bio(i,k,iSDet)*cff1
+!^
               tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)*cff1
-!>            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
-!>   &                       Bio(i,k,iSDet)*cff2
-!>
+!^            Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+                            &
+!^   &                       Bio(i,k,iSDet)*cff2
+!^
               tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
      &                          tl_Bio(i,k,iSDet)*cff2
             END DO
@@ -1475,11 +1487,11 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-!>              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>
+!^              BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
+!^
                 BioTrc(ibio,nstp)=t(i,j,k,nstp,ibio)
-!>              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
-!>
+!^              BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)*Hz_inv(i,k)
+!^
                 BioTrc(ibio,nnew)=t(i,j,k,nnew,ibio)
               END DO
 !
@@ -2188,8 +2200,8 @@
             DO i=Istr,Iend
               cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
               tl_cff=tl_Bio(i,k,ibio)-tl_Bio_old(i,k,ibio)
-!>            t(i,j,k,nnew,ibio)=t(i,j,k,nnew,ibio)+cff*Hz(i,j,k)
-!>
+!^            t(i,j,k,nnew,ibio)=t(i,j,k,nnew,ibio)+cff*Hz(i,j,k)
+!^
               tl_t(i,j,k,nnew,ibio)=tl_t(i,j,k,nnew,ibio)+              &
      &                              tl_cff*Hz(i,j,k)+cff*tl_Hz(i,j,k)-  &
 #ifdef TL_IOMS
@@ -2202,4 +2214,6 @@
       END DO J_LOOP
 !
       RETURN
-      END SUBROUTINE rp_biology_tile
+      END SUBROUTINE rp_npzd_powell_tile
+
+      END MODULE rp_biology_mod

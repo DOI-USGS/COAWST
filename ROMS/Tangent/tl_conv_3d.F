@@ -4,9 +4,10 @@
 
 #if defined TANGENT && defined FOUR_DVAR && defined SOLVE3D
 !
-!svn $Id: tl_conv_3d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_conv_3d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -223,20 +224,20 @@
 !
       Nold=1
       Nnew=2
-!>    CALL dabc_r3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_r3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_r3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &
@@ -246,8 +247,8 @@
       DO k=1,N(ng)
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
-!>          Awrk(i,j,k,Nold)=A(i,j,k)
-!>
+!^          Awrk(i,j,k,Nold)=A(i,j,k)
+!^
             tl_Awrk(i,j,k,Nold)=tl_A(i,j,k)
           END DO
         END DO
@@ -284,16 +285,16 @@
                 dZdx(i,j,k2)=cff*(z_r(i  ,j,k+1)-                       &
      &                            z_r(i-1,j,k+1))
 #  ifdef MASKING
-!>              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)*rmask(i  ,j)-    &
-!>   &                            Awrk(i-1,j,k+1,Nold)*rmask(i-1,j))
-!>
+!^              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)*rmask(i  ,j)-    &
+!^   &                            Awrk(i-1,j,k+1,Nold)*rmask(i-1,j))
+!^
                 tl_dAdx(i,j,k2)=cff*                                    &
      &                          (tl_Awrk(i  ,j,k+1,Nold)*rmask(i  ,j)-  &
      &                           tl_Awrk(i-1,j,k+1,Nold)*rmask(i-1,j))
 #  else
-!>              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
-!>   &                            Awrk(i-1,j,k+1,Nold))
-!>
+!^              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
+!^   &                            Awrk(i-1,j,k+1,Nold))
+!^
                 tl_dAdx(i,j,k2)=cff*(tl_Awrk(i  ,j,k+1,Nold)-           &
      &                               tl_Awrk(i-1,j,k+1,Nold))
 #  endif
@@ -308,16 +309,16 @@
                 dZde(i,j,k2)=cff*(z_r(i,j  ,k+1)-                       &
      &                            z_r(i,j-1,k+1))
 #  ifdef MASKING
-!>              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)*rmask(i,j  )-    &
-!>   &                            Awrk(i,j-1,k+1,Nold)*rmask(i,j-1))
-!>
+!^              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)*rmask(i,j  )-    &
+!^   &                            Awrk(i,j-1,k+1,Nold)*rmask(i,j-1))
+!^
                 tl_dAde(i,j,k2)=cff*                                    &
      &                          (tl_Awrk(i,j  ,k+1,Nold)*rmask(i,j  )-  &
      &                           tl_Awrk(i,j-1,k+1,Nold)*rmask(i,j-1))
 #  else
-!>              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
-!>   &                            Awrk(i,j-1,k+1,Nold))
-!>
+!^              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
+!^   &                            Awrk(i,j-1,k+1,Nold))
+!^
                 tl_dAde(i,j,k2)=cff*(tl_Awrk(i,j  ,k+1,Nold)-           &
      &                               tl_Awrk(i,j-1,k+1,Nold))
 #  endif
@@ -327,11 +328,11 @@
           IF ((k.eq.0).or.(k.eq.N(ng))) THEN
             DO j=Jstr-1,Jend+1
               DO i=Istr-1,Iend+1
-!>              dAdz(i,j,k2)=0.0_r8
-!>
+!^              dAdz(i,j,k2)=0.0_r8
+!^
                 tl_dAdz(i,j,k2)=0.0_r8
-!>              FZ(i,j,k2)=0.0_r8
-!>
+!^              FZ(i,j,k2)=0.0_r8
+!^
                 tl_FZ(i,j,k2)=0.0_r8
               END DO
             END DO
@@ -339,14 +340,14 @@
             DO j=Jstr-1,Jend+1
               DO i=Istr-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-!>              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
-!>   &                            Awrk(i,j,k  ,Nold))
-!>
+!^              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
+!^   &                            Awrk(i,j,k  ,Nold))
+!^
                 tl_dAdz(i,j,k2)=cff*(tl_Awrk(i,j,k+1,Nold)-             &
      &                               tl_Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
-!>              dAdz(i,j,k2)=dAdz(i,j,k2)*rmask(i,j)
-!>
+!^              dAdz(i,j,k2)=dAdz(i,j,k2)*rmask(i,j)
+!^
                 tl_dAdz(i,j,k2)=tl_dAdz(i,j,k2)*rmask(i,j)
 #  endif
               END DO
@@ -362,14 +363,14 @@
                 cff=0.25_r8*(Kh(i-1,j)+Kh(i-1,j))*on_u(i,j)
                 cff1=MIN(dZdx(i,j,k1),0.0_r8)
                 cff2=MAX(dZdx(i,j,k1),0.0_r8)
-!>              FX(i,j)=cff*                                            &
-!>   &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
-!>   &                  (dAdx(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
-!>   &                                 dAdz(i  ,j,k2))+                 &
-!>   &                           cff2*(dAdz(i-1,j,k2)+                  &
-!>   &                                 dAdz(i  ,j,k1))))
-!>
+!^              FX(i,j)=cff*                                            &
+!^   &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
+!^   &                  (dAdx(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
+!^   &                                 dAdz(i  ,j,k2))+                 &
+!^   &                           cff2*(dAdz(i-1,j,k2)+                  &
+!^   &                                 dAdz(i  ,j,k1))))
+!^
                 tl_FX(i,j)=cff*                                         &
      &                     (Hz(i,j,k)+Hz(i-1,j,k))*                     &
      &                     (tl_dAdx(i,j,k1)-                            &
@@ -384,14 +385,14 @@
                 cff=0.25_r8*(Kh(i,j-1)+Kh(i,j))*om_v(i,j)
                 cff1=MIN(dZde(i,j,k1),0.0_r8)
                 cff2=MAX(dZde(i,j,k1),0.0_r8)
-!>              FE(i,j)=cff*                                            &
-!>   &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
-!>   &                  (dAde(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
-!>   &                                 dAdz(i,j  ,k2))+                 &
-!>   &                           cff2*(dAdz(i,j-1,k2)+                  &
-!>   &                                 dAdz(i,j  ,k1))))
-!>
+!^              FE(i,j)=cff*                                            &
+!^   &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
+!^   &                  (dAde(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
+!^   &                                 dAdz(i,j  ,k2))+                 &
+!^   &                           cff2*(dAdz(i,j-1,k2)+                  &
+!^   &                                 dAdz(i,j  ,k1))))
+!^
                 tl_FE(i,j)=cff*                                         &
      &                     (Hz(i,j,k)+Hz(i,j-1,k))*                     &
      &                     (tl_dAde(i,j,k1)-                            &
@@ -409,12 +410,12 @@
                   cff2=MIN(dZdx(i+1,j,k2),0.0_r8)
                   cff3=MAX(dZdx(i  ,j,k2),0.0_r8)
                   cff4=MAX(dZdx(i+1,j,k1),0.0_r8)
-!>                FZ(i,j,k2)=cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
-!>
+!^                FZ(i,j,k2)=cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
+!^
                   tl_FZ(i,j,k2)=cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
      &                                 tl_dAdx(i  ,j,k1))+              &
@@ -428,13 +429,13 @@
                   cff2=MIN(dZde(i,j+1,k2),0.0_r8)
                   cff3=MAX(dZde(i,j  ,k2),0.0_r8)
                   cff4=MAX(dZde(i,j+1,k1),0.0_r8)
-!>                FZ(i,j,k2)=FZ(i,j,k2)+                                &
-!>   &                       cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
-!>
+!^                FZ(i,j,k2)=FZ(i,j,k2)+                                &
+!^   &                       cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
+!^
                   tl_FZ(i,j,k2)=tl_FZ(i,j,k2)+                          &
      &                          cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
@@ -453,13 +454,13 @@
 !
             DO j=Jstr,Jend
               DO i=Istr,Iend
-!>              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
-!>   &                           Hfac(i,j)*                             &
-!>   &                           (FX(i+1,j  )-FX(i,j)+                  &
-!>   &                            FE(i  ,j+1)-FE(i,j))+                 &
-!>   &                           DTsizeH*                               &
-!>   &                           (FZ(i,j,k2)-FZ(i,j,k1))
-!>
+!^              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+!^   &                           Hfac(i,j)*                             &
+!^   &                           (FX(i+1,j  )-FX(i,j)+                  &
+!^   &                            FE(i  ,j+1)-FE(i,j))+                 &
+!^   &                           DTsizeH*                               &
+!^   &                           (FZ(i,j,k2)-FZ(i,j,k1))
+!^
                 tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                &
      &                              Hfac(i,j)*                          &
      &                              (tl_FX(i+1,j  )-tl_FX(i,j)+         &
@@ -480,28 +481,28 @@
         DO k=1,N(ng)
           DO j=Jstr,Jend
             DO i=Istr,Iend+1
-!>            FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*           &
-!>   &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
-!>
+!^            FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*           &
+!^   &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
+!^
               tl_FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*        &
      &                   (tl_Awrk(i,j,k,Nold)-tl_Awrk(i-1,j,k,Nold))
 #  ifdef MASKING
-!>            FX(i,j)=FX(i,j)*umask(i,j)
-!>
+!^            FX(i,j)=FX(i,j)*umask(i,j)
+!^
               tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
 #  endif
             END DO
           END DO
           DO j=Jstr,Jend+1
             DO i=Istr,Iend
-!>            FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*           &
-!>   &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
-!>
+!^            FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*           &
+!^   &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
+!^
               tl_FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*        &
      &                   (tl_Awrk(i,j,k,Nold)-tl_Awrk(i,j-1,k,Nold))
 #  ifdef MASKING
-!>            FE(i,j)=FE(i,j)*vmask(i,j)
-!>
+!^            FE(i,j)=FE(i,j)*vmask(i,j)
+!^
               tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
 #  endif
             END DO
@@ -511,11 +512,11 @@
 !
           DO j=Jstr,Jend
             DO i=Istr,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         Hfac(i,j)*                               &
-!>   &                         (FX(i+1,j)-FX(i,j)+                      &
-!>   &                          FE(i,j+1)-FE(i,j))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         Hfac(i,j)*                               &
+!^   &                         (FX(i+1,j)-FX(i,j)+                      &
+!^   &                          FE(i,j+1)-FE(i,j))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            Hfac(i,j)*                            &
      &                            (tl_FX(i+1,j)-tl_FX(i,j)+             &
@@ -527,20 +528,20 @@
 !
 !  Apply boundary conditions.
 !
-!>      CALL dabc_r3d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL dabc_r3d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL dabc_r3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      tl_Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL mp_exchange3d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      Nghost,                                     &
@@ -582,8 +583,8 @@
           END DO
           DO i=Istr,Iend
             CF(i,0)=0.0_r8
-!>          DC(i,0)=0.0_r8
-!>
+!^          DC(i,0)=0.0_r8
+!^
             tl_DC(i,0)=0.0_r8
           END DO
 !
@@ -596,9 +597,9 @@
      &                DTsizeV*Kv(i,j,k)*(oHz(i,j,k)+oHz(i,j,k+1))
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
               CF(i,k)=cff*CF(i,k)
-!>            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-Awrk(i,j,k,Nold)-         &
-!>   &                     FC(i,k)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-Awrk(i,j,k,Nold)-         &
+!^   &                     FC(i,k)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &
      &                        tl_Awrk(i,j,k  ,Nold)-                    &
      &                        FC(i,k)*tl_DC(i,k-1))
@@ -608,27 +609,27 @@
 !  Backward substitution.
 !
           DO i=Istr,Iend
-!>          DC(i,N(ng))=0.0_r8
-!>
+!^          DC(i,N(ng))=0.0_r8
+!^
             tl_DC(i,N(ng))=0.0_r8
           END DO
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
             END DO
           END DO
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)*Kv(i,j,k)
-!>
+!^            DC(i,k)=DC(i,k)*Kv(i,j,k)
+!^
               tl_DC(i,k)=tl_DC(i,k)*Kv(i,j,k)
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         DTsizeV*oHz(i,j,k)*                      &
-!>   &                         (DC(i,k)-DC(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         DTsizeV*oHz(i,j,k)*                      &
+!^   &                         (DC(i,k)-DC(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            DTsizeV*oHz(i,j,k)*                   &
      &                            (tl_DC(i,k)-tl_DC(i,k-1))
@@ -657,8 +658,8 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               BC(i,k)=Hz(i,j,k)-FC(i,j,k)-FC(i,j,k-1)
-!>            DC(i,k)=Awrk(i,j,k,Nold)*Hz(i,j,k)
-!>
+!^            DC(i,k)=Awrk(i,j,k,Nold)*Hz(i,j,k)
+!^
               tl_DC(i,k)=tl_Awrk(i,j,k,Nold)*Hz(i,j,k)
             END DO
           END DO
@@ -668,16 +669,16 @@
           DO i=Istr,Iend
             cff=1.0_r8/BC(i,1)
             CF(i,1)=cff*FC(i,j,1)
-!>          DC(i,1)=cff*DC(i,1)
-!>
+!^          DC(i,1)=cff*DC(i,1)
+!^
             tl_DC(i,1)=cff*tl_DC(i,1)
           END DO
           DO k=2,N(ng)-1
             DO i=Istr,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,j,k-1)*CF(i,k-1))
               CF(i,k)=cff*FC(i,j,k)
-!>            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_DC(i,k)-FC(i,j,k-1)*tl_DC(i,k-1))
             END DO
           END DO
@@ -685,33 +686,33 @@
 !  Compute new solution by back substitution.
 !
           DO i=Istr,Iend
-!>          DC(i,N(ng))=(DC(i,N(ng))-                                   &
-!>   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
-!>   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>
+!^          DC(i,N(ng))=(DC(i,N(ng))-                                   &
+!^   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
+!^   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
+!^
             tl_DC(i,N(ng))=(tl_DC(i,N(ng))-                             &
      &                      FC(i,j,N(ng)-1)*tl_DC(i,N(ng)-1))/          &
      &                     (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
-!>
+!^          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_DC(i,N(ng))
 #    ifdef MASKING
-!>          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*rmask(i,j)
-!>
+!^          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*rmask(i,j)
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_Awrk(i,j,N(ng),Nnew)*rmask(i,j)
 #    endif
           END DO
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
-!>            Awrk(i,j,k,Nnew)=DC(i,k)
-!>
+!^            Awrk(i,j,k,Nnew)=DC(i,k)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_DC(i,k)
 #    ifdef MASKING
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*rmask(i,j)
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*rmask(i,j)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nnew)*rmask(i,j)
 #    endif
             END DO
@@ -739,24 +740,24 @@
         DO j=Jstr,Jend
           DO k=1,N(ng)-1
             DO i=Istr,Iend
-!>            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
-!>   &                           Awrk(i,j,k  ,Nold))
-!>
+!^            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
+!^   &                           Awrk(i,j,k  ,Nold))
+!^
               tl_FS(i,k)=FC(i,j,k)*(tl_Awrk(i,j,k+1,Nold)-              &
      &                              tl_Awrk(i,j,k  ,Nold))
 #   ifdef MASKING
-!>            FS(i,k)=FS(i,k)*rmask(i,j)
-!>
+!^            FS(i,k)=FS(i,k)*rmask(i,j)
+!^
               tl_FS(i,k)=tl_FS(i,k)*rmask(i,j)
 #   endif
             END DO
           END DO
           DO i=Istr,Iend
-!>          FS(i,0)=0.0_r8
-!>
+!^          FS(i,0)=0.0_r8
+!^
             tl_FS(i,0)=0.0_r8
-!>          FS(i,N(ng))=0.0_r8
-!>
+!^          FS(i,N(ng))=0.0_r8
+!^
             tl_FS(i,N(ng))=0.0_r8
           END DO
 !
@@ -765,10 +766,10 @@
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         oHz(i,j,k)*(FS(i,k  )-                   &
-!>   &                                     FS(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         oHz(i,j,k)*(FS(i,k  )-                   &
+!^   &                                     FS(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            oHz(i,j,k)*(tl_FS(i,k  )-             &
      &                                        tl_FS(i,k-1))
@@ -792,26 +793,26 @@
       DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          A(i,j,k)=Awrk(i,j,k,Nold)
-!>
+!^          A(i,j,k)=Awrk(i,j,k,Nold)
+!^
             tl_A(i,j,k)=tl_Awrk(i,j,k,Nold)
           END DO
         END DO
       END DO
-!>    CALL dabc_r3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_r3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_r3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &
@@ -1006,20 +1007,20 @@
 !
       Nold=1
       Nnew=2
-!>    CALL dabc_u3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_u3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_u3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &
@@ -1029,8 +1030,8 @@
       DO k=1,N(ng)
         DO j=Jstr-1,Jend+1
           DO i=IstrU-1,Iend+1
-!>          Awrk(i,j,k,Nold)=A(i,j,k)
-!>
+!^          Awrk(i,j,k,Nold)=A(i,j,k)
+!^
             tl_Awrk(i,j,k,Nold)=tl_A(i,j,k)
           END DO
         END DO
@@ -1083,20 +1084,20 @@
             DO j=Jstr,Jend
               DO i=IstrU-1,Iend
 #  ifdef MASKING
-!>              dAdx(i,j,k2)=pm(i,j)*                                   &
-!>   &                       (Awrk(i+1,j,k+1,Nold)*umask(i+1,j)-        &
-!>   &                        Awrk(i  ,j,k+1,Nold)*umask(i  ,j))
-!>
+!^              dAdx(i,j,k2)=pm(i,j)*                                   &
+!^   &                       (Awrk(i+1,j,k+1,Nold)*umask(i+1,j)-        &
+!^   &                        Awrk(i  ,j,k+1,Nold)*umask(i  ,j))
+!^
                 tl_dAdx(i,j,k2)=pm(i,j)*                                &
      &                          (tl_Awrk(i+1,j,k+1,Nold)*umask(i+1,j)-  &
      &                           tl_Awrk(i  ,j,k+1,Nold)*umask(i  ,j))
-!>              dAdx(i,j,k2)=dAdx(i,j,k2)*rmask(i,j)
-!>
+!^              dAdx(i,j,k2)=dAdx(i,j,k2)*rmask(i,j)
+!^
                 tl_dAdx(i,j,k2)=tl_dAdx(i,j,k2)*rmask(i,j)
 #  else
-!>              dAdx(i,j,k2)=pm(i,j)*(Awrk(i+1,j,k+1,Nold)-             &
-!>   &                                Awrk(i  ,j,k+1,Nold))
-!>
+!^              dAdx(i,j,k2)=pm(i,j)*(Awrk(i+1,j,k+1,Nold)-             &
+!^   &                                Awrk(i  ,j,k+1,Nold))
+!^
                 tl_dAdx(i,j,k2)=pm(i,j)*(tl_Awrk(i+1,j,k+1,Nold)-       &
      &                                   tl_Awrk(i  ,j,k+1,Nold))
 #  endif
@@ -1110,21 +1111,21 @@
                 cff=0.25_r8*(pn(i-1,j  )+pn(i,j  )+                     &
      &                       pn(i-1,j-1)+pn(i,j-1))
 #  ifdef MASKING
-!>              dAde(i,j,k2)=cff*                                       &
-!>   &                       (Awrk(i,j  ,k+1,Nold)*umask(i,j  )-        &
-!>   &                        Awrk(i,j-1,k+1,Nold)*umask(i,j-1))
-!>
+!^              dAde(i,j,k2)=cff*                                       &
+!^   &                       (Awrk(i,j  ,k+1,Nold)*umask(i,j  )-        &
+!^   &                        Awrk(i,j-1,k+1,Nold)*umask(i,j-1))
+!^
                 tl_dAde(i,j,k2)=cff*                                    &
      &                          (tl_Awrk(i,j  ,k+1,Nold)*umask(i,j  )-  &
      &                           tl_Awrk(i,j-1,k+1,Nold)*umask(i,j-1))
 
-!>              dAde(i,j,k2)=dAde(i,j,k2)*pmask(i,j)
-!>
+!^              dAde(i,j,k2)=dAde(i,j,k2)*pmask(i,j)
+!^
                 tl_dAde(i,j,k2)=tl_dAde(i,j,k2)*pmask(i,j)
 #  else
-!>              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
-!>   &                            Awrk(i,j-1,k+1,Nold))
-!>
+!^              dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
+!^   &                            Awrk(i,j-1,k+1,Nold))
+!^
                 tl_dAde(i,j,k2)=cff*(tl_Awrk(i,j  ,k+1,Nold)-           &
      &                               tl_Awrk(i,j-1,k+1,Nold))
 #  endif
@@ -1137,11 +1138,11 @@
           IF ((k.eq.0).or.(k.eq.N(ng))) THEN
             DO j=Jstr-1,Jend+1
               DO i=IstrU-1,Iend+1
-!>              dAdz(i,j,k2)=0.0_r8
-!>
+!^              dAdz(i,j,k2)=0.0_r8
+!^
                 tl_dAdz(i,j,k2)=0.0_r8
-!>              FZ(i,j,k2)=0.0_r8
-!>
+!^              FZ(i,j,k2)=0.0_r8
+!^
                 tl_FZ(i,j,k2)=0.0_r8
               END DO
             END DO
@@ -1149,14 +1150,14 @@
             DO j=Jstr-1,Jend+1
               DO i=IstrU-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-!>              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
-!>   &                            Awrk(i,j,k  ,Nold))
-!>
+!^              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
+!^   &                            Awrk(i,j,k  ,Nold))
+!^
                 tl_dAdz(i,j,k2)=cff*(tl_Awrk(i,j,k+1,Nold)-             &
      &                               tl_Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
-!>              dAdz(i,j,k2)=dAdz(i,j,k2)*umask(i,j)
-!>
+!^              dAdz(i,j,k2)=dAdz(i,j,k2)*umask(i,j)
+!^
                 tl_dAdz(i,j,k2)=tl_dAdz(i,j,k2)*umask(i,j)
 #  endif
               END DO
@@ -1172,14 +1173,14 @@
                 cff=Kh(i,j)*on_r(i,j)
                 cff1=MIN(dZdx_r(i,j,k1),0.0_r8)
                 cff2=MAX(dZdx_r(i,j,k1),0.0_r8)
-!>              FX(i,j)=cff*                                            &
-!>   &                  Hz(i,j,k)*                                      &
-!>   &                  (dAdx(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i  ,j,k1)+                  &
-!>   &                                 dAdz(i+1,j,k2))+                 &
-!>   &                           cff2*(dAdz(i  ,j,k2)+                  &
-!>   &                                 dAdz(i+1,j,k1))))
-!>
+!^              FX(i,j)=cff*                                            &
+!^   &                  Hz(i,j,k)*                                      &
+!^   &                  (dAdx(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i  ,j,k1)+                  &
+!^   &                                 dAdz(i+1,j,k2))+                 &
+!^   &                           cff2*(dAdz(i  ,j,k2)+                  &
+!^   &                                 dAdz(i+1,j,k1))))
+!^
                 tl_FX(i,j)=cff*                                         &
      &                     Hz(i,j,k)*                                   &
      &                     (tl_dAdx(i,j,k1)-                            &
@@ -1195,15 +1196,15 @@
      &                         Kh(i  ,j-1)+Kh(i  ,j))*om_p(i,j)
                 cff1=MIN(dZde_p(i,j,k1),0.0_r8)
                 cff2=MAX(dZde_p(i,j,k1),0.0_r8)
-!>              FE(i,j)=cff*                                            &
-!>   &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
-!>   &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
-!>   &                  (dAde(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
-!>   &                                 dAdz(i,j  ,k2))+                 &
-!>   &                           cff2*(dAdz(i,j-1,k2)+                  &
-!>   &                                 dAdz(i,j  ,k1))))
-!>
+!^              FE(i,j)=cff*                                            &
+!^   &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
+!^   &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
+!^   &                  (dAde(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
+!^   &                                 dAdz(i,j  ,k2))+                 &
+!^   &                           cff2*(dAdz(i,j-1,k2)+                  &
+!^   &                                 dAdz(i,j  ,k1))))
+!^
                 tl_FE(i,j)=cff*                                         &
      &                     (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                  &
      &                      Hz(i  ,j-1,k)+Hz(i  ,j,k))*                 &
@@ -1222,12 +1223,12 @@
                   cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                   cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
                   cff4=MAX(dZdx_r(i  ,j,k1),0.0_r8)
-!>                FZ(i,j,k2)=cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i-1,j,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i-1,j,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i  ,j,k1)))
-!>
+!^                FZ(i,j,k2)=cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i-1,j,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i-1,j,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i  ,j,k1)))
+!^
                   tl_FZ(i,j,k2)=cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
      &                           tl_dAdx(i-1,j,k1))+                    &
@@ -1241,13 +1242,13 @@
                   cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                   cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
                   cff4=MAX(dZde_p(i,j+1,k1),0.0_r8)
-!>                FZ(i,j,k2)=FZ(i,j,k2)+                                &
-!>   &                       cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
-!>
+!^                FZ(i,j,k2)=FZ(i,j,k2)+                                &
+!^   &                       cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
+!^
                   tl_FZ(i,j,k2)=tl_FZ(i,j,k2)+                          &
      &                          cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
@@ -1266,13 +1267,13 @@
 !
             DO j=Jstr,Jend
               DO i=IstrU,Iend
-!>              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
-!>   &                           Hfac(i,j)*                             &
-!>   &                           (FX(i,j  )-FX(i-1,j)+                  &
-!>   &                            FE(i,j+1)-FE(i  ,j))+                 &
-!>   &                           DTsizeH*                               &
-!>   &                           (FZ(i,j,k2)-FZ(i,j,k1))
-!>
+!^              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+!^   &                           Hfac(i,j)*                             &
+!^   &                           (FX(i,j  )-FX(i-1,j)+                  &
+!^   &                            FE(i,j+1)-FE(i  ,j))+                 &
+!^   &                           DTsizeH*                               &
+!^   &                           (FZ(i,j,k2)-FZ(i,j,k1))
+!^
                 tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                &
      &                              Hfac(i,j)*                          &
      &                              (tl_FX(i,j  )-tl_FX(i-1,j)+         &
@@ -1293,25 +1294,25 @@
         DO k=1,N(ng)
           DO j=Jstr,Jend
             DO i=IstrU-1,Iend
-!>            FX(i,j)=pmon_r(i,j)*Kh(i,j)*                              &
-!>   &                (Awrk(i+1,j,k,Nold)-Awrk(i,j,k,Nold))
-!>
+!^            FX(i,j)=pmon_r(i,j)*Kh(i,j)*                              &
+!^   &                (Awrk(i+1,j,k,Nold)-Awrk(i,j,k,Nold))
+!^
               tl_FX(i,j)=pmon_r(i,j)*Kh(i,j)*                           &
      &                   (tl_Awrk(i+1,j,k,Nold)-tl_Awrk(i,j,k,Nold))
             END DO
           END DO
           DO j=Jstr,Jend+1
             DO i=IstrU,Iend
-!>            FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
-!>   &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
-!>   &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
-!>
+!^            FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
+!^   &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
+!^   &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
+!^
               tl_FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+    &
      &                                        Kh(i-1,j-1)+Kh(i,j-1))*   &
      &                   (tl_Awrk(i,j,k,Nold)-tl_Awrk(i,j-1,k,Nold))
 #  ifdef MASKING
-!>            FE(i,j)=FE(i,j)*pmask(i,j)
-!>
+!^            FE(i,j)=FE(i,j)*pmask(i,j)
+!^
               tl_FE(i,j)=tl_FE(i,j)*pmask(i,j)
 #  endif
             END DO
@@ -1321,11 +1322,11 @@
 !
           DO j=Jstr,Jend
             DO i=IstrU,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         Hfac(i,j)*                               &
-!>   &                         (FX(i,j)-FX(i-1,j)+                      &
-!>   &                          FE(i,j+1)-FE(i,j))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         Hfac(i,j)*                               &
+!^   &                         (FX(i,j)-FX(i-1,j)+                      &
+!^   &                          FE(i,j+1)-FE(i,j))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            Hfac(i,j)*                            &
      &                            (tl_FX(i,j)-tl_FX(i-1,j)+             &
@@ -1337,20 +1338,20 @@
 !
 !  Apply boundary conditions.
 !
-!>      CALL dabc_u3d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL dabc_u3d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL dabc_u3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      tl_Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL mp_exchange3d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      Nghost,                                     &
@@ -1396,8 +1397,8 @@
           END DO
           DO i=IstrU,Iend
             CF(i,0)=0.0_r8
-!>          DC(i,0)=0.0_r8
-!>
+!^          DC(i,0)=0.0_r8
+!^
             tl_DC(i,0)=0.0_r8
           END DO
 !
@@ -1410,9 +1411,9 @@
      &                DTsizeV*Kv(i,j,k)*(oHz(i,j,k)+oHz(i,j,k+1))
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
               CF(i,k)=cff*CF(i,k)
-!>            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-Awrk(i,j,k,Nold)-         &
-!>   &                     FC(i,k)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-Awrk(i,j,k,Nold)-         &
+!^   &                     FC(i,k)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &
      &                        tl_Awrk(i,j,k  ,Nold)-                    &
      &                        FC(i,k)*tl_DC(i,k-1))
@@ -1422,27 +1423,27 @@
 !  Backward substitution.
 !
           DO i=IstrU,Iend
-!>          DC(i,N(ng))=0.0_r8
-!>
+!^          DC(i,N(ng))=0.0_r8
+!^
             tl_DC(i,N(ng))=0.0_r8
           END DO
           DO k=N(ng)-1,1,-1
             DO i=IstrU,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
             END DO
           END DO
 !
           DO k=1,N(ng)
             DO i=IstrU,Iend
-!>            DC(i,k)=DC(i,k)*Kv(i,j,k)
-!>
+!^            DC(i,k)=DC(i,k)*Kv(i,j,k)
+!^
               tl_DC(i,k)=tl_DC(i,k)*Kv(i,j,k)
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         DTsizeV*oHz(i,j,k)*                      &
-!>   &                         (DC(i,k)-DC(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         DTsizeV*oHz(i,j,k)*                      &
+!^   &                         (DC(i,k)-DC(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            DTsizeV*oHz(i,j,k)*                   &
      &                            (tl_DC(i,k)-tl_DC(i,k-1))
@@ -1472,8 +1473,8 @@
             DO i=IstrU,Iend
               cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
               BC(i,k)=cff-FC(i,j,k)-FC(i,j,k-1)
-!>            DC(i,k)=Awrk(i,j,k,Nold)*cff
-!>
+!^            DC(i,k)=Awrk(i,j,k,Nold)*cff
+!^
               tl_DC(i,k)=tl_Awrk(i,j,k,Nold)*cff
             END DO
           END DO
@@ -1483,16 +1484,16 @@
           DO i=IstrU,Iend
             cff=1.0_r8/BC(i,1)
             CF(i,1)=cff*FC(i,j,1)
-!>          DC(i,1)=cff*DC(i,1)
-!>
+!^          DC(i,1)=cff*DC(i,1)
+!^
             tl_DC(i,1)=cff*tl_DC(i,1)
           END DO
           DO k=2,N(ng)-1
             DO i=IstrU,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,j,k-1)*CF(i,k-1))
               CF(i,k)=cff*FC(i,j,k)
-!>            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_DC(i,k)-FC(i,j,k-1)*tl_DC(i,k-1))
             END DO
           END DO
@@ -1500,33 +1501,33 @@
 !  Compute new solution by back substitution.
 !
           DO i=IstrU,Iend
-!>          DC(i,N(ng))=(DC(i,N(ng))-                                   &
-!>   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
-!>   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>
+!^          DC(i,N(ng))=(DC(i,N(ng))-                                   &
+!^   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
+!^   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
+!^
             tl_DC(i,N(ng))=(tl_DC(i,N(ng))-                             &
      &                      FC(i,j,N(ng)-1)*tl_DC(i,N(ng)-1))/          &
      &                     (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
-!>
+!^          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_DC(i,N(ng))
 #    ifdef MASKING
-!>          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*umask(i,j)
-!>
+!^          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*umask(i,j)
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_Awrk(i,j,N(ng),Nnew)*umask(i,j)
 #    endif
           END DO
           DO k=N(ng)-1,1,-1
             DO i=IstrU,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
-!>            Awrk(i,j,k,Nnew)=DC(i,k)
-!>
+!^            Awrk(i,j,k,Nnew)=DC(i,k)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_DC(i,k)
 #    ifdef MASKING
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*umask(i,j)
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*umask(i,j)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nnew)*umask(i,j)
 #    endif
             END DO
@@ -1554,24 +1555,24 @@
         DO j=Jstr,Jend
           DO k=1,N(ng)-1
             DO i=IstrU,Iend
-!>            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
-!>   &                           Awrk(i,j,k  ,Nold))
-!>
+!^            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
+!^   &                           Awrk(i,j,k  ,Nold))
+!^
               tl_FS(i,k)=FC(i,j,k)*(tl_Awrk(i,j,k+1,Nold)-              &
      &                              tl_Awrk(i,j,k  ,Nold))
 #   ifdef MASKING
-!>            FS(i,k)=FS(i,k)*umask(i,j)
-!>
+!^            FS(i,k)=FS(i,k)*umask(i,j)
+!^
               tl_FS(i,k)=tl_FS(i,k)*umask(i,j)
 #   endif
             END DO
           END DO
           DO i=IstrU,Iend
-!>          FS(i,0)=0.0_r8
-!>
+!^          FS(i,0)=0.0_r8
+!^
             tl_FS(i,0)=0.0_r8
-!>          FS(i,N(ng))=0.0_r8
-!>
+!^          FS(i,N(ng))=0.0_r8
+!^
             tl_FS(i,N(ng))=0.0_r8
           END DO
 !
@@ -1580,10 +1581,10 @@
 !
           DO k=1,N(ng)
             DO i=IstrU,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         oHz(i,j,k)*(FS(i,k  )-                   &
-!>   &                                     FS(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         oHz(i,j,k)*(FS(i,k  )-                   &
+!^   &                                     FS(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            oHz(i,j,k)*(tl_FS(i,k  )-             &
      &                                        tl_FS(i,k-1))
@@ -1607,26 +1608,26 @@
       DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-!>          A(i,j,k)=Awrk(i,j,k,Nold)
-!>
+!^          A(i,j,k)=Awrk(i,j,k,Nold)
+!^
             tl_A(i,j,k)=tl_Awrk(i,j,k,Nold)
           END DO
         END DO
       END DO
-!>    CALL dabc_u3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_u3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_u3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &
@@ -1822,20 +1823,20 @@
 !
       Nold=1
       Nnew=2
-!>    CALL dabc_v3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_v3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_v3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &
@@ -1845,8 +1846,8 @@
       DO k=1,N(ng)
         DO j=JstrV-1,Jend+1
           DO i=Istr-1,Iend+1
-!>          Awrk(i,j,k,Nold)=A(i,j,k)
-!>
+!^          Awrk(i,j,k,Nold)=A(i,j,k)
+!^
             tl_Awrk(i,j,k,Nold)=tl_A(i,j,k)
           END DO
         END DO
@@ -1901,20 +1902,20 @@
                 cff=0.25_r8*(pm(i-1,j-1)+pm(i-1,j)+                     &
      &                       pm(i  ,j-1)+pm(i  ,j))
 #  ifdef MASKING
-!>              dAdx(i,j,k2)=cff*                                       &
-!>   &                       (Awrk(i  ,j,k+1,Nold)*vmask(i  ,j)-        &
-!>   &                        Awrk(i-1,j,k+1,Nold)*vmask(i-1,j))
-!>
+!^              dAdx(i,j,k2)=cff*                                       &
+!^   &                       (Awrk(i  ,j,k+1,Nold)*vmask(i  ,j)-        &
+!^   &                        Awrk(i-1,j,k+1,Nold)*vmask(i-1,j))
+!^
                 tl_dAdx(i,j,k2)=cff*                                    &
      &                          (tl_Awrk(i  ,j,k+1,Nold)*vmask(i  ,j)-  &
      &                           tl_Awrk(i-1,j,k+1,Nold)*vmask(i-1,j))
-!>              dAdx(i,j,k2)=dAdx(i,j,k2)*pmask(i,j)
-!>
+!^              dAdx(i,j,k2)=dAdx(i,j,k2)*pmask(i,j)
+!^
                 tl_dAdx(i,j,k2)=tl_dAdx(i,j,k2)*pmask(i,j)
 #  else
-!>              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
-!>   &                            Awrk(i-1,j,k+1,Nold))
-!>
+!^              dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
+!^   &                            Awrk(i-1,j,k+1,Nold))
+!^
                 tl_dAdx(i,j,k2)=cff*(tl_Awrk(i  ,j,k+1,Nold)-           &
      &                               tl_Awrk(i-1,j,k+1,Nold))
 #  endif
@@ -1926,20 +1927,20 @@
             DO j=JstrV-1,Jend
               DO i=Istr,Iend
 #  ifdef MASKING
-!>              dAde(i,j,k2)=pn(i,j)*                                   &
-!>   &                       (Awrk(i,j+1,k+1,Nold)*vmask(i,j+1)-        &
-!>   &                        Awrk(i,j  ,k+1,Nold)*vmask(i,j  ))
-!>
+!^              dAde(i,j,k2)=pn(i,j)*                                   &
+!^   &                       (Awrk(i,j+1,k+1,Nold)*vmask(i,j+1)-        &
+!^   &                        Awrk(i,j  ,k+1,Nold)*vmask(i,j  ))
+!^
                 tl_dAde(i,j,k2)=pn(i,j)*                                &
      &                          (tl_Awrk(i,j+1,k+1,Nold)*vmask(i,j+1)-  &
      &                           tl_Awrk(i,j  ,k+1,Nold)*vmask(i,j  ))
-!>              dAde(i,j,k2)=dAde(i,j,k2)*rmask(i,j)
-!>
+!^              dAde(i,j,k2)=dAde(i,j,k2)*rmask(i,j)
+!^
                 tl_dAde(i,j,k2)=tl_dAde(i,j,k2)*rmask(i,j)
 #  else
-!>              dAde(i,j,k2)=pn(i,j)*(Awrk(i,j+1,k+1,Nold)-             &
-!>   &                                Awrk(i,j  ,k+1,Nold))
-!>
+!^              dAde(i,j,k2)=pn(i,j)*(Awrk(i,j+1,k+1,Nold)-             &
+!^   &                                Awrk(i,j  ,k+1,Nold))
+!^
                 tl_dAde(i,j,k2)=pn(i,j)*(tl_Awrk(i,j+1,k+1,Nold)-       &
      &                                   tl_Awrk(i,j  ,k+1,Nold))
 #  endif
@@ -1952,11 +1953,11 @@
           IF ((k.eq.0).or.(k.eq.N(ng))) THEN
             DO j=JstrV-1,Jend+1
               DO i=Istr-1,Iend+1
-!>              dAdz(i,j,k2)=0.0_r8
-!>
+!^              dAdz(i,j,k2)=0.0_r8
+!^
                 tl_dAdz(i,j,k2)=0.0_r8
-!>              FZ(i,j,k2)=0.0_r8
-!>
+!^              FZ(i,j,k2)=0.0_r8
+!^
                 tl_FZ(i,j,k2)=0.0_r8
               END DO
             END DO
@@ -1964,14 +1965,14 @@
             DO j=JstrV-1,Jend+1
               DO i=Istr-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-!>              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
-!>   &                            Awrk(i,j,k  ,Nold))
-!>
+!^              dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
+!^   &                            Awrk(i,j,k  ,Nold))
+!^
                 tl_dAdz(i,j,k2)=cff*(tl_Awrk(i,j,k+1,Nold)-             &
      &                               tl_Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
-!>              dAdz(i,j,k2)=dAdz(i,j,k2)*vmask(i,j)
-!>
+!^              dAdz(i,j,k2)=dAdz(i,j,k2)*vmask(i,j)
+!^
                 tl_dAdz(i,j,k2)=tl_dAdz(i,j,k2)*vmask(i,j)
 #  endif
               END DO
@@ -1988,15 +1989,15 @@
      &                         Kh(i  ,j-1)+Kh(i  ,j))*on_p(i,j)
                 cff1=MIN(dZdx_p(i,j,k1),0.0_r8)
                 cff2=MAX(dZdx_p(i,j,k1),0.0_r8)
-!>              FX(i,j)=cff*                                            &
-!>   &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
-!>   &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
-!>   &                  (dAdx(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
-!>   &                                 dAdz(i  ,j,k2))+                 &
-!>   &                           cff2*(dAdz(i-1,j,k2)+                  &
-!>   &                                 dAdz(i  ,j,k1))))
-!>
+!^              FX(i,j)=cff*                                            &
+!^   &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
+!^   &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
+!^   &                  (dAdx(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
+!^   &                                 dAdz(i  ,j,k2))+                 &
+!^   &                           cff2*(dAdz(i-1,j,k2)+                  &
+!^   &                                 dAdz(i  ,j,k1))))
+!^
                 tl_FX(i,j)=cff*                                         &
      &                     (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                  &
      &                      Hz(i  ,j-1,k)+Hz(i  ,j,k))*                 &
@@ -2012,14 +2013,14 @@
                 cff=Kh(i,j)*om_r(i,j)
                 cff1=MIN(dZde_r(i,j,k1),0.0_r8)
                 cff2=MAX(dZde_r(i,j,k1),0.0_r8)
-!>              FE(i,j)=cff*                                            &
-!>   &                  Hz(i,j,k)*                                      &
-!>   &                  (dAde(i,j,k1)-                                  &
-!>   &                   0.5_r8*(cff1*(dAdz(i,j  ,k1)+                  &
-!>   &                                 dAdz(i,j+1,k2))+                 &
-!>   &                           cff2*(dAdz(i,j  ,k2)+                  &
-!>   &                                 dAdz(i,j+1,k1))))
-!>
+!^              FE(i,j)=cff*                                            &
+!^   &                  Hz(i,j,k)*                                      &
+!^   &                  (dAde(i,j,k1)-                                  &
+!^   &                   0.5_r8*(cff1*(dAdz(i,j  ,k1)+                  &
+!^   &                                 dAdz(i,j+1,k2))+                 &
+!^   &                           cff2*(dAdz(i,j  ,k2)+                  &
+!^   &                                 dAdz(i,j+1,k1))))
+!^
                 tl_FE(i,j)=cff*                                         &
      &                     Hz(i,j,k)*                                   &
      &                     (tl_dAde(i,j,k1)-                            &
@@ -2037,12 +2038,12 @@
                   cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                   cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
                   cff4=MAX(dZdx_p(i+1,j,k1),0.0_r8)
-!>                FZ(i,j,k2)=cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
-!>
+!^                FZ(i,j,k2)=cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
+!^
                   tl_FZ(i,j,k2)=cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
      &                           tl_dAdx(i  ,j,k1))+                    &
@@ -2056,13 +2057,13 @@
                   cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                   cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
                   cff4=MAX(dZde_r(i,j  ,k1),0.0_r8)
-!>                FZ(i,j,k2)=FZ(i,j,k2)+                                &
-!>   &                       cff*                                       &
-!>   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j-1,k1))+  &
-!>   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
-!>   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j-1,k2))+  &
-!>   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j  ,k1)))
-!>
+!^                FZ(i,j,k2)=FZ(i,j,k2)+                                &
+!^   &                       cff*                                       &
+!^   &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j-1,k1))+  &
+!^   &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+!^   &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j-1,k2))+  &
+!^   &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j  ,k1)))
+!^
                   tl_FZ(i,j,k2)=tl_FZ(i,j,k2)+                          &
      &                          cff*                                    &
      &                          (cff1*(cff1*tl_dAdz(i,j,k2)-            &
@@ -2081,13 +2082,13 @@
 !
             DO j=JstrV,Jend
               DO i=Istr,Iend
-!>              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
-!>   &                           Hfac(i,j)*                             &
-!>   &                           (FX(i+1,j)-FX(i,j  )+                  &
-!>   &                            FE(i  ,j)-FE(i,j-1))+                 &
-!>   &                           DTsizeH*                               &
-!>   &                           (FZ(i,j,k2)-FZ(i,j,k1))
-!>
+!^              Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+!^   &                           Hfac(i,j)*                             &
+!^   &                           (FX(i+1,j)-FX(i,j  )+                  &
+!^   &                            FE(i  ,j)-FE(i,j-1))+                 &
+!^   &                           DTsizeH*                               &
+!^   &                           (FZ(i,j,k2)-FZ(i,j,k1))
+!^
                 tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                &
      &                              Hfac(i,j)*                          &
      &                              (tl_FX(i+1,j)-tl_FX(i,j  )+         &
@@ -2107,25 +2108,25 @@
         DO k=1,N(ng)
           DO j=JstrV,Jend
             DO i=Istr,Iend+1
-!>            FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
-!>   &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
-!>   &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
-!>
+!^            FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
+!^   &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
+!^   &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
+!^
               tl_FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+    &
      &                                        Kh(i-1,j-1)+Kh(i,j-1))*   &
      &                   (tl_Awrk(i,j,k,Nold)-tl_Awrk(i-1,j,k,Nold))
 #  ifdef MASKING
-!>            FX(i,j)=FX(i,j)*pmask(i,j)
-!>
+!^            FX(i,j)=FX(i,j)*pmask(i,j)
+!^
               tl_FX(i,j)=tl_FX(i,j)*pmask(i,j)
 #  endif
             END DO
           END DO
           DO j=JstrV-1,Jend
             DO i=Istr,Iend
-!>            FE(i,j)=pnom_r(i,j)*Kh(i,j)*                              &
-!>   &                (Awrk(i,j+1,k,Nold)-Awrk(i,j,k,Nold))
-!>
+!^            FE(i,j)=pnom_r(i,j)*Kh(i,j)*                              &
+!^   &                (Awrk(i,j+1,k,Nold)-Awrk(i,j,k,Nold))
+!^
               tl_FE(i,j)=pnom_r(i,j)*Kh(i,j)*                           &
      &                   (tl_Awrk(i,j+1,k,Nold)-tl_Awrk(i,j,k,Nold))
             END DO
@@ -2135,11 +2136,11 @@
 !
           DO j=JstrV,Jend
             DO i=Istr,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         Hfac(i,j)*                               &
-!>   &                         (FX(i+1,j)-FX(i,j)+                      &
-!>   &                          FE(i,j)-FE(i,j-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         Hfac(i,j)*                               &
+!^   &                         (FX(i+1,j)-FX(i,j)+                      &
+!^   &                          FE(i,j)-FE(i,j-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            Hfac(i,j)*                            &
      &                            (tl_FX(i+1,j)-tl_FX(i,j)+             &
@@ -2151,20 +2152,20 @@
 !
 !  Apply boundary conditions.
 !
-!>      CALL dabc_v3d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL dabc_v3d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL dabc_v3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      tl_Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      Awrk(:,:,:,Nnew))
-!>
+!^      CALL mp_exchange3d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      Awrk(:,:,:,Nnew))
+!^
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
      &                      Nghost,                                     &
@@ -2210,8 +2211,8 @@
           END DO
           DO i=Istr,Iend
             CF(i,0)=0.0_r8
-!>          DC(i,0)=0.0_r8
-!>
+!^          DC(i,0)=0.0_r8
+!^
             tl_DC(i,0)=0.0_r8
           END DO
 !
@@ -2224,10 +2225,10 @@
      &                DTsizeV*Kv(i,j,k)*(oHz(i,j,k)+oHz(i,j,k+1))
               cff=1.0_r8/(BC(i,k)-FC(i,k)*CF(i,k-1))
               CF(i,k)=cff*CF(i,k)
-!>            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-                          &
-!>   &                     Awrk(i,j,k  ,Nold)-                          &
-!>   &                     FC(i,k)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(Awrk(i,j,k+1,Nold)-                          &
+!^   &                     Awrk(i,j,k  ,Nold)-                          &
+!^   &                     FC(i,k)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_Awrk(i,j,k+1,Nold)-                    &
      &                        tl_Awrk(i,j,k  ,Nold)-                    &
      &                        FC(i,k)*tl_DC(i,k-1))
@@ -2237,27 +2238,27 @@
 !  Backward substitution.
 !
           DO i=Istr,Iend
-!>          DC(i,N(ng))=0.0_r8
-!>
+!^          DC(i,N(ng))=0.0_r8
+!^
             tl_DC(i,N(ng))=0.0_r8
           END DO
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
             END DO
           END DO
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)*Kv(i,j,k)
-!>
+!^            DC(i,k)=DC(i,k)*Kv(i,j,k)
+!^
               tl_DC(i,k)=tl_DC(i,k)*Kv(i,j,k)
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         DTsizeV*oHz(i,j,k)*                      &
-!>   &                         (DC(i,k)-DC(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         DTsizeV*oHz(i,j,k)*                      &
+!^   &                         (DC(i,k)-DC(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            DTsizeV*oHz(i,j,k)*                   &
      &                            (tl_DC(i,k)-tl_DC(i,k-1))
@@ -2287,8 +2288,8 @@
             DO i=Istr,Iend
               cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
               BC(i,k)=cff-FC(i,j,k)-FC(i,j,k-1)
-!>            DC(i,k)=Awrk(i,j,k,Nold)*cff
-!>
+!^            DC(i,k)=Awrk(i,j,k,Nold)*cff
+!^
               tl_DC(i,k)=tl_Awrk(i,j,k,Nold)*cff
             END DO
           END DO
@@ -2298,16 +2299,16 @@
           DO i=Istr,Iend
             cff=1.0_r8/BC(i,1)
             CF(i,1)=cff*FC(i,j,1)
-!>          DC(i,1)=cff*DC(i,1)
-!>
+!^          DC(i,1)=cff*DC(i,1)
+!^
             tl_DC(i,1)=cff*tl_DC(i,1)
           END DO
           DO k=2,N(ng)-1
             DO i=Istr,Iend
               cff=1.0_r8/(BC(i,k)-FC(i,j,k-1)*CF(i,k-1))
               CF(i,k)=cff*FC(i,j,k)
-!>            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
-!>
+!^            DC(i,k)=cff*(DC(i,k)-FC(i,j,k-1)*DC(i,k-1))
+!^
               tl_DC(i,k)=cff*(tl_DC(i,k)-FC(i,j,k-1)*tl_DC(i,k-1))
             END DO
           END DO
@@ -2315,33 +2316,33 @@
 !  Compute new solution by back substitution.
 !
           DO i=Istr,Iend
-!>          DC(i,N(ng))=(DC(i,N(ng))-                                   &
-!>   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
-!>   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>
+!^          DC(i,N(ng))=(DC(i,N(ng))-                                   &
+!^   &                   FC(i,j,N(ng)-1)*DC(i,N(ng)-1))/                &
+!^   &                  (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
+!^
             tl_DC(i,N(ng))=(tl_DC(i,N(ng))-                             &
      &                      FC(i,j,N(ng)-1)*tl_DC(i,N(ng)-1))/          &
      &                     (BC(i,N(ng))-FC(i,j,N(ng)-1)*CF(i,N(ng)-1))
-!>          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
-!>
+!^          Awrk(i,j,N(ng),Nnew)=DC(i,N(ng))
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_DC(i,N(ng))
 #    ifdef MASKING
-!>          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*vmask(i,j)
-!>
+!^          Awrk(i,j,N(ng),Nnew)=Awrk(i,j,N(ng),Nnew)*vmask(i,j)
+!^
             tl_Awrk(i,j,N(ng),Nnew)=tl_Awrk(i,j,N(ng),Nnew)*vmask(i,j)
 #    endif
           END DO
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
-!>            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>
+!^            DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
+!^
               tl_DC(i,k)=tl_DC(i,k)-CF(i,k)*tl_DC(i,k+1)
-!>            Awrk(i,j,k,Nnew)=DC(i,k)
-!>
+!^            Awrk(i,j,k,Nnew)=DC(i,k)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_DC(i,k)
 #    ifdef MASKING
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*vmask(i,j)
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nnew)*vmask(i,j)
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nnew)*vmask(i,j)
 #    endif
             END DO
@@ -2369,24 +2370,24 @@
         DO j=JstrV,Jend
           DO k=1,N(ng)-1
             DO i=Istr,Iend
-!>            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
-!>   &                           Awrk(i,j,k  ,Nold))
-!>
+!^            FS(i,k)=FC(i,j,k)*(Awrk(i,j,k+1,Nold)-                    &
+!^   &                           Awrk(i,j,k  ,Nold))
+!^
               tl_FS(i,k)=FC(i,j,k)*(tl_Awrk(i,j,k+1,Nold)-              &
      &                              tl_Awrk(i,j,k  ,Nold))
 #   ifdef MASKING
-!>            FS(i,k)=FS(i,k)*vmask(i,j)
-!>
+!^            FS(i,k)=FS(i,k)*vmask(i,j)
+!^
               tl_FS(i,k)=tl_FS(i,k)*vmask(i,j)
 #   endif
             END DO
           END DO
           DO i=Istr,Iend
-!>          FS(i,0)=0.0_r8
-!>
+!^          FS(i,0)=0.0_r8
+!^
             tl_FS(i,0)=0.0_r8
-!>          FS(i,N(ng))=0.0_r8
-!>
+!^          FS(i,N(ng))=0.0_r8
+!^
             tl_FS(i,N(ng))=0.0_r8
           END DO
 !
@@ -2395,10 +2396,10 @@
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
-!>   &                         oHz(i,j,k)*(FS(i,k  )-                   &
-!>   &                                     FS(i,k-1))
-!>
+!^            Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                        &
+!^   &                         oHz(i,j,k)*(FS(i,k  )-                   &
+!^   &                                     FS(i,k-1))
+!^
               tl_Awrk(i,j,k,Nnew)=tl_Awrk(i,j,k,Nold)+                  &
      &                            oHz(i,j,k)*(tl_FS(i,k  )-             &
      &                                        tl_FS(i,k-1))
@@ -2422,26 +2423,26 @@
       DO k=1,N(ng)
         DO j=JstrV,Jend
           DO i=Istr,Iend
-!>          A(i,j,k)=Awrk(i,j,k,Nold)
-!>
+!^          A(i,j,k)=Awrk(i,j,k,Nold)
+!^
             tl_A(i,j,k)=tl_Awrk(i,j,k,Nold)
           END DO
         END DO
       END DO
-!>    CALL dabc_v3d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    A)
-!>
+!^    CALL dabc_v3d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    A)
+!^
       CALL dabc_v3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    tl_A)
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    A)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    A)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
      &                    Nghost,                                       &

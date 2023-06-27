@@ -2,9 +2,10 @@
 #ifdef TANGENT
       SUBROUTINE tl_output (ng)
 !
-!svn $Id: tl_output.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_output.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,13 +24,25 @@
 # endif
       USE mod_iounits
       USE mod_ncparam
-      USE mod_netcdf
       USE mod_scalars
 !
+      USE close_io_mod,   ONLY : close_file
+# ifdef TL_AVERAGES
+      USE def_avg_mod,    ONLY : def_avg
+# endif
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasts
 # endif
+# ifdef OBSERVATIONS
+      USE obs_read_mod,   ONLY : obs_read
+      USE obs_write_mod,  ONLY : obs_write
+# endif
       USE strings_mod,    ONLY : FoundError
+      USE tl_def_his_mod, ONLY : tl_def_his
+      USE tl_wrt_his_mod, ONLY : tl_wrt_his
+# ifdef TL_AVERAGES
+      USE wrt_avg_mod,    ONLY : def_avg
+# endif
 !
       implicit none
 !
@@ -39,7 +52,7 @@
 !
 !  Local variable declarations.
 !
-      logical :: Ldefine, NewFile
+      logical :: Ldefine, Lupdate, NewFile
 !
       integer :: Fcount, ifile, status, tile
 !
@@ -66,6 +79,15 @@
       IF (Lanafile) THEN
         Lanafile=.FALSE.
       END IF
+!
+!  If appropriate, set switch for updating biology header file global
+!  attribute in output NetCDF files.
+!
+#ifdef BIOLOGY
+      Lupdate=.TRUE.
+#else
+      Lupdate=.FALSE.
+#endif
 !
 !  Create output tangent NetCDF file or prepare existing file to
 !  append new data to it.  Also,  notice that it is possible to
@@ -123,9 +145,7 @@
             CALL mp_bcasts (ng, iTLM, TLM(ng)%name)
 # endif
             TLM(ng)%files(Fcount)=TRIM(TLM(ng)%name)
-            IF (TLM(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
-            END IF
+            CALL close_file (ng, iTLM, TLM(ng), TLM(ng)%name, Lupdate)
             CALL tl_def_his (ng, NewFile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
@@ -154,20 +174,32 @@
 !  Write only on first time step.
 !
         IF (iic(ng).eq.1) THEN
-          CALL tl_wrt_his (ng)
+#  ifdef DISTRIBUTE
+          CALL tl_wrt_his (ng, MyRank)
+#  else
+          CALL tl_wrt_his (ng, -1)
+#  endif
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # else
         IF (LwrtPER(ng)) THEN
           IF ((iic(ng).gt.ntstart(ng)).and.                             &
      &        (MOD(iic(ng)-1,nTLM(ng)).eq.0)) THEN
-            CALL tl_wrt_his (ng)
+#  ifdef DISTRIBUTE
+            CALL tl_wrt_his (ng, MyRank)
+#  else
+            CALL tl_wrt_his (ng, -1)
+#  endif
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         ELSE
           IF ((MOD(iic(ng)-1,nTLM(ng)).eq.0).and.                       &
      &        ((nrrec(ng).eq.0).or.(iic(ng).ne.ntstart(ng)))) THEN
-            CALL tl_wrt_his (ng)
+#  ifdef DISTRIBUTE
+            CALL tl_wrt_his (ng, MyRank)
+#  else
+            CALL tl_wrt_his (ng, -1)
+#  endif
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END IF
@@ -242,9 +274,7 @@
             CALL mp_bcasts (ng, iTLM, AVG(ng)%name)
 #  endif
             AVG(ng)%files(Fcount)=TRIM(AVG(ng)%name)
-            IF (AVG(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iTLM, AVG(ng)%ncid)
-            END IF
+            CALL close_file (ng, iTLM, AVG(ng), AVG(ng)%name, Lupdate)
             CALL def_avg (ng, Newfile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             LwrtAVG(ng)=.TRUE.
@@ -264,7 +294,11 @@
       IF (LwrtAVG(ng)) THEN
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
      &      (MOD(iic(ng)-1,nAVG(ng)).eq.0)) THEN
-          CALL wrt_avg (ng)
+#  ifdef DISTRIBUTE
+          CALL wrt_avg (ng, MyRank)
+#  else
+          CALL wrt_avg (ng, -1)
+#  endif
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END IF

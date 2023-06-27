@@ -4,9 +4,10 @@
 
 #if defined ADJOINT && defined FOUR_DVAR
 !
-!svn $Id: ad_conv_2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_conv_2d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -155,29 +156,29 @@
 !------------------------------------------------------------------------
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_r2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_r2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_r2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)
       DO j=Jstr,Jend
         DO i=Istr,Iend
-!>        tl_A(i,j)=tl_Awrk(i,j,Nold)
-!>
+!^        tl_A(i,j)=tl_Awrk(i,j,Nold)
+!^
           ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_A(i,j)
           ad_A(i,j)=0.0_r8
         END DO
@@ -199,22 +200,22 @@
 !  data.
 !
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange2d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL mp_exchange2d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_mp_exchange2d (ng, tile, model, 1,                      &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         Nghost,                                  &
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL dabc_r2d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL dabc_r2d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_dabc_r2d_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         ad_Awrk(:,:,Nnew))
@@ -223,11 +224,11 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
-!>   &                        Hfac(i,j)*                                &
-!>   &                        (tl_FX(i+1,j)-tl_FX(i,j)+                 &
-!>   &                         tl_FE(i,j+1)-tl_FE(i,j))
-!>
+!^          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
+!^   &                        Hfac(i,j)*                                &
+!^   &                        (tl_FX(i+1,j)-tl_FX(i,j)+                 &
+!^   &                         tl_FE(i,j+1)-tl_FE(i,j))
+!^
             adfac=Hfac(i,j)*ad_Awrk(i,j,Nnew)
             ad_FE(i,j  )=ad_FE(i,j  )-adfac
             ad_FE(i,j+1)=ad_FE(i,j+1)+adfac
@@ -243,13 +244,13 @@
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
 # ifdef MASKING
-!>          tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
-!>
+!^          tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
+!^
             ad_FE(i,j)=ad_FE(i,j)*vmask(i,j)
 # endif
-!>          tl_FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*          &
-!>   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i,j-1,Nold))
-!>
+!^          tl_FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*          &
+!^   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i,j-1,Nold))
+!^
             adfac=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*ad_FE(i,j)
             ad_Awrk(i,j-1,Nold)=ad_Awrk(i,j-1,Nold)-adfac
             ad_Awrk(i,j  ,Nold)=ad_Awrk(i,j  ,Nold)+adfac
@@ -259,13 +260,13 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
 # ifdef MASKING
-!>          tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
-!>
+!^          tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
+!^
             ad_FX(i,j)=ad_FX(i,j)*umask(i,j)
 # endif
-!>          tl_FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*          &
-!>   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i-1,j,Nold))
-!>
+!^          tl_FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*          &
+!^   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i-1,j,Nold))
+!^
             adfac=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*ad_FX(i,j)
             ad_Awrk(i-1,j,Nold)=ad_Awrk(i-1,j,Nold)-adfac
             ad_Awrk(i  ,j,Nold)=ad_Awrk(i  ,j,Nold)+adfac
@@ -279,29 +280,29 @@
 !
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
-!>        tl_Awrk(i,j,Nold)=tl_A(i,j)
-!>
+!^        tl_Awrk(i,j,Nold)=tl_A(i,j)
+!^
           ad_A(i,j)=ad_A(i,j)+ad_Awrk(i,j,Nold)
           ad_Awrk(i,j,Nold)=0.0_r8
         END DO
       END DO
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>                        EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^                        EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_r2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_r2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_r2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)
@@ -407,29 +408,29 @@
 !------------------------------------------------------------------------
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_u2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_u2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_u2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        tl_A(i,j)=tl_Awrk(i,j,Nold)
-!>
+!^        tl_A(i,j)=tl_Awrk(i,j,Nold)
+!^
           ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_A(i,j)
           ad_A(i,j)=0.0_r8
         END DO
@@ -451,22 +452,22 @@
 !  data.
 !
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange2d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL mp_exchange2d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_mp_exchange2d (ng, tile, model, 1,                      &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         Nghost,                                  &
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL dabc_u2d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL dabc_u2d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_dabc_u2d_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         ad_Awrk(:,:,Nnew))
@@ -475,11 +476,11 @@
 !
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-!>          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
-!>   &                        Hfac(i,j)*                                &
-!>   &                        (tl_FX(i,j)-tl_FX(i-1,j)+                 &
-!>   &                         tl_FE(i,j+1)-tl_FE(i,j))
-!>
+!^          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
+!^   &                        Hfac(i,j)*                                &
+!^   &                        (tl_FX(i,j)-tl_FX(i-1,j)+                 &
+!^   &                         tl_FE(i,j+1)-tl_FE(i,j))
+!^
             adfac=Hfac(i,j)*ad_Awrk(i,j,Nnew)
             ad_FE(i,j  )=ad_FE(i,j  )-adfac
             ad_FE(i,j+1)=ad_FE(i,j+1)+adfac
@@ -495,14 +496,14 @@
         DO j=Jstr,Jend+1
           DO i=IstrU,Iend
 # ifdef MASKING
-!>          tl_FE(i,j)=tl_FE(i,j)*pmask(i,j)
-!>
+!^          tl_FE(i,j)=tl_FE(i,j)*pmask(i,j)
+!^
             ad_FE(i,j)=ad_FE(i,j)*pmask(i,j)
 # endif
-!>          tl_FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+      &
-!>   &                                      Kh(i-1,j-1)+Kh(i,j-1))*     &
-!>   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i,j-1,Nold))
-!>
+!^          tl_FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+      &
+!^   &                                      Kh(i-1,j-1)+Kh(i,j-1))*     &
+!^   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i,j-1,Nold))
+!^
             adfac=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+           &
      &                                 Kh(i-1,j-1)+Kh(i,j-1))*          &
      &            ad_FE(i,j)
@@ -513,9 +514,9 @@
         END DO
         DO j=Jstr,Jend
           DO i=IstrU-1,Iend
-!>          tl_FX(i,j)=pmon_r(i,j)*Kh(i,j)*                             &
-!>   &                 (tl_Awrk(i+1,j,Nold)-tl_Awrk(i,j,Nold))
-!>
+!^          tl_FX(i,j)=pmon_r(i,j)*Kh(i,j)*                             &
+!^   &                 (tl_Awrk(i+1,j,Nold)-tl_Awrk(i,j,Nold))
+!^
             adfac=pmon_r(i,j)*Kh(i,j)*ad_FX(i,j)
             ad_Awrk(i  ,j,Nold)=ad_Awrk(i  ,j,Nold)-adfac
             ad_Awrk(i+1,j,Nold)=ad_Awrk(i+1,j,Nold)+adfac
@@ -529,29 +530,29 @@
 !
       DO j=Jstr-1,Jend+1
         DO i=IstrU-1,Iend+1
-!>        tl_Awrk(i,j,Nold)=tl_A(i,j)
-!>
+!^        tl_Awrk(i,j,Nold)=tl_A(i,j)
+!^
           ad_A(i,j)=ad_A(i,j)+ad_Awrk(i,j,Nold)
           ad_Awrk(i,j,Nold)=0.0_r8
         END DO
       END DO
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_u2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_u2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_u2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)
@@ -657,29 +658,29 @@
 !------------------------------------------------------------------------
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_v2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_v2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_v2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        tl_A(i,j)=tl_Awrk(i,j,Nold)
-!>
+!^        tl_A(i,j)=tl_Awrk(i,j,Nold)
+!^
           ad_Awrk(i,j,Nold)=ad_Awrk(i,j,Nold)+ad_A(i,j)
           ad_A(i,j)=0.0_r8
         END DO
@@ -701,22 +702,22 @@
 !  data.
 !
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange2d (ng, tile, model, 1,                         &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      Nghost,                                     &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL mp_exchange2d (ng, tile, model, 1,                         &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      Nghost,                                     &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_mp_exchange2d (ng, tile, model, 1,                      &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         Nghost,                                  &
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL dabc_v2d_tile (ng, tile,                                   &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      tl_Awrk(:,:,Nnew))
-!>
+!^      CALL dabc_v2d_tile (ng, tile,                                   &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      tl_Awrk(:,:,Nnew))
+!^
         CALL ad_dabc_v2d_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         ad_Awrk(:,:,Nnew))
@@ -725,11 +726,11 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-!>          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
-!>   &                        Hfac(i,j)*                                &
-!>   &                        (tl_FX(i+1,j)-tl_FX(i,j)+                 &
-!>   &                         tl_FE(i,j)-tl_FE(i,j-1))
-!>
+!^          tl_Awrk(i,j,Nnew)=tl_Awrk(i,j,Nold)+                        &
+!^   &                        Hfac(i,j)*                                &
+!^   &                        (tl_FX(i+1,j)-tl_FX(i,j)+                 &
+!^   &                         tl_FE(i,j)-tl_FE(i,j-1))
+!^
             adfac=Hfac(i,j)*ad_Awrk(i,j,Nnew)
             ad_FE(i,j-1)=ad_FE(i,j-1)-adfac
             ad_FE(i,j  )=ad_FE(i,j  )+adfac
@@ -744,9 +745,9 @@
 !
         DO j=JstrV-1,Jend
           DO i=Istr,Iend
-!>          tl_FE(i,j)=pnom_r(i,j)*Kh(i,j)*                             &
-!>   &                 (tl_Awrk(i,j+1,Nold)-tl_Awrk(i,j,Nold))
-!>
+!^          tl_FE(i,j)=pnom_r(i,j)*Kh(i,j)*                             &
+!^   &                 (tl_Awrk(i,j+1,Nold)-tl_Awrk(i,j,Nold))
+!^
             adfac=pnom_r(i,j)*Kh(i,j)*ad_FE(i,j)
             ad_Awrk(i,j  ,Nold)=ad_Awrk(i,j  ,Nold)-adfac
             ad_Awrk(i,j+1,Nold)=ad_Awrk(i,j+1,Nold)+adfac
@@ -756,14 +757,14 @@
         DO j=JstrV,Jend
           DO i=Istr,Iend+1
 # ifdef MASKING
-!>          tl_FX(i,j)=tl_FX(i,j)*pmask(i,j)
-!>
+!^          tl_FX(i,j)=tl_FX(i,j)*pmask(i,j)
+!^
             ad_FX(i,j)=ad_FX(i,j)*pmask(i,j)
 # endif
-!>          tl_FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+      &
-!>   &                                      Kh(i-1,j-1)+Kh(i,j-1))*     &
-!>   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i-1,j,Nold))
-!>
+!^          tl_FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+      &
+!^   &                                      Kh(i-1,j-1)+Kh(i,j-1))*     &
+!^   &                 (tl_Awrk(i,j,Nold)-tl_Awrk(i-1,j,Nold))
+!^
             adfac=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+           &
      &                                 Kh(i-1,j-1)+Kh(i,j-1))*          &
      &            ad_FX(i,j)
@@ -779,29 +780,29 @@
 !
       DO j=JstrV-1,Jend+1
         DO i=Istr-1,Iend+1
-!>        tl_Awrk(i,j,Nold)=tl_A(i,j)
-!>
+!^        tl_Awrk(i,j,Nold)=tl_A(i,j)
+!^
           ad_A(i,j)=ad_A(i,j)+ad_Awrk(i,j,Nold)
           ad_Awrk(i,j,Nold)=0.0_r8
         END DO
       END DO
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    Nghost,                                       &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_A)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    Nghost,                                       &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_A)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       Nghost,                                    &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL dabc_v2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_A)
-!>
+!^    CALL dabc_v2d_tile (ng, tile,                                     &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    tl_A)
+!^
       CALL ad_dabc_v2d_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       ad_A)

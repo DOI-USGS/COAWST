@@ -1,9 +1,10 @@
 #include "cppdefs.h"
-      SUBROUTINE get_state (ng, model, msg, ncname, IniRec, Tindex)
+      MODULE get_state_mod
 !
-!svn $Id: get_state.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: get_state.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -13,12 +14,12 @@
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     ng         Nested grid number.                                   !
-!     model      Calling model identifier.                             !
-!     msg        Message index for StateMsg.                           !
-!     ncname     Nonlinear initial conditions NetCDF file name.        !
-!     IniRec     Nonlinear initial conditions time record to read.     !
-!     Tindex     State variable time index to intialize.               !
+!     ng         Nested grid number (integer)                          !
+!     model      Calling model identifier (integer)                    !
+!     msg        Message index for StateMsg (string)                   !
+!     S          File structure, TYPE(T_IO).                           !
+!     IniRec     Time record to read (integer)                         !
+!     Tindex     State variable time index to load (integer)           !
 !                                                                      !
 !=======================================================================
 !
@@ -40,7 +41,6 @@
       USE mod_mixing
 #endif
       USE mod_ncparam
-      USE mod_netcdf
       USE mod_ocean
       USE mod_scalars
 #if defined ESTUARYBGC && defined SAV_BIOMASS
@@ -56,10 +56,10 @@
 #endif 
       USE mod_stepping
       USE mod_strings
-#ifdef FILTERED_RST
-      USE mod_filter, ONLY: FILN
-#endif
+!
       USE dateclock_mod,      ONLY : time_string
+      USE checkvars_mod,      ONLY : checkvars
+      USE lbc_mod,            ONLY : lbc_getatt
 #ifdef DISTRIBUTE
       USE mp_exchange_mod,    ONLY : mp_exchange2d
 # ifdef SOLVE3D
@@ -82,13 +82,107 @@
 !
       implicit none
 !
+      PUBLIC  :: get_state
+      PRIVATE :: get_state_nf90
+#if defined PIO_LIB && defined DISTRIBUTE
+      PRIVATE :: get_state_pio
+#endif
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE get_state (ng, model, msg, S, IniRec, Tindex)
+!***********************************************************************
+!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, model, msg, Tindex
 
       integer, intent(inout) :: IniRec
 !
-      character (len=*), intent(in) :: ncname
+      TYPE(T_IO), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      integer :: tile
+#ifdef ADJUST_BOUNDARY
+      integer :: IorJ, LBij, UBij
+#endif
+      integer :: LBi, UBi, LBj, UBj
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+!-----------------------------------------------------------------------
+!  Write out history fields according to IO type.
+!-----------------------------------------------------------------------
+!
+#ifdef DISTRIBUTE
+      tile=MyRank
+#else
+      tile=-1
+#endif
+!
+#ifdef ADJUST_BOUNDARY
+      LBij=BOUNDS(ng)%LBij
+      UBij=BOUNDS(ng)%UBij
+      IorJ=IOBOUNDS(ng)%IorJ
+#endif
+      LBi=BOUNDS(ng)%LBi(tile)
+      UBi=BOUNDS(ng)%UBi(tile)
+      LBj=BOUNDS(ng)%LBj(tile)
+      UBj=BOUNDS(ng)%UBj(tile)
+!
+      SELECT CASE (S%IOtype)
+        CASE (io_nf90)
+          CALL get_state_nf90 (ng, model, msg, S, IniRec, Tindex,       &
+#ifdef ADJUST_BOUNDARY
+     &                         IorJ, LBij, UBij,                        &
+#endif
+     &                         LBi, UBi, LBj, UBj)
+
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL get_state_pio (ng, model, msg, S, IniRec, Tindex,        &
+# ifdef ADJUST_BOUNDARY
+     &                        IorJ, LBij, UBij,                         &
+# endif
+     &                        LBi, UBi, LBj, UBj)
+#endif
+        CASE DEFAULT
+          IF (Master) WRITE (stdout,10) S%IOtype
+          exit_flag=2
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (' GET_STATE - Illegal input file type, io_type = ',i0,    &
+     &        /,13x,'Check KeyWord ''INP_LIB'' in ''roms.in''.')
+!
+      RETURN
+      END SUBROUTINE get_state
+!
+!***********************************************************************
+      SUBROUTINE get_state_nf90 (ng, model, msg, S, IniRec, Tindex,     &
+#ifdef ADJUST_BOUNDARY
+     &                           IorJ, LBij, UBij,                      &
+#endif
+     &                           LBi, UBi, LBj, UBj)
+
+!***********************************************************************
+!
+      USE mod_netcdf
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, msg, Tindex
+#ifdef ADJUST_BOUNDARY
+      integer, intent(in) :: IorJ, LBij, UBij
+#endif
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+
+      integer, intent(inout) :: IniRec
+!
+      TYPE(T_IO), intent(inout) :: S
 !
 !  Local variable declarations.
 !
@@ -99,10 +193,6 @@
 #endif
       logical, dimension(NV) :: get_var, have_var
 !
-      integer :: LBi, UBi, LBj, UBj
-#ifdef ADJUST_BOUNDARY
-      integer :: IorJ, LBij, UBij
-#endif
       integer :: IDmod, InpRec, gtype, i, ifield, itrc, lstr, lend
       integer :: Nrec, mySize, ncINPid, nvatts, nvdim, status, varid
       integer :: Vsize(4), start(4), total(4)
@@ -115,79 +205,75 @@
 
       real(dp), allocatable :: TimeVar(:)
 !
-      character (len=6 ) :: string
-      character (len=15) :: Tstring, attnam, tvarnam
-      character (len=22) :: t_code
-      character (len=40) :: tunits
+      character (len=  5) :: string
+      character (len= 15) :: Tstring, attnam, tvarnam
+      character (len= 22) :: t_code
+      character (len= 40) :: tunits
+      character (len=256) :: ncname
 
       character (len=*), parameter :: MyFile =                          &
-     &  __FILE__
+     &  __FILE__//", get_state_nf90"
 !
       SourceFile=MyFile
-
-#ifdef ADJUST_BOUNDARY
-!
-      LBij=BOUNDS(ng)%LBij
-      UBij=BOUNDS(ng)%UBij
-      IorJ=IOBOUNDS(ng)%IorJ
-#endif
 !
 !-----------------------------------------------------------------------
 !  Determine variables to read and their availability.
 !-----------------------------------------------------------------------
 !
+      ncname=TRIM(S%name)
+!
 !  Set model identification string.
 !
       IF (model.eq.iNLM.or.(model.eq.0)) THEN
-        string=' NLM: '                    ! nonlinear model, restart
+        string='NLM: '                     ! nonlinear model, restart
         IDmod=iNLM
       ELSE IF (model.eq.iTLM) THEN
-        string=' TLM: '                    ! tangent linear model
+        string='TLM: '                     ! tangent linear model
         IDmod=iTLM
       ELSE IF (model.eq.iRPM) THEN
-        string=' RPM: '                    ! representer model
+        string='RPM: '                     ! representer model
         IDmod=iRPM
       ELSE IF (model.eq.iADM) THEN
-        string=' ADM: '                    ! adjoint model
+        string='ADM: '                     ! adjoint model
         IDmod=iADM
       ELSE IF (model.eq.5) THEN
-        string=' NLM: '                    ! surface forcing and
+        string='NLM: '                     ! surface forcing and
         IDmod=iNLM                         ! OBC increments
       ELSE IF (model.eq.6) THEN
-        string=' TLM: '                    ! tangent linear error
+        string='TLM: '                     ! tangent linear error
         IDmod=iTLM                         ! forcing (time covariance)
       ELSE IF (model.eq.7) THEN
-        string=' FRC: '                    ! impulse forcing
+        string='FRC: '                     ! impulse forcing
         IDmod=iNLM
       ELSE IF (model.eq.8) THEN
-        string=' TLM: '                    ! v-space increments
+        string='TLM: '                     ! v-space increments
         IDmod=iTLM                         ! I4D-Var
       ELSE IF (model.eq.9) THEN
-        string=' NLM: '                    ! nonlinear model
+        string='NLM: '                     ! nonlinear model
         IDmod=iNLM                         ! background state
       ELSE IF (model.eq.10) THEN
-        string=' STD: '                    ! standard deviation
+        string='STD: '                     ! standard deviation
         IDmod=iNLM                         ! initial conditions
       ELSE IF (model.eq.11) THEN
-        string=' STD: '                    ! standard deviation
+        string='STD: '                     ! standard deviation
         IDmod=iNLM                         ! model error
       ELSE IF (model.eq.12) THEN
-        string=' STD: '                    ! standard deviation
+        string='STD: '                     ! standard deviation
         IDmod=iNLM                         ! boundary conditions
       ELSE IF (model.eq.13) THEN
-        string=' STD: '                    ! standard deviation
+        string='STD: '                     ! standard deviation
         IDmod=iNLM                         ! surface forcing
       ELSE IF (model.eq.14) THEN
-        string=' NRM: '                    ! normalization factors
+        string='NRM: '                     ! normalization factors
         IDmod=iNLM                         ! initial conditions
       ELSE IF (model.eq.15) THEN
-        string=' NRM: '                    ! normalization factors
+        string='NRM: '                     ! normalization factors
         IDmod=iNLM                         ! model error
       ELSE IF (model.eq.16) THEN
-        string=' NRM: '                    ! normalization factor
+        string='NRM: '                     ! normalization factor
         IDmod=iNLM                         ! boundary conditions
       ELSE IF (model.eq.17) THEN
-        string=' NRM: '                    ! normalization factor
+        string='NRM: '                     ! normalization factor
         IDmod=iNLM                         ! surface forcing
       END IF
 
@@ -221,11 +307,6 @@
 !  Open input NetCDF file and check time variable.
 !-----------------------------------------------------------------------
 !
-      LBi=LBOUND(GRID(ng)%h,DIM=1)
-      UBi=UBOUND(GRID(ng)%h,DIM=1)
-      LBj=LBOUND(GRID(ng)%h,DIM=2)
-      UBj=UBOUND(GRID(ng)%h,DIM=2)
-!
 !  Open input NetCDF file.
 !
       CALL netcdf_open (ng, IDmod, ncname, 0, ncINPid)
@@ -236,8 +317,8 @@
 !
 !  Determine variables to read.
 !
-      CALL checkvars (ng, model, ncname, ncINPid, string, Nrec, NV,     &
-     &                tvarnam, get_var, have_var)
+      CALL checkvars (ng, model, ncname, ncINPid, string,               &
+     &                Nrec, NV, tvarnam, get_var, have_var)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       SourceFile=MyFile
 
@@ -383,9 +464,6 @@
       IF (model.eq.iNLM) THEN
         IniRec=InpRec
       END IF
-#ifdef FILTERED
-      filtindx = InpRec
-#endif
 !
 !  Set current input time, io_time .  Notice that the model time,
 !  time(ng), is reset above.  This is a THREADPRIVATE variable in
@@ -409,18 +487,18 @@
         WRITE (Tstring,'(f15.4)') tdays(ng)
 #if defined I4DVAR          || defined I4DVAR_ANA_SENSITIVITY || \
     defined WEAK_CONSTRAINT
-        WRITE (stdout,40) string, 'Reading '//TRIM(StateMsg(msg)),      &
+        WRITE (stdout,40) string, TRIM(StateMsg(msg)),                  &
      &                    t_code, ng, ', Outer=', outer,                &
      &                    TRIM(ADJUSTL(Tstring)), ncname(lstr:lend),    &
      &                    InpRec, Tindex
 #else
         IF (ERend.gt.ERstr) THEN
-          WRITE (stdout,40) string, 'Reading '//TRIM(StateMsg(msg)),    &
+          WRITE (stdout,40) string, TRIM(StateMsg(msg)),                &
      &                      t_code, ng, ', Iter=', Nrun,                &
      &                      TRIM(ADJUSTL(Tstring)),  ncname(lstr:lend), &
      &                      InpRec, Tindex
         ELSE
-          WRITE (stdout,50) string, 'Reading '//TRIM(StateMsg(msg)),    &
+          WRITE (stdout,50) string, TRIM(StateMsg(msg)),                &
      &                      t_code, ng, TRIM(ADJUSTL(Tstring)),         &
      &                      ncname(lstr:lend), InpRec, Tindex
         END IF
@@ -2645,9 +2723,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in free-surface open boundaries.
+!  Read in free-surface open boundaries adjustments.
 !
         IF (get_var(idSbry(isFsur)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isFsur,ng))) THEN
@@ -2655,18 +2734,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, r2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, r2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_zeta_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_zeta_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -2751,9 +2830,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in 2D U-momentum component open boundaries.
+!  Read in 2D U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUbar)).and.get_adjust.and.                 &
      &        ANY(Lobc(:,isUbar,ng))) THEN
@@ -2761,18 +2841,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_ubar_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_ubar_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -2857,9 +2937,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in 2D V-momentum component open boundaries.
+!  Read in 2D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVbar)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isVbar,ng))) THEN
@@ -2867,18 +2948,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_vbar_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_vbar_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -3077,9 +3158,10 @@
             END IF
           END IF
         END IF
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in 3D U-momentum component open boundaries.
+!  Read in 3D U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUvel)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isUvel,ng))) THEN
@@ -3087,18 +3169,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_u_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_u_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -3183,9 +3265,10 @@
             END IF
           END IF
         END IF
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in 3D V-momentum component open boundaries.
+!  Read in 3D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVvel)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isVvel,ng))) THEN
@@ -3193,18 +3276,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #   ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_v_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #   else
-     &                             BOUNDARY(ng) % tl_v_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #   endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -3292,9 +3375,10 @@
             END IF
           END IF
         END DO
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in 3D tracers open boundaries.
+!  Read in 3D tracers open boundaries adjustments.
 !
         DO itrc=1,NT(ng)
           IF (get_var(idSbry(isTvar(itrc))).and.get_adjust.and.         &
@@ -3303,18 +3387,18 @@
             foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
      &                          varid)
             IF (foundit) THEN
-              status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,        &
-     &                               Vname(1,ifield), varid,            &
-     &                               InpRec, r3dvar,                    &
-     &                               LBij, UBij, 1, N(ng), Nbrec(ng),   &
-     &                               Fscl, Fmin, Fmax,                  &
+              status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,         &
+     &                              Vname(1,ifield), varid,             &
+     &                              InpRec, r3dvar,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
 #   ifdef CHECKSUM
-     &                               BOUNDARY(ng) % tl_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc), &
-     &                               checksum = Fhash)
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
 #   else
-     &                               BOUNDARY(ng) % tl_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc))
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
 #   endif
               IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
                 IF (Master) THEN
@@ -3809,9 +3893,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in adjoint free-surface open boundaries.
+!  Read in adjoint free-surface open boundaries adjustments.
 !
         IF (get_var(idSbry(isFsur)).and.                                &
      &      ANY(Lobc(:,isFsur,ng))) THEN
@@ -3819,18 +3904,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, r2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, r2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % ad_zeta_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % ad_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % ad_zeta_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % ad_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -3915,9 +4000,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in 2D adjoint U-momentum component open boundaries.
+!  Read in 2D adjoint U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUbar)).and.                                &
      &        ANY(Lobc(:,isUbar,ng))) THEN
@@ -3925,18 +4011,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % ad_ubar_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % ad_ubar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % ad_ubar_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % ad_ubar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -4021,9 +4107,10 @@
             END IF
           END IF
         END IF
+
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in 2D V-momentum component open boundaries.
+!  Read in 2D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVbar)).and.                                &
      &      ANY(Lobc(:,isVbar,ng))) THEN
@@ -4031,18 +4118,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % ad_vbar_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % ad_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % ad_vbar_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % ad_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -4242,9 +4329,10 @@
             END IF
           END IF
         END IF
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in adjoint 3D U-momentum component open boundaries.
+!  Read in adjoint 3D U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUvel)).and.                                &
      &      ANY(Lobc(:,isUvel,ng))) THEN
@@ -4252,18 +4340,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #   ifdef CHECKSUM
-     &                             BOUNDARY(ng) % ad_u_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % ad_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #   else
-     &                             BOUNDARY(ng) % ad_u_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % ad_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #   endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -4349,9 +4437,10 @@
             END IF
           END IF
         END IF
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in 3D V-momentum component open boundaries.
+!  Read in 3D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVvel)).and.                                &
      &      ANY(Lobc(:,isVvel,ng))) THEN
@@ -4359,18 +4448,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #   ifdef CHECKSUM
-     &                             BOUNDARY(ng) % ad_v_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % ad_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #   else
-     &                             BOUNDARY(ng) % ad_v_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % ad_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #   endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -4458,9 +4547,10 @@
             END IF
           END IF
         END DO
+
 #  ifdef ADJUST_BOUNDARY
 !
-!  Read in adjoint 3D tracers open boundaries.
+!  Read in adjoint 3D tracers open boundaries adjustments.
 !
         DO itrc=1,NT(ng)
           IF (get_var(idSbry(isTvar(itrc))).and.                        &
@@ -4469,18 +4559,18 @@
             foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
      &                          varid)
             IF (foundit) THEN
-              status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,        &
-     &                               Vname(1,ifield), varid,            &
-     &                               InpRec, r3dvar,                    &
-     &                               LBij, UBij, 1, N(ng), Nbrec(ng),   &
-     &                               Fscl, Fmin, Fmax,                  &
+              status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,         &
+     &                              Vname(1,ifield), varid,             &
+     &                              InpRec, r3dvar,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
 #   ifdef CHECKSUM
-     &                               BOUNDARY(ng) % ad_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc), &
-     &                               checksum = Fhash)
+     &                              BOUNDARY(ng) % ad_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
 #   else
-     &                               BOUNDARY(ng) % ad_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc))
+     &                              BOUNDARY(ng) % ad_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
 #   endif
               IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
                 IF (Master) THEN
@@ -5101,6 +5191,7 @@
 
           END IF
         END IF
+
 # ifdef SOLVE3D
 !
 !  Read in 3D U-momentum component normalization factor.
@@ -5296,9 +5387,10 @@
      &                          Vname(1,idSbry(isFsur)),                &
      &                          BOUNDARY(ng) % b_zeta_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isFsur))),            &
@@ -5314,9 +5406,10 @@
      &                          Vname(1,idSbry(isUbar)),                &
      &                          BOUNDARY(ng) % b_ubar_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isUbar))),            &
@@ -5332,15 +5425,17 @@
      &                          Vname(1,idSbry(isVbar)),                &
      &                          BOUNDARY(ng) % b_vbar_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isVbar))),            &
      &                        Fmin, Fmax
           END IF
         END IF
+
 #  ifdef SOLVE3D
 !
 !  Read in 3D U-momentum component open boundaries normalization factor.
@@ -5351,9 +5446,10 @@
      &                          Vname(1,idSbry(isUvel)),                &
      &                          BOUNDARY(ng) % b_u_obc(LBij:,:,:),      &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1,1/),                      &
-     &                          total = (/IorJ,N(ng),4/),               &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,1,InpRec/),               &
+     &                          total = (/IorJ,N(ng),4,1/),             &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isUvel))),            &
@@ -5369,9 +5465,10 @@
      &                          Vname(1,idSbry(isVvel)),                &
      &                          BOUNDARY(ng) % b_v_obc(LBij:,:,:),      &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1,1/),                      &
+     &                          start = (/1,1,1,InpRec/),               &
      &                          total = (/IorJ,N(ng),4/),               &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isVvel))),            &
@@ -5389,9 +5486,10 @@
      &                            BOUNDARY(ng) % b_t_obc(LBij:,:,:,     &
      &                                                   itrc),         &
      &                            ncid = ncINPid,                       &
-     &                            start =(/1,1,1/),                     &
-     &                            total =(/IorJ,N(ng),4/),              &
-     &                            min_val = Fmin, max_val = Fmax)
+     &                            start =(/1,1,1,InpRec/),              &
+     &                            total =(/IorJ,N(ng),4,1/),            &
+     &                            min_val = Fmin,                       &
+     &                            max_val = Fmax)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             IF (Master) THEN
               WRITE (stdout,75) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
@@ -5780,6 +5878,7 @@
 
           END IF
         END IF
+
 # ifdef SOLVE3D
 !
 !  Read in 3D U-momentum component standard deviation.
@@ -6024,6 +6123,7 @@
             END IF
           END IF
         END IF
+
 # ifdef SOLVE3D
 !
 !  Read in convolution vertical diffusion coefficient.
@@ -6096,9 +6196,10 @@
      &                          Vname(1,idSbry(isFsur)),                &
      &                          BOUNDARY(ng) % e_zeta_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isFsur))),            &
@@ -6114,9 +6215,10 @@
      &                          Vname(1,idSbry(isUbar)),                &
      &                          BOUNDARY(ng) % e_ubar_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isUbar))),            &
@@ -6132,15 +6234,17 @@
      &                          Vname(1,idSbry(isVbar)),                &
      &                          BOUNDARY(ng) % e_vbar_obc(LBij:,:),     &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1/),                        &
-     &                          total = (/IorJ,4/),                     &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,InpRec/),                 &
+     &                          total = (/IorJ,4,1/),                   &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isVbar))),            &
      &                        Fmin, Fmax
           END IF
         END IF
+
 #  ifdef SOLVE3D
 !
 !  Read in 3D U-momentum component open boundaries standard deviation.
@@ -6151,9 +6255,10 @@
      &                          Vname(1,idSbry(isUvel)),                &
      &                          BOUNDARY(ng) % e_u_obc(LBij:,:,:),      &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1,1/),                      &
-     &                          total = (/IorJ,N(ng),4/),               &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,1,InpRec/),               &
+     &                          total = (/IorJ,N(ng),4,1/),             &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isUvel))),            &
@@ -6169,9 +6274,10 @@
      &                          Vname(1,idSbry(isVvel)),                &
      &                          BOUNDARY(ng) % e_v_obc(LBij:,:,:),      &
      &                          ncid = ncINPid,                         &
-     &                          start = (/1,1,1/),                      &
-     &                          total = (/IorJ,N(ng),4/),               &
-     &                          min_val = Fmin, max_val = Fmax)
+     &                          start = (/1,1,1,InpRec/),               &
+     &                          total = (/IorJ,N(ng),4,1/),             &
+     &                          min_val = Fmin,                         &
+     &                          max_val = Fmax)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF (Master) THEN
             WRITE (stdout,75) TRIM(Vname(1,idSbry(isVvel))),            &
@@ -6189,9 +6295,10 @@
      &                            BOUNDARY(ng) % e_t_obc(LBij:,:,:,     &
      &                                                   itrc),         &
      &                            ncid = ncINPid,                       &
-     &                            start =(/1,1,1/),                     &
-     &                            total =(/IorJ,N(ng),4/),              &
-     &                            min_val = Fmin, max_val = Fmax)
+     &                            start =(/1,1,1,InpRec/),              &
+     &                            total =(/IorJ,N(ng),4,1/),            &
+     &                            min_val = Fmin,                       &
+     &                            max_val = Fmax)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             IF (Master) THEN
               WRITE (stdout,75) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
@@ -6417,7 +6524,7 @@
      &                        total = (/1/))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-!  Read in free-surface forcing.
+!  Read in free-surface impulse forcing.
 !
         IF (get_var(idFsur)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
@@ -6471,7 +6578,7 @@
 
 # ifndef SOLVE3D
 !
-!  Read in 2D momentum forcing in the XI-direction.
+!  Read in 2D U-momentum impulse forcing.
 !
         IF (get_var(idUbar)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
@@ -6523,7 +6630,7 @@
           END IF
         END IF
 !
-!  Read in 2D momentum forcing in the ETA-direction.
+!  Read in 2D V-momentum impulse forcing.
 !
         IF (get_var(idVbar)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
@@ -6577,7 +6684,7 @@
 # endif
 # ifdef SOLVE3D
 !
-!  Read in 3D momentum forcing in the XI-direction.
+!  Read in 3D U-momentum impulse forcing.
 !
         IF (get_var(idUvel)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
@@ -6629,7 +6736,7 @@
           END IF
         END IF
 !
-!  Read in 3D momentum norm in the ETA-direction.
+!  Read in 3D V-momentum impulse forcing.
 !
         IF (get_var(idVvel)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
@@ -6681,7 +6788,7 @@
           END IF
         END IF
 !
-!  Read in tracer type variables norm.
+!  Read in tracer variables impulse forcing.
 !
         DO itrc=1,NT(ng)
           IF (get_var(idTvar(itrc))) THEN
@@ -6760,7 +6867,7 @@
 
 # ifdef ADJUST_BOUNDARY
 !
-!  Read in free-surface open boundaries.
+!  Read in free-surface open boundaries adjustments.
 !
         IF (get_var(idSbry(isFsur)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isFsur,ng))) THEN
@@ -6768,18 +6875,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, r2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, r2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_zeta_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_zeta_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -6812,7 +6919,7 @@
           END IF
         END IF
 !
-!  Read in 2D U-momentum component open boundaries.
+!  Read in 2D U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUbar)).and.get_adjust.and.                 &
      &        ANY(Lobc(:,isUbar,ng))) THEN
@@ -6820,18 +6927,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_ubar_obc(:,:,:,    &
-     &                                                      Tindex),    &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_ubar_obc(:,:,:,    &
-     &                                                      Tindex))
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -6864,7 +6971,7 @@
           END IF
         END IF
 !
-!  Read in 2D V-momentum component open boundaries.
+!  Read in 2D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVbar)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isVbar,ng))) THEN
@@ -6872,18 +6979,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread2d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v2dvar,                      &
-     &                             LBij, UBij, Nbrec(ng),               &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread2d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v2dvar,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
 #  ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_vbar_obc(:,:,:,    &
-     &                                                        Tindex),  &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
 #  else
-     &                             BOUNDARY(ng) % tl_vbar_obc(:,:,:,    &
-     &                                                        Tindex))
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
 #  endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -6918,7 +7025,7 @@
 
 #  ifdef SOLVE3D
 !
-!  Read in 3D U-momentum component open boundaries.
+!  Read in 3D U-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isUvel)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isUvel,ng))) THEN
@@ -6926,18 +7033,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, u3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, u3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #   ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_u_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #   else
-     &                             BOUNDARY(ng) % tl_u_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #   endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -6970,7 +7077,7 @@
           END IF
         END IF
 !
-!  Read in 3D V-momentum component open boundaries.
+!  Read in 3D V-momentum component open boundaries adjustments.
 !
         IF (get_var(idSbry(isVvel)).and.get_adjust.and.                 &
      &      ANY(Lobc(:,isVvel,ng))) THEN
@@ -6978,18 +7085,18 @@
           foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
      &                        varid)
           IF (foundit) THEN
-            status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,          &
-     &                             Vname(1,ifield), varid,              &
-     &                             InpRec, v3dvar,                      &
-     &                             LBij, UBij, 1, N(ng), Nbrec(ng),     &
-     &                             Fscl, Fmin, Fmax,                    &
+            status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,           &
+     &                            Vname(1,ifield), varid,               &
+     &                            InpRec, v3dvar,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
 #   ifdef CHECKSUM
-     &                             BOUNDARY(ng) % tl_v_obc(:,:,:,:,     &
-     &                                                     Tindex),     &
-     &                             checksum = Fhash)
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
 #   else
-     &                             BOUNDARY(ng) % tl_v_obc(:,:,:,:,     &
-     &                                                     Tindex))
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
 #   endif
             IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
@@ -7023,7 +7130,7 @@
           END IF
         END IF
 !
-!  Read in 3D tracers open boundaries.
+!  Read in 3D tracers open boundaries adjustments.
 !
         DO itrc=1,NT(ng)
           IF (get_var(idSbry(isTvar(itrc))).and.get_adjust.and.         &
@@ -7032,18 +7139,18 @@
             foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
      &                          varid)
             IF (foundit) THEN
-              status=nf_fread3d_bry (ng, IDmod, ncname, ncINPid,        &
-     &                               Vname(1,ifield), varid,            &
-     &                               InpRec, r3dvar,                    &
-     &                               LBij, UBij, 1, N(ng), Nbrec(ng),   &
-     &                               Fscl, Fmin, Fmax,                  &
+              status=nf_fread3d_bry(ng, IDmod, ncname, ncINPid,         &
+     &                              Vname(1,ifield), varid,             &
+     &                              InpRec, r3dvar,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
 #   ifdef CHECKSUM
-     &                               BOUNDARY(ng) % tl_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc), &
-     &                               checksum = Fhash)
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
 #   else
-     &                               BOUNDARY(ng) % tl_t_obc(:,:,:,:,   &
-     &                                                    Tindex,itrc))
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
 #   endif
               IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
                 IF (Master) THEN
@@ -7490,7 +7597,7 @@
           END IF
         END IF
 !
-!  Read in 3D momentum norm in the ETA-direction.
+!  Read in 3D momentum forcing in the ETA-direction.
 !
         IF (get_var(idVvel)) THEN
           foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
@@ -7613,32 +7720,8334 @@
       CALL wclock_off (ng, IDmod, 80, __LINE__, MyFile)
 #endif
 !
-  10  FORMAT (/,a,'GET_STATE - unable to open input NetCDF file: ',a)
-  20  FORMAT (/,a,'GET_STATE - Warning - NetCDF global attribute: ',a,  &
-     &        /,18x,'for lateral boundary conditions not checked',      &
-     &        /,18x,'in restart file: ',a)
-  30  FORMAT (/,a,'GET_STATE - requested input time record = ',i3,/,    &
-     &        18x,'not found in input NetCDF: ',a,/,                    &
-     &        18x,'number of available records = ',i3)
-  40  FORMAT (/,a,'GET_STATE - ',a,t75,a,                               &
-     &        /,19x,'(Grid ',i2.2,a,i4.4, ', t = ',a,                   &
+  10  FORMAT (/,2x,'GET_STATE_NF90 - ',a,'unable to open input NetCDF', &
+     &        ' file: ',a)
+  20  FORMAT (/,2x,'GET_STATE_NF90 - ',a,'Warning - NetCDF global',     &
+     &        ' attribute:',a,                                          &
+     &        /,19x,'for lateral boundary conditions not checked',      &
+     &        /,19x,'in file: ',a)
+  30  FORMAT (/,2x,'GET_STATE_NF90 - ',a,'requested input time',        &
+     &        ' record = ',i0,/,19x,'not found in input NetCDF: ',a,/,  &
+     &        19x,'number of available records = ',i0)
+  40  FORMAT (/,2x,'GET_STATE_NF90   - ',a,a,t75,a,                     &
+     &        /,22x,'(Grid ',i2.2,a,i4.4, ', t = ',a,                   &
      &        ', File: ',a, ', Rec=',i4.4,', Index=',i1,')')
-  50  FORMAT (/,a,'GET_STATE - ',a,t75,a,                               &
-     &        /,19x,'(Grid ',i2.2, ', t = ',a,                          &
+  50  FORMAT (/,2x,'GET_STATE_NF90   - ',a,a,t75,a,                     &
+     &        /,22x,'(Grid ',i2.2, ', t = ',a,                          &
      &        ', File: ',a,', Rec=',i4.4, ', Index=',i1,')')
-  60  FORMAT (/,a,'GET_STATE - error while reading variable: ',a,2x,    &
-     &        'at time record = ',i3,/,18x,'in input NetCDF file: ',a)
+  60  FORMAT (/,2x,'GET_STATE_NF90 - ',a,'error while reading',         &
+     &        ' variable: ',a,2x,'at time record = ',i0,                &
+     &        /,19x,'in input NetCDF file: ',a)
 #ifdef CHECKSUM
-  70  FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+  70  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
      &        ' Max = ',1p,e15.8,' CheckSum = ',i0,')')
 #else
-  70  FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+  70  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
      &        ' Max = ',1p,e15.8,')')
 #endif
-  75  FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+  75  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
      &        ' Max = ',1p,e15.8,')')
-  80  FORMAT (/,a,'GET_STATE - cannot find variable: ',a,               &
-     &        /,18x,'in input NetCDF file: ',a)
+  80  FORMAT (/,2x,'GET_STATE_NF90 - ',a,'cannot find variable: ',a,    &
+     &        /,19x,'in input NetCDF file: ',a)
 !
       RETURN
-      END SUBROUTINE get_state
+      END SUBROUTINE get_state_nf90
+
+#if defined PIO_LIB && defined DISTRIBUTE
+!
+!***********************************************************************
+      SUBROUTINE get_state_pio (ng, model, msg, S, IniRec, Tindex,      &
+# ifdef ADJUST_BOUNDARY
+     &                          IorJ, LBij, UBij,                       &
+# endif
+     &                          LBi, UBi, LBj, UBj)
+
+!***********************************************************************
+!
+      USE mod_pio_netcdf
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, msg, Tindex
+# ifdef ADJUST_BOUNDARY
+      integer, intent(in) :: IorJ, LBij, UBij
+# endif
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+
+      integer, intent(inout) :: IniRec
+!
+      TYPE(T_IO), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      logical :: Perfect2D, Perfect3D, foundit
+# if defined ADJUST_BOUNDARY || \
+    defined ADJUST_WSTRESS  || defined ADJUST_STFLUX
+      logical :: get_adjust
+# endif
+      logical, dimension(NV) :: get_var, have_var
+!
+      integer :: IDmod, InpRec, i, ifield, itrc, lstr, lend
+      integer :: Nrec, mySize, nvatts, nvdim, status, vindex
+      integer :: Vsize(4), start(4), total(4)
+      integer(i8b) :: Fhash
+!
+      real(dp), parameter :: Fscl = 1.0_r8
+
+      real(dp) :: INPtime, Tmax, my_dstart, scale, time_scale
+      real(r8) :: Fmax, Fmin
+
+      real(dp), allocatable :: TimeVar(:)
+!
+      character (len=  5) :: string
+      character (len= 15) :: Tstring, attnam, tvarnam
+      character (len= 22) :: t_code
+      character (len= 40) :: tunits
+      character (len=256) :: ncname
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", get_state_pio"
+!
+      TYPE (IO_Desc_t), pointer :: ioDesc
+
+      TYPE (file_desc_t) :: pioFile
+      TYPE (Var_desc_t)  :: pioVar
+      TYPE (My_VarDesc)  :: my_pioVar
+!
+      SourceFile=MyFile
+!
+!-----------------------------------------------------------------------
+!  Determine variables to read and their availability.
+!-----------------------------------------------------------------------
+!
+      ncname=TRIM(S%name)
+!
+!  Set model identification string.
+!
+      IF (model.eq.iNLM.or.(model.eq.0)) THEN
+        string='NLM: '                     ! nonlinear model, restart
+        IDmod=iNLM
+      ELSE IF (model.eq.iTLM) THEN
+        string='TLM: '                     ! tangent linear model
+        IDmod=iTLM
+      ELSE IF (model.eq.iRPM) THEN
+        string='RPM: '                     ! representer model
+        IDmod=iRPM
+      ELSE IF (model.eq.iADM) THEN
+        string='ADM: '                     ! adjoint model
+        IDmod=iADM
+      ELSE IF (model.eq.5) THEN
+        string='NLM: '                     ! surface forcing and
+        IDmod=iNLM                         ! OBC increments
+      ELSE IF (model.eq.6) THEN
+        string='TLM: '                     ! tangent linear error
+        IDmod=iTLM                         ! forcing (time covariance)
+      ELSE IF (model.eq.7) THEN
+        string='FRC: '                     ! impulse forcing
+        IDmod=iNLM
+      ELSE IF (model.eq.8) THEN
+        string='TLM: '                     ! v-space increments
+        IDmod=iTLM                         ! I4D-Var
+      ELSE IF (model.eq.9) THEN
+        string='NLM: '                     ! nonlinear model
+        IDmod=iNLM                         ! background state
+      ELSE IF (model.eq.10) THEN
+        string='STD: '                     ! standard deviation
+        IDmod=iNLM                         ! initial conditions
+      ELSE IF (model.eq.11) THEN
+        string='STD: '                     ! standard deviation
+        IDmod=iNLM                         ! model error
+      ELSE IF (model.eq.12) THEN
+        string='STD: '                     ! standard deviation
+        IDmod=iNLM                         ! boundary conditions
+      ELSE IF (model.eq.13) THEN
+        string='STD: '                     ! standard deviation
+        IDmod=iNLM                         ! surface forcing
+      ELSE IF (model.eq.14) THEN
+        string='NRM: '                     ! normalization factors
+        IDmod=iNLM                         ! initial conditions
+      ELSE IF (model.eq.15) THEN
+        string='NRM: '                     ! normalization factors
+        IDmod=iNLM                         ! model error
+      ELSE IF (model.eq.16) THEN
+        string='NRM: '                     ! normalization factor
+        IDmod=iNLM                         ! boundary conditions
+      ELSE IF (model.eq.17) THEN
+        string='NRM: '                     ! normalization factor
+        IDmod=iNLM                         ! surface forcing
+      END IF
+
+# ifdef PROFILE
+!
+!  Turn on time wall clock.
+!
+      CALL wclock_on (ng, IDmod, 80, __LINE__, MyFile)
+# endif
+!
+!  Set switch to process variables for nonlinear model perfect restart.
+!
+      Perfect2D=.FALSE.
+      Perfect3D=.FALSE.
+# ifdef PERFECT_RESTART
+      IF (((model.eq.0).or.(model.eq.iNLM)).and.(nrrec(ng).ne.0)) THEN
+        Perfect2D=.TRUE.
+        Perfect3D=.TRUE.
+      END IF
+# endif
+      PerfectRST(ng)=Perfect2D.or.Perfect3D
+!
+!  Set Vsize to zero to deactivate interpolation of input data to model
+!  grid in "nf_fread2d" and "nf_fread3d".
+!
+      DO i=1,4
+        Vsize(i)=0
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Open input NetCDF file and check time variable.
+!-----------------------------------------------------------------------
+!
+!  Open input NetCDF file.
+!
+      CALL pio_netcdf_open (ng, IDmod, ncname, 0, pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+        IF (Master) WRITE (stdout,10) string, TRIM(ncname)
+        RETURN
+      END IF
+!
+!  Determine variables to read.
+!
+      CALL checkvars (ng, model, ncname, pioFile, string, Nrec, NV,     &
+     &                tvarnam, get_var, have_var)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      SourceFile=MyFile
+
+# if defined DEBUGGING || defined NO_LBC_ATT
+!
+!  Lateral boundary conditions attribute not checked in restart file.
+!
+      IF (((model.eq.0).or.(model.eq.iNLM)).and.(nrrec(ng).ne.0)) THEN
+        IF (Master) WRITE (stdout,20) string, 'NLM_LBC', TRIM(ncname)
+      END IF
+# else
+!
+!  If restart, read in lateral boundary conditions global attribute
+!  from restart file and check keyword strings with structure vlues
+!  for consistency.
+!
+      IF (((model.eq.0).or.(model.eq.iNLM)).and.(nrrec(ng).ne.0)) THEN
+        CALL lbc_getatt (ng, model, pioFile, ncname, 'NLM_LBC', LBC)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      END IF
+# endif
+!
+!  Inquire about the input time variable.
+!
+      CALL pio_netcdf_inq_var (ng, IDmod, ncname,                       &
+     &                         pioFile = pioFile,                       &
+     &                         MyVarName = TRIM(tvarnam),               &
+     &                         pioVar = pioVar,                         &
+     &                         nVarDim =  nvdim,                        &
+     &                         nVarAtt = nvatts)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Allocate input time variable and read its value(s).  Recall that
+!  input time variable is a one-dimensional array with one or several
+!  values.
+!
+      mySize=var_Dsize(1)
+      IF (.not.allocated(TimeVar)) allocate (TimeVar(mySize))
+      CALL pio_netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),       &
+     &                          Rclock%DateNumber, TimeVar,             &
+     &                          pioFile = pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  If using the latest time record from input NetCDF file as the
+!  initialization record, assign input time.
+!
+      IF (LastRec(ng)) THEN
+        Tmax=-1.0_r8
+        DO i=1,mySize
+          IF (TimeVar(i).gt.Tmax) THEN
+            Tmax=TimeVar(i)
+            IniRec=i
+          END IF
+        END DO
+        INPtime=Tmax
+        InpRec=IniRec
+      ELSE
+        IF ((IniRec.ne.0).and.(IniRec.gt.mySize)) THEN
+          IF (Master)  WRITE (stdout,30) string, IniRec, TRIM(ncname),  &
+     &                                   mySize
+          exit_flag=2
+          RETURN
+        END IF
+        IF (IniRec.ne.0) THEN
+          InpRec=IniRec
+        ELSE
+          InpRec=1
+        END IF
+        INPtime=TimeVar(InpRec)
+      END IF
+      IF (allocated(TimeVar)) deallocate ( TimeVar )
+!
+!  Set input time scale by looking at the "units" attribute.
+!
+      time_scale=0.0_dp
+      DO i=1,nvatts
+        IF (TRIM(var_Aname(i)).eq.'units') THEN
+          IF (INDEX(TRIM(var_Achar(i)),'day').ne.0) THEN
+            time_scale=day2sec
+          ELSE IF (INDEX(TRIM(var_Achar(i)),'second').ne.0) THEN
+            time_scale=1.0_dp
+          END IF
+        END IF
+      END DO
+      IF (time_scale.gt.0.0_r8) THEN
+        INPtime=INPtime*time_scale
+      END IF
+!
+!  Set starting time index and time clock in days.  Notice that the
+!  global time variables and indices are only over-written when
+!  processing initial conditions (msg = 1).
+!
+      IF ((model.eq.0).or.(model.eq.iNLM).or.                           &
+     &    (model.eq.iTLM).or.(model.eq.iRPM)) THEN
+# ifdef GENERIC_DSTART
+        IF (INItime(ng).lt.0.0_dp) THEN
+          my_dstart=dstart                  ! ROMS input script
+        ELSE
+          my_dstart=INItime(ng)/86400.0_dp  ! NLM IC time is known
+        END IF
+        IF (((model.eq.iTLM).or.(model.eq.iRPM)).and.(msg.eq.1).and.    &
+     &      (INPtime.ne.(my_dstart*day2sec))) THEN
+          INPtime=my_dstart*day2sec
+        END IF
+# else
+        IF (((model.eq.iTLM).or.(model.eq.iRPM)).and.(msg.eq.1).and.    &
+     &      (INPtime.ne.(dstart*day2sec))) THEN
+          INPtime=dstart*day2sec
+        END IF
+# endif
+        IF (msg.eq.1) THEN            ! processing initial conditions
+          time(ng)=INPtime
+          tdays(ng)=time(ng)*sec2day
+          ntstart(ng)=NINT((time(ng)-dstart*day2sec)/dt(ng))+1
+          IF (ntstart(ng).lt.1) ntstart(ng)=1
+          ntend(ng)=ntstart(ng)+ntimes(ng)-1
+          IF (PerfectRST(ng)) THEN
+            ntfirst(ng)=1
+          ELSE
+            ntfirst(ng)=ntstart(ng)
+          END IF
+        END IF
+# ifdef WEAK_CONSTRAINT
+        IF (msg.eq.4) THEN
+          ForceTime(ng)=time(ng)
+        END IF
+# endif
+      ELSE IF (model.eq.iADM) THEN
+        IF ((msg.eq.1).and.(INPtime.eq.0.0_r8)) THEN
+          INPtime=time(ng)
+        ELSE IF (msg.ne.1) THEN
+          time(ng)=INPtime
+          tdays(ng)=time(ng)*sec2day
+        END IF
+        ntstart(ng)=ntimes(ng)+1
+        ntend(ng)=1
+        ntfirst(ng)=ntend(ng)
+      END IF
+      CALL time_string (time(ng), time_code(ng))
+!
+!  Over-write "IniRec" to the actual initial record processed.
+!
+      IF (model.eq.iNLM) THEN
+        IniRec=InpRec
+      END IF
+!
+!  Set current input time, io_time .  Notice that the model time,
+!  time(ng), is reset above.  This is a THREADPRIVATE variable in
+!  shared-memory and this routine is only processed by the MASTER
+!  thread since it is an I/O routine. Therefore, we need to update
+!  time(ng) somewhere else in a parallel region. This will be done
+!  with io_time variable.
+!
+      io_time=INPtime
+!
+!  Report information.
+!
+      lstr=SCAN(ncname,'/',BACK=.TRUE.)+1
+      lend=LEN_TRIM(ncname)
+      IF (Master) THEN
+        IF ((10.le.model).and.(model.le.17)) THEN
+          t_code=' '              ! time is meaningless for these fields
+        ELSE
+          CALL time_string (INPtime, t_code)
+        END IF
+        WRITE (Tstring,'(f15.4)') tdays(ng)
+# if defined I4DVAR          || defined I4DVAR_ANA_SENSITIVITY || \
+    defined WEAK_CONSTRAINT
+        WRITE (stdout,40) string, TRIM(StateMsg(msg)),                  &
+     &                    t_code, ng, ', Outer=', outer,                &
+     &                    TRIM(ADJUSTL(Tstring)), ncname(lstr:lend),    &
+     &                    InpRec, Tindex
+# else
+        IF (ERend.gt.ERstr) THEN
+          WRITE (stdout,40) string, TRIM(StateMsg(msg)),                &
+     &                      t_code, ng, ', Iter=', Nrun,                &
+     &                      TRIM(ADJUSTL(Tstring)),  ncname(lstr:lend), &
+     &                      InpRec, Tindex
+        ELSE
+          WRITE (stdout,50) string, TRIM(StateMsg(msg)),                &
+     &                      t_code, ng, TRIM(ADJUSTL(Tstring)),         &
+     &                      ncname(lstr:lend), InpRec, Tindex
+        END IF
+# endif
+      END IF
+
+# ifdef NONLINEAR
+!
+!-----------------------------------------------------------------------
+!  Read in nonlinear state variables. If applicable, read in perfect
+!  restart variables.
+!-----------------------------------------------------------------------
+!
+      NLM_STATE: IF ((model.eq.iNLM).or.(model.eq.0)) THEN
+
+#  ifdef PERFECT_RESTART
+!
+!  Read in time-stepping indices.
+!
+        IF ((model.eq.0).and.(nrrec(ng).ne.0)) THEN
+#   ifdef SOLVE3D
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'nstp', nstp(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'nrhs', nrhs(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'nnew', nnew(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#   endif
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'kstp', kstp(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'krhs', krhs(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+          CALL pio_netcdf_get_ivar (ng, IDmod, ncname,                  &
+     &                              'knew', knew(ng:),                  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/InpRec/),                 &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+#  endif
+#  if defined SEDIMENT && defined SED_MORPH
+!
+!  Read in time-evolving bathymetry (m).
+!
+        IF (get_var(idbath)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idbath)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(GRID(ng)%h).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idbath), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        GRID(ng) % h,                             &
+     &                        checksum = Fhash)
+#   else
+     &                        GRID(ng) % h)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idbath)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idbath)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idbath)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idbath)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+!
+!  Read in nonlinear free-surface (m).
+!
+        IF (get_var(idFsur)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (Perfect2D) THEN
+              IF (KIND(OCEAN(ng)%zeta).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_rzeta(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_rzeta(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idFsur), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, 3,               &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % zeta,                       &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % zeta)
+#  endif
+            ELSE
+              IF (KIND(OCEAN(ng)%zeta).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idFsur), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % zeta(:,:,Tindex),           &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % zeta(:,:,Tindex))
+#  endif
+            END IF
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear RHS of free-surface.
+!
+        IF (get_var(idRzet).and.Perfect2D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idRzet)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%rzeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_rzeta(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_rzeta(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idRzet), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, 2,                 &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % rzeta,                        &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % rzeta)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idRzet)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idRzet)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idRzet)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idRzet)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear 2D U-momentum component (m/s).
+!
+        IF (get_var(idUbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (Perfect2D) THEN
+              IF (KIND(OCEAN(ng)%ubar).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_ubar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_ubar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUbar), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, 3,               &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % ubar,                       &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % ubar)
+#  endif
+            ELSE
+              IF (KIND(OCEAN(ng)%ubar).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUbar), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % ubar(:,:,Tindex),           &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % ubar(:,:,Tindex))
+#  endif
+            END IF
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear RHS of 2D U-momentum component.
+!
+        IF (get_var(idRu2d).and.Perfect2D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idRu2d)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%rubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_rubar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_rubar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idRu2d), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, 2,                 &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % rubar,                        &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % rubar)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idRu2d)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idRu2d)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idRu2d)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idRu2d)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear 2D V-momentum component (m/s).
+!
+        IF (get_var(idVbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+
+            IF (Perfect2D) THEN
+              IF (KIND(OCEAN(ng)%vbar).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_vbar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_vbar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVbar), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, 3,               &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % vbar,                       &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % vbar)
+#  endif
+            ELSE
+              IF (KIND(OCEAN(ng)%vbar).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVbar), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#  ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#  endif
+#  ifdef CHECKSUM
+     &                          OCEAN(ng) % vbar(:,:,Tindex),           &
+     &                          checksum = Fhash)
+#  else
+     &                          OCEAN(ng) % vbar(:,:,Tindex))
+#  endif
+            END IF
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear RHS 2D V-momentum component.
+!
+        IF (get_var(idRv2d).and.Perfect2D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idRv2d)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%rvbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_rvbar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_rvbar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idRv2d), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, 2,                 &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % rvbar,                        &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % rvbar)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idRv2d)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idRv2d)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idRv2d)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idRv2d)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef SOLVE3D
+!
+!  Read in nonlinear 3D U-momentum component (m/s).
+!
+        IF (get_var(idUvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (Perfect3D) THEN
+              IF (KIND(OCEAN(ng)%u).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_uvel(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_uvel(ng)
+              END IF
+!
+              status=nf_fread4d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUvel), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), 1, 2,     &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % u,                          &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % u)
+#   endif
+            ELSE
+              IF (KIND(OCEAN(ng)%u).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_u3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_u3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUvel), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % u(:,:,:,Tindex),            &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % u(:,:,:,Tindex))
+#   endif
+            END IF
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear RHS of 3D U-momentum component.
+!
+        IF (get_var(idRu3d).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idRu3d)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%ru).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_ruvel(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_ruvel(ng)
+            END IF
+!
+            status=nf_fread4d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idRu3d), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng), 1, 2,       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % ru,                           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % ru)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idRu3d)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idRu3d)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idRu3d)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idRu3d)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear 3D V-momentum component (m/s).
+!
+        IF (get_var(idVvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (Perfect3D) THEN
+              IF (KIND(OCEAN(ng)%v).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_vvel(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_vvel(ng)
+              END IF
+!
+              status=nf_fread4d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVvel), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), 1, 2,     &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % v,                          &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % v)
+#   endif
+            ELSE
+              IF (KIND(OCEAN(ng)%v).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_v3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_v3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVvel), my_pioVar,             &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % v(:,:,:,Tindex),            &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % v(:,:,:,Tindex))
+#   endif
+            END IF
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear RHS of 3D V-momentum component.
+!
+        IF (get_var(idRv3d).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idRv3d)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%dkind=PIO_FRST
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%rv).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_rvvel(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_rvvel(ng)
+            END IF
+!
+            status=nf_fread4d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idRv3d), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng), 1, 2,       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % rv,                           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % rv)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idRv3d)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idRv3d)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idRv3d)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idRv3d)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in nonlinear tracer type variables.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (Perfect3D) THEN
+                IF (KIND(OCEAN(ng)%u).eq.8) THEN
+                  my_pioVar%dkind=PIO_double
+                  ioDesc => ioDesc_dp_trcvar(ng)
+                ELSE
+                  my_pioVar%dkind=PIO_real
+                  ioDesc => ioDesc_sp_trcvar(ng)
+                END IF
+!
+                status=nf_fread4d(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,idTvar(itrc)), my_pioVar,     &
+     &                            InpRec, ioDesc, Vsize,                &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng), 1, 2,   &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef MASKING
+     &                            GRID(ng) % rmask,                     &
+#   endif
+#   ifdef CHECKSUM
+     &                            OCEAN(ng) % t(:,:,:,:,itrc),          &
+     &                            checksum = Fhash)
+#   else
+     &                            OCEAN(ng) % t(:,:,:,:,itrc))
+#   endif
+              ELSE
+                IF (KIND(OCEAN(ng)%t).eq.8) THEN
+                  my_pioVar%dkind=PIO_double
+                  ioDesc => ioDesc_dp_r3dvar(ng)
+                ELSE
+                  my_pioVar%dkind=PIO_real
+                  ioDesc => ioDesc_sp_r3dvar(ng)
+                END IF
+!
+                status=nf_fread3d(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,idTvar(itrc)), my_pioVar,     &
+     &                            InpRec, ioDesc, Vsize,                &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef MASKING
+     &                            GRID(ng) % rmask,                     &
+#   endif
+#   ifdef CHECKSUM
+     &                            OCEAN(ng) % t(:,:,:,Tindex,itrc),     &
+     &                            checksum = Fhash)
+#   else
+     &                            OCEAN(ng) % t(:,:,:,Tindex,itrc))
+#   endif
+              END IF
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#   if defined GLS_MIXING || defined MY25_MIXING || defined LMD_MIXING
+!
+!  Read in vertical viscosity.
+!
+        IF (have_var(idVvis)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvis)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%AKv).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvis), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin,Fmax,                          &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % AKv,                         &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % AKv)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvis)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvis)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idVvis)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+#    ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          MIXING(ng) % AKv)
+#    endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvis)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in temperature vertical diffusion.
+!
+        IF (have_var(idTdif)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idTdif)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%AKt).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idTdif), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin,Fmax,                          &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % AKt(:,:,:,itemp),            &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % AKt(:,:,:,itemp))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idTdif)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idTdif)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idTdif)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+#    ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          MIXING(ng) % AKt(:,:,:,itemp))
+#    endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idTdif)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#    ifdef SALINITY
+!
+!  Read in salinity vertical diffusion.
+!
+        IF (have_var(idSdif)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idSdif)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%AKt).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idSdif), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin,Fmax,                          &
+#     ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#     endif
+#     ifdef CHECKSUM
+     &                        MIXING(ng) % AKt(:,:,:,isalt),            &
+     &                        checksum = Fhash)
+#     else
+     &                        MIXING(ng) % AKt(:,:,:,isalt))
+#     endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idSdif)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#     ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idSdif)), Fmin, Fmax,    &
+     &                            Fhash
+#     else
+                WRITE (stdout,70) TRIM(Vname(2,idSdif)), Fmin, Fmax
+#     endif
+
+              END IF
+            END IF
+#     ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          MIXING(ng) % AKt(:,:,:,isalt))
+#     endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idSdif)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#    endif
+#   endif
+#   if defined LMD_SKPP
+!
+!  Read in Hsbl
+!
+        IF (have_var(idHsbl).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idHsbl)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%dkind=PIO_FRST
+            my_pioVar%gtype=r2dvar
+            IF (KIND(MIXING(ng)%Hsbl).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idHsbl), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % Hsbl,                        &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % Hsbl)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idHsbl)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idHsbl)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idHsbl)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idHsbl)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+#   if defined LMD_BKPP
+!
+!  Read in Hbbl
+!
+        IF (have_var(idHbbl).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idHbbl)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%dkind=PIO_FRST
+            my_pioVar%gtype=r2dvar
+            IF (KIND(MIXING(ng)%Hbbl).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idHbbl), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        MIXING(ng) % Hbbl,                        &
+     &                        checksum = Fhash)
+#  else
+     &                        MIXING(ng) % Hbbl)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idHbbl)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idHbbl)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idHbbl)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idHbbl)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+#   if defined LMD_NONLOCAL && defined PERFECT_RESTART
+!
+!  Read in Ghats
+!
+      DO itrc=1,NAT
+        IF (have_var(idGhat(itrc))) THEN
+          foundit=find_string(var_name, n_var,                          &
+     &                        TRIM(Vname(1,idGhat(itrc))), vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%Ghats).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idGhat(itrc)), my_pioVar,         &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin,Fmax,                          &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % Ghats(:,:,:,itrc),           &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % Ghats(:,:,:,itrc))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idGhat(itrc))),  &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idGhat(itrc))),          &
+     &                            Fmin, Fmax, Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idGhat(itrc))),          &
+     &                            Fmin, Fmax
+#    endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idGhat(itrc))),    &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+      END DO
+#   endif
+#   if defined GLS_MIXING || defined MY25_MIXING
+!
+!  Read in turbulent kinetic energy.
+!
+        IF (get_var(idMtke).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idMtke)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%dkind=PIO_FRST
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%tke).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_tkevar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_tkevar(ng)
+            END IF
+!
+            status=nf_fread4d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idMtke), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng), 1, 2,       &
+     &                        Fscl, Fmin, Fmax,                         &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % tke,                         &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % tke)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idMtke)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idMtke)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idMtke)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idMtke)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in turbulent kinetic energy time length scale.
+!
+        IF (get_var(idMtls).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idMtls)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%gls).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_tkevar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_tkevar(ng)
+            END IF
+!
+            status=nf_fread4d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idMtls), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng), 1, 2,       &
+     &                        Fscl, Fmin, Fmax,                         &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % gls,                         &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % gls)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idMtls)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+             RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idMtls)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idMtls)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idMtls)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in vertical mixing turbulent length scale.
+!
+        IF (get_var(idVmLS).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVmLS)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%dkind=PIO_FRST
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%Lscale).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVmLS), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % Lscale,                      &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % Lscale)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVmLS)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVmLS)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idVmLS)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVmLS)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in turbulent kinetic energy vertical diffusion coefficient.
+!
+        IF (get_var(idVmKK).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVmKK)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%Akk).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVmKK), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#    ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#    endif
+#    ifdef CHECKSUM
+     &                        MIXING(ng) % Akk,                         &
+     &                        checksum = Fhash)
+#    else
+     &                        MIXING(ng) % Akk)
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVmKK)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVmKK)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,idVmKK)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVmKK)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#    ifdef GLS_MIXING
+!
+!  Read in turbulent length scale vertical diffusion coefficient.
+!
+        IF (get_var(idVmKP).and.Perfect3D) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVmKP)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%Akp).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVmKP), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#     ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#     endif
+#     ifdef CHECKSUM
+     &                        MIXING(ng) % Akp,                         &
+     &                        checksum = Fhash)
+#     else
+     &                        MIXING(ng) % Akp)
+#     endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVmKP)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#     ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVmKP)), Fmin, Fmax,    &
+     &                            Fhash
+#     else
+                WRITE (stdout,70) TRIM(Vname(2,idVmKP)), Fmin, Fmax
+#     endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVmKP)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#    endif
+#   endif
+#   ifdef SEDIMENT
+!
+!  Read in nonlinear sediment fraction of each size class in each bed
+!  layer.
+!
+        DO i=1,NST
+          IF (get_var(idfrac(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idfrac(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%bed_frac).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idfrac(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % bed_frac(:,:,:,i),         &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % bed_frac(:,:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idfrac(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax
+#    endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idfrac(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+!  Read in nonlinear sediment mass of each size class in each bed layer.
+!
+          IF (get_var(idBmas(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idBmas(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%bed_mass).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBmas(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % bed_mass(:,:,:,Tindex,i),  &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % bed_mass(:,:,:,Tindex,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBmas(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax
+#   endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBmas(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+!
+!  Read in nonlinear sediment properties in each bed layer.
+!
+        DO i=1,MBEDP
+          IF (get_var(idSbed(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idSbed(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%bed).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idSbed(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % bed(:,:,:,i),              &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % bed(:,:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idSbed(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax
+#    endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idSbed(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#    ifdef BEDLOAD
+!
+!  Read in nonlinear sediment fraction of bed load.
+!
+        DO i=1,NST
+          IF (get_var(idUbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idUbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=u2dvar
+              IF (KIND(SEDBED(ng)%bedldu).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % bedldu(:,:,i),             &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % bedldu(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idUbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idUbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+          IF (get_var(idVbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idVbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=v2dvar
+              IF (KIND(SEDBED(ng)%bedldv).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % bedldv(:,:,i),             &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % bedldv(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idVbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idVbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#    endif
+#   endif
+
+#   if defined SEDIMENT || defined BBL_MODEL
+!
+!  Read in nonlinear sediment properties in exposed bed layer.
+!
+        DO i=1,MBOTP
+          IF (get_var(idBott(i)).and.have_var(idBott(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idBott(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(SEDBED(ng)%bottom).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBott(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % bottom(:,:,i),             &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % bottom(:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBott(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax
+#    endif
+
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBott(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+      END IF NLM_STATE
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!-----------------------------------------------------------------------
+!  Read in tangent linear state variables.
+!-----------------------------------------------------------------------
+!
+      TLM_STATE: IF ((model.eq.iTLM).or.(model.eq.iRPM)) THEN
+
+#  if defined ADJUST_BOUNDARY || \
+    defined ADJUST_WSTRESS  || defined ADJUST_STFLUX
+        IF (inner.eq.0.and.model.eq.iRPM) THEN
+          get_adjust=.FALSE.
+        ELSE
+          get_adjust=.TRUE.
+        END IF
+#  endif
+!
+!  Read in tangent linear free-surface (m).
+!
+        IF (get_var(idFsur)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%tl_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_zeta(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % tl_zeta(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in free-surface open boundaries adjustments.
+!
+        IF (get_var(idSbry(isFsur)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isFsur,ng))) THEN
+          ifield=idSbry(isFsur)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dobc
+            IF (KIND(BOUNDARY(ng)%tl_zeta_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+!
+!  Read in tangent linear 2D U-momentum component (m/s).
+!
+        IF (get_var(idUbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%tl_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_ubar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % tl_ubar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in 2D U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUbar)).and.get_adjust.and.                 &
+     &        ANY(Lobc(:,isUbar,ng))) THEN
+          ifield=idSbry(isUbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dobc
+            IF (KIND(BOUNDARY(ng)%tl_ubar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+!
+!  Read in tangent linear 2D V-momentum component.
+!
+        IF (get_var(idVbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%tl_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_vbar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % tl_vbar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in 2D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVbar)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isVbar,ng))) THEN
+          ifield=idSbry(isVbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dobc
+            IF (KIND(BOUNDARY(ng)%tl_vbar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef ADJUST_WSTRESS
+!
+!  Read in tangent linear surface U-momentum stress.
+!
+        IF (get_var(idUsms).and.get_adjust) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(FORCES(ng)%tl_ustr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % tl_ustr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % tl_ustr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted tl_ustr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted tl_ustr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in tangent linear surface V-momentum stress.
+!
+        IF (get_var(idVsms).and.get_adjust) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(FORCES(ng)%tl_vstr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % tl_vstr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % tl_vstr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted tl_vstr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted tl_vstr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef SOLVE3D
+!
+!  Read in tangent linear 3D U-momentum component.
+
+!
+        IF (get_var(idUvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%tl_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_u(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_u(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in 3D U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUvel)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isUvel,ng))) THEN
+          ifield=idSbry(isUvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dobc
+            IF (KIND(BOUNDARY(ng)%tl_u_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+!
+!  Read in tangent linear 3D V-momentum component.
+!
+        IF (get_var(idVvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%tl_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_v(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_v(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in 3D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVvel)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isVvel,ng))) THEN
+          ifield=idSbry(isVvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dobc
+            IF (KIND(BOUNDARY(ng)%tl_v_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#    ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#    else
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+!
+!  Read in tangent linear tracer type variables.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%tl_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % tl_t(:,:,:,Tindex,itrc),    &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % tl_t(:,:,:,Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in 3D tracers open boundaries adjustments.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idSbry(isTvar(itrc))).and.get_adjust.and.         &
+     &        ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            ifield=idSbry(isTvar(itrc))
+            foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
+     &                          vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dobc
+              IF (KIND(BOUNDARY(ng)%tl_t_obc).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dobc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dobc(ng)
+              END IF
+!
+              status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,         &
+     &                              Vname(1,ifield), my_pioVar,         &
+     &                              InpRec, ioDesc,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
+#    ifdef CHECKSUM
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
+#    else
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,ifield)),      &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,  &
+     &                              Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,ifield)),        &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#   ifdef ADJUST_STFLUX
+!
+!  Read in tangent linear surface tracers flux.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTsur(itrc)).and.get_adjust.and.                 &
+     &        Lstflux(itrc,ng)) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTsur(itrc))), vindex)
+            IF (foundit) THEN
+              scale=1.0_dp
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(FORCES(ng)%tl_tflux).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dfrc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dfrc(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTsur(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nfrec(ng),       &
+     &                          scale, Fmin, Fmax,                      &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#   ifdef CHECKSUM
+     &                          FORCES(ng)% tl_tflux(:,:,:,             &
+     &                                               Tindex,itrc),      &
+     &                          checksum = Fhash)
+#   else
+     &                          FORCES(ng)% tl_tflux(:,:,:,             &
+     &                                               Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTsur(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted tl_tflux', Fmin, Fmax,  &
+     &                              Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted tl_tflux', Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTsur(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#   ifdef SEDIMENT
+!
+!  Read in tangent linear sediment fraction of each size class in each
+!  bed layer.
+!
+        DO i=1,NST
+          IF (get_var(idfrac(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idfrac(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(OCEAN(ng)%tl_bed_frac).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idfrac(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#   ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bed_frac(:,:,:,i),      &
+     &                          checksum = Fhash)
+#   else
+     &                          SEDBED(ng) % tl_bed_frac(:,:,:,i))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idfrac(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idfrac(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+!  Read in tangent linear sediment mass of each size class in each
+!  bed layer.
+!
+          IF (get_var(idBmas(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idBmas(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(OCEAN(ng)%tl_bed_mass).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBmas(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bed_mass(:,:,:,         &
+     &                                                   Tindex,i),     &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % tl_bed_mass(:,:,:,         &
+     &                                                   Tindex,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBmas(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBmas(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+!
+!  Read in tangent linear sediment properties in each bed layer.
+!
+        DO i=1,MBEDP
+          IF (get_var(idSbed(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idSbed(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(OCEAN(ng)%tl_bed).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idSbed(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bed(:,:,:,i),           &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % tl_bed(:,:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idSbed(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idSbed(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#    ifdef BEDLOAD
+!
+!  Read in tangent linear sediment fraction of bed load.
+!
+        DO i=1,NST
+          IF (get_var(idUbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idUbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=u2dvar
+              IF (KIND(OCEAN(ng)%tl_bedldu).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bedldu(:,:,i),          &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % tl_bedldu(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idUbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idUbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+          IF (get_var(idVbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idVbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=v2dvar
+              IF (KIND(OCEAN(ng)%tl_bedldv).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bedldv(:,:,i),          &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % tl_bedldv(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idVbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idVbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#    endif
+#   endif
+
+#   if defined SEDIMENT || defined BBL_MODEL
+!
+!  Read in tangent linear sediment properties in exposed bed layer.
+!
+        DO i=1,MBOTP
+          IF (get_var(idBott(i)).and.have_var(idBott(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idBott(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(OCEAN(ng)%tl_bottom).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBott(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % tl_bottom(:,:,i),          &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % tl_bottom(:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBott(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBott(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+      END IF TLM_STATE
+# endif
+
+# ifdef ADJOINT
+!
+!-----------------------------------------------------------------------
+!  Read in adjoint state variables.
+!-----------------------------------------------------------------------
+!
+      ADM_STATE: IF (model.eq.iADM) THEN
+!
+!  Read in adjoint free-surface.
+!
+        IF (get_var(idFsur)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%ad_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % ad_zeta(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % ad_zeta(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in adjoint free-surface open boundaries adjustments.
+!
+        IF (get_var(idSbry(isFsur)).and.                                &
+     &      ANY(Lobc(:,isFsur,ng))) THEN
+          ifield=idSbry(isFsur)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dobc
+            IF (KIND(BOUNDARY(ng)%ad_zeta_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % ad_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % ad_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+!
+!  Read in adjoint 2D U-momentum component.
+!
+        IF (get_var(idUbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%ad_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % ad_ubar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % ad_ubar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in 2D adjoint U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUbar)).and.                                &
+     &        ANY(Lobc(:,isUbar,ng))) THEN
+          ifield=idSbry(isUbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dobc
+            IF (KIND(BOUNDARY(ng)%ad_ubar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % ad_ubar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % ad_ubar_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+!
+!  Read in adjoint 2D V-momentum component.
+!
+        IF (get_var(idVbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%ad_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % ad_vbar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % ad_vbar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in 2D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVbar)).and.                                &
+     &      ANY(Lobc(:,isVbar,ng))) THEN
+          ifield=idSbry(isVbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dobc
+            IF (KIND(BOUNDARY(ng)%ad_vbar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % ad_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % ad_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef ADJUST_WSTRESS
+!
+!  Read in adjoint linear surface U-momentum stress.
+!
+        IF (get_var(idUsms)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(FORCES(ng)%ad_ustr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % ad_ustr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % ad_ustr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted ad_ustr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted ad_ustr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in adjoint linear surface V-momentum stress.
+!
+        IF (get_var(idVsms)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(FORCES(ng)%ad_vstr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % ad_vstr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % ad_vstr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted ad_vstr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted ad_vstr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef SOLVE3D
+!
+!  Read in adjoint 3D U-momentum component.
+!
+        IF (get_var(idUvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%ad_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % ad_u(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % ad_u(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in adjoint 3D U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUvel)).and.                                &
+     &      ANY(Lobc(:,isUvel,ng))) THEN
+          ifield=idSbry(isUvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dobc
+            IF (KIND(BOUNDARY(ng)%ad_u_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#    ifdef CHECKSUM
+     &                            BOUNDARY(ng) % ad_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#    else
+     &                            BOUNDARY(ng) % ad_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+!
+!  Read in adjoint 3D V-momentum component.
+!
+        IF (get_var(idVvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%ad_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % ad_v(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % ad_v(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in 3D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVvel)).and.                                &
+     &      ANY(Lobc(:,isVvel,ng))) THEN
+          ifield=idSbry(isVvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dobc
+            IF (KIND(BOUNDARY(ng)%ad_v_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#    ifdef CHECKSUM
+     &                            BOUNDARY(ng) % ad_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#    else
+     &                            BOUNDARY(ng) % ad_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#   endif
+!
+!  Read in adjoint tracer type variables.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%ad_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % ad_t(:,:,:,Tindex,itrc),    &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % ad_t(:,:,:,Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmin, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Read in adjoint 3D tracers open boundaries adjustments.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idSbry(isTvar(itrc))).and.                        &
+     &        ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            ifield=idSbry(isTvar(itrc))
+            foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
+     &                          vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dobc
+              IF (KIND(BOUNDARY(ng)%ad_t_obc).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dobc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dobc(ng)
+              END IF
+!
+              status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,         &
+     &                              Vname(1,ifield), my_pioVar,         &
+     &                              InpRec, ioDesc,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
+#    ifdef CHECKSUM
+     &                              BOUNDARY(ng) % ad_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
+#    else
+     &                              BOUNDARY(ng) % ad_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,ifield)),      &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,  &
+     &                              Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,ifield)),        &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#   ifdef ADJUST_STFLUX
+!
+!  Read in adjoint surface tracers flux.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTsur(itrc)).and.Lstflux(itrc,ng)) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTsur(itrc))), vindex)
+            IF (foundit) THEN
+              scale=1.0_dp
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(FORCES(ng)%ad_tflux).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dfrc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dfrc(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTsur(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nfrec(ng),       &
+     &                          scale, Fmin, Fmax,                      &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          FORCES(ng) % ad_tflux(:,:,:,            &
+     &                                                Tindex,itrc),     &
+     &                          checksum = Fhash)
+#    else
+     &                          FORCES(ng) % ad_tflux(:,:,:,            &
+     &                                                Tindex,itrc))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTsur(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted ad_tflux', Fmin, Fmax,  &
+     &                              Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted ad_tflux', Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTsur(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#   ifdef SEDIMENT
+!
+!  Read in adjoint sediment fraction of each size class in each bed
+!  layer.
+!
+        DO i=1,NST
+          IF (get_var(idfrac(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idfrac(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%ad_bed_frac).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idfrac(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bed_frac(:,:,:,i),      &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % ad_bed_frac(:,:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idfrac(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idfrac(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idfrac(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+!  Read in adjoint sediment mass of each size class in each bed layer.
+!
+          IF (get_var(idBmas(i))) THEN
+            foundit=find_string(var_name, n_var,
+     &                          TRIM(Vname(1,idBmas(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%ad_bed_mass).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBmas(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bed_mass(:,:,:,         &
+                                                         Tindex,i),     &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % ad_bed_mass(:,:,:,         &
+     &                                                   Tindex,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBmas(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idBmas(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBmas(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+!
+!  Read in adjoint sediment properties in each bed layer.
+!
+        DO i=1,MBEDP
+          IF (get_var(idSbed(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idSbed(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=b3dvar
+              IF (KIND(SEDBED(ng)%ad_bed).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_b3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_b3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idSbed(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nbed,            &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bed(:,:,:,i),           &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % ad_bed(:,:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idSbed(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idSbed(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idSbed(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+
+#    ifdef BEDLOAD
+!
+!  Read in adjoint sediment fraction of bed load.
+!
+        DO i=1,NST
+          IF (get_var(idUbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idUbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=u2dvar
+              IF (KIND(SEDBED(ng)%ad_bedldu).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idUbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bedldu(:,:,i),          &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % ad_bedldu(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idUbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idUbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idUbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+!
+          IF (get_var(idVbld(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idVbld(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=v2dvar
+              IF (KIND(SEDBED(ng)%ad_bedldv).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idVbld(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#     ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#     endif
+#     ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bedldv(:,:,i),          &
+     &                          checksum = Fhash)
+#     else
+     &                          SEDBED(ng) % ad_bedldv(:,:,i))
+#     endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idVbld(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#     ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax, Fhash
+#     else
+                  WRITE (stdout,70) TRIM(Vname(2,idVbld(i))),           &
+     &                              Fmin, Fmax
+#     endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idVbld(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#    endif
+#   endif
+#   if defined SEDIMENT || defined BBL_MODEL
+!
+!  Read in adjoint sediment properties in exposed bed layer.
+!
+        DO i=1,MBOTP
+          IF (get_var(idBott(i)).and.have_var(idBott(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idBott(i))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(SEDBED(ng)%tl_bottom).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idBott(i)), my_pioVar,          &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#    ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#    endif
+#    ifdef CHECKSUM
+     &                          SEDBED(ng) % ad_bottom(:,:,i),          &
+     &                          checksum = Fhash)
+#    else
+     &                          SEDBED(ng) % ad_bottom(:,:,i))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idBott(i))),   &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax, Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,idBott(i))),           &
+     &                              Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idBott(i))),     &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+      END IF ADM_STATE
+# endif
+
+# ifdef FOUR_DVAR
+!
+!-----------------------------------------------------------------------
+!  Read in error covariance normalization (nondimensional) factors.
+!-----------------------------------------------------------------------
+!
+      NRM_STATE: IF ((model.eq.14).or.                                  &
+     &               (model.eq.15).or.                                  &
+     &               (model.eq.16).or.                                  &
+     &               (model.eq.17)) THEN
+!
+!  Read in free-surface normalization factor.
+!
+        IF (get_var(idFsur).and.((model.eq.14).or.(model.eq.15))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%b_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % b_zeta(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % b_zeta(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % b_zeta(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D U-momentum component normalization factor.
+!
+        IF (get_var(idUbar).and.((model.eq.14).or.(model.eq.15))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%b_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % b_ubar(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % b_ubar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % b_ubar(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum component normalization factor.
+!
+        IF (get_var(idVbar).and.((model.eq.14).or.(model.eq.15))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%b_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % b_vbar(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % b_vbar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % b_vbar(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+
+#  ifdef SOLVE3D
+!
+!  Read in 3D U-momentum component normalization factor.
+!
+        IF (get_var(idUvel).and.((model.eq.14).or.(model.eq.15))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%b_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % b_u(:,:,:,Tindex),            &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % b_u(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % b_u(:,:,:,Tindex))
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum component normalization factor.
+!
+        IF (get_var(idVvel).and.((model.eq.14).or.(model.eq.15))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%b_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % b_v(:,:,:,Tindex),            &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % b_v(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % b_v(:,:,:,Tindex))
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+!
+!  Read in tracer type variables normalization factor.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc)).and.                                &
+     &        ((model.eq.14).or.(model.eq.15))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%b_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % b_t(:,:,:,Tindex,itrc),     &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % b_t(:,:,:,Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+#   ifdef DISTRIBUTE
+              CALL mp_exchange3d (ng, MyRank, IDmod, 1,                 &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            NghostPoints,                         &
+     &                            EWperiodic(ng), NSperiodic(ng),       &
+     &                            OCEAN(ng) % b_t(:,:,:,Tindex,itrc))
+#   endif
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                          TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in free-surface open boundaries normalization factor.
+!
+        IF (get_var(idSbry(isFsur)).and.(model.eq.16).and.              &
+     &      ANY(Lobc(:,isFsur,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isFsur)),            &
+     &                              BOUNDARY(ng) % b_zeta_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isFsur))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 2D U-momentum component open boundaries normalization factor.
+!
+        IF (get_var(idSbry(isUbar)).and.(model.eq.16).and.              &
+     &        ANY(Lobc(:,isUbar,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isUbar)),            &
+     &                              BOUNDARY(ng) % b_ubar_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isUbar))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum component open boundaries normalization factor.
+!
+        IF (get_var(idSbry(isVbar)).and.(model.eq.16).and.              &
+     &      ANY(Lobc(:,isVbar,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isVbar)),            &
+     &                              BOUNDARY(ng) % b_vbar_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isVbar))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+
+#   ifdef SOLVE3D
+!
+!  Read in 3D U-momentum component open boundaries normalization factor.
+!
+        IF (get_var(idSbry(isUvel)).and.(model.eq.16).and.              &
+     &      ANY(Lobc(:,isUvel,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isUvel)),            &
+     &                              BOUNDARY(ng) % b_u_obc(LBij:,:,:),  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,1,InpRec/),           &
+     &                              total = (/IorJ,N(ng),4,1/),         &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isUvel))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum component open boundaries normalization factor.
+!
+        IF (get_var(idSbry(isVvel)).and.(model.eq.16).and.              &
+     &      ANY(Lobc(:,isVvel,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isVvel)),            &
+     &                              BOUNDARY(ng) % b_v_obc(LBij:,:,:),  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,1,InpRec/),           &
+     &                              total = (/IorJ,N(ng),4,1/),         &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isVvel))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 3D tracers open boundaries normalization factor.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idSbry(isTvar(itrc))).and.(model.eq.16).and.      &
+     &        ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                &
+     &                                Vname(1,idSbry(isTvar(itrc))),    &
+     &                                BOUNDARY(ng) % b_t_obc(LBij:,:,:, &
+     &                                                       itrc),     &
+     &                                pioFile = pioFile,                &
+     &                                start =(/1,1,1,InpRec/),          &
+     &                                total =(/IorJ,N(ng),4,1/),        &
+     &                                min_val = Fmin,                   &
+     &                                max_val = Fmax)
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+            IF (Master) THEN
+              WRITE (stdout,75) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
+     &                          Fmin, Fmax
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+#  ifdef ADJUST_WSTRESS
+!
+!  Read in surface U-momentum stress normalization factors.
+!
+        IF (get_var(idUsms).and.(model.eq.17)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(FORCES(ng)%b_sustr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % b_sustr,                     &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % b_sustr)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUsms)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUsms)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          FORCES(ng) % b_sustr)
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in surface V-momentum stress normalization factors.
+!
+        IF (get_var(idVsms).and.(model.eq.17)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(FORCES(ng)%b_svstr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % b_svstr,                     &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % b_svstr)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVsms)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVsms)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          FORCES(ng) % b_svstr)
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+!
+!  Read in surface tracer flux normalization factors.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTsur(itrc)).and.(model.eq.17).and.              &
+     &        Lstflux(itrc,ng)) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTsur(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(FORCES(ng)%b_stflx).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTsur(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          FORCES(ng) % b_stflx(:,:,itrc),         &
+     &                          checksum = Fhash)
+#   else
+     &                          FORCES(ng) % b_stflx(:,:,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTsur(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+#   ifdef DISTRIBUTE
+              CALL mp_exchange2d (ng, MyRank, IDmod, 1,                 &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            NghostPoints,                         &
+     &                            EWperiodic(ng), NSperiodic(ng),       &
+     &                            FORCES(ng) % b_stflx(:,:,itrc))
+#   endif
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTsur(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+      END IF NRM_STATE
+# endif
+
+# if defined FOUR_DVAR || (defined HESSIAN_SV && defined BNORM)
+!
+!-----------------------------------------------------------------------
+!  Read in error covariance standard deviation factors.
+!-----------------------------------------------------------------------
+!
+      STD_STATE: IF ((model.eq.10).or.                                  &
+     &               (model.eq.11).or.                                  &
+     &               (model.eq.12).or.                                  &
+     &               (model.eq.13)) THEN
+!
+!  Read in free-surface standard deviation.
+!
+        IF (get_var(idFsur).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%e_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % e_zeta(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % e_zeta(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_zeta(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+!
+!  Read in 2D U-momentum component standard deviation.
+!
+        IF (get_var(idUbar).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%e_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % e_ubar(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % e_ubar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_ubar(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum component standard deviation.
+!
+        IF (get_var(idVbar).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%e_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % e_vbar(:,:,Tindex),           &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % e_vbar(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_vbar(:,:,Tindex))
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+
+#  ifdef SOLVE3D
+!
+!  Read in 3D U-momentum component standard deviation.
+!
+        IF (get_var(idUvel).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%b_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % e_u(:,:,:,Tindex),            &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % e_u(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_u(:,:,:,Tindex))
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum standard deviation.
+!
+        IF (get_var(idVvel).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%e_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % e_v(:,:,:,Tindex),            &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % e_v(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_v(:,:,:,Tindex))
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+
+          END IF
+        END IF
+!
+!  Read in tracer type variables standard deviation.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc)).and.                                &
+     &        ((model.eq.10).or.(model.eq.11))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%e_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % e_t(:,:,:,Tindex,itrc),     &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % e_t(:,:,:,Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          OCEAN(ng) % e_t(:,:,:,Tindex,itrc))
+#   endif
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+!
+!  Read in convolution horizontal diffusion coefficients.
+!
+        IF (have_var(idKhor).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idKhor)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+              IF (KIND(MIXING(ng)%Kh).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idKhor), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, KhMin(ng), KhMax(ng),               &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        MIXING(ng) % Kh,                          &
+     &                        checksum = Fhash)
+#  else
+     &                        MIXING(ng) % Kh)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idKhor)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idKhor)),                &
+     &                            KhMin(ng), Khmax(ng),  Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idKhor)),                &
+     &                            KhMin(ng), KhMax(ng)
+#  endif
+              END IF
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          MIXING(ng) % Kh)
+#  endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idKhor)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifdef SOLVE3D
+!
+!  Read in convolution vertical diffusion coefficient.
+!
+        IF (have_var(idKver).and.((model.eq.10).or.(model.eq.11))) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idKver)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=w3dvar
+            IF (KIND(MIXING(ng)%Kv).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_w3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_w3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idKver), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        Fscl, KvMin(ng), KvMax(ng),               &
+#   ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        MIXING(ng) % Kv,                          &
+     &                        checksum = Fhash)
+#   else
+     &                        MIXING(ng) % Kv)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idKver)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idKver)),                &
+     &                            KvMin(ng), KvMax, Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idKver)),                &
+     &                            KvMin(ng), KvMax, Fhash
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          MIXING(ng) % Kv)
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idKver)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in free-surface open boundaries standard deviation.
+!
+        IF (get_var(idSbry(isFsur)).and.(model.eq.12).and.              &
+     &      ANY(Lobc(:,isFsur,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isFsur)),            &
+     &                              BOUNDARY(ng) % e_zeta_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isFsur))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 2D U-momentum component open boundaries standard deviation.
+!
+        IF (get_var(idSbry(isUbar)).and.(model.eq.12).and.              &
+     &        ANY(Lobc(:,isUbar,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isUbar)),            &
+     &                              BOUNDARY(ng) % e_ubar_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isUbar))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum component open boundaries standard deviation.
+!
+        IF (get_var(idSbry(isVbar)).and.(model.eq.12).and.              &
+     &      ANY(Lobc(:,isVbar,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isVbar)),            &
+     &                              BOUNDARY(ng) % e_vbar_obc(LBij:,:), &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,InpRec/),             &
+     &                              total = (/IorJ,4,1/),               &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isVbar))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+
+#   ifdef SOLVE3D
+!
+!  Read in 3D U-momentum component open boundaries standard deviation.
+!
+        IF (get_var(idSbry(isUvel)).and.(model.eq.12).and.              &
+     &      ANY(Lobc(:,isUvel,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isUvel)),            &
+     &                              BOUNDARY(ng) % e_u_obc(LBij:,:,:),  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,1,InpRec/),           &
+     &                              total = (/IorJ,N(ng),4,1/),         &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isUvel))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum component open boundaries standard deviation.
+!
+        IF (get_var(idSbry(isVvel)).and.(model.eq.12).and.              &
+     &      ANY(Lobc(:,isVvel,ng))) THEN
+          CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                  &
+     &                              Vname(1,idSbry(isVvel)),            &
+     &                              BOUNDARY(ng) % e_v_obc(LBij:,:,:),  &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1,1,1,InpRec/),           &
+     &                              total = (/IorJ,N(ng),4,1/),         &
+     &                              min_val = Fmin,                     &
+     &                              max_val = Fmax)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          IF (Master) THEN
+            WRITE (stdout,75) TRIM(Vname(1,idSbry(isVvel))),            &
+     &                        Fmin, Fmax
+          END IF
+        END IF
+!
+!  Read in 3D tracers open boundaries standard deviation.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idSbry(isTvar(itrc))).and.(model.eq.12).and.      &
+     &        ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            CALL pio_netcdf_get_fvar (ng, IDmod, ncname,                &
+     &                                Vname(1,idSbry(isTvar(itrc))),    &
+     &                                BOUNDARY(ng) % e_t_obc(LBij:,:,:, &
+     &                                                       itrc),     &
+     &                                pioFile = pioFile,                &
+     &                                start =(/1,1,1,InpRec/),          &
+     &                                total =(/IorJ,N(ng),4,1/),        &
+     &                                min_val = Fmin,                   &
+     &                                max_val = Fmax)
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+            IF (Master) THEN
+              WRITE (stdout,75) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
+     &                          Fmin, Fmax
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+#  ifdef ADJUST_WSTRESS
+!
+!  Read in surface U-momentum stress standard deviation.
+!
+        IF (get_var(idUsms).and.(model.eq.13)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp/rho0                   ! N/m2 (Pa) to m2/s2
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(FORCES(ng)%e_sustr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % e_sustr,                     &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % e_sustr)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUsms)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUsms)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          FORCES(ng) % e_sustr)
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in surface V-momentum stress standard deviation.
+!
+        IF (get_var(idVsms).and.(model.eq.13)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp/rho0                   ! N/m2 (Pa) to m2/s2
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(FORCES(ng)%e_svstr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % e_svstr,                     &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % e_svstr)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVsms)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVsms)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+#   ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, MyRank, IDmod, 1,                   &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          FORCES(ng) % e_svstr)
+#   endif
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+!
+!  Read in surface tracer flux standard deviations.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTsur(itrc)).and.(model.eq.13).and.              &
+     &        Lstflux(itrc,ng)) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTsur(itrc))), vindex)
+            IF (foundit) THEN
+              IF (itrc.eq.itemp) THEN
+                scale=1.0_dp/(rho0*Cp)        ! W/m2 to Celsius m/s
+              ELSE
+                scale=1.0_dp
+              END IF
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(FORCES(ng)%e_stflx).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+!
+              status=nf_fread2d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTsur(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          FORCES(ng) % e_stflx(:,:,itrc),         &
+     &                          checksum = Fhash)
+#   else
+     &                          FORCES(ng) % e_stflx(:,:,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTsur(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+#   ifdef DISTRIBUTE
+              CALL mp_exchange2d (ng, MyRank, IDmod, 1,                 &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            NghostPoints,                         &
+     &                            EWperiodic(ng), NSperiodic(ng),       &
+     &                            FORCES(ng) % e_stflx(:,:,itrc))
+#   endif
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTsur(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+      END IF STD_STATE
+# endif
+
+# if defined IMPULSE
+!
+!-----------------------------------------------------------------------
+!  Read in adjoint model or tangent linear model impulse forcing terms.
+!-----------------------------------------------------------------------
+!
+      FRC_STATE: IF (model.eq.7) THEN
+!
+!  Set number of records available.
+!
+        NrecFrc(ng)=Nrec
+!
+!  Read in next impulse forcing time to process.
+!
+        CALL pio_netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),     &
+     &                            Rclock%DateNumber, FrcTime(ng:),      &
+     &                            pioFile = pioFile,                    &
+     &                            start = (/InpRec/),                   &
+     &                            total = (/1/))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Read in free-surface impulse forcing.
+!
+        IF (get_var(idFsur)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%f_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % f_zeta,                       &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % f_zeta)
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifndef SOLVE3D
+!
+!  Read in 2D U-momentum impulse forcing.
+!
+        IF (get_var(idUbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%f_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % f_ubar,                       &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % f_ubar)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum impulse forcing.
+!
+        IF (get_var(idVbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%f_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % f_vbar,                       &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % f_vbar)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef SOLVE3D
+!
+!  Read in 3D U-momentum impulse forcing.
+!
+        IF (get_var(idUvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%f_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % f_u,                          &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % f_u)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum impulse forcing.
+!
+        IF (get_var(idVvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%f_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % f_v,                          &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % f_v)
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in tracers variables impulse forcing.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%f_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % f_t(:,:,:,itrc),            &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % f_t(:,:,:,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+      END IF FRC_STATE
+# endif
+
+# if (defined RBL4DVAR                 || \
+     defined RBL4DVAR_ANA_SENSITIVITY || \
+     defined RBL4DVAR_FCT_SENSITIVITY || \
+     defined TL_RBL4DVAR)             && \
+    (defined ADJUST_BOUNDARY          || \
+     defined ADJUST_STFLUX            || \
+     defined ADJUST_WSTRESS)
+!
+!-----------------------------------------------------------------------
+!  Read in tangent linear forcing corrections.
+!-----------------------------------------------------------------------
+!
+      TLM_FORCING: IF (model.eq.5) THEN
+!
+!  Set switch to process surface forcing and/or open boundaries during
+!  4D-Var minimization.
+!
+        get_adjust=.TRUE.
+
+#  ifdef ADJUST_BOUNDARY
+!
+!  Read in free-surface open boundaries adjustments.
+!
+        IF (get_var(idSbry(isFsur)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isFsur,ng))) THEN
+          ifield=idSbry(isFsur)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dobc
+            IF (KIND(BOUNDARY(ng)%tl_zeta_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_zeta_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUbar)).and.get_adjust.and.                 &
+     &        ANY(Lobc(:,isUbar,ng))) THEN
+          ifield=idSbry(isUbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dobc
+            IF (KIND(BOUNDARY(ng)%tl_ubar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,            &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                     Tindex),     &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_ubar_obc(:,:,:,     &
+     &                                                     Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVbar)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isVbar,ng))) THEN
+          ifield=idSbry(isVbar)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dobc
+            IF (KIND(BOUNDARY(ng)%tl_vbar_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dobc(ng)
+            END IF
+!
+            status=nf_fread2d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, Nbrec(ng),                &
+     &                            Fscl, Fmin, Fmax,                     &
+#   ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex),   &
+     &                            checksum = Fhash)
+#   else
+     &                            BOUNDARY(ng) % tl_vbar_obc(:,:,:,     &
+     &                                                       Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#   ifdef SOLVE3D
+!
+!  Read in 3D U-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isUvel)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isUvel,ng))) THEN
+          ifield=idSbry(isUvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dobc
+            IF (KIND(BOUNDARY(ng)%tl_u_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#    ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#    else
+     &                            BOUNDARY(ng) % tl_u_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 3D V-momentum component open boundaries adjustments.
+!
+        IF (get_var(idSbry(isVvel)).and.get_adjust.and.                 &
+     &      ANY(Lobc(:,isVvel,ng))) THEN
+          ifield=idSbry(isVvel)
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dobc
+            IF (KIND(BOUNDARY(ng)%tl_v_obc).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dobc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dobc(ng)
+            END IF
+!
+            status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,           &
+     &                            Vname(1,ifield), my_pioVar,           &
+     &                            InpRec, ioDesc,                       &
+     &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
+     &                            Fscl, Fmin, Fmax,                     &
+#    ifdef CHECKSUM
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex),      &
+     &                            checksum = Fhash)
+#    else
+     &                            BOUNDARY(ng) % tl_v_obc(:,:,:,:,      &
+     &                                                    Tindex))
+#    endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,ifield)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#    ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,    &
+     &                            Fhash
+#    else
+                WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,ifield)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 3D tracers open boundaries adjustments.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idSbry(isTvar(itrc))).and.get_adjust.and.         &
+     &        ANY(Lobc(:,isTvar(itrc),ng))) THEN
+            ifield=idSbry(isTvar(itrc))
+            foundit=find_string(var_name, n_var, TRIM(Vname(1,ifield)), &
+     &                          vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dobc
+              IF (KIND(BOUNDARY(ng)%tl_t_obc).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dobc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dobc(ng)
+              END IF
+!
+              status=nf_fread3d_bry(ng, IDmod, ncname, pioFile,         &
+     &                              Vname(1,ifield), my_pioVar,         &
+     &                              InpRec, ioDesc,                     &
+     &                              LBij, UBij, 1, N(ng), Nbrec(ng),    &
+     &                              Fscl, Fmin, Fmax,                   &
+#    ifdef CHECKSUM
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc),  &
+     &                              checksum = Fhash)
+#    else
+     &                              BOUNDARY(ng) % tl_t_obc(:,:,:,:,    &
+     &                                                   Tindex,itrc))
+#    endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,ifield)),      &
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#    ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax,  &
+     &                            Fhash
+#    else
+                  WRITE (stdout,70) TRIM(Vname(2,ifield)), Fmin, Fmax
+#    endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,ifield)),        &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#   endif
+#  endif
+#  ifdef ADJUST_WSTRESS
+!
+!  Read in tangent linear surface U-momentum stress.
+!
+        IF (get_var(idUsms).and.get_adjust) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(FORCES(ng)%tl_ustr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % tl_ustr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % tl_ustr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted tl_ustr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUsms))//               &
+     &                            ', adjusted tl_ustr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in tangent linear surface V-momentum stress.
+!
+        IF (get_var(idVsms).and.get_adjust) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVsms)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            scale=1.0_dp
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(FORCES(ng)%tl_vstr).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dfrc(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dfrc(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVsms), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, Nfrec(ng),         &
+     &                        scale, Fmin, Fmax,                        &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        FORCES(ng) % tl_vstr(:,:,:,Tindex),       &
+     &                        checksum = Fhash)
+#   else
+     &                        FORCES(ng) % tl_vstr(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVsms)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted tl_vstr', Fmin, Fmax,     &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVsms))//               &
+     &                            ', adjusted tl_vstr', Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVsms)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  if defined ADJUST_STFLUX && defined SOLVE3D
+!
+!  Read in tangent linear surface tracers flux.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTsur(itrc)).and.get_adjust.and.                 &
+     &        Lstflux(itrc,ng)) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTsur(itrc))), vindex)
+            IF (foundit) THEN
+              scale=1.0_dp
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r2dvar
+              IF (KIND(FORCES(ng)%tl_tflux).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r2dfrc(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r2dfrc(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTsur(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, Nfrec(ng),       &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          FORCES(ng)% tl_tflux(:,:,:,             &
+     &                                               Tindex,itrc),      &
+     &                          checksum = Fhash)
+#   else
+     &                          FORCES(ng)% tl_tflux(:,:,:,             &
+     &                                               Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTsur(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted tl_tflux', Fmin, Fmax,  &
+     &                              Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTsur(itrc)))//       &
+     &                              ', adjusted tl_tflux', Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTsur(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+      END IF TLM_FORCING
+# endif
+!
+# if defined TIME_CONV
+!
+!-----------------------------------------------------------------------
+!  Read in tangent linear model error forcing terms used in the time
+!  convolutions.
+!-----------------------------------------------------------------------
+!
+      TCS_STATE: IF (model.eq.6) THEN
+!
+!  Set number of records available.
+!
+        NrecFrc(ng)=Nrec
+!
+!  Read in next impulse forcing time to process.
+!
+        CALL pio_netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),     &
+     &                            Rclock%DateNumber, ForceTime(ng:),    &
+     &                            pioFile = pioFile,                    &
+     &                            start = (/InpRec/),                   &
+     &                            total = (/1/))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Read in free-surface forcing.
+!
+        IF (get_var(idFsur)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idFsur)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=r2dvar
+            IF (KIND(OCEAN(ng)%tl_zeta).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_r2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_r2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idFsur), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#  ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#  endif
+#  ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_zeta(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#  else
+     &                        OCEAN(ng) % tl_zeta(:,:,Tindex))
+#  endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idFsur)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#  ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax,    &
+     &                            Fhash
+#  else
+                WRITE (stdout,70) TRIM(Vname(2,idFsur)), Fmin, Fmax
+#  endif
+
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idFsur)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+
+#  ifndef SOLVE3D
+!
+!  Read in 2D momentum forcing in the XI-direction.
+!
+        IF (get_var(idUbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u2dvar
+            IF (KIND(OCEAN(ng)%tl_ubar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_ubar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_ubar(:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUbar)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 2D momentum forcing in the ETA-direction.
+!
+        IF (get_var(idVbar)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVbar)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v2dvar
+            IF (KIND(OCEAN(ng)%tl_vbar).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v2dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v2dvar(ng)
+            END IF
+!
+            status=nf_fread2d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVbar), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_vbar(:,:,Tindex),          &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_vbar(:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVbar)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVbar)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVbar)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+#  endif
+#  ifdef SOLVE3D
+!
+!  Read in 3D momentum forcing in the XI-direction.
+!
+        IF (get_var(idUvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idUvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=u3dvar
+            IF (KIND(OCEAN(ng)%tl_u).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_u3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_u3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idUvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % umask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_u(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_u(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idUvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idUvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idUvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in 3D momentum forcing in the ETA-direction.
+!
+        IF (get_var(idVvel)) THEN
+          foundit=find_string(var_name, n_var, TRIM(Vname(1,idVvel)),   &
+     &                        vindex)
+          IF (foundit) THEN
+            my_pioVar%vd=var_desc(vindex)
+            my_pioVar%gtype=v3dvar
+            IF (KIND(OCEAN(ng)%tl_v).eq.8) THEN
+              my_pioVar%dkind=PIO_double
+              ioDesc => ioDesc_dp_v3dvar(ng)
+            ELSE
+              my_pioVar%dkind=PIO_real
+              ioDesc => ioDesc_sp_v3dvar(ng)
+            END IF
+!
+            status=nf_fread3d(ng, IDmod, ncname, pioFile,               &
+     &                        Vname(1,idVvel), my_pioVar,               &
+     &                        InpRec, ioDesc, Vsize,                    &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % vmask,                         &
+#   endif
+#   ifdef CHECKSUM
+     &                        OCEAN(ng) % tl_v(:,:,:,Tindex),           &
+     &                        checksum = Fhash)
+#   else
+     &                        OCEAN(ng) % tl_v(:,:,:,Tindex))
+#   endif
+            IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idVvel)),        &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+#   ifdef CHECKSUM
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax,    &
+     &                            Fhash
+#   else
+                WRITE (stdout,70) TRIM(Vname(2,idVvel)), Fmin, Fmax
+#   endif
+              END IF
+            END IF
+          ELSE
+            IF (Master) THEN
+              WRITE (stdout,80) string, TRIM(Vname(1,idVvel)),          &
+     &                          TRIM(ncname)
+            END IF
+            exit_flag=4
+            IF (FoundError(exit_flag, PIO_noerr,                        &
+     &                     __LINE__, MyFile)) THEN
+              RETURN
+            END IF
+          END IF
+        END IF
+!
+!  Read in tracer type variables.
+!
+        DO itrc=1,NT(ng)
+          IF (get_var(idTvar(itrc))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idTvar(itrc))), vindex)
+            IF (foundit) THEN
+              my_pioVar%vd=var_desc(vindex)
+              my_pioVar%gtype=r3dvar
+              IF (KIND(OCEAN(ng)%tl_t).eq.8) THEN
+                my_pioVar%dkind=PIO_double
+                ioDesc => ioDesc_dp_r3dvar(ng)
+              ELSE
+                my_pioVar%dkind=PIO_real
+                ioDesc => ioDesc_sp_r3dvar(ng)
+              END IF
+!
+              status=nf_fread3d(ng, IDmod, ncname, pioFile,             &
+     &                          Vname(1,idTvar(itrc)), my_pioVar,       &
+     &                          InpRec, ioDesc, Vsize,                  &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Fscl, Fmin, Fmax,                       &
+#   ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#   endif
+#   ifdef CHECKSUM
+     &                          OCEAN(ng) % tl_t(:,:,:,Tindex,itrc),    &
+     &                          checksum = Fhash)
+#   else
+     &                          OCEAN(ng) % tl_t(:,:,:,Tindex,itrc))
+#   endif
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,60) string, TRIM(Vname(1,idTvar(itrc))),&
+     &                              InpRec, TRIM(ncname)
+                END IF
+                exit_flag=2
+                ioerror=status
+                RETURN
+              ELSE
+                IF (Master) THEN
+#   ifdef CHECKSUM
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax, Fhash
+#   else
+                  WRITE (stdout,70) TRIM(Vname(2,idTvar(itrc))),        &
+     &                              Fmin, Fmax
+#   endif
+                END IF
+              END IF
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,80) string, TRIM(Vname(1,idTvar(itrc))),  &
+     &                            TRIM(ncname)
+              END IF
+              exit_flag=4
+              IF (FoundError(exit_flag, PIO_noerr,                      &
+     &                       __LINE__, MyFile)) THEN
+                RETURN
+              END IF
+            END IF
+          END IF
+        END DO
+#  endif
+      END IF TCS_STATE
+# endif
+!
+!-----------------------------------------------------------------------
+!  Close input NetCDF file.
+!-----------------------------------------------------------------------
+!
+      CALL pio_netcdf_close (ng, IDmod, pioFile, ncname, .FALSE.)
+
+# ifdef PROFILE
+!
+!  Turn off time wall clock.
+!
+      CALL wclock_off (ng, IDmod, 80, __LINE__, MyFile)
+# endif
+!
+  10  FORMAT (/,2x,'GET_STATE_PIO  - ',a,'unable to open input NetCDF', &
+     &        ' file: ',a)
+  20  FORMAT (/,2x,'GET_STATE_PIO  - ',a,'Warning - NetCDF global',     &
+     &        ' attribute:',a,                                          &
+     &        /,19x,'for lateral boundary conditions not checked',      &
+     &        /,19x,'in file: ',a)
+  30  FORMAT (/,2x,'GET_STATE_PIO  - ',a,'requested input time',        &
+     &        ' record = ',i0,/,19x,'not found in input NetCDF: ',a,/,  &
+     &        19x,'number of available records = ',i0)
+  40  FORMAT (/,2x,'GET_STATE_PIO    - ',a,a,t75,a,                     &
+     &        /,22x,'(Grid ',i2.2,a,i4.4, ', t = ',a,                   &
+     &        ', File: ',a, ', Rec=',i4.4,', Index=',i1,')')
+  50  FORMAT (/,2x,'GET_STATE_PIO    - ',a,a,t75,a,                     &
+     &        /,22x,'(Grid ',i2.2, ', t = ',a,                          &
+     &        ', File: ',a,', Rec=',i4.4, ', Index=',i1,')')
+  60  FORMAT (/,2x,'GET_STATE_PIO  - ',a,'error while reading',         &
+     &        ' variable: ',a,2x,'at time record = ',i0,                &
+     &        /,19x,'in input NetCDF file: ',a)
+#ifdef CHECKSUM
+  70  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,' CheckSum = ',i0,')')
+#else
+  70  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,')')
+#endif
+  75  FORMAT (19x,'- ',a,/,22x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,')')
+  80  FORMAT (/,2x,'GET_STATE_PIO  - ',a,'cannot find variable: ',a,    &
+     &        /,19x,'in input NetCDF file: ',a)
+!
+      RETURN
+      END SUBROUTINE get_state_pio
+#endif
+      END MODULE get_state_mod

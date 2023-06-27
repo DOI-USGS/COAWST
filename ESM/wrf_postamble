@@ -19,6 +19,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_HDF5_FLAG \
                       CONFIGURE_CLOUDCV_FLAG \
                       CONFIGURE_4DVAR_FLAG \
+                      CONFIGURE_TERRAIN_AND_LANDUSE \
                       CONFIGURE_WAVELET_FLAG \
                       CONFIGURE_NESTOPT \
                       -DUSE_ALLOCATABLES \
@@ -27,19 +28,37 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DINTIO \
                       -DKEEP_INT_AROUND \
                       -DLIMIT_ARGS \
-                      -DBUILD_RRTMG_FAST=1 \
+                      -DBUILD_RRTMG_FAST=0 \
+                      -DBUILD_RRTMK=0 \
+                      -DBUILD_SBM_FAST=1 \
+                      -DSHOW_ALL_VARS_USED=0 \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \
                       -DMAX_HISTORY=$(MAX_HISTORY) \
 		      -DNMM_NEST=$(WRF_NMM_NEST)
 CFLAGS          =    $(CFLAGS_LOCAL) CONFIGURE_DMPARALLEL CONFIGURE_STUBMPI \
+                     CONFIGURE_TERRAIN_AND_LANDUSE \
                       -DMAX_HISTORY=$(MAX_HISTORY) CONFIGURE_NMM_CORE
 FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
 ESMF_LIB_FLAGS  =    ESMFLIBFLAG
 # ESMF 5 -- these are defined in esmf.mk, included above
 #NOWIN ESMF_IO_LIB     =    ESMFIOLIB
 ESMF_IO_LIB_EXT =    ESMFIOEXTLIB
-INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
+ifeq ($(WRF_VERSION),4.3)
+  INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
+                     $(ESMF_MOD_INC) $(ESMF_LIB_FLAGS) \
+                      -I$(WRF_SRC_ROOT_DIR)/main \
+                      -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf \
+                      -I$(WRF_SRC_ROOT_DIR)/external/io_int \
+                      -I$(WRF_SRC_ROOT_DIR)/frame \
+                      -I$(WRF_SRC_ROOT_DIR)/share \
+                      -I$(WRF_SRC_ROOT_DIR)/phys \
+                      -I$(WRF_SRC_ROOT_DIR)/wrftladj \
+                      -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
+                      -I$(NETCDFPATH)/include \
+                      CONFIGURE_RTTOV_INC  CONFIGURE_CTSM_INC
+else
+  INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                      $(ESMF_MOD_INC) $(ESMF_LIB_FLAGS) \
                       -I$(WRF_SRC_ROOT_DIR)/main \
                       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf \
@@ -51,23 +70,14 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
                       -I$(NETCDFPATH)/include \
                       CONFIGURE_RTTOV_INC
+endif
 REGISTRY        =    Registry
 CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
-
-#NOWIN LIB_BUNDLED     = \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
-#NOWIN                      $(ESMF_IO_LIB) \
-#NOWIN                      CONFIGURE_COMMS_LIB \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
-#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
-
-#NOWIN LIB_EXTERNAL    = \
-#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
-
+ifeq ($(WRF_VERSION),4.3)
+LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO) CONFIGURE_CTSM_LIB
+else
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO)
+endif
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
 CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
@@ -101,13 +111,13 @@ module_dm_rsllite :
 	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; \
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F ; fi )
 
-wrfio_nf : 
+wrfio_nf :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
           make $(J) NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           CC="$(SCC)" CFLAGS="$(CFLAGS)" NETCDF4_DEP_LIB="$(NETCDF4_DEP_LIB)" \
           FC="$(SFC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
-wrfio_pnf : 
+wrfio_pnf :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
           FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
@@ -115,7 +125,7 @@ wrfio_pnf :
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
           make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive) 
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive)
 
 wrfio_grib1 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
@@ -129,13 +139,13 @@ wrfio_grib2 :
           FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
           FIXED="$(FORMAT_FIXED)" archive)
 
-wrfio_int : 
+wrfio_int :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
           make $(J) CC="$(CC)" CFLAGS_LOCAL="$(CFLAGS_LOCAL)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP)" FGREP="$(FGREP)" \
           TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ARCHFLAGS="$(ARCHFLAGS)" all )
 
-esmf_time : 
+esmf_time :
 	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ; \
           make $(J) FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
           CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
@@ -198,12 +208,12 @@ wrfio_esmf :
           mv $*.f90.tmp $*.f90 ; \
         fi
 	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
-        
+
 
 .F.f90:
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(SED_FTN) $*.G > $*.H 
+	$(SED_FTN) $*.G > $*.H
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
 	$(RM) $*.G $*.H
 

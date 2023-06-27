@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE stiffness_mod
 !
-!svn $Id: stiffness.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: stiffness.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -56,11 +57,7 @@
 #ifdef SOLVE3D
      &                     GRID(ng) % Hz,                               &
      &                     GRID(ng) % z_w,                              &
-#else
-# ifdef ICESHELF
-     &                     GRID(ng) % zice,                             &
-# endif
-#endif 
+#endif
      &                     OCEAN(ng)% zeta)
       RETURN
       END SUBROUTINE stiffness
@@ -75,10 +72,6 @@
      &                           h, omn,                                &
 #ifdef SOLVE3D
      &                           Hz, z_w,                               &
-#else
-# ifdef ICESHELF
-     &                           zice,                                  &
-# endif
 #endif
      &                           zeta)
 !***********************************************************************
@@ -111,10 +104,6 @@
 # ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-# else
-#  ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:,LBj:)
-#  endif
 # endif
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 #else
@@ -128,10 +117,6 @@
 # ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-# else
-#  ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
-#  endif
 # endif
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #endif
@@ -149,10 +134,10 @@
 
 #ifdef DISTRIBUTE
 # ifdef SOLVE3D
-      real(r8), dimension(5) :: buffer
+      real(r8), dimension(5) :: rbuffer
       character (len=3), dimension(5) :: op_handle
 # else
-      real(r8), dimension(3) :: buffer
+      real(r8), dimension(3) :: rbuffer
       character (len=3), dimension(3) :: op_handle
 # endif
 #endif
@@ -237,11 +222,7 @@
 # ifdef MASKING
           IF (rmask(i,j).gt.0.0_r8) THEN
 # endif
-# ifdef ICESHELF
-            cff=omn(i,j)*(zeta(i,j,1)+h(i,j)-ABS(zice(i,j)))
-# else
             cff=omn(i,j)*(zeta(i,j,1)+h(i,j))
-# endif
             my_volume0=my_volume0+cff
             my_volume1=MIN(my_volume1,cff)
             my_volume2=MAX(my_volume2,cff)
@@ -278,12 +259,12 @@
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
 #ifdef DISTRIBUTE
-        buffer(1)=TotVolume(ng)
-        buffer(2)=MinVolume(ng)
-        buffer(3)=MaxVolume(ng)
+        rbuffer(1)=TotVolume(ng)
+        rbuffer(2)=MinVolume(ng)
+        rbuffer(3)=MaxVolume(ng)
 # ifdef SOLVE3D
-        buffer(4)=rx0(ng)
-        buffer(5)=rx1(ng)
+        rbuffer(4)=rx0(ng)
+        rbuffer(5)=rx1(ng)
 # endif
         op_handle(1)='SUM'
         op_handle(2)='MIN'
@@ -293,16 +274,16 @@
         op_handle(5)='MAX'
 # endif
 # ifdef SOLVE3D
-        CALL mp_reduce (ng, model, 5, buffer, op_handle)
+        CALL mp_reduce (ng, model, 5, rbuffer, op_handle)
 # else
-        CALL mp_reduce (ng, model, 3, buffer, op_handle)
+        CALL mp_reduce (ng, model, 3, rbuffer, op_handle)
 # endif
-        TotVolume(ng)=buffer(1)
-        MinVolume(ng)=buffer(2)
-        MaxVolume(ng)=buffer(3)
+        TotVolume(ng)=rbuffer(1)
+        MinVolume(ng)=rbuffer(2)
+        MaxVolume(ng)=rbuffer(3)
 # ifdef SOLVE3D
-        rx0(ng)=buffer(4)
-        rx1(ng)=buffer(5)
+        rx0(ng)=rbuffer(4)
+        rx1(ng)=rbuffer(5)
 # endif
 #endif
         IF (Master.and.LwrtInfo(ng)) THEN

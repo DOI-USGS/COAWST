@@ -2,9 +2,10 @@
       MODULE set_vbc_mod
 #ifdef NONLINEAR
 !
-!svn $Id: set_vbc.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: set_vbc.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -141,9 +142,6 @@
 #  if defined SCORRECTION || defined SRELAXATION
      &                         sss,                                     &
 #  endif
-#  if defined SSSFLX
-     &                         sssflx,                                  &
-#  endif
 #  if defined ICESHELF
 #   ifdef SHORTWAVE
      &                         srflx,                                   &
@@ -206,9 +204,6 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:,LBj:)
 #   endif
-#   if defined SSSFLX
-      real(r8), intent(inout) :: sssflx(LBi:,LBj:)
-#   endif
       real(r8), intent(in) :: stflux(LBi:,LBj:,:)
       real(r8), intent(in) :: btflux(LBi:,LBj:,:)
 #   if defined ICESHELF
@@ -257,9 +252,6 @@
 #   endif
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:UBi,LBj:UBj)
-#   endif
-#   if defined SSSFLX
-      real(r8), intent(inout) :: sssflx(LBi:UBi,LBj:UBj)
 #   endif
       real(r8), intent(in) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(in) :: btflux(LBi:UBi,LBj:UBj,NT(ng))
@@ -386,13 +378,7 @@
 #   if defined SCORRECTION
           stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
      &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
-#     if defined SSSC_THRESHOLD
-! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold(ng),              &
-     &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
-#     else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#     endif
 #    ifdef WET_DRY
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
 #    elif defined MASKING
@@ -400,13 +386,7 @@
 #    endif
 #   elif defined SRELAXATION
           stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
-#    if defined SSSC_THRESHOLD
-! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold(ng),              &
-     &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
-#    else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#    endif
 #    ifdef WET_DRY
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
 #    elif defined MASKING
@@ -418,24 +398,6 @@
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
 #    elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
-#    endif
-#   endif
-#   ifdef SSSFLX
-          stflx(i,j,isalt)=stflx(i,j,isalt)+sssflx(i,j)
-#    ifdef WET_DRY
-          stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
-#    elif defined MASKING
-          stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
-#    endif
-#   endif
-#   if (defined SCORRECTION || defined SRELAXATION) && \
-        defined SSSFLX
-          sssflx(i,j) = -Tnudg_SSS(ng)*Hz(i,j,N(ng))*                   &
-     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#    ifdef WET_DRY
-          sssflx(i,j) = rmask_wet(i,j)*sssflx(i,j)
-#    elif defined MASKING
-          sssflx(i,j) = rmask(i,j)*sssflx(i,j)
 #    endif
 #   endif
           btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)

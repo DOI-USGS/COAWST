@@ -2,9 +2,10 @@
       MODULE ad_diag_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_diag.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_diag.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -132,20 +133,22 @@
 !  Local variable declarations.
 !
       integer :: NSUB, i, j, k, trd
+      integer :: idia, istep
 
 # ifdef DISTRIBUTE
-      real(r8), dimension(3) :: buffer
+      real(r8), dimension(3) :: rbuffer
       character (len=3), dimension(3) :: op_handle
 # else
       integer :: my_threadnum
 # endif
-
+!
       real(r8) :: cff, my_avgke, my_avgpe, my_volume
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ke2d
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: pe2d
-
-      character (len=8) :: kechar, pechar
+!
+      character (len=8 ) :: kechar, pechar
+      character (len=22) :: DateTime
 
 # include "set_bounds.h"
 !
@@ -160,7 +163,20 @@
 !  proper adjoint of these quantities are not coded.
 !-----------------------------------------------------------------------
 !
-      IF (MOD(iic(ng)-1,ninfo(ng)).eq.0) THEN
+!  Set time timestep counter and time level indices to process. Restart
+!  counter after 10 billion steps.
+!
+      istep=INT(MOD(REAL(iic(ng)-1,r8),1.0E+10_r8))
+# ifdef SOLVE3D
+      idia=nstp
+# else
+      idia=kstp
+# endif
+      DateTime=time_code(ng)
+!
+! Compute kinetic and potential energy.
+!
+      IF (MOD(istep,ninfo(ng)).eq.0) THEN
         DO j=Jstr,Jend
 # ifdef SOLVE3D
           DO i=Istr,Iend
@@ -171,10 +187,10 @@
             DO i=Istr,Iend
               ke2d(i,j)=ke2d(i,j)+                                      &
      &                  ad_Hz(i,j,k)*                                   &
-     &                  0.25_r8*(ad_u(i  ,j,k,nstp)*ad_u(i  ,j,k,nstp)+ &
-     &                           ad_u(i+1,j,k,nstp)*ad_u(i+1,j,k,nstp)+ &
-     &                           ad_v(i,j  ,k,nstp)*ad_v(i,j  ,k,nstp)+ &
-     &                           ad_v(i,j+1,k,nstp)*ad_v(i,j+1,k,nstp))
+     &                  0.25_r8*(ad_u(i  ,j,k,idia)*ad_u(i  ,j,k,idia)+ &
+     &                           ad_u(i+1,j,k,idia)*ad_u(i+1,j,k,idia)+ &
+     &                           ad_v(i,j  ,k,idia)*ad_v(i,j  ,k,idia)+ &
+     &                           ad_v(i,j+1,k,idia)*ad_v(i,j+1,k,idia))
              pe2d(i,j)=pe2d(i,j)+                                       &
      &                 cff*ad_Hz(i,j,k)*(ad_rho(i,j,k)+1000.0_r8)*      &
      &                 (ad_z_r(i,j,k)-ad_z_w(i,j,0))
@@ -183,12 +199,12 @@
 # else
           cff=0.5_r8*g
           DO i=Istr,Iend
-            ke2d(i,j)=(ad_zeta(i,j,kstp)+h(i,j))*                       &
-     &                0.25_r8*(ad_ubar(i  ,j,kstp)*ad_ubar(i  ,j,kstp)+ &
-     &                         ad_ubar(i+1,j,kstp)*ad_ubar(i+1,j,kstp)+ &
-     &                         ad_vbar(i,j  ,kstp)*ad_vbar(i,j  ,kstp)+ &
-     &                         ad_vbar(i,j+1,kstp)*ad_vbar(i,j+1,kstp))
-            pe2d(i,j)=cff*ad_zeta(i,j,kstp)*ad_zeta(i,j,kstp)
+            ke2d(i,j)=(ad_zeta(i,j,idia)+h(i,j))*                       &
+     &                0.25_r8*(ad_ubar(i  ,j,idia)*ad_ubar(i  ,j,idia)+ &
+     &                         ad_ubar(i+1,j,idia)*ad_ubar(i+1,j,idia)+ &
+     &                         ad_vbar(i,j  ,idia)*ad_vbar(i,j  ,idia)+ &
+     &                         ad_vbar(i,j+1,idia)*ad_vbar(i,j+1,idia))
+            pe2d(i,j)=cff*ad_zeta(i,j,idia)*ad_zeta(i,j,idia)
           END DO
 # endif
         END DO
@@ -253,16 +269,16 @@
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 # ifdef DISTRIBUTE
-          buffer(1)=volume
-          buffer(2)=avgke
-          buffer(3)=avgpe
+          rbuffer(1)=volume
+          rbuffer(2)=avgke
+          rbuffer(3)=avgpe
           op_handle(1)='SUM'
           op_handle(2)='SUM'
           op_handle(3)='SUM'
-          CALL mp_reduce (ng, iADM, 3, buffer, op_handle)
-          volume=buffer(1)
-          avgke=buffer(2)
-          avgpe=buffer(3)
+          CALL mp_reduce (ng, iADM, 3, rbuffer, op_handle)
+          volume=rbuffer(1)
+          avgke=rbuffer(2)
+          avgpe=rbuffer(3)
           trd=MyMaster
 # else
           trd=my_threadnum()
@@ -270,6 +286,9 @@
           avgke=avgke/volume
           avgpe=avgpe/volume
           avgkp=avgke+avgpe
+!
+! Report global run diagnotics values for the adjoint kernel.
+!
           IF (first_time(ng).eq.0) THEN
             first_time(ng)=1
             IF (Master.and.(ng.eq.1)) THEN
@@ -287,9 +306,9 @@
 # endif
             END IF
           END IF
-          IF (Master) THEN    ! restart counter after 10 billion steps
-            WRITE (stdout,20) INT(MOD(REAL(iic(ng)-1,r8),1.0E+10_r8)),  &
-     &                        time_code(ng),                            &
+!
+          IF (Master) THEN
+            WRITE (stdout,20) istep, DateTime,                          &
 # ifdef NESTING
      &                        avgke, avgpe, avgkp, volume, ng
 # else

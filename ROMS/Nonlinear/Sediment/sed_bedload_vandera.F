@@ -546,7 +546,7 @@
 ! 3. Compute sediment load entrained during each trough half cycle
 !-----------------------------------------------------------------------
 !
-            cff1=MAX(0.5_r8*T_crestl(i,j)/T_cu, 0.0_r8)
+            cff1=MAX(0.5_r8*T_crestl(i,j)/(T_cu+eps), 0.0_r8)
 !
             cff2=sqrt(mag_theta_c)*(om_cc+cff1*om_tc)  
             cff3=(theta_cx/mag_theta_c)
@@ -555,7 +555,7 @@
             cff3=(theta_cy/mag_theta_c)
             bedld_cy=cff2*cff3
 !
-            cff1=MAX(0.5_r8*T_troughl(i,j)/T_tu, 0.0_r8)
+            cff1=MAX(0.5_r8*T_troughl(i,j)/(T_tu+eps), 0.0_r8)
 !
             cff2=sqrt(mag_theta_t)*(om_tt+cff1*om_ct)
             cff3=(theta_tx/mag_theta_t)
@@ -572,9 +572,9 @@
             smgd_3=sqrt((rhos/rho0-1.0_r8)*g*d50**3.0_r8)
 !
             bedld_x=smgd_3*( bedld_cx*T_crestl(i,j)+                     &
-     &                       bedld_tx*T_troughl(i,j) )/Td
+     &                       bedld_tx*T_troughl(i,j) )/(Td+eps)
             bedld_y=smgd_3*( bedld_cy*T_crestl(i,j)+                     &
-     &                       bedld_ty*T_troughl(i,j) )/Td
+     &                       bedld_ty*T_troughl(i,j) )/(Td+eps)
 !
 ! The units of these are kg m-1 sec-1
 ! COMMENTED FOR NOW 
@@ -1007,7 +1007,7 @@
 !mai
             cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdx/(dzdxdy+eps)
+            cff=ABS(dzdxdy-sedslope_crit_dry(ng))*dzdx/(dzdxdy+eps)
             cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
@@ -1062,7 +1062,7 @@
 !mai
             cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdy/(dzdxdy+eps)
+            cff=ABS(dzdxdy-sedslope_crit_dry(ng))*dzdy/(dzdxdy+eps)
             cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)
@@ -1666,7 +1666,7 @@
 ! Calculate full-cycle current friction factor from VA2013 Eqn. 20
 ! use the stress from COAWST and corresponding current velocity 
 !
-      alpha=udelta/(udelta+uhat)
+      alpha=udelta/(udelta+uhat+eps)
 !     fwd=alpha*fd+(1.0-alpha)*fw
       fwd=alpha*fd*alphac+(1.0-alpha)*fw*alphaw
 !
@@ -1911,12 +1911,12 @@
 ! Avoid non zero values for time periods 
 !
       T_c_new=MAX( T_c_new, 0.0_r8)
-      T_cu_new=MAX( T_cu*T_c_new/T_c, 0.0_r8 )
+      T_cu_new=MAX( T_cu*T_c_new/(T_c+eps), 0.0_r8 )
 !
       delta_Tt=eps_eff*uhat/(c*pi+eps_eff*2.0*uhat)
       T_t_new=T_t-delta_Tt
       T_t_new=MAX( T_t_new, 0.0_r8)
-      T_tu_new=MAX( T_tu*T_t_new/T_t, 0.0_r8 )
+      T_tu_new=MAX( T_tu*T_t_new/(T_t+eps), 0.0_r8 )
 !
       T_c=T_c_new
       T_cu=T_cu_new
@@ -2008,6 +2008,7 @@
       real(r8), parameter :: p4=0.297_r8
       real(r8), parameter :: p5=0.815_r8
       real(r8), parameter :: p6=0.672_r8
+      real(r8), parameter :: eps=1.0E-14_r8
       real(r8) :: a_w
       real(r8) :: B, psi, bb
       real(r8) :: k_wn, cff
@@ -2021,7 +2022,7 @@
       k_wn=kh(T,depth)/depth    
 !
       a_w=0.5_r8*H_s 
-      Ur=0.75_r8*a_w*k_wn/((k_wn*depth)**3.0_r8)
+      Ur=0.75_r8*a_w*k_wn/((k_wn*depth)**3.0_r8)+eps
 !
 ! Ruessink et al., 2012 Equation 9.
 !

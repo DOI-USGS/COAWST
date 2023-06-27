@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE mod_sources
 !
-!svn $Id: mod_sources.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_sources.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,8 +48,12 @@
 !
         implicit none
 !
-        integer, allocatable :: Msrc(:)
-        integer, allocatable :: Nsrc(:)
+        PUBLIC :: allocate_sources
+        PUBLIC :: deallocate_sources
+!
+!-----------------------------------------------------------------------
+!  Define T_SOURCES structure.
+!-----------------------------------------------------------------------
 !
         TYPE T_SOURCES
 
@@ -60,25 +65,13 @@
           real(r8), pointer :: Qbar(:)
           real(r8), pointer :: Qshape(:,:)
           real(r8), pointer :: Qsrc(:,:)
-#ifdef ONE_TRACER_SOURCE
-          real(r8), pointer :: Tsrc(:)
-#elif defined TWO_D_TRACER_SOURCE
-          real(r8), pointer :: Tsrc(:,:)
-#else
           real(r8), pointer :: Tsrc(:,:,:)
-#endif
           real(r8), pointer :: Xsrc(:)
           real(r8), pointer :: Ysrc(:)
 
 #ifndef ANA_PSOURCE
           real(r8), pointer :: QbarG(:,:)
-# ifdef ONE_TRACER_SOURCE
-          real(r8), pointer :: TsrcG(:,:)
-# elif defined TWO_D_TRACER_SOURCE
-          real(r8), pointer :: TsrcG(:,:,:)
-# else
           real(r8), pointer :: TsrcG(:,:,:,:)
-# endif
 #endif
 
 #ifdef ADJOINT
@@ -94,8 +87,15 @@
 #endif
 
         END TYPE T_SOURCES
-
+!
         TYPE (T_SOURCES), allocatable :: SOURCES(:)
+!
+!-----------------------------------------------------------------------
+!  Define other variables in module.
+!-----------------------------------------------------------------------
+!
+        integer, allocatable :: Msrc(:)
+        integer, allocatable :: Nsrc(:)
 !
       CONTAINS
 !
@@ -114,6 +114,9 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
+# if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+# endif
       USE mod_scalars
 #endif
 !
@@ -136,12 +139,18 @@
 !
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", allocate_sources"
+
+#ifndef ANA_PSOURCE
+# if defined PIO_LIB && defined DISTRIBUTE
+!
+      TYPE (Var_desc_t)  :: my_pioVar
+# endif
+#endif
 !
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
-!     IF (ng.eq.1) THEN
       IF (.not.allocated(Msrc)) THEN
         allocate ( Msrc(Ngrids) )
       END IF
@@ -152,23 +161,39 @@
 
 #ifndef ANA_PSOURCE
 !
-!  Inquire about the number of point sources.
+!  Inquire about the number of point Sources/Sinks.
 !
       IF (ng.eq.1) THEN
         DO mg=1,Ngrids
           foundit=.FALSE.
           IF (LuvSrc(mg).or.LwSrc(mg).or.ANY(LtracerSrc(:,mg))) THEN
-            CALL netcdf_inq_var (ng, iNLM, SSF(mg)%name,                &
-     &                           MyVarName = TRIM(Vname(1,idRxpo)),     &
-     &                           SearchVar = foundit,                   &
-     &                           VarID = Vid,                           &
-     &                           nVardim = nvdim,                       &
-     &                           nVarAtt = nvatt)
-            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+            SELECT CASE (SSF(ng)%IOtype)
+              CASE (io_nf90)
+                CALL netcdf_inq_var (ng, iNLM, SSF(mg)%name,            &
+     &                               MyVarName = Vname(1,idRxpo),       &
+     &                               SearchVar = foundit,               &
+     &                               VarID = Vid,                       &
+     &                               nVardim = nvdim,                   &
+     &                               nVarAtt = nvatt)
 
+# if defined PIO_LIB && defined DISTRIBUTE
+              CASE (io_pio)
+                CALL pio_netcdf_inq_var (ng, iNLM, SSF(mg)%name,        &
+     &                                   MyVarName = Vname(1,idRxpo),   &
+     &                                   SearchVar = foundit,           &
+     &                                   pioVar = my_pioVar,            &
+     &                                   nVardim = nvdim,               &
+     &                                   nVarAtt = nvatt)
+# endif
+            END SELECT
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             IF (foundit) THEN
               Nsrc(mg)=var_Dsize(1)         ! first dimension
               Msrc(mg)=Nsrc(mg)
+              CALL check_sources (mg, SSF(mg)%name, Nsrc(mg))
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       MyFile)) RETURN
+
             END IF
           END IF
         END DO
@@ -209,16 +234,8 @@
       allocate ( SOURCES(ng) % Qsrc(Nsrc(ng),N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng),r8)
 
-#ifdef ONE_TRACER_SOURCE
-      allocate ( SOURCES(ng) % Tsrc(NT(ng)) )
-      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)
-#elif defined TWO_D_TRACER_SOURCE
-      allocate ( SOURCES(ng) % Tsrc(Nsrc(ng),NT(ng)) )
-      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*NT(ng),r8)
-#else
       allocate ( SOURCES(ng) % Tsrc(Nsrc(ng),N(ng),NT(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
-#endif
 
       allocate ( SOURCES(ng) % Xsrc(Nsrc(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
@@ -230,16 +247,8 @@
       allocate ( SOURCES(ng) % QbarG(Nsrc(ng),2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng),r8)
 
-# ifdef ONE_TRACER_SOURCE
-      allocate ( SOURCES(ng) % TsrcG(2,NT(ng)) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NT(ng),r8)
-# elif defined TWO_D_TRACER_SOURCE
-      allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),2,NT(ng)) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng)*NT(ng),r8)
-# else
       allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),N(ng),2,NT(ng)) )
       Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
-# endif
 #endif
 
 #ifdef ADJOINT
@@ -301,39 +310,250 @@
         END DO
       END DO
       DO itrc=1,NT(ng)
-#ifdef ONE_TRACER_SOURCE
-        SOURCES(ng) % Tsrc(itrc) = IniVal
-# ifndef ANA_PSOURCE
-        SOURCES(ng) % TsrcG(1,itrc) = IniVal
-        SOURCES(ng) % TsrcG(2,itrc) = IniVal
-# endif
-#elif defined TWO_D_TRACER_SOURCE
-        DO is=1,Nsrc(ng)
-          SOURCES(ng) % Tsrc(is,itrc) = IniVal
-# ifndef ANA_PSOURCE
-          SOURCES(ng) % TsrcG(is,1,itrc) = IniVal
-          SOURCES(ng) % TsrcG(is,2,itrc) = IniVal
-# endif
-        END DO
-#else
         DO k=1,N(ng)
           DO is=1,Nsrc(ng)
             SOURCES(ng) % Tsrc(is,k,itrc) = IniVal
-# ifdef ADJOINT
+#ifdef ADJOINT
             SOURCES(ng) % ad_Tsrc(is,k,itrc) = IniVal
-# endif
-# ifdef TANGENT
+#endif
+#ifdef TANGENT
             SOURCES(ng) % tl_Tsrc(is,k,itrc) = IniVal
-# endif
-# ifndef ANA_PSOURCE
+#endif
+#ifndef ANA_PSOURCE
             SOURCES(ng) % TsrcG(is,k,1,itrc) = IniVal
             SOURCES(ng) % TsrcG(is,k,2,itrc) = IniVal
-# endif
+#endif
           END DO
         END DO
-#endif
       END DO
 !
       RETURN
       END SUBROUTINE allocate_sources
+!
+      SUBROUTINE deallocate_sources (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+
+#ifdef SUBOBJECT_DEALLOCATION
+!
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_mixing"
+
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_SOURCES structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+      IF (.not.destroy(ng, SOURCES(ng)%Isrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Isrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Jsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Jsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Dsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Dsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Fsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Fsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Qbar, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Qbar')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Qshape, MyFile,                  &
+     &                 __LINE__, 'SOURCES(ng)%Qshape')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Qsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Qsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Tsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Tsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Xsrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Xsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%Ysrc, MyFile,                    &
+     &                 __LINE__, 'SOURCES(ng)%Ysrc')) RETURN
+
+# ifndef ANA_PSOURCE
+      IF (.not.destroy(ng, SOURCES(ng)%QbarG, MyFile,                   &
+     &                 __LINE__, 'SOURCES(ng)%QbarG')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%TsrcG, MyFile,                   &
+     &                 __LINE__, 'SOURCES(ng)%TsrcG')) RETURN
+# endif
+
+# ifdef ADJOINT
+      IF (.not.destroy(ng, SOURCES(ng)%ad_Qbar, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%ad_Qbar')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%ad_Qsrc, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%ad_Qsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%ad_Tsrc, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%ad_Tsrc')) RETURN
+# endif
+
+# ifdef TANGENT
+      IF (.not.destroy(ng, SOURCES(ng)%tl_Qbar, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%tl_Qbar')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%tl_Qsrc, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%tl_Qsrc')) RETURN
+
+      IF (.not.destroy(ng, SOURCES(ng)%tl_Tsrc, MyFile,                 &
+     &                 __LINE__, 'SOURCES(ng)%tl_Tsrc')) RETURN
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type SOURCES structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(SOURCES)) deallocate ( SOURCES )
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Deallocate other variables in module.
+!-----------------------------------------------------------------------
+!
+      IF (allocated(Msrc)) THEN
+        deallocate ( Msrc )
+      END IF
+
+      IF (allocated(Nsrc)) THEN
+        deallocate ( Nsrc )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_sources
+!
+      SUBROUTINE check_sources (ng, ncname, Npsrc)
+!
+!=======================================================================
+!                                                                      !
+!  It checks input NetCDF file for correctness in the spefication of   !
+!  the point Source/Sink grid-cell face flag values (0, 1, 2) and the  !
+!  implementation methodology using "LuvSrc" and or "LwSrc".           !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_netcdf
+#if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+#endif
+      USE mod_scalars
+!
+      USE strings_mod, ONLY : FoundError
+
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, Npsrc
+!
+      character (len=*), intent(in) :: ncname
+!
+!  Local variable declarations.
+!
+      integer :: i, ic_u, ic_v, ic_w
+!
+      real(r8) :: Dsrc_min, Dsrc_max
+!
+      real(r8) :: Dsrc(Npsrc)
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", check_sources"
+!
+!-----------------------------------------------------------------------
+!  Read in Point Source/Sink cell-face flag and check for correct values
+!  according to the implementation methodology:
+!
+!    If LuvSrc = T,  needs Dsrc = 0 (flow across grid cell u-face) or
+!                          Dsrc = 1 (flow across grid cell v-face)
+!
+!    If LwSrc = T,   needs Dsrc = 2 (flow across grid cell w-face)
+!-----------------------------------------------------------------------
+!
+!  Read in Source/Sink cell-face flag.
+!
+      SELECT CASE (SSF(ng)%IOtype)
+        CASE (io_nf90)
+          CALL netcdf_get_fvar (ng, iNLM, ncname,                       &
+     &                          Vname(1,idRdir),  Dsrc,                 &
+     &                          min_val = Dsrc_min,                     &
+     &                          max_val = Dsrc_max)
+
+# if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_get_fvar (ng, iNLM, ncname,                   &
+     &                              Vname(1,idRdir),  Dsrc,             &
+     &                              min_val = Dsrc_min,                 &
+     &                              max_val = Dsrc_max)
+# endif
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Count and report Source/Sink for each cell-face flag value.
+!
+      ic_u=0
+      ic_v=0
+      ic_w=0
+!
+      DO i=1,NpSrc
+        IF (INT(Dsrc(i)).eq.0) ic_u=ic_u+1
+        IF (INT(Dsrc(i)).eq.1) ic_v=ic_v+1
+        IF (INT(Dsrc(i)).eq.2) ic_w=ic_w+1
+      END DO
+!
+      IF (Master) THEN
+        IF (ng.eq.1) WRITE (stdout,10)
+        WRITE (stdout,20) ng, TRIM(ncname),                             &
+                          LuvSrc(ng), ic_u,                             &
+                          LuvSrc(ng), ic_v,                             &
+                          LwSrc(ng),  ic_w
+      END IF
+!
+!  Stop if illegal configuration.
+!
+      IF (.not.LwSrc(ng).and.LuvSrc(ng).and.                            &
+          (ic_u.eq.0).and.(ic_v.eq.0)) THEN
+        IF (Master) WRITE (stdout,30) 'LuvSrc'
+        exit_flag=5
+      END IF
+      IF (.not.LuvSrc(ng).and.LwSrc(ng).and.(ic_w.eq.0)) THEN
+        IF (Master) WRITE (stdout,30) 'LwSrc'
+        exit_flag=5
+      END IF
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (/,1x,'Point Sources/Sinks grid-cell flag locations ',     &
+     &        'counter:',/)
+  20  FORMAT (4x,'Grid: ',i0,', file: ',a,/,                            &
+     &        19x,'LuvSrc = ',l1,2x,'u-face = ',i0,/,                   &
+     &        19x,'LuvSrc = ',l1,2x,'v-face = ',i0,/,                   &
+     &        19x,'LwSrc  = ',l1,2x,'w-face = ',i0)
+  30  FORMAT (/,' CHECK_SOURCES - Cannot find point Souces/Sinks ',     &
+     &        "the '",a,"' method.")
+!
+      RETURN
+      END SUBROUTINE check_sources
+!
       END MODULE mod_sources

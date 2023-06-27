@@ -1,0 +1,186 @@
+# git $Id$
+# svn $Id: Makefile.cice 1151 2023-02-09 03:08:53Z arango $
+#::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
+#   Licensed under a MIT/X style license                                :::
+#   See License_ROMS.txt                                                :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#                                                                       :::
+#  CICE Master Makefile                                                 :::
+#                                                                       :::
+#  This Makefile is designed to work only with GNU Make version 3.80 or :::
+#  higher. It can be used in any architecture provided that there is a  :::
+#  machine/compiler rules file in the  "Compilers"  subdirectory.  You  :::
+#  may need to modify the rules file to specify the  correct path  for  :::
+#  the needed libraries.                                                :::
+#                                                                       :::
+#  This Makefile is generice and does not need to be modified. Use the  :::
+#  script "build_cice.sh" or "build_cice.bash" to compile.              :::
+#                                                                       :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+ifneq (3.80,$(firstword $(sort $(MAKE_VERSION) 3.80)))
+ $(error This makefile requires GNU make version 3.80 or higher. \
+		Your current version is: $(MAKE_VERSION))
+endif
+
+#--------------------------------------------------------------------------
+#  Initialize.
+#--------------------------------------------------------------------------
+
+EXEC   := cice
+LIB    := libcice.a
+OBJDIR ?= Build_cice
+
+#--------------------------------------------------------------------------
+#  Set macros VPATH, INCS, SRCS, FCPP and OBJS.  The enviromental variable
+#  VPATH is provided by the build script.
+#--------------------------------------------------------------------------
+
+ifndef VPATH
+  $(error Variable VPATH not set.  Use "build_cice" script)
+endif
+
+SRCS := $(wildcard $(addsuffix /*.F90, $(VPATH)) \
+                   $(addsuffix /*.F,   $(VPATH)))
+
+FCPP := $(addprefix $(OBJDIR)/, $(addsuffix .f90, \
+                                  $(sort $(basename $(notdir $(SRCS))))))
+OBJS := $(addprefix $(OBJDIR)/, $(addsuffix .o, \
+                                  $(sort $(basename $(notdir $(SRCS))))))
+
+INCS := $(patsubst %,-I%, $(VPATH) )
+
+#  Set list of suffices for target rules.
+
+.SUFFIXES:
+.SUFFIXES: .F90 .F .o
+
+#  Specify the search path directories for file names that match pattern.
+
+vpath %.f90 $(OBJDIR)
+vpath %.o $(OBJDIR)
+
+#--------------------------------------------------------------------------
+#  Set CICE executable path and filename.
+#--------------------------------------------------------------------------
+
+EXEC := $(EXEDIR)/ciceS
+ifdef USE_DEBUG
+  EXEC := $(EXEDIR)/ciceG
+else
+ ifdef USE_MPI
+   EXEC := $(EXEDIR)/ciceM
+ endif
+ ifdef USE_OpenMP
+   EXEC := $(EXEDIR)/ciceO
+ endif
+endif
+
+#--------------------------------------------------------------------------
+#  Make targets.
+#--------------------------------------------------------------------------
+
+.PHONY: all
+
+all: $(OBJDIR) $(OBJDIR)/MakeDepend $(OBJS) $(LIB) $(EXEC)
+
+#--------------------------------------------------------------------------
+#  "uname -s" should return the OS or kernel name and "uname -m" should
+#  return the CPU or hardware name. In practice the results can be pretty
+#  flaky. Run the results through sed to convert "/" and " " to "-",
+#  then apply platform-specific conversions.
+#--------------------------------------------------------------------------
+
+OS := $(shell uname -s | sed 's/[\/ ]/-/g')
+OS := $(patsubst CYGWIN_%,CYGWIN,$(OS))
+OS := $(patsubst MINGW%,MINGW,$(OS))
+OS := $(patsubst sn%,UNICOS-sn,$(OS))
+
+ifndef FORT
+  $(error Variable FORT not set)
+endif
+CMACRO := $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
+
+ifneq ($(MAKECMDGOALS),clean)
+  -include $(CMACRO)
+endif
+
+INCDIR := $(patsubst %,-I%, $(INCDIR) )
+
+#--------------------------------------------------------------------------
+#  Build compiling rules.
+#--------------------------------------------------------------------------
+
+$(OBJDIR)/MakeDepend: | $(OBJDIR)
+
+$(OBJS): | $(OBJDIR)
+
+$(OBJDIR):
+	@ echo "Creating directory: $@"
+	$(shell $(TEST) -d $(OBJDIR) || $(MKDIR) $(OBJDIR) )
+
+$(EXEC): $(OBJS)
+	$(LD) -o $(EXEC) $(LDFLAGS) $(OBJS) $(ULIBS) $(SLIBS)
+
+$(LIB): $(OBJS)
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ $^
+	cd $(OBJDIR); $(RANLIB) $@
+
+$(OBJDIR)/%.f90: %.F90
+	cd $(OBJDIR); $(CPP) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCDIR) $< > $*.f90
+
+%.o: %.f90
+	cd $(OBJDIR); $(FC) -c $(FFLAGS) $(FREEFLAGS) $(INCS) $(INCDIR) $*.f90
+
+#--------------------------------------------------------------------------
+#  Create dependencies using "sfmakedepend" perl script.
+#--------------------------------------------------------------------------
+
+$(OBJDIR)/MakeDepend:
+	$(SFMAKEDEPEND) $(MDEPFLAGS) $(SRCS) > $(OBJDIR)/MakeDepend
+
+MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(OBJDIR) --silent
+
+.PHONY: depend
+
+depend: $(OBJDIR)
+	$(SFMAKEDEPEND) $(MDEPFLAGS) $(SRCS) > $(OBJDIR)/MakeDepend
+
+ifneq ($(MAKECMDGOALS),clean)
+  -include $(OBJDIR)/MakeDepend
+endif
+
+#--------------------------------------------------------------------------
+#  Cleaning targets.
+#--------------------------------------------------------------------------
+
+clean_list := core *.ipo $(OBJDIR)
+
+ifeq "$(strip $(OBJDIR))" "."
+  clean_list := core *.o *.oo *.mod *.f90 lib*.a *.bak
+  clean_list += $(CURDIR)/*.ipo
+endif
+ifeq "$(strip $(OBJDIR))" "./"
+  clean_list := core *.o *.oo *.ipo *.mod *.f90 lib*.a *.bak
+  clean_list += $(CURDIR)/*.ipo
+endif
+
+.PHONY: clean
+
+clean:
+	$(RM) -r -f $(clean_list)
+
+#--------------------------------------------------------------------------
+#  A handy debugging target. For example, to find the value of CPPFLAGS
+#  execute:
+#
+#        gmake print-CPPFLAGS
+#  or
+#        make print-CPPFLAGS
+#--------------------------------------------------------------------------
+
+.PHONY: print-%
+
+print-%:
+	@echo $* = $($*)

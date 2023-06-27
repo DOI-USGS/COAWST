@@ -2,9 +2,10 @@
       MODULE mod_coupling
 #ifdef SOLVE3D
 !
-!svn $Id: mod_coupling.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_coupling.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,9 +23,17 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_coupling
+        PUBLIC :: deallocate_coupling
+        PUBLIC :: initialize_coupling
+!
+!-----------------------------------------------------------------------
+!  Define T_COUPLING structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_COUPLING
 !
 !  Nonlinear model state.
@@ -90,11 +99,11 @@
 # endif
 
         END TYPE T_COUPLING
-
+!
         TYPE (T_COUPLING), allocatable :: COUPLING(:)
-
-        CONTAINS
-
+!
+      CONTAINS
+!
       SUBROUTINE allocate_coupling (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -106,7 +115,7 @@
 !
       USE mod_param
 !
-!  Local variable declarations.
+!  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
@@ -247,10 +256,175 @@
       allocate ( COUPLING(ng) % rvfrcG(LBi:UBi,LBj:UBj,2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
-
+!
       RETURN
       END SUBROUTINE allocate_coupling
+!
+      SUBROUTINE deallocate_coupling (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+# ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_coupling"
 
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate module variables.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+      IF (.not.destroy(ng, COUPLING(ng)%DU_avg1, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%DU_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DU_avg2, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%DU_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DV_avg1, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%DV_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DV_avg2, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%DV_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%Zt_avg1, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%Zt_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%rufrc, MyFile,                  &
+     &                 __LINE__, 'COUPLING(ng)%rufrc')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%rvfrc, MyFile,                  &
+     &                 __LINE__, 'COUPLING(ng)%rvfrc')) RETURN
+
+#  ifdef VAR_RHO_2D
+      IF (.not.destroy(ng, COUPLING(ng)%rhoA, MyFile,                   &
+     &                 __LINE__, 'COUPLING(ng)%rhoA')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%rhoS, MyFile,                   &
+     &                 __LINE__, 'COUPLING(ng)%rhoS')) RETURN
+#  endif
+
+#  if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      IF (.not.destroy(ng, COUPLING(ng)%tl_DU_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%tl_DU_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_DU_avg2, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%tl_DU_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_DV_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%tl_DV_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_DV_avg2, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%tl_DV_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_Zt_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%tl_Zt_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_rufrc, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%tl_rufrc')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_rvfrc, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%tl_rvfrc')) RETURN
+
+#   ifdef VAR_RHO_2D
+      IF (.not.destroy(ng, COUPLING(ng)%tl_rhoA, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%tl_rhoA')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%tl_rhoS, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%tl_rhoS')) RETURN
+#   endif
+#  endif
+
+#  ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      IF (.not.destroy(ng, COUPLING(ng)%ad_DU_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%ad_DU_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_DU_avg2, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%ad_DU_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_DV_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%ad_DV_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_DV_avg2, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%ad_DV_avg2')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_Zt_avg1, MyFile,             &
+     &                 __LINE__, 'COUPLING(ng)%ad_Zt_avg1')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_rufrc, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%ad_rufrc')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_rvfrc, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%ad_rvfrc')) RETURN
+
+#   ifdef VAR_RHO_2D
+      IF (.not.destroy(ng, COUPLING(ng)%ad_rhoA, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%ad_rhoA')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%ad_rhoS, MyFile,                &
+     &                 __LINE__, 'COUPLING(ng)%ad_rhoS')) RETURN
+#   endif
+#  endif
+
+#  if defined FORWARD_READ && \
+     (defined TANGENT || defined TL_IOMS || defined ADJOINT)
+!
+!  Latest two records of the nonlinear trajectory used to interpolate
+!  the background state in the tangent linear and adjoint models.
+!
+      IF (.not.destroy(ng, COUPLING(ng)%DU_avg1G, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%DU_avg1G')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DU_avg2G, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%DU_avg2G')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DV_avg1G, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%DV_avg1G')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%DV_avg2G, MyFile,               &
+     &                 __LINE__, 'COUPLING(ng)%DV_avg2G')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%rufrcG, MyFile,                 &
+     &                 __LINE__, 'COUPLING(ng)%rufrcG')) RETURN
+
+      IF (.not.destroy(ng, COUPLING(ng)%rvfrcG, MyFile,                 &
+     &                 __LINE__, 'COUPLING(ng)%rvfrcG')) RETURN
+#  endif
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type COUPLING structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(COUPLING)) deallocate ( COUPLING )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_coupling
+!
       SUBROUTINE initialize_coupling (ng, tile, model)
 !
 !=======================================================================
@@ -417,7 +591,7 @@
         END DO
       END IF
 # endif
-
+!
       RETURN
       END SUBROUTINE initialize_coupling
 #endif

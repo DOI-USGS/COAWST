@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE mod_netcdf
 !
-!svn $Id: mod_netcdf.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_netcdf.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,11 +18,32 @@
 !=======================================================================
 !
       USE mod_kinds
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_scalars
       USE netcdf
+!
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
-      INTERFACE netcdf_get_fvar
+!  Interfaces for same name routine overloading. They differ in the kind
+!  type parameter and data array rank.
+!
+      INTERFACE netcdf_get_fatt                  ! reads attributes
+#ifdef SINGLE_PRECISION
+        MODULE PROCEDURE netcdf_get_fatt_dp
+#endif
+        MODULE PROCEDURE netcdf_get_fatt_r8
+      END INTERFACE netcdf_get_fatt
+!
+      INTERFACE netcdf_get_fvar                  ! reads floating-point
+#ifdef SINGLE_PRECISION
+        MODULE PROCEDURE netcdf_get_fvar_0dp
+        MODULE PROCEDURE netcdf_get_fvar_1dp
+#endif
         MODULE PROCEDURE netcdf_get_fvar_0d
         MODULE PROCEDURE netcdf_get_fvar_1d
         MODULE PROCEDURE netcdf_get_fvar_2d
@@ -29,30 +51,30 @@
         MODULE PROCEDURE netcdf_get_fvar_4d
       END INTERFACE netcdf_get_fvar
 !
-      INTERFACE netcdf_get_lvar
-        MODULE PROCEDURE netcdf_get_lvar_0d
-        MODULE PROCEDURE netcdf_get_lvar_1d
-      END INTERFACE netcdf_get_lvar
-!
-      INTERFACE netcdf_get_ivar
+      INTERFACE netcdf_get_ivar                  ! reads integer
         MODULE PROCEDURE netcdf_get_ivar_0d
         MODULE PROCEDURE netcdf_get_ivar_1d
         MODULE PROCEDURE netcdf_get_ivar_2d
       END INTERFACE netcdf_get_ivar
 !
-      INTERFACE netcdf_get_svar
+      INTERFACE netcdf_get_lvar                  ! reads logical
+        MODULE PROCEDURE netcdf_get_lvar_0d
+        MODULE PROCEDURE netcdf_get_lvar_1d
+      END INTERFACE netcdf_get_lvar
+!
+      INTERFACE netcdf_get_svar                  ! reads string
         MODULE PROCEDURE netcdf_get_svar_0d
         MODULE PROCEDURE netcdf_get_svar_1d
         MODULE PROCEDURE netcdf_get_svar_2d
         MODULE PROCEDURE netcdf_get_svar_3d
       END INTERFACE netcdf_get_svar
 !
-      INTERFACE netcdf_get_time
+      INTERFACE netcdf_get_time                  ! reads time variable
         MODULE PROCEDURE netcdf_get_time_0d
         MODULE PROCEDURE netcdf_get_time_1d
       END INTERFACE netcdf_get_time
 !
-      INTERFACE netcdf_put_fvar
+      INTERFACE netcdf_put_fvar                  ! writes floating-point
 #ifdef SINGLE_PRECISION
         MODULE PROCEDURE netcdf_put_fvar_0dp
         MODULE PROCEDURE netcdf_put_fvar_1dp
@@ -65,24 +87,37 @@
         MODULE PROCEDURE netcdf_put_fvar_4d
       END INTERFACE netcdf_put_fvar
 !
-      INTERFACE netcdf_put_ivar
+      INTERFACE netcdf_put_ivar                  ! writes integer
         MODULE PROCEDURE netcdf_put_ivar_0d
         MODULE PROCEDURE netcdf_put_ivar_1d
         MODULE PROCEDURE netcdf_put_ivar_2d
       END INTERFACE netcdf_put_ivar
 !
-      INTERFACE netcdf_put_lvar
+      INTERFACE netcdf_put_lvar                  ! writes logical
         MODULE PROCEDURE netcdf_put_lvar_0d
         MODULE PROCEDURE netcdf_put_lvar_1d
         MODULE PROCEDURE netcdf_put_lvar_2d
       END INTERFACE netcdf_put_lvar
 !
-      INTERFACE netcdf_put_svar
+      INTERFACE netcdf_put_svar                  ! writes string
         MODULE PROCEDURE netcdf_put_svar_0d
         MODULE PROCEDURE netcdf_put_svar_1d
         MODULE PROCEDURE netcdf_put_svar_2d
         MODULE PROCEDURE netcdf_put_svar_3d
       END INTERFACE netcdf_put_svar
+!
+      PUBLIC :: netcdf_check_dim        ! checks dimensions
+      PUBLIC :: netcdf_check_var        ! checks variables
+      PUBLIC :: netcdf_close            ! closes file
+      PUBLIC :: netcdf_create           ! creates file
+      PUBLIC :: netcdf_enddef           ! ends definition mode
+      PUBLIC :: netcdf_get_dim          ! reads dimension names/values
+      PUBLIC :: netcdf_get_satt         ! reads string attributes
+      PUBLIC :: netcdf_inq_var          ! inquires variables
+      PUBLIC :: netcdf_inq_varid        ! inquires variable ID
+      PUBLIC :: netcdf_open             ! opens file
+      PUBLIC :: netcdf_redef            ! puts file in definition mode
+      PUBLIC :: netcdf_sync             ! synchronizes file
 !
 !  Switch to debug creating, opening, and closing of NetCDF file IDs
 !  to monitor 'Too many open files' error. In the Unix environment
@@ -214,6 +249,81 @@
 !
       CONTAINS
 !
+      FUNCTION netcdf_find_var (ng, model, ncid,                        &
+     &                          VarName, VarID) RESULT (foundit)
+!
+!=======================================================================
+!                                                                      !
+!  This function checks if a requested variable is available in a      !
+!  NetCDF file and returns its ID.                                     !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     ncid         NetCDF file ID (integer)                            !
+!     VarName      Requested dimension name (string)                   !
+!                                                                      !
+!  On Ouput:                                                           !
+!                                                                      !
+!     VarID        ID of requested variable (integer)                  !
+!                                                                      !
+!=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasti
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, ncid
+!
+      character (len=*), intent(in) :: VarName
+!
+      integer, intent(out) :: VarID
+!
+!  Local variable declarations.
+!
+      logical :: foundit
+!
+      integer :: status
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      integer, dimension(3) :: ibuffer
+#endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", netcdf_find_var"
+!
+!-----------------------------------------------------------------------
+!  Inquire if requested variable is available in NetCDF file.
+!-----------------------------------------------------------------------
+!
+      foundit=.FALSE.
+      status=nf90_noerr
+      VarID=0
+      IF (InpThread) THEN
+        status=nf90_inq_varid(ncid, TRIM(VarName), VarID)
+      END IF
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      ibuffer(1)=status
+      ibuffer(2)=VarID
+      CALL mp_bcasti (ng, model, ibuffer)
+      status=ibuffer(1)
+      VarID=ibuffer(2)
+#endif
+!
+      IF (status.eq.nf90_noerr) THEN
+        foundit=.TRUE.
+      END IF
+!
+      RETURN
+      END FUNCTION netcdf_find_var
+!
       SUBROUTINE netcdf_get_dim (ng, model, ncname, ncid, DimName,      &
      &                           DimSize, DimID)
 !
@@ -252,16 +362,12 @@
 !     WARNING: This is information is rewritten during each CALL.      !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
+
 !
 !  Imported variable declarations.
 !
@@ -281,7 +387,7 @@
       integer :: my_ncid, i, j, status
       integer :: myID, myValue
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(5) :: ibuffer
 #endif
 !
@@ -327,7 +433,7 @@
         status=nf90_inquire(my_ncid, n_dim, n_var, n_gatt, rec_id)
 #endif
         IF ((status.eq.nf90_noerr).and.(n_dim.le.Mdims)) THEN
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
           ibuffer(1)=n_dim
           ibuffer(2)=n_var
           ibuffer(3)=n_gatt
@@ -350,7 +456,7 @@
             END IF
             IF (dim_id(i).eq.rec_id) THEN
               rec_size=dim_size(i)
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
               ibuffer(5)=rec_size
 #endif
             END IF
@@ -369,7 +475,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast dimension to all processors in the group.
 !
@@ -463,13 +569,6 @@
 !     WARNING: This is information is rewritten during each CALL.      !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-      USE strings_mod, ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -658,17 +757,11 @@
 !     WARNING: This is information is rewritten during each CALL.      !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_scalars
-!
+
 #ifdef FOUR_DVAR
+!
       USE strings_mod, ONLY : find_string
 #endif
-      USE strings_mod, ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -1336,16 +1429,11 @@
 !     WARNING: This is information is rewritten during each CALL.      !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcastf, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -1369,9 +1457,12 @@
       integer :: i, j, status
       integer :: att_id, my_Alen, my_Atype, my_id, my_ncid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
-      integer, dimension(4) :: ibuffer
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      integer, dimension(5) :: ibuffer
 #endif
+!
+      real(r4) :: my_Afloat
+      real(r8) :: my_Adouble
 !
       character (len=1024) :: text
 
@@ -1384,11 +1475,14 @@
 !
 !  Initialize.
 !
+      att_kind=-1
+      dim_id=0
+      dim_size=0
       n_dim=0
       n_var=0
       n_gatt=0
       rec_id=-1
-      att_kind=-1
+      rec_size=0
       var_id=0
       var_natt=0
       var_flag=0
@@ -1399,6 +1493,11 @@
       DO i=1,Matts
         DO j=1,LEN(att_name(1))
           att_name(i)(j:j)=' '
+        END DO
+      END DO
+      DO i=1,Mdims
+        DO j=1,LEN(dim_name(1))
+          dim_name(i)(j:j)=' '
         END DO
       END DO
       DO i=1,Mvars
@@ -1421,12 +1520,34 @@
       IF (InpThread) THEN
         status=nf90_inquire(my_ncid, n_dim, n_var, n_gatt, rec_id)
         IF ((status.eq.nf90_noerr).and.(n_var.le.Mvars)) THEN
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
           ibuffer(1)=n_dim
           ibuffer(2)=n_var
           ibuffer(3)=n_gatt
           ibuffer(4)=rec_id
 #endif
+!
+!  Inquire about global dimensions: names, ID, and size.
+!
+          rec_size=-1
+          DO i=1,n_dim
+            dim_id(i)=i
+            status=nf90_inquire_dimension(my_ncid, dim_id(i),           &
+     &                                    dim_name(i), dim_size(i))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              WRITE (stdout,10) dim_id(i), TRIM(ncname),                &
+     &                          TRIM(SourceFile), nf90_strerror(status)
+              exit_flag=2
+              ioerror=status
+              EXIT
+            END IF
+            IF (dim_id(i).eq.rec_id) THEN
+              rec_size=dim_size(i)
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+              ibuffer(5)=rec_size
+#endif
+            END IF
+          END DO
 !
 !  Inquire global attribute names and their external data type.
 !
@@ -1455,8 +1576,8 @@
             END IF
           END DO
 !
-!  Inquire about variables: name, ID, dimensions, data type, and number
-!  of attributes.
+!  Inquire about variables: name, ID, number of dimensions, dimension
+!  IDs, data type, and number of attributes.
 !
           IF (status.eq.nf90_noerr) THEN
             DO i=1,n_var
@@ -1507,7 +1628,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast dimension to all processors in the group.
 !
@@ -1518,7 +1639,11 @@
         n_var=ibuffer(2)
         n_gatt=ibuffer(3)
         rec_id=ibuffer(4)
+        rec_size=ibuffer(5)
         CALL mp_bcasti (ng, model, att_kind)
+        CALL mp_bcasti (ng, model, dim_id)
+        CALL mp_bcasti (ng, model, dim_size)
+        CALL mp_bcasts (ng, model, dim_name)
         CALL mp_bcasti (ng, model, var_id)
         CALL mp_bcasti (ng, model, var_flag)
         CALL mp_bcasti (ng, model, var_type)
@@ -1620,11 +1745,10 @@
                         EXIT
                       END IF
                     ELSE IF ((my_Alen.eq.1).and.                        &
-     &                       ((my_Atype.eq.NF90_FLOAT ).or.             &
-     &                        (my_Atype.eq.NF90_DOUBLE))) THEN
+     &                       (my_Atype.eq.NF90_FLOAT)) THEN
                       status=nf90_get_att(my_ncid, my_id,               &
      &                                    TRIM(var_Aname(i)),           &
-     &                                    var_Afloat(i))
+     &                                    my_Afloat)
                       IF (FoundError(status, nf90_noerr,                &
      &                               __LINE__, MyFile)) THEN
                         WRITE (stdout,60) 'float',                      &
@@ -1637,6 +1761,33 @@
                         ioerror=status
                         EXIT
                       END IF
+#ifdef SINGLE_PRECISION
+                      var_Afloat(i)=my_Afloat
+#else
+                      var_Afloat(i)=REAL(my_Afloat, r8)
+#endif
+                    ELSE IF ((my_Alen.eq.1).and.                        &
+     &                       (my_Atype.eq.NF90_DOUBLE)) THEN
+                      status=nf90_get_att(my_ncid, my_id,               &
+     &                                    TRIM(var_Aname(i)),           &
+     &                                    my_Adouble)
+                      IF (FoundError(status, nf90_noerr,                &
+     &                               __LINE__, MyFile)) THEN
+                        WRITE (stdout,60) 'float',                      &
+     &                                    TRIM(var_Aname(i)),           &
+     &                                    TRIM(myVarName),              &
+     &                                    TRIM(ncname),                 &
+     &                                    TRIM(SourceFile),             &
+     &                                    nf90_strerror(status)
+                        exit_flag=2
+                        ioerror=status
+                        EXIT
+                      END IF
+#ifdef SINGLE_PRECISION
+                      var_Afloat(i)=REAL(my_Adouble, r4)
+#else
+                      var_Afloat(i)=my_Adouble
+#endif
                     ELSE IF (my_Atype.eq.NF90_CHAR) THEN
                       status=nf90_get_att(my_ncid, my_id,               &
      &                                    TRIM(var_Aname(i)),           &
@@ -1674,7 +1825,7 @@
             END IF
           END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast requested variable information to all processors in the
 !  group.
@@ -1739,7 +1890,7 @@
      &        i1,' for variable:',2x,a,/,18x,'in input file:',2x,a,     &
      &        /,18x,'call from:',2x,a,/,18x,a)
   60  FORMAT (/,' NETCDF_INQ_VAR - error while reading ',a,             &
-     &        'attribute:',1x,a,' for variable ',a,/,18x,               &
+     &        ' attribute:',1x,a,' for variable ',a,/,18x,              &
      &        'in input file:',2x,a,/,18x,'call from:',2x,a,/,18x,a)
   70  FORMAT (/,' NETCDF_INQ_VAR - unable to inquire name of ',         &
      &        'attribute ',i1,' for variable ',a,/,18x,                 &
@@ -1771,16 +1922,11 @@
 !     VarID        ID of requested variable (integer)                  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -1794,7 +1940,7 @@
 !  Local variable declarations.
 !
       integer :: status
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(3) :: ibuffer
 #endif
 !
@@ -1815,7 +1961,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       ibuffer(1)=exit_flag
       ibuffer(2)=ioerror
       ibuffer(3)=VarID
@@ -1831,9 +1977,201 @@
 !
       RETURN
       END SUBROUTINE netcdf_inq_varid
+
+#ifdef SINGLE_PRECISION
 !
-      SUBROUTINE netcdf_get_fatt (ng, model, ncname, varid, AttName,    &
-     &                            AttValue, foundit, ncid)
+      SUBROUTINE netcdf_get_fatt_dp (ng, model, ncname, varid,         &
+     &                               AttName, AttValue, foundit, ncid)
+!
+!=======================================================================
+!                                                                      !
+!  This routine gets requested variable double-precision attribute(s). !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     ncname       NetCDF file name (string)                           !
+!     varid        Variable ID for variable attribute or               !
+!                    NF90_GLOBAL for a global attribute (integer)      !
+!     AttName      Attribute name to read (string array)               !
+!     ncid         NetCDF file ID (integer, OPTIONAL)                  !
+!                                                                      !
+!  On Ouput:                                                           !
+!                                                                      !
+!     AttValue     Attribute value (double precision array)            !
+!     foundit      Switch (T/F) activated when the requested           !
+!                    attribute is found (logical array)                !
+!                                                                      !
+!=======================================================================
+
+# if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, varid
+
+      integer, intent(in), optional :: ncid
+!
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: AttName(:)
+!
+      logical, intent(out) :: foundit(:)
+!
+      real(dp), intent(out) :: AttValue(:)
+!
+!  Local variable declarations.
+!
+      integer :: i, j, my_natts, my_ncid, natts, status
+
+# if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      real(dp), allocatable :: rbuffer(:)
+# endif
+!
+      character (len=40) :: my_Aname
+      character (len=40) :: my_Vname
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", netcdf_get_fatt"
+!
+!-----------------------------------------------------------------------
+!  Inquire ID of requested variable.
+!-----------------------------------------------------------------------
+!
+!  Get number of variable attributes to process.
+!
+      natts=UBOUND(AttName, DIM=1)
+      DO i=1,natts
+        foundit(i)=.FALSE.
+        AttValue(i)=0.0_dp
+      END DO
+# if !defined PARALLEL_IO && defined DISTRIBUTE
+      IF (.not.allocated(rbuffer)) THEN
+        allocate ( rbuffer(2*natts+1) )
+      END IF
+# endif
+!
+!  If appropriate, open file for reading.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_open (ng, model, TRIM(ncname), 0, my_ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      ELSE
+        my_ncid=ncid
+      END IF
+!
+!  Inquire about requested attribute value.
+!
+      IF (InpThread) THEN
+        IF (varid.eq.nf90_global) THEN
+          status=nf90_inquire(my_ncid,                                  &
+     &                        nAttributes = my_natts)
+        ELSE
+          status=nf90_inquire_variable(my_ncid, varid,                  &
+     &                                 name = my_Vname,                 &
+     &                                 nAtts = my_natts)
+        END IF
+        IF (status.eq.nf90_noerr) THEN
+          DO j=1,my_natts
+            status=nf90_inq_attname(my_ncid, varid, j, my_Aname)
+            IF (status.eq.nf90_noerr) THEN
+              DO i=1,natts
+                IF (TRIM(my_Aname).eq.TRIM(AttName(i))) THEN
+                  status=nf90_get_att(my_ncid, varid, TRIM(AttName(i)), &
+     &                                AttValue(i))
+                  IF (FoundError(status, nf90_noerr,                    &
+     &                           __LINE__, MyFile)) THEN
+                    IF (Master) WRITE (stdout,10) TRIM(AttName(i)),     &
+     &                                            TRIM(my_Vname),       &
+     &                                            TRIM(ncname),         &
+     &                                            TRIM(SourceFile),     &
+     &                                            nf90_strerror(status)
+                    exit_flag=2
+                    ioerror=status
+                  END IF
+                  foundit(i)=.TRUE.
+                  EXIT
+                END IF
+              END DO
+            ELSE
+              IF (Master) WRITE (stdout,20) j,                          &
+     &                                      TRIM(my_Vname),             &
+     &                                      TRIM(ncname),               &
+     &                                      TRIM(SourceFile),           &
+     &                                      nf90_strerror(status)
+              exit_flag=2
+              ioerror=status
+              EXIT
+            END IF
+          END DO
+# if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+          rbuffer=0.0_dp
+          DO i=1,natts
+            rbuffer(i)=AttValue(i)
+            IF (foundit(i)) THEN
+               rbuffer(i+natts)=1.0_dp
+            END IF
+          END DO
+          rbuffer(2*natts+1)=REAL(ioerror, dp)
+# endif
+        ELSE
+          IF (Master) WRITE (stdout,30) TRIM(my_Vname),                 &
+     &                                  TRIM(ncname),                   &
+     &                                  TRIM(SourceFile),               &
+     &                                  nf90_strerror(status)
+          exit_flag=2
+          ioerror=status
+        END IF
+      END IF
+
+# if !defined PARALLEL_IO  && defined DISTRIBUTE
+!
+!  Broadcast information to all processors in the group. Pack all
+!  data into a real array for efficient communications.
+!
+      CALL mp_bcasti (ng, model, exit_flag)
+      IF (exit_flag.eq.NoError) THEN
+        CALL mp_bcastf (ng, model, rbuffer)
+        DO i=1,natts
+          AttValue(i)=rbuffer(i)
+          IF (rbuffer(i+natts).gt.0.0_dp) THEN
+            foundit(i)=.TRUE.
+          END IF
+        END DO
+        ioerror=INT(rbuffer(2*natts+1))
+        IF (allocated(rbuffer)) THEN
+          deallocate (rbuffer)
+        END IF
+      END IF
+# endif
+!
+!  If applicable, close input NetCDF file.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_close (ng, model, my_ncid, ncname, .FALSE.)
+      END IF
+!
+  10  FORMAT (/,' NETCDF_GET_FATT_DP - error while reading attribute:', &
+     &        1x,a,'for variable',1x,a,/,22x,'in input file:',2x,a,/,   &
+     &        22x,'call from:',2x,a,/,22x,a)
+  20  FORMAT (/,' NETCDF_GET_FATT_DP - error while inquiring ',         &
+     &        'attribute: ',i2.2,'for variable',1x,a,/,22x,             &
+     &        'in input file:',2x,a,/,19x,'call from:',2x,a,/,19x,a)
+  30  FORMAT (/,' NETCDF_GET_FATT_DP - error while inquiring number of',&
+     &        ' attributes for variable:',1x,a,/,22x,'in input file:',  &
+     &        2x,a,/,22x,'call from:',2x,a,/,22x,a)
+!
+      RETURN
+      END SUBROUTINE netcdf_get_fatt_dp
+#endif
+!
+      SUBROUTINE netcdf_get_fatt_r8 (ng, model, ncname, varid, AttName, &
+     &                               AttValue, foundit, ncid)
 !
 !=======================================================================
 !                                                                      !
@@ -1856,16 +2194,11 @@
 !                    attribute is found (logical array)                !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -1884,16 +2217,16 @@
 !
       integer :: i, j, my_natts, my_ncid, natts, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      real(r8), allocatable :: buffer(:)
+      real(r8), allocatable :: rbuffer(:)
 #endif
 !
       character (len=40) :: my_Aname
       character (len=40) :: my_Vname
 
       character (len=*), parameter :: MyFile =                          &
-     &  __FILE__//", netcdf_get_fatt"
+     &  __FILE__//", netcdf_get_fatt_r8"
 !
 !-----------------------------------------------------------------------
 !  Inquire ID of requested variable.
@@ -1906,9 +2239,9 @@
         foundit(i)=.FALSE.
         AttValue(i)=0.0_r8
       END DO
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
-      IF (.not.allocated(buffer)) THEN
-        allocate ( buffer(2*natts+1) )
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      IF (.not.allocated(rbuffer)) THEN
+        allocate ( rbuffer(2*natts+1) )
       END IF
 #endif
 !
@@ -1965,16 +2298,16 @@
               EXIT
             END IF
           END DO
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-          buffer=0.0_r8
+          rbuffer=0.0_r8
           DO i=1,natts
-            buffer(i)=AttValue(i)
+            rbuffer(i)=AttValue(i)
             IF (foundit(i)) THEN
-               buffer(i+natts)=1.0_r8
+               rbuffer(i+natts)=1.0_r8
             END IF
           END DO
-          buffer(2*natts+1)=REAL(ioerror, r8)
+          rbuffer(2*natts+1)=REAL(ioerror, r8)
 #endif
         ELSE
           IF (Master) WRITE (stdout,30) TRIM(my_Vname),                 &
@@ -1993,16 +2326,16 @@
 !
       CALL mp_bcasti (ng, model, exit_flag)
       IF (exit_flag.eq.NoError) THEN
-        CALL mp_bcastf (ng, model, buffer)
+        CALL mp_bcastf (ng, model, rbuffer)
         DO i=1,natts
-          AttValue(i)=buffer(i)
-          IF (buffer(i+natts).gt.0.0_r8) THEN
+          AttValue(i)=rbuffer(i)
+          IF (rbuffer(i+natts).gt.0.0_r8) THEN
             foundit(i)=.TRUE.
           END IF
         END DO
-        ioerror=INT(buffer(2*natts+1))
-        IF (allocated(buffer)) THEN
-          deallocate (buffer)
+        ioerror=INT(rbuffer(2*natts+1))
+        IF (allocated(rbuffer)) THEN
+          deallocate (rbuffer)
         END IF
       END IF
 #endif
@@ -2013,18 +2346,18 @@
         CALL netcdf_close (ng, model, my_ncid, ncname, .FALSE.)
       END IF
 !
-  10  FORMAT (/,' NETCDF_GET_FATT - error while reading attribute:',    &
-     &        1x,a,'for variable',1x,a,/,19x,'in input file:',2x,a,/,   &
-     &        19x,'call from:',2x,a,/,19x,a)
-  20  FORMAT (/,' NETCDF_GET_FATT - error while inquiring attribute:',  &
-     &        1x,i2.2,'for variable',1x,a,/,19x,'in input file:',2x,a,  &
-     &        /,19x,'call from:',2x,a,/,19x,a)
-  30  FORMAT (/,' NETCDF_GET_FATT - error while inquiring number of ',  &
-     &        'attributes for variable:',1x,a,/,19x,'in input file:',   &
-     &        2x,a,/,19x,'call from:',2x,a,/,19x,a)
+  10  FORMAT (/,' NETCDF_GET_FATT_R8 - error while reading attribute:', &
+     &        1x,a,'for variable',1x,a,/,22x,'in input file:',2x,a,/,   &
+     &        22x,'call from:',2x,a,/,22x,a)
+  20  FORMAT (/,' NETCDF_GET_FATT_R8 - error while inquiring ',         &
+     &        'attribute: ',i2.2,'for variable',1x,a,/,22x,             &
+     &        'in input file:',2x,a,/,19x,'call from:',2x,a,/,19x,a)
+  30  FORMAT (/,' NETCDF_GET_FATT_R8 - error while inquiring number of',&
+     &        ' attributes for variable:',1x,a,/,22x,'in input file:',  &
+     &        2x,a,/,22x,'call from:',2x,a,/,22x,a)
 !
       RETURN
-      END SUBROUTINE netcdf_get_fatt
+      END SUBROUTINE netcdf_get_fatt_r8
 !
       SUBROUTINE netcdf_get_satt (ng, model, ncname, varid, AttName,    &
      &                            AttValue, foundit, ncid)
@@ -2050,16 +2383,11 @@
 !                    attribute is found (logical array)                !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2078,7 +2406,7 @@
 !
       integer :: i, j, my_natts, my_ncid, natts, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, allocatable :: ibuffer(:)
 #endif
 !
@@ -2099,7 +2427,7 @@
         foundit(i)=.FALSE.
         AttValue(i)=' '
       END DO
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       IF (.not.allocated(ibuffer)) THEN
         allocate ( ibuffer(natts+1) )
       END IF
@@ -2158,7 +2486,7 @@
               EXIT
             END IF
           END DO
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
           ibuffer=0
           DO i=1,natts
@@ -2178,7 +2506,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast information to all processors in the group. Pack all
 !  data into a real array for efficient communications.
@@ -2217,6 +2545,425 @@
 !
       RETURN
       END SUBROUTINE netcdf_get_satt
+
+#ifdef SINGLE_PRECISION
+!
+      SUBROUTINE netcdf_get_fvar_0dp (ng, model, ncname, myVarName, A,  &
+     &                                ncid, start, total, broadcast,    &
+     &                                min_val, max_val)
+!
+!=======================================================================
+!                                                                      !
+!  This routine reads requested double-precision scalar variable from  !
+!  specified NetCDF file.                                              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     ncname       NetCDF file name (string)                           !
+!     myVarName    Variable name (string)                              !
+!     ncid         NetCDF file ID (integer, OPTIONAL)                  !
+!     start        Starting index where the first of the data values   !
+!                    will be read along each dimension (integer,       !
+!                    OPTIONAL)                                         !
+!     total        Number of data values to be read along each         !
+!                    dimension (integer, OPTIONAL)                     !
+!     broadcast    Switch to broadcast read values from root to all    !
+!                    members of the communicator in distributed-       !
+!                    memory applications (logical, OPTIONAL,           !
+!                    default=TRUE)                                     !
+!                                                                      !
+!  On Ouput:                                                           !
+!                                                                      !
+!     A            Read scalar variable (double precision)             !
+!     min_val      Read data minimum value (double precision, OPTIONAL)!
+!     max_val      Read data maximum value (double precision, OPTIONAL)!
+!                                                                      !
+!  Examples:                                                           !
+!                                                                      !
+!    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar)       !
+!    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(1))    !
+!                                                                      !
+!=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
+#endif
+!
+!  Imported variable declarations.
+!
+      logical, intent(in), optional :: broadcast
+!
+      integer, intent(in) :: ng, model
+
+      integer, intent(in), optional :: ncid
+      integer, intent(in), optional :: start(:)
+      integer, intent(in), optional :: total(:)
+!
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: myVarName
+!
+      real(dp), intent(out), optional :: min_val
+      real(dp), intent(out), optional :: max_val
+
+      real(dp), intent(out) :: A
+!
+!  Local variable declarations.
+!
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      logical :: DoBroadcast
+!
+#endif
+
+      integer :: my_ncid, status, varid
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      integer, dimension(2) :: ibuffer
+#endif
+!
+      real(dp), dimension(1) :: my_A
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", netcdf_get_fvar_0dp"
+!
+!-----------------------------------------------------------------------
+!  Read in a double-precision scalar variable.
+!-----------------------------------------------------------------------
+!
+!  If NetCDF file ID is not provided, open NetCDF for reading.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_open (ng, model, TRIM(ncname), 0, my_ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      ELSE
+        my_ncid=ncid
+      END IF
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+!  Determine if the read data is only needed and allocated by the master
+!  node ins distribute-memory applications.
+!
+      IF (.not.PRESENT(broadcast)) THEN
+        DoBroadcast=.TRUE.
+      ELSE
+        DoBroadcast=broadcast
+      END IF
+#endif
+!
+!  Read in variable.
+!
+      IF (InpThread) THEN
+        status=nf90_inq_varid(my_ncid, TRIM(myVarName), varid)
+        IF (status.eq.nf90_noerr) THEN
+          IF (PRESENT(start).and.PRESENT(total)) THEN
+            status=nf90_get_var(my_ncid, varid, my_A, start, total)
+            A=my_A(1)
+          ELSE
+            status=nf90_get_var(my_ncid, varid, A)
+          END IF
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+            WRITE (stdout,10) TRIM(myVarName), TRIM(ncname),            &
+     &                        TRIM(SourceFile), nf90_strerror(status)
+            exit_flag=2
+            ioerror=status
+          END IF
+        ELSE
+          WRITE (stdout,20) TRIM(myVarName), TRIM(ncname),              &
+     &                      TRIM(SourceFile), nf90_strerror(status)
+          exit_flag=2
+          ioerror=status
+        END IF
+      END IF
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+!  Broadcast read variable to all processors in the group.
+!
+      ibuffer(1)=exit_flag
+      ibuffer(2)=ioerror
+      CALL mp_bcasti (ng, model, ibuffer)
+      exit_flag=ibuffer(1)
+      ioerror=ibuffer(2)
+      IF (DoBroadcast.and.(exit_flag.eq.NoError)) THEN
+        CALL mp_bcastf (ng, model, A)
+      END IF
+#endif
+!
+!  Compute minimum and maximum values of read variable. Notice that
+!  the same read value is assigned since a scalar variable was
+!  processed.
+!
+      IF (PRESENT(min_val)) THEN
+        min_val=A
+      END IF
+      IF (PRESENT(max_val)) THEN
+        max_val=A
+      END IF
+!
+!  If NetCDF file ID is not provided, close input NetCDF file.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_close (ng, model, my_ncid, ncname, .FALSE.)
+      END IF
+!
+  10  FORMAT (/,' NETCDF_GET_FVAR_0DP - error while reading variable:', &
+     &        2x,a,/,23x,'in input file:',2x,a,/,23x,'call from:',2x,a, &
+     &        /,23x,a)
+  20  FORMAT (/,' NETCDF_GET_FVAR_0DP - error while inquiring ID for ', &
+     &        'variable:',2x,a,/,23x,'in input file:',2x,a,/,23x,       &
+     &        'call from:',2x,a,/,23x,a)
+!
+      RETURN
+      END SUBROUTINE netcdf_get_fvar_0dp
+!
+      SUBROUTINE netcdf_get_fvar_1dp (ng, model, ncname, myVarName, A,  &
+     &                               ncid, start, total, broadcast,     &
+     &                               min_val, max_val)
+!
+!=======================================================================
+!                                                                      !
+!  This routine reads requested double-precision 1D-array variable     !
+!  froms specified NetCDF file.                                        !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     ncname       NetCDF file name (string)                           !
+!     myVarName    Variable name (string)                              !
+!     ncid         NetCDF file ID (integer, OPTIONAL)                  !
+!     start        Starting index where the first of the data values   !
+!                    will be read along each dimension (integer,       !
+!                    OPTIONAL)                                         !
+!     total        Number of data values to be read along each         !
+!                    dimension (integer, OPTIONAL)                     !
+!     broadcast    Switch to broadcast read values from root to all    !
+!                    members of the communicator in distributed-       !
+!                    memory applications (logical, OPTIONAL,           !
+!                    default=TRUE)                                     !
+!                                                                      !
+!  On Ouput:                                                           !
+!                                                                      !
+!     A            Read 1D-array variable (double precision)           !
+!     min_val      Read data minimum value (double precision, OPTIONAL)!
+!     max_val      Read data maximum value (double precision, OPTIONAL)!
+!                                                                      !
+!  Examples:                                                           !
+!                                                                      !
+!    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar)       !
+!    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(0:))   !
+!    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(:,1))  !
+!                                                                      !
+!=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
+#endif
+!
+!  Imported variable declarations.
+!
+      logical, intent(in), optional :: broadcast
+!
+      integer, intent(in) :: ng, model
+
+      integer, intent(in), optional :: ncid
+      integer, intent(in), optional :: start(:)
+      integer, intent(in), optional :: total(:)
+!
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: myVarName
+!
+      real(dp), intent(out), optional :: min_val
+      real(dp), intent(out), optional :: max_val
+
+      real(dp), intent(out) :: A(:)
+!
+!  Local variable declarations.
+!
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      logical :: DoBroadcast
+#endif
+      logical, dimension(3) :: foundit
+!
+      integer :: i, my_ncid, status, varid
+
+      integer, dimension(1) :: Asize
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+      integer, dimension(2) :: ibuffer
+#endif
+!
+      real(dp) :: Afactor, Aoffset, Aspval
+
+      real(dp), parameter :: Aepsilon = 1.0E-8_dp
+
+      real(dp), dimension(3) :: AttValue
+!
+      character (len=12), dimension(3) :: AttName
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", netcdf_get_fvar_1dp"
+!
+!-----------------------------------------------------------------------
+!  Read in a double-precision 1D-array variable.
+!-----------------------------------------------------------------------
+!
+      IF (PRESENT(start).and.PRESENT(total)) THEN
+        Asize(1)=1
+        DO i=1,SIZE(total)              ! this logic is for the case
+          Asize(1)=Asize(1)*total(i)    ! of reading multidimensional
+        END DO                          ! data into a compact 1D array
+      ELSE
+        Asize(1)=UBOUND(A, DIM=1)
+      END IF
+!
+!  If NetCDF file ID is not provided, open NetCDF for reading.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_open (ng, model, TRIM(ncname), 0, my_ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      ELSE
+        my_ncid=ncid
+      END IF
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+!  Determine if the read data is only needed and allocated by the master
+!  node ins distribute-memory applications.
+!
+      IF (.not.PRESENT(broadcast)) THEN
+        DoBroadcast=.TRUE.
+      ELSE
+        Dobroadcast=broadcast
+      END IF
+#endif
+!
+!  Read in variable.
+!
+      IF (InpThread) THEN
+        status=nf90_inq_varid(my_ncid, TRIM(myVarName), varid)
+        IF (status.eq.nf90_noerr) THEN
+          IF (PRESENT(start).and.PRESENT(total)) THEN
+            status=nf90_get_var(my_ncid, varid, A, start, total)
+          ELSE
+            status=nf90_get_var(my_ncid, varid, A)
+          END IF
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+            WRITE (stdout,10) TRIM(myVarName), TRIM(ncname),            &
+     &                        TRIM(SourceFile), nf90_strerror(status)
+            exit_flag=2
+            ioerror=status
+          END IF
+        ELSE
+          WRITE (stdout,20) TRIM(myVarName), TRIM(ncname),              &
+     &                      TRIM(SourceFile), nf90_strerror(status)
+          exit_flag=2
+          ioerror=status
+        END IF
+      END IF
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
+!
+!  Broadcast read variable to all processors in the group.
+!
+      ibuffer(1)=exit_flag
+      ibuffer(2)=ioerror
+      CALL mp_bcasti (ng, model, ibuffer)
+      exit_flag=ibuffer(1)
+      ioerror=ibuffer(2)
+      IF (DoBroadcast.and.(exit_flag.eq.NoError)) THEN
+        CALL mp_bcastf (ng, model, A)
+      END IF
+#endif
+!
+!  Check if the following attributes: "scale_factor", "add_offset", and
+!  "_FillValue" are present in the input NetCDF variable:
+!
+!  If the "scale_value" attribute is present, the data is multiplied by
+!  this factor after reading.
+!  If the "add_offset" attribute is present, this value is added to the
+!  data after reading.
+!  If both "scale_factor" and "add_offset" attributes are present, the
+!  data are first scaled before the offset is added.
+!  If the "_FillValue" attribute is present, the data having this value
+!  is treated as missing and it is replaced with zero. This feature it
+!  is usually related with the land/sea masking.
+!
+      AttName(1)='scale_factor'
+      AttName(2)='add_offset  '
+      AttName(3)='_FillValue  '
+
+      CALL netcdf_get_fatt (ng, model, ncname, varid, AttName,          &
+     &                      AttValue, foundit,                          &
+     &                      ncid = my_ncid)
+
+      IF (exit_flag.eq.NoError) THEN
+        IF (.not.foundit(1)) THEN
+          Afactor=1.0_dp
+        ELSE
+          Afactor=AttValue(1)
+        END IF
+
+        IF (.not.foundit(2)) THEN
+          Aoffset=0.0_dp
+        ELSE
+          Aoffset=AttValue(2)
+        END IF
+
+        IF (.not.foundit(3)) THEN
+          Aspval=spval_check
+        ELSE
+          Aspval=AttValue(3)
+        END IF
+
+        DO i=1,Asize(1)                       ! zero out missing values
+          IF ((foundit(3).and.(ABS(A(i)-Aspval).lt.Aepsilon)).or.       &
+     &        (.not.foundit(3).and.(ABS(A(i)).ge.ABS(Aspval)))) THEN
+            A(i)=0.0_dp
+          END IF
+        END DO
+
+        IF (foundit(1)) THEN                  ! scale data
+          DO i=1,Asize(1)
+            A(i)=Afactor*A(i)
+          END DO
+        END IF
+
+        IF (foundit(2)) THEN                  ! add data offset
+          DO i=1,Asize(1)
+            A(i)=A(i)+Aoffset
+          END DO
+        END IF
+      END IF
+!
+!  Compute minimum and maximum values of read variable.
+!
+      IF (PRESENT(min_val)) THEN
+        min_val=MINVAL(A)
+      END IF
+      IF (PRESENT(max_val)) THEN
+        max_val=MAXVAL(A)
+      END IF
+!
+!  If NetCDF file ID is not provided, close input NetCDF file.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_close (ng, model, my_ncid, ncname, .FALSE.)
+      END IF
+!
+  10  FORMAT (/,' NETCDF_GET_FVAR_1DP - error while reading variable:', &
+     &        2x,a,/,23x,'in input file:',2x,a,/,23x,'call from:',2x,a, &
+     &        /,23x,a)
+  20  FORMAT (/,' NETCDF_GET_FVAR_1DP - error while inquiring ID for ', &
+     &        'variable:',2x,a,/,23x,'in input file:',2x,a,/,23x,       &
+     &        'call from:',2x,a,/,23x,a)
+!
+      RETURN
+      END SUBROUTINE netcdf_get_fvar_1dp
+#endif
 !
       SUBROUTINE netcdf_get_fvar_0d (ng, model, ncname, myVarName, A,   &
      &                               ncid, start, total, broadcast,     &
@@ -2256,16 +3003,11 @@
 !    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(1))    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2287,14 +3029,14 @@
 !
 !  Local variable declarations.
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       logical :: DoBroadcast
 !
 #endif
 
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -2316,7 +3058,7 @@
         my_ncid=ncid
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Determine if the read data is only needed and allocated by the master
 !  node ins distribute-memory applications.
@@ -2353,7 +3095,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -2433,16 +3175,11 @@
 !    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(:,1))  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2464,7 +3201,7 @@
 !
 !  Local variable declarations.
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       logical :: DoBroadcast
 #endif
       logical, dimension(3) :: foundit
@@ -2472,7 +3209,7 @@
       integer :: i, my_ncid, status, varid
 
       integer, dimension(1) :: Asize
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -2509,7 +3246,7 @@
         my_ncid=ncid
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Determine if the read data is only needed and allocated by the master
 !  node ins distribute-memory applications.
@@ -2545,7 +3282,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -2684,16 +3421,11 @@
 !    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar(:,:,1))!
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2715,7 +3447,7 @@
 !
 !  Local variable declarations.
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       logical :: Dobroadcast
 #endif
       logical, dimension(3) :: foundit
@@ -2724,7 +3456,7 @@
 
       integer, dimension(2) :: Asize
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -2760,7 +3492,7 @@
         my_ncid=ncid
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Determine if the read data is only needed and allocated by the master
 !  node ins distribute-memory applications.
@@ -2790,13 +3522,14 @@
           END IF
         ELSE
           WRITE (stdout,20) TRIM(myVarName), TRIM(ncname),              &
+     &                      TRIM(SourceFile), nf90_strerror(status),    &
      &                      nf90_strerror(status)
           exit_flag=2
           ioerror=status
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -2938,16 +3671,11 @@
 !    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar)       !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2969,7 +3697,7 @@
 !
 !  Local variable declarations.
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       logical :: DoBroadcast
 #endif
       logical, dimension(3) :: foundit
@@ -2978,7 +3706,7 @@
 
       integer, dimension(3) :: Asize
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -3016,7 +3744,7 @@
         my_ncid=ncid
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Determine if the read data is only needed and allocated by the master
 !  node ins distribute-memory applications.
@@ -3052,7 +3780,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -3202,16 +3930,11 @@
 !    CALL netcdf_get_fvar (ng, iNLM, 'file.nc', 'VarName', fvar)       !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3233,7 +3956,7 @@
 !
 !  Local variable declarations.
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       logical :: DoBroadcast
 #endif
       logical, dimension(3) :: foundit
@@ -3242,7 +3965,7 @@
 
       integer, dimension(4) :: Asize
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -3282,7 +4005,7 @@
         my_ncid=ncid
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Determine if the read data is only needed and allocated by the master
 !  node ins distribute-memory applications.
@@ -3318,7 +4041,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -3470,16 +4193,11 @@
 !    CALL netcdf_get_lvar (ng, iNLM, 'file.nc', 'VarName', lvar(1))    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcastl
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3501,7 +4219,7 @@
       integer :: AI
       integer, dimension(1) :: my_AI
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -3578,7 +4296,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -3645,16 +4363,11 @@
 !    CALL netcdf_get_lvar (ng, iNLM, 'file.nc', 'VarName', lvar(:,1))  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcastl
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3675,7 +4388,7 @@
 
       integer, dimension(SIZE(A,1)) :: AI
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -3755,7 +4468,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -3819,16 +4532,11 @@
 !    CALL netcdf_get_ivar (ng, iNLM, 'file.nc', 'VarName', ivar(1))    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3849,7 +4557,7 @@
 
       integer, dimension(1) :: my_A
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -3894,7 +4602,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -3956,16 +4664,11 @@
 !    CALL netcdf_get_ivar (ng, iNLM, 'file.nc', 'VarName', ivar(:,1))  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3984,7 +4687,7 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -4028,7 +4731,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4091,16 +4794,11 @@
 !    CALL netcdf_get_ivar (ng, iNLM, 'file.nc', 'VarName', ivar(:,:,1))!
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -4119,7 +4817,7 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -4163,7 +4861,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4234,16 +4932,11 @@
 !    CALL netcdf_get_svar (ng, iNLM, 'file.nc', 'VarName', ivar(1))    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -4262,10 +4955,12 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
+      character (len=LEN(A)), dimension(1) :: my_A
+
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", netcdf_get_svar_0d"
 !
@@ -4288,7 +4983,8 @@
         status=nf90_inq_varid(my_ncid, TRIM(myVarName), varid)
         IF (status.eq.nf90_noerr) THEN
           IF (PRESENT(start).and.PRESENT(total)) THEN
-            status=nf90_get_var(my_ncid, varid, A, start, total)
+            status=nf90_get_var(my_ncid, varid, my_A, start, total)
+            A=my_A(1)
           ELSE
             status=nf90_get_var(my_ncid, varid, A)
           END IF
@@ -4306,7 +5002,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4373,16 +5069,11 @@
 !     A            Read 1D-array variable or array element (string)    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -4401,7 +5092,7 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -4445,7 +5136,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4512,16 +5203,11 @@
 !     A            Read 2D-array variable or array element (string)    !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -4540,7 +5226,7 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -4584,7 +5270,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4651,16 +5337,11 @@
 !     A            Read 3D-array variable or element (string)          !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -4679,7 +5360,7 @@
 !
       integer :: my_ncid, status, varid
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -4723,7 +5404,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -4795,16 +5476,11 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
       USE dateclock_mod,  ONLY : datenum, datestr, time_units
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError, lowercase
+      USE strings_mod,    ONLY : lowercase
 !
 !  Imported variable declarations.
 !
@@ -4835,7 +5511,7 @@
       integer :: ind, lstr, my_ncid, status, varid
       integer :: year, month, day, hour, minutes
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
       real(dp) :: Afactor, Aoffset, my_Rdate(2), seconds
@@ -4890,7 +5566,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -5082,16 +5758,11 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
       USE dateclock_mod,  ONLY : datenum, datestr, time_units
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError, lowercase
+      USE strings_mod,    ONLY : lowercase
 !
 !  Imported variable declarations.
 !
@@ -5123,7 +5794,7 @@
       integer :: year, month, day, hour, minutes
 
       integer, dimension(1) :: Asize
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -5186,7 +5857,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast read variable to all processors in the group.
 !
@@ -5377,16 +6048,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5405,11 +6071,11 @@
 !
       integer :: my_ncid, my_varid, status
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 # endif
 !
-      real(r8), dimension(1) :: my_A
+      real(dp), dimension(1) :: my_A
 !
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", netcdf_put_fvar_0dp"
@@ -5460,7 +6126,7 @@
         END IF
       END IF
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -5518,16 +6184,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5546,7 +6207,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 # endif
 !
@@ -5594,7 +6255,7 @@
         END IF
       END IF
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -5652,16 +6313,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5680,7 +6336,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 # endif
 !
@@ -5728,7 +6384,7 @@
         END IF
       END IF
 
-# if !defined PARALLEL_IO  && defined DISTRIBUTE
+# if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -5787,16 +6443,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5815,7 +6466,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -5870,7 +6521,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -5928,16 +6579,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5956,7 +6602,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6004,7 +6650,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6062,16 +6708,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6090,7 +6731,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6138,7 +6779,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6196,16 +6837,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6224,7 +6860,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6272,7 +6908,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6330,16 +6966,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6358,7 +6989,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6406,7 +7037,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6464,16 +7095,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6494,7 +7120,7 @@
 
       integer, dimension(1) :: my_A
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6547,7 +7173,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6605,16 +7231,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6633,7 +7254,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6681,7 +7302,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6739,16 +7360,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6767,7 +7383,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6815,7 +7431,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -6876,16 +7492,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -6907,7 +7518,7 @@
       integer :: AI
       integer, dimension(1) :: my_AI
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -6969,7 +7580,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7036,7 +7647,7 @@
       USE mod_iounits
       USE mod_scalars
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
       USE strings_mod,    ONLY : FoundError
@@ -7060,7 +7671,7 @@
 
       integer, dimension(SIZE(A,1)) :: AI
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -7119,7 +7730,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7180,16 +7791,11 @@
 !  Notice: This routine must be used to write only nontiled variables. !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7210,7 +7816,7 @@
 
       integer, dimension(SIZE(A,1),SIZE(A,2)) :: AI
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -7271,7 +7877,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7337,19 +7943,12 @@
 !     exit_flag    Error flag (integer) stored in MOD_SCALARS          !
 !     ioerror      NetCDF return code (integer) stored in MOD_IOUNITS  !
 !                                                                      !
-!  Notice: This routine must be used to write only nontiled variables. !
-!                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7367,10 +7966,12 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
+      character (len=LEN(A)), dimension(1) :: my_A
+
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", netcdf_put_svar_0d"
 !
@@ -7405,7 +8006,12 @@
 !  Write out data.
 !
         IF (exit_flag.eq.NoError) THEN
-          status=nf90_put_var(my_ncid, my_varid, A, start, total)
+          IF ((start(1).eq.1).and.(total(1).eq.1)) THEN
+             status=nf90_put_var(my_ncid, my_varid, A)
+          ELSE
+            my_A(1)=A
+            status=nf90_put_var(my_ncid, my_varid, my_A, start, total)
+          END IF
           IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             WRITE (stdout,20) TRIM(myVarName), TRIM(ncname),            &
      &                        TRIM(SourceFile), nf90_strerror(status)
@@ -7415,7 +8021,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7482,19 +8088,12 @@
 !     exit_flag    Error flag (integer) stored in MOD_SCALARS          !
 !     ioerror      NetCDF return code (integer) stored in MOD_IOUNITS  !
 !                                                                      !
-!  Notice: This routine must be used to write only nontiled variables. !
-!                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7513,7 +8112,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -7561,7 +8160,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7629,16 +8228,11 @@
 !     ioerror      NetCDF return code (integer) stored in MOD_IOUNITS  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7657,7 +8251,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -7705,7 +8299,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7773,16 +8367,11 @@
 !     ioerror      NetCDF return code (integer) stored in MOD_IOUNITS  !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7801,7 +8390,7 @@
 !
       integer :: my_ncid, my_varid, status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 !
@@ -7849,7 +8438,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -7893,17 +8482,11 @@
 !     Lupdate      Update global attribute (logical, OPTIONAl)         !
 !                                                                      !
 !=======================================================================
+
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_scalars
-!
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -7923,9 +8506,9 @@
 #endif
       integer :: i, status
 #ifdef BIOLOGY
-      integer :: AttLen, is, ie, lstr
+      integer :: is, ie, lstr
 #endif
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer, dimension(3) :: ibuffer
 #endif
 !
@@ -7965,7 +8548,7 @@
 !  with the "bio_file" attribute.
 !
         IF (.not.PRESENT(Lupdate)) THEN
-          my_Lupdate=.TRUE.
+          my_Lupdate=.FALSE.
         ELSE
           my_Lupdate=Lupdate
         END IF
@@ -7974,39 +8557,36 @@
 !
         IF (my_Lupdate) THEN
           is=1
-          status=nf90_inquire_attribute(ncid, nf90_global, 'bio_file',  &
-     &                                  len = AttLen)
-          IF (status.eq.nf90_noerr) THEN
-            DO i=1,512
-              bio_file(i:i)=' '
-            END DO
-            DO i=1,4
-              lstr=LEN_TRIM(BIONAME(i))
-              IF (lstr.gt.0) THEN
-                ie=is+lstr-1
-                bio_file(is:ie)=TRIM(BIONAME(i))
-                is=ie+1
-                bio_file(is:is)=','
-                is=is+2
-              END IF
-            END DO
-            lstr=LEN_TRIM(bio_file)-1
+          DO i=1,512
+            bio_file(i:i)=' '
+          END DO
+          DO i=1,4
+            lstr=LEN_TRIM(BIONAME(i))
             IF (lstr.gt.0) THEN
-              status=nf90_put_att(ncid, nf90_global, 'bio_file',        &
-     &                            bio_file(1:lstr))
-              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-                WRITE (stdout,10) 'bio_file', TRIM(my_ncname),          &
-     &                            TRIM(SourceFile),                     &
-     &                            nf90_strerror(status)
-                exit_flag=3
-                ioerror=status
-              END IF
+              ie=is+lstr-1
+              bio_file(is:ie)=TRIM(BIONAME(i))
+              is=ie+1
+              bio_file(is:is)=','
+              is=is+2
+            END IF
+          END DO
+          lstr=LEN_TRIM(bio_file)-1
+          IF (lstr.gt.0) THEN
+            status=nf90_put_att(ncid, nf90_global, 'bio_file',          &
+     &                          bio_file(1:lstr))
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+              WRITE (stdout,10) 'bio_file', TRIM(my_ncname),            &
+     &                          TRIM(SourceFile),                       &
+     &                          nf90_strerror(status)
+              exit_flag=3
+              ioerror=status
             END IF
           END IF
         END IF
 #endif
 !
-!  Close requested NetCDF file.
+!  Close requested NetCDF file. After closing, the "ncid" identifier is
+!  set to its closed state value of -1.
 !
         IF (exit_flag.eq.NoError) THEN
           status=nf90_close(ncid)
@@ -8017,17 +8597,16 @@
             ioerror=status
           END IF
           IF (Ldebug_ncid) THEN
-            WRITE (DBout,'(a,1x," <= ",i8,2(2x,a))') kernel(model)//    &
-     &                                               ' CLOSE', ncid,    &
-     &                                               TRIM(my_ncname),   &
-     &                                               TRIM(SourceFile)
+            WRITE (DBout,'(a,1x," <= ",i8,2(2x,a))')                    &
+     &            KernelString(model)//' F90: CLOSE', ncid,             &
+     &            TRIM(my_ncname), TRIM(SourceFile)
             CALL my_flush (DBout)
           END IF
           ncid=-1
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -8069,16 +8648,11 @@
 !     ncid         NetCDF file ID (integer)                            !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
+
 #if !defined PARALLEL_IO && defined DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -8150,10 +8724,9 @@
           ioerror=status
         END IF
         IF (Ldebug_ncid) THEN
-            WRITE (DBout,'(a," <= ",i8,2(2x,a))') kernel(model)//       &
-     &                                            ' CREATE', ncid,      &
-     &                                            TRIM(ncname),         &
-     &                                            TRIM(SourceFile)
+            WRITE (DBout,'(a," ** ",i8,2(2x,a))')                       &
+     &            KernelString(model)//' F90: CREATE', ncid,            &
+     &            TRIM(ncname), TRIM(SourceFile)
           CALL my_flush (DBout)
         END IF
 !
@@ -8212,16 +8785,11 @@
 !          NetCDF-4 format type file.                                  !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
+
 #if !defined PARALLEL_IO && defined DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -8297,16 +8865,11 @@
 !     ncid         NetCDF file ID (integer)                            !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
+
 #if !defined PARALLEL_IO && defined DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -8402,10 +8965,9 @@
           ioerror=status
         END IF
         IF (Ldebug_ncid) THEN
-           WRITE (DBout,'(a,2x," => ",i8,2(2x,a))') kernel(model)//     &
-     &                                              ' OPEN', ncid,      &
-     &                                              TRIM(ncname),       &
-     &                                              TRIM(SourceFile)
+           WRITE (DBout,'(a,2x," => ",i8,2(2x,a))')                     &
+     &           KernelString(model)//' F90: OPEN', ncid,               &
+     &           TRIM(ncname), TRIM(SourceFile)
           CALL my_flush (DBout)
         END IF
 # ifdef DISTRIBUTE
@@ -8452,16 +9014,11 @@
 !          NetCDF-4 format type files.                                 !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
+
 #if !defined PARALLEL_IO && defined DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -8481,7 +9038,7 @@
      &  __FILE__//", netcdf_redef"
 !
 !-----------------------------------------------------------------------
-!  Leave definition mode.
+!  Put open file into definition mode.
 !-----------------------------------------------------------------------
 !
       IF (OutThread) THEN
@@ -8530,16 +9087,11 @@
 !  See NetCDF user manual for more details.                            !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_scalars
-!
+
 #if !defined PARALLEL_IO && defined DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_bcasti
 #endif
-      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -8551,7 +9103,7 @@
 !
       integer :: status
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IO && defined DISTRIBUTE
       integer :: ibuffer(2)
 #endif
 !

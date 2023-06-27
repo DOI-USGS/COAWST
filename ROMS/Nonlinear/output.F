@@ -3,9 +3,10 @@
 #ifdef NONLINEAR
       SUBROUTINE output (ng)
 !
-!svn $Id: output.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: output.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,9 +20,6 @@
 !
       USE mod_param
       USE mod_parallel
-# ifdef FILTERED
-      USE mod_filter, ONLY: FILN
-# endif
 # ifdef FLOATS
       USE mod_floats
 # endif
@@ -30,13 +28,51 @@
 # endif
       USE mod_iounits
       USE mod_ncparam
-      USE mod_netcdf
       USE mod_scalars
 !
-# ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasts
+      USE close_io_mod,    ONLY : close_file
+# ifdef AVERAGES
+      USE def_avg_mod,     ONLY : def_avg
 # endif
-      USE strings_mod,    ONLY : FoundError
+# ifdef DIAGNOSTICS
+      USE def_diags_mod,   ONLY : def_diags
+# endif
+# ifdef FLOATS
+      USE def_floats_mod,  ONLY : def_floats
+# endif
+      USE def_his_mod,     ONLY : def_his
+      USE def_quick_mod,   ONLY : def_quick
+      USE def_rst_mod,     ONLY : def_rst
+# ifdef STATIONS
+      USE def_station_mod, ONLY : def_station
+# endif
+# ifdef DISTRIBUTE
+      USE distribute_mod,  ONLY : mp_bcasts
+# endif
+# ifdef OBSERVATIONS
+      USE obs_read_mod,    ONLY : obs_read
+      USE obs_write_mod,   ONLY : obs_write
+# endif
+      USE strings_mod,     ONLY : FoundError
+# ifdef AVERAGES
+      USE wrt_avg_mod,     ONLY : wrt_avg
+# endif
+# ifdef DIAGNOSTICS
+      USE wrt_diags_mod,   ONLY : wrt_diags
+# endif
+# ifdef FLOATS
+      USE wrt_floats_mod,  ONLY : wrt_floats
+# endif
+      USE wrt_his_mod,     ONLY : wrt_his
+      USE wrt_quick_mod,   ONLY : wrt_quick
+      USE wrt_rst_mod,     ONLY : wrt_rst
+# ifdef STATIONS
+      USE wrt_station_mod, ONLY : wrt_station
+# endif
+# if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
+      USE wrt_tides_mod,   ONLY : wrt_tides
+# endif
 !
       implicit none
 !
@@ -46,12 +82,9 @@
 !
 !  Local variable declarations.
 !
-      logical :: Ldefine, NewFile
+      logical :: Ldefine, Lupdate, NewFile
 !
       integer :: Fcount, ifile, status, tile
-# ifdef FILTERED_RST
-      integer :: i
-# endif
 !
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__
@@ -85,11 +118,19 @@
         Lanafile=.FALSE.
       END IF
 !
+!  If appropriate, set switch for updating biology header file global
+!  attribute in output NetCDF files.
+!
+#ifdef BIOLOGY
+      Lupdate=.TRUE.
+#else
+      Lupdate=.FALSE.
+#endif
+!
 !  Create output history NetCDF file or prepare existing file to
 !  append new data to it.  Also,  notice that it is possible to
 !  create several files during a single model run.
 !
-# ifndef NO_HIS
       IF (LdefHIS(ng)) THEN
         IF (ndefHIS(ng).gt.0) THEN
           IF (idefHIS(ng).lt.0) THEN
@@ -138,13 +179,11 @@
             IF (Master) THEN
               WRITE (HIS(ng)%name,20) TRIM(HIS(ng)%base), ifile
             END IF
-#  ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, HIS(ng)%name)
-#  endif
+# endif
             HIS(ng)%files(Fcount)=TRIM(HIS(ng)%name)
-            IF (HIS(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-            END IF
+            CALL close_file (ng, iNLM, HIS(ng), HIS(ng)%name, Lupdate)
             CALL def_his (ng, NewFile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
@@ -182,7 +221,6 @@
           END IF
         END IF
       END IF
-# endif
 !
 !-----------------------------------------------------------------------
 !  If appropriate, process nonlinear quicksave NetCDF file.
@@ -244,9 +282,7 @@
             CALL mp_bcasts (ng, iNLM, QCK(ng)%name)
 # endif
             QCK(ng)%files(Fcount)=TRIM(QCK(ng)%name)
-            IF (QCK(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, QCK(ng)%ncid)
-            END IF
+            CALL close_file (ng, iNLM, QCK(ng), QCK(ng)%name, Lupdate)
             CALL def_quick (ng, NewFile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
@@ -353,9 +389,7 @@
             CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
 #  endif
             AVG(ng)%files(Fcount)=TRIM(AVG(ng)%name)
-            IF (AVG(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, AVG(ng)%ncid)
-            END IF
+            CALL close_file (ng, iNLM, AVG(ng), AVG(ng)%name, Lupdate)
             CALL def_avg (ng, Newfile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             LwrtAVG(ng)=.TRUE.
@@ -376,10 +410,10 @@
         IF (((iic(ng).gt.ntstart(ng)).and.                              &
      &       (MOD(iic(ng)-1,nAVG(ng)).eq.0)).or.                        &
      &      ((iic(ng).ge.ntsAVG(ng)).and.(nAVG(ng).eq.1))) THEN
-          CALL wrt_avg (ng)
+          CALL wrt_avg (ng, tile)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
-          CALL wrt_tides (ng)
+          CALL wrt_tides (ng, tile)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
         END IF
@@ -454,9 +488,7 @@
             CALL mp_bcasts (ng, iNLM, DIA(ng)%name)
 #  endif
             DIA(ng)%files(Fcount)=TRIM(DIA(ng)%name)
-            IF (DIA(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, DIA(ng)%ncid)
-            END IF
+            CALL close_file (ng, iNLM, DIA(ng), DIA(ng)%name, Lupdate)
             CALL def_diags (ng, Newfile)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             LwrtDIA(ng)=.TRUE.
@@ -477,7 +509,7 @@
         IF (((iic(ng).gt.ntstart(ng)).and.                              &
      &       (MOD(iic(ng)-1,nDIA(ng)).eq.0)).or.                        &
      &      ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1))) THEN
-          CALL wrt_diags (ng)
+          CALL wrt_diags (ng, tile)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END IF
@@ -504,7 +536,7 @@
 !  Write out data into stations NetCDF file.
 !
         IF (MOD(iic(ng)-1,nSTA(ng)).eq.0) THEN
-          CALL wrt_station (ng)
+          CALL wrt_station (ng, tile)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END IF
@@ -555,9 +587,6 @@
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         LwrtRST(ng)=.TRUE.
         LdefRST(ng)=.FALSE.
-#ifdef FILTERED_RST
-        CALL def_filt (ng)
-#endif
       END IF
 !
 !  Write out data into restart NetCDF file.
@@ -565,14 +594,8 @@
       IF (LwrtRST(ng)) THEN
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
      &      (MOD(iic(ng)-1,nRST(ng)).eq.0)) THEN
-          CALL wrt_rst (ng)
+          CALL wrt_rst (ng, tile)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# ifdef FILTERED_RST
-          DO i=1,FILN
-            CALL wrt_filt (ng, i)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-          END DO
-# endif
         END IF
       END IF
 

@@ -31,9 +31,9 @@ function [Dweights, Oweights] = smooth_weights (Wname, varargin)
 %    Oweights    OCEAN component smooth melding weights (2D array)
 %  
 
-% svn $Id: smooth_weights.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: smooth_weights.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           John L. Wilkin        %
 %=========================================================================%
@@ -123,19 +123,23 @@ if (Lplot)
   figure;
   
   hax(1) = subplot(2,2,1);
-  pcolorjw(W.lon, W.lat, W.ocean_weight_rigid); colorbar
+  pcolorjw(W.lon, W.lat, W.ocean_weight_rigid);
+  shading flat; colorbar;
   title('ocean\_weight\_rigid')
 
   hax(2) = subplot(2,2,2);
-  pcolorjw(W.lon, W.lat, ocean_weight_smooth); colorbar
+  pcolorjw(W.lon, W.lat, ocean_weight_smooth);
+  shading flat; colorbar;
   title(['ocean\_weight\_smooth, N = ', num2str(Nconv)]);
   
   hax(3) = subplot(2,2,3);
-  pcolorjw(W.lon, W.lat, W.data_weight_rigid); colorbar
+  pcolorjw(W.lon, W.lat, W.data_weight_rigid);
+  shading flat; colorbar;
   title('data\_weight\_rigid')
 
   hax(4) = subplot(2,2,4);
-  pcolorjw(W.lon, W.lat, data_weight_smooth); colorbar
+  pcolorjw(W.lon, W.lat, data_weight_smooth);
+  shading flat; colorbar;
   title(['data\_weight\_smooth, N = ', num2str(Nconv)]);
 
   linkaxes(hax)

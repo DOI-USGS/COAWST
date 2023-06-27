@@ -18,6 +18,8 @@
 #define SWAN_MODEL
 #define MCT_LIB
 
+#define SWAN_SINGLESPEC
+
 #define UV_VIS2
 #define MIX_S_UV
 #define MASKING

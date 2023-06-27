@@ -1,17 +1,29 @@
-      SUBROUTINE rp_t3dmix4 (ng, tile)
+      MODULE rp_t3dmix4_mod
 !
-!svn $Id: rp_t3dmix4_geo.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: rp_t3dmix4_geo.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes representers tangent linear horizontal     !
 !  biharmonic mixing of tracers along geopotential surfaces.           !
 !                                                                      !
 !  BASIC STATE variables needed: diff4, Hz, t, z_r                     !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC rp_t3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE rp_t3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -40,44 +52,44 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iRPM, 28, __LINE__, MyFile)
 #endif
-      CALL rp_t3dmix4_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nrhs(ng), nstp(ng), nnew(ng),               &
+      CALL rp_t3dmix4_geo_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nrhs(ng), nstp(ng), nnew(ng),           &
 #ifdef MASKING
-     &                      GRID(ng) % umask,                           &
-     &                      GRID(ng) % vmask,                           &
+     &                          GRID(ng) % umask,                       &
+     &                          GRID(ng) % vmask,                       &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                      GRID(ng) % umask_wet,                       &
-     &                      GRID(ng) % vmask_wet,                       &
+     &                          GRID(ng) % umask_wet,                   &
+     &                          GRID(ng) % vmask_wet,                   &
 #endif
-     &                      GRID(ng) % om_v,                            &
-     &                      GRID(ng) % on_u,                            &
-     &                      GRID(ng) % pm,                              &
-     &                      GRID(ng) % pn,                              &
-     &                      GRID(ng) % Hz,                              &
-     &                      GRID(ng) % tl_Hz,                           &
-     &                      GRID(ng) % z_r,                             &
-     &                      GRID(ng) % tl_z_r,                          &
+     &                          GRID(ng) % om_v,                        &
+     &                          GRID(ng) % on_u,                        &
+     &                          GRID(ng) % pm,                          &
+     &                          GRID(ng) % pn,                          &
+     &                          GRID(ng) % Hz,                          &
+     &                          GRID(ng) % tl_Hz,                       &
+     &                          GRID(ng) % z_r,                         &
+     &                          GRID(ng) % tl_z_r,                      &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-     &                      MIXING(ng) % diff3d_u,                      &
-     &                      MIXING(ng) % diff3d_v,                      &
+     &                          MIXING(ng) % diff3d_u,                  &
+     &                          MIXING(ng) % diff3d_v,                  &
 # else
-     &                      MIXING(ng) % diff3d_r,                      &
+     &                          MIXING(ng) % diff3d_r,                  &
 # endif
 #else
-     &                      MIXING(ng) % diff4,                         &
+     &                          MIXING(ng) % diff4,                     &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                      CLIMA(ng) % tclm,                           &
+     &                          CLIMA(ng) % tclm,                       &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                      DIAGS(ng) % DiaTwrk,                        &
+!!   &                          DIAGS(ng) % DiaTwrk,                    &
 #endif
-     &                      OCEAN(ng) % t,                              &
-     &                      OCEAN(ng) % tl_t)
+     &                          OCEAN(ng) % t,                          &
+     &                          OCEAN(ng) % tl_t)
 #ifdef PROFILE
       CALL wclock_off (ng, iRPM, 28, __LINE__, MyFile)
 #endif
@@ -86,35 +98,35 @@
       END SUBROUTINE rp_t3dmix4
 !
 !***********************************************************************
-      SUBROUTINE rp_t3dmix4_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            nrhs, nstp, nnew,                     &
+      SUBROUTINE rp_t3dmix4_geo_tile (ng, tile,                         &
+     &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
+     &                                nrhs, nstp, nnew,                 &
 #ifdef MASKING
-     &                            umask, vmask,                         &
+     &                                umask, vmask,                     &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                            umask_wet, vmask_wet,                 &
+     &                                umask_wet, vmask_wet,             &
 #endif
-     &                            om_v, on_u, pm, pn,                   &
-     &                            Hz, tl_Hz,                            &
-     &                            z_r, tl_z_r,                          &
+     &                                om_v, on_u, pm, pn,               &
+     &                                Hz, tl_Hz,                        &
+     &                                z_r, tl_z_r,                      &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-     &                            diff3d_u, diff3d_v,                   &
+     &                                diff3d_u, diff3d_v,               &
 # else
-     &                            diff3d_r,                             &
+     &                                diff3d_r,                         &
 # endif
 #else
-     &                            diff4,                                &
+     &                                diff4,                            &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                            tclm,                                 &
+     &                                tclm,                             &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                            DiaTwrk,                              &
+!!   &                                DiaTwrk,                          &
 #endif
-     &                            t, tl_t)
+     &                                t, tl_t)
 !***********************************************************************
 !
       USE mod_param
@@ -959,16 +971,16 @@
                 cff=0.25_r8*(diff4(i,j,itrc)+diff4(i-1,j,itrc))*        &
      &              on_u(i,j)
 #endif
-!>              FX(i,j)=cff*
-!>   &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
-!>   &                  (dTdx(i  ,j,k1)-                                &
-!>   &                   0.5_r8*(MIN(dZdx(i,j,k1),0.0_r8)*              &
-!>   &                              (dTdz(i-1,j,k1)+                    &
-!>   &                               dTdz(i  ,j,k2))+                   &
-!>   &                           MAX(dZdx(i,j,k1),0.0_r8)*              &
-!>   &                              (dTdz(i-1,j,k2)+                    &
-!>   &                               dTdz(i  ,j,k1))))
-!>
+!^              FX(i,j)=cff*
+!^   &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
+!^   &                  (dTdx(i  ,j,k1)-                                &
+!^   &                   0.5_r8*(MIN(dZdx(i,j,k1),0.0_r8)*              &
+!^   &                              (dTdz(i-1,j,k1)+                    &
+!^   &                               dTdz(i  ,j,k2))+                   &
+!^   &                           MAX(dZdx(i,j,k1),0.0_r8)*              &
+!^   &                              (dTdz(i-1,j,k2)+                    &
+!^   &                               dTdz(i  ,j,k1))))
+!^
                 tl_FX(i,j)=cff*                                         &
      &                     ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*              &
      &                      (dTdx(i,j,k1)-                              &
@@ -1020,16 +1032,16 @@
                 cff=0.25_r8*(diff4(i,j,itrc)+diff4(i,j-1,itrc))*        &
      &              om_v(i,j)
 #endif
-!>              FE(i,j)=cff*                                            &
-!>   &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
-!>   &                  (dTde(i,j,k1)-                                  &
-!>   &                   0.5_r8*(MIN(dZde(i,j,k1),0.0_r8)*              &
-!>   &                              (dTdz(i,j-1,k1)+                    &
-!>   &                               dTdz(i,j  ,k2))+                   &
-!>   &                           MAX(dZde(i,j,k1),0.0_r8)*              &
-!>   &                              (dTdz(i,j-1,k2)+                    &
-!>   &                               dTdz(i,j  ,k1))))
-!>
+!^              FE(i,j)=cff*                                            &
+!^   &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
+!^   &                  (dTde(i,j,k1)-                                  &
+!^   &                   0.5_r8*(MIN(dZde(i,j,k1),0.0_r8)*              &
+!^   &                              (dTdz(i,j-1,k1)+                    &
+!^   &                               dTdz(i,j  ,k2))+                   &
+!^   &                           MAX(dZde(i,j,k1),0.0_r8)*              &
+!^   &                              (dTdz(i,j-1,k2)+                    &
+!^   &                               dTdz(i,j  ,k1))))
+!^
                 tl_FE(i,j)=cff*                                         &
      &                     ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*              &
      &                      (dTde(i,j,k1)-                              &
@@ -1097,17 +1109,17 @@
      &                    tl_dZdx(i  ,j,k2)
                   tl_cff4=(0.5_r8+SIGN(0.5_r8, dZdx(i+1,j,k1)))*        &
      &                    tl_dZdx(i+1,j,k1)
-!>
-!>                FS(i,j,k2)=difx*                                      &
-!>   &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
-!>   &                              dTdx(i  ,j,k1))+                    &
-!>   &                        cff2*(cff2*dTdz(i,j,k2)-                  &
-!>   &                              dTdx(i+1,j,k2))+                    &
-!>   &                        cff3*(cff3*dTdz(i,j,k2)-                  &
-!>   &                              dTdx(i  ,j,k2))+                    &
-!>   &                        cff4*(cff4*dTdz(i,j,k2)-                  &
-!>   &                              dTdx(i+1,j,k1)))
-!>
+!^
+!^                FS(i,j,k2)=difx*                                      &
+!^   &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
+!^   &                              dTdx(i  ,j,k1))+                    &
+!^   &                        cff2*(cff2*dTdz(i,j,k2)-                  &
+!^   &                              dTdx(i+1,j,k2))+                    &
+!^   &                        cff3*(cff3*dTdz(i,j,k2)-                  &
+!^   &                              dTdx(i  ,j,k2))+                    &
+!^   &                        cff4*(cff4*dTdz(i,j,k2)-                  &
+!^   &                              dTdx(i+1,j,k1)))
+!^
                   tl_FS(i,j,k2)=difx*                                   &
      &                          (tl_cff1*(cff1*dTdz(i,j,k2)-            &
      &                                    dTdx(i  ,j,k1))+              &
@@ -1153,17 +1165,17 @@
      &                    tl_dZde(i,j  ,k2)
                   tl_cff4=(0.5_r8+SIGN(0.5_r8, dZde(i,j+1,k1)))*        &
      &                    tl_dZde(i,j+1,k1)
-!>                FS(i,j,k2)=FS(i,j,k2)+                                &
-!>   &                       dife*                                      &
-!>   &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
-!>   &                              dTde(i,j  ,k1))+                    &
-!>   &                        cff2*(cff2*dTdz(i,j,k2)-                  &
-!>   &                              dTde(i,j+1,k2))+                    &
-!>   &                        cff3*(cff3*dTdz(i,j,k2)-                  &
-!>   &                              dTde(i,j  ,k2))+                    &
-!>   &                        cff4*(cff4*dTdz(i,j,k2)-                  &
-!>   &                              dTde(i,j+1,k1)))
-!>
+!^                FS(i,j,k2)=FS(i,j,k2)+                                &
+!^   &                       dife*                                      &
+!^   &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
+!^   &                              dTde(i,j  ,k1))+                    &
+!^   &                        cff2*(cff2*dTdz(i,j,k2)-                  &
+!^   &                              dTde(i,j+1,k2))+                    &
+!^   &                        cff3*(cff3*dTdz(i,j,k2)-                  &
+!^   &                              dTde(i,j  ,k2))+                    &
+!^   &                        cff4*(cff4*dTdz(i,j,k2)-                  &
+!^   &                              dTde(i,j+1,k1)))
+!^
                   tl_FS(i,j,k2)=tl_FS(i,j,k2)+                          &
      &                          dife*                                   &
      &                          (tl_cff1*(cff1*dTdz(i,j,k2)-            &
@@ -1205,17 +1217,17 @@
 !
             DO j=Jstr,Jend
               DO i=Istr,Iend
-!>              cff=dt(ng)*pm(i,j)*pn(i,j)*                             &
-!>   &                     (FX(i+1,j  )-FX(i,j)+                        &
-!>   &                      FE(i  ,j+1)-FE(i,j))+                       &
-!>   &              dt(ng)*(FS(i,j,k2)-FS(i,j,k1))
-!>
+!^              cff=dt(ng)*pm(i,j)*pn(i,j)*                             &
+!^   &                     (FX(i+1,j  )-FX(i,j)+                        &
+!^   &                      FE(i  ,j+1)-FE(i,j))+                       &
+!^   &              dt(ng)*(FS(i,j,k2)-FS(i,j,k1))
+!^
                 tl_cff=dt(ng)*pm(i,j)*pn(i,j)*                          &
      &                        (tl_FX(i+1,j)-tl_FX(i,j)+                 &
      &                         tl_FE(i,j+1)-tl_FE(i,j))+                &
      &                 dt(ng)*(tl_FS(i,j,k2)-tl_FS(i,j,k1))
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff
 #ifdef DIAGNOSTICS_TS
 !!              DiaTwrk(i,j,k,itrc,iThdif)=-cff
@@ -1227,4 +1239,6 @@
       END DO T_LOOP
 !
       RETURN
-      END SUBROUTINE rp_t3dmix4_tile
+      END SUBROUTINE rp_t3dmix4_geo_tile
+
+      END MODULE rp_t3dmix4_mod

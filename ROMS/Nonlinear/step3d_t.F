@@ -2,9 +2,10 @@
       MODULE step3d_t_mod
 #if !defined TS_FIXED && (defined NONLINEAR && defined SOLVE3D)
 !
-!svn $Id: step3d_t.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: step3d_t.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -47,9 +48,6 @@
       USE mod_grid
       USE mod_mixing
       USE mod_ocean
-# if defined TRC_PSOURCE
-      USE mod_trc_sources
-# endif
 # if defined SEDIMENT && defined SED_MORPH
       USE mod_sedbed
 # endif
@@ -73,13 +71,6 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
-# if defined TRC_PSOURCE
-     &                    Msrcpt(ng), Nsrcpt(ng),                       &
-     &                    TRC_SOURCES(ng) % Isrcpt,                     &
-     &                    TRC_SOURCES(ng) % Jsrcpt,                     &
-     &                    TRC_SOURCES(ng) % Tsrcpt,                     &
-     &                    TRC_SOURCES(ng) % Lsrcpt,                     &
-# endif
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
      &                    GRID(ng) % umask,                             &
@@ -134,10 +125,6 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
-# if defined TRC_PSOURCE
-     &                          Msrcpt, Nsrcpt,                         &
-     &                          Isrcpt, Jsrcpt, Tsrcpt, Lsrcpt,         &
-# endif
 # ifdef MASKING
      &                          rmask, umask, vmask,                    &
 # endif
@@ -190,9 +177,6 @@
       USE nesting_mod, ONLY : bry_fluxes
 # endif
       USE t3dbc_mod, ONLY : t3dbc_tile
-# ifdef T_PASSIVE
-      USE pt3dbc_mod, ONLY : pt3dbc_tile
-# endif
 !
 !  Imported variable declarations.
 !
@@ -200,17 +184,8 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
-# if defined TRC_PSOURCE
-      integer, intent(in) :: Msrcpt, Nsrcpt
-# endif
-
+!
 # ifdef ASSUMED_SHAPE
-#  if defined TRC_PSOURCE
-      logical, intent(in)  :: Lsrcpt(:,:)
-      integer, intent(in)  :: Isrcpt(:)
-      integer, intent(in)  :: Jsrcpt(:)
-      real(r8), intent(in) :: Tsrcpt(:,:,:)
-#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
@@ -264,12 +239,6 @@
 
 # else
 
-#  if defined TRC_PSOURCE
-      logical, intent(in) :: Lsrcpt(Msrcpt,NT(ng))
-      integer, intent(in) :: Isrcpt(Msrcpt)
-      integer, intent(in) :: Jsrcpt(Msrcpt)
-      real(r8), intent(in) :: Tsrcpt(Msrcpt,N(ng),NT(ng))
-#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -326,7 +295,7 @@
 # endif
       integer :: IminT, ImaxT, JminT, JmaxT
       integer :: Isrc, Jsrc
-      integer :: i, ibt, ic, ii, is, itrc, j, jj, k, ltrc
+      integer :: i, ic, ii, is, itrc, j, jj, k, ltrc
 # if defined AGE_MEAN && defined T_PASSIVE
       integer :: iage
 # endif
@@ -365,7 +334,6 @@
       real(r8), allocatable :: Dhadv(:,:,:)
       real(r8), allocatable :: Dvadv(:,:,:,:)
 # endif
-      real(r8) :: my_maxbio(15)
       real(r8), allocatable :: Ta(:,:,:,:)
       real(r8), allocatable :: Ua(:,:,:)
       real(r8), allocatable :: Va(:,:,:)
@@ -815,6 +783,9 @@
 !  Apply tracers point sources to the horizontal advection terms,
 !  if any.
 !
+!    Dsrc(is) = 0,  flow across grid cell u-face (positive or negative)
+!    Dsrc(is) = 1,  flow across grid cell v-face (positive or negative)
+!
           IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
@@ -835,13 +806,7 @@
                 IF (LapplySrc) THEN
                   IF (LtracerSrc(itrc,ng)) THEN
                     FX(Isrc,Jsrc)=Huon(Isrc,Jsrc,k)*                    &
-# ifdef ONE_TRACER_SOURCE
-     &                            SOURCES(ng)%Tsrc(itrc)
-# elif defined TWO_D_TRACER_SOURCE
-     &                            SOURCES(ng)%Tsrc(is,itrc)
-# else
      &                            SOURCES(ng)%Tsrc(is,k,itrc)
-# endif
 # ifdef MASKING
                   ELSE
                     IF ((rmask(Isrc  ,Jsrc).eq.0.0_r8).and.             &
@@ -872,13 +837,7 @@
                 IF (LapplySrc) THEN
                   IF (LtracerSrc(itrc,ng)) THEN
                     FE(Isrc,Jsrc)=Hvom(Isrc,Jsrc,k)*                    &
-# ifdef ONE_TRACER_SOURCE
-     &                            SOURCES(ng)%Tsrc(itrc)
-# elif defined TWO_D_TRACER_SOURCE
-     &                            SOURCES(ng)%Tsrc(is,itrc)
-# else
      &                            SOURCES(ng)%Tsrc(is,k,itrc)
-# endif
 # ifdef MASKING
                   ELSE
                     IF ((rmask(Isrc,Jsrc  ).eq.0.0_r8).and.             &
@@ -1244,6 +1203,8 @@
 !  advection schemes LwSrc is applied after the vertical advection
 !  is completed (J. Wilkin).
 !
+!    Dsrc(is) = 2,  flow across grid cell w-face (positive or negative)
+!
           IF (LwSrc(ng)) THEN
             IF (Vadvection(itrc,ng)%MPDATA) THEN
               DO is=1,Nsrc(ng)
@@ -1256,13 +1217,7 @@
                     DO k=1,N(ng)
                       cff=dt(ng)*pm(Isrc,Jsrc)*pn(Isrc,Jsrc)
                       IF (LtracerSrc(itrc,ng)) THEN
-# ifdef ONE_TRACER_SOURCE
-                        cff3=SOURCES(ng)%Tsrc(itrc)
-# elif defined TWO_D_TRACER_SOURCE
-                        cff3=SOURCES(ng)%Tsrc(is,itrc)
-# else
                         cff3=SOURCES(ng)%Tsrc(is,k,itrc)
-# endif
                       ELSE
                         cff3=t(Isrc,Jsrc,k,3,itrc)
                       END IF
@@ -1365,8 +1320,9 @@
 #  ifdef DIAGNOSTICS_TS
               cff1=Ta(i,j,N(ng),itrc)*oHz(i,j,N(ng))
 #  endif
-              DC(i,N(ng))=(DC(i,N(ng))+FCmax(i,N(ng)-1)*DC(i,N(ng)-1))/&
-     &                    (BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+              cff=1.0_r8/(BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+              DC(i,N(ng))=cff*(DC(i,N(ng))+                            &
+     &                         FCmax(i,N(ng)-1)*DC(i,N(ng)-1))
               Ta(i,j,N(ng),itrc)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_TS
               DiaTwrk(i,j,N(ng),itrc,iTvadv)=                          &
@@ -1542,6 +1498,8 @@
 !  added volume to keep the receiving cell concentration unchanged.
 !  J. Levin (Jupiter Intelligence Inc.) and J. Wilkin
 !
+!    Dsrc(is) = 2,  flow across grid cell w-face (positive or negative)
+!
       IF (LwSrc(ng)) THEN
         DO itrc=1,NT(ng)
           IF (.not.((Hadvection(itrc,ng)%MPDATA).and.                   &
@@ -1550,7 +1508,7 @@
              IF (INT(SOURCES(ng)%Dsrc(is)).eq.2) THEN
                 Isrc=SOURCES(ng)%Isrc(is)
                 Jsrc=SOURCES(ng)%Jsrc(is)
-                IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
+                IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.          &
      &              ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
                   DO k=1,N(ng)
                     cff=dt(ng)*pm(Isrc,Jsrc)*pn(Isrc,Jsrc)
@@ -1558,13 +1516,7 @@
                     cff=cff*oHz(Isrc,Jsrc,k)
 # endif
                     IF (LtracerSrc(itrc,ng)) THEN
-# ifdef ONE_TRACER_SOURCE
-                      cff3=SOURCES(ng)%Tsrc(itrc)
-# elif defined TWO_D_TRACER_SOURCE
-                      cff3=SOURCES(ng)%Tsrc(is,itrc)
-# else
                       cff3=SOURCES(ng)%Tsrc(is,k,itrc)
-# endif
                     ELSE
                       cff3=t(Isrc,Jsrc,k,3,itrc)
                     END IF
@@ -1883,35 +1835,7 @@
         END DO
       END DO
 # endif
-# if defined TRC_PSOURCE
 !
-!  Apply tracers point sources to the horizontal advection terms.
-!
-        DO it=1,NPT
-          itrc=inert(it)
-          DO is=1,Nsrcpt
-            i=Isrcpt(is)
-            j=Jsrcpt(is)
-            DO k=1,N(ng)
-              IF ((Hadvection(inert(itrc),ng)%MPDATA).and.              &
-     &            (Vadvection(inert(itrc),ng)%MPDATA)) THEN
-                IF (((Istr-2.le.i).and.(i.le.Iend+2)).and.              &
-     &              ((Jstr-2.le.j).and.(j.le.Jend+2))) THEN
-              ELSE
-                IF (((Istr.le.i).and.(i.le.Iend+1)).and.                &
-     &              ((Jstr.le.j).and.(j.le.Jend))) THEN
-              END IF
-!
-                IF (Lsrcpt(is,itrc)) THEN
-                  t(i,j,k,3,itrc)=0.
-                  t(i,j,k,nstp,itrc)=Tsrcpt(is,k,itrc)
-                  t(i,j,k,nnew,itrc)=Tsrcpt(is,k,itrc)
-                END IF
-              END IF
-            END DO
-          END DO
-        END DO
-# endif
 !-----------------------------------------------------------------------
 !  Apply lateral boundary conditions and, if appropriate, nudge
 !  to tracer data and apply Land/Sea mask.

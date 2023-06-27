@@ -2,9 +2,10 @@
       MODULE gls_corstep_mod
 #if defined NONLINEAR && defined GLS_MIXING && defined SOLVE3D
 !
-!svn $Id: gls_corstep.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: gls_corstep.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -1187,6 +1188,82 @@
 !-----------------------------------------------------------------------
 !  Set lateral boundary conditions.
 !-----------------------------------------------------------------------
+!
+      DO k=0,N(ng)
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            DO itrc=1,NAT
+              Akt(Istr-1,j,k,itrc)=Akt(Istr,j,k,itrc)
+            END DO
+            Akv(Istr-1,j,k)=Akv(Istr,j,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            DO itrc=1,NAT
+              Akt(Iend+1,j,k,itrc)=Akt(Iend,j,k,itrc)
+            END DO
+            Akv(Iend+1,j,k)=Akv(Iend,j,k)
+          END DO
+
+        END IF
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            DO itrc=1,NAT
+              Akt(i,Jstr-1,k,itrc)=Akt(i,Jstr,k,itrc)
+            END DO
+            Akv(i,Jstr-1,k)=Akv(i,Jstr,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            DO itrc=1,NAT
+              Akt(i,Jend+1,k,itrc)=Akt(i,Jend,k,itrc)
+            END DO
+            Akv(i,Jend+1,k)=Akv(i,Jend,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Istr-1,Jstr-1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Istr  ,Jstr-1,k,itrc)+       &
+     &                                 Akt(Istr-1,Jstr  ,k,itrc))
+          END DO
+          Akv(Istr-1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (Akv(Istr  ,Jstr-1,k)+                   &
+     &                          Akv(Istr-1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Iend+1,Jstr-1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Iend  ,Jstr-1,k,itrc)+       &
+     &                                 Akt(Iend+1,Jstr  ,k,itrc))
+          END DO
+          Akv(Iend+1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (Akv(Iend  ,Jstr-1,k)+                   &
+     &                          Akv(Iend+1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Istr-1,Jend+1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Istr  ,Jend+1,k,itrc)+       &
+     &                                 Akt(Istr-1,Jend  ,k,itrc))
+          END DO
+          Akv(Istr-1,Jend+1,k)=0.5_r8*                                  &
+     &                         (Akv(Istr  ,Jend+1,k)+                   &
+     &                          Akv(Istr-1,Jend  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Iend+1,Jend+1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Iend  ,Jend+1,k,itrc)+       &
+     &                                 Akt(Iend+1,Jend  ,k,itrc))
+          END DO
+          Akv(Iend+1,Jend+1,k)=0.5_r8*                                  &
+     &                         (Akv(Iend  ,Jend+1,k)+                   &
+     &                          Akv(Iend+1,Jend  ,k))
+        END IF
+      END DO
 !
       CALL tkebc_tile (ng, tile,                                        &
      &                 LBi, UBi, LBj, UBj, N(ng),                       &

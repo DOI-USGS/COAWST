@@ -1,15 +1,27 @@
-      SUBROUTINE tl_t3dmix4 (ng, tile)
+      MODULE tl_t3dmix4_mod
 !
-!svn $Id: tl_t3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: tl_t3dmix4_s.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes tangent linear horizontal biharmonic       !
 !  mixing of tracers along S-coordinate levels surfaces.               !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC tl_t3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE tl_t3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -38,42 +50,42 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iTLM, 27, __LINE__, MyFile)
 #endif
-      CALL tl_t3dmix4_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nrhs(ng), nstp(ng), nnew(ng),               &
+      CALL tl_t3dmix4_s_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
+     &                        nrhs(ng), nstp(ng), nnew(ng),             &
 #ifdef MASKING
-     &                      GRID(ng) % umask,                           &
-     &                      GRID(ng) % vmask,                           &
+     &                        GRID(ng) % umask,                         &
+     &                        GRID(ng) % vmask,                         &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                      GRID(ng) % umask_wet,                       &
-     &                      GRID(ng) % vmask_wet,                       &
+     &                        GRID(ng) % umask_wet,                     &
+     &                        GRID(ng) % vmask_wet,                     &
 #endif
-     &                      GRID(ng) % Hz,                              &
-     &                      GRID(ng) % tl_Hz,                           &
-     &                      GRID(ng) % pmon_u,                          &
-     &                      GRID(ng) % pnom_v,                          &
-     &                      GRID(ng) % pm,                              &
-     &                      GRID(ng) % pn,                              &
+     &                        GRID(ng) % Hz,                            &
+     &                        GRID(ng) % tl_Hz,                         &
+     &                        GRID(ng) % pmon_u,                        &
+     &                        GRID(ng) % pnom_v,                        &
+     &                        GRID(ng) % pm,                            &
+     &                        GRID(ng) % pn,                            &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT_NOT_YET
-     &                      MIXING(ng) % diff3d_u,                      &
-     &                      MIXING(ng) % diff3d_v,                      &
+     &                        MIXING(ng) % diff3d_u,                    &
+     &                        MIXING(ng) % diff3d_v,                    &
 # else
-     &                      MIXING(ng) % diff3d_r,                      &
+     &                        MIXING(ng) % diff3d_r,                    &
 # endif
 #else
-     &                      MIXING(ng) % diff4,                         &
+     &                        MIXING(ng) % diff4,                       &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                      CLIMA(ng) % tclm,                           &
+     &                        CLIMA(ng) % tclm,                         &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                      DIAGS(ng) % DiaTwrk,                        &
+!!   &                        DIAGS(ng) % DiaTwrk,                      &
 #endif
-     &                      OCEAN(ng) % t,                              &
-     &                      OCEAN(ng) % tl_t)
+     &                        OCEAN(ng) % t,                            &
+     &                        OCEAN(ng) % tl_t)
 #ifdef PROFILE
       CALL wclock_off (ng, iTLM, 27, __LINE__, MyFile)
 #endif
@@ -82,34 +94,34 @@
       END SUBROUTINE tl_t3dmix4
 !
 !***********************************************************************
-      SUBROUTINE tl_t3dmix4_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            nrhs, nstp, nnew,                     &
+      SUBROUTINE tl_t3dmix4_s_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
+     &                              nrhs, nstp, nnew,                   &
 #ifdef MASKING
-     &                            umask, vmask,                         &
+     &                              umask, vmask,                       &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                            umask_wet, vmask_wet,                 &
+     &                              umask_wet, vmask_wet,               &
 #endif
-     &                            Hz, tl_Hz,                            &
-     &                            pmon_u, pnom_v, pm, pn,               &
+     &                              Hz, tl_Hz,                          &
+     &                              pmon_u, pnom_v, pm, pn,             &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT_NOT_YET
-     &                            diff3d_u, diff3d_v,                   &
+     &                              diff3d_u, diff3d_v,                 &
 # else
-     &                            diff3d_r,                             &
+     &                              diff3d_r,                           &
 # endif
 #else
-     &                            diff4,                                &
+     &                              diff4,                              &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                            tclm,                                 &
+     &                              tclm,                               &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                            DiaTwrk,                              &
+!!   &                              DiaTwrk,                            &
 #endif
-     &                            t, tl_t)
+     &                              t, tl_t)
 !***********************************************************************
 !
       USE mod_param
@@ -503,18 +515,18 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i-1,j,itrc))*          &
      &            pmon_u(i,j)
 #endif
-!>            FX(i,j)=cff*                                              &
-!>   &                (Hz(i,j,k)+Hz(i-1,j,k))*                          &
-!>   &                (LapT(i,j)-LapT(i-1,j))
-!>
+!^            FX(i,j)=cff*                                              &
+!^   &                (Hz(i,j,k)+Hz(i-1,j,k))*                          &
+!^   &                (LapT(i,j)-LapT(i-1,j))
+!^
               tl_FX(i,j)=cff*                                           &
      &                   ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*                &
      &                    (LapT(i,j)-LapT(i-1,j))+                      &
      &                    (Hz(i,j,k)+Hz(i-1,j,k))*                      &
      &                    (tl_LapT(i,j)-tl_LapT(i-1,j)))
 #ifdef MASKING
-!>            FX(i,j)=FX(i,j)*umask(i,j)
-!>
+!^            FX(i,j)=FX(i,j)*umask(i,j)
+!^
               tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
 #endif
 #ifdef WET_DRY_NOT_YET
@@ -535,18 +547,18 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i,j-1,itrc))*          &
      &            pnom_v(i,j)
 #endif
-!>            FE(i,j)=cff*                                              &
-!>   &                (Hz(i,j,k)+Hz(i,j-1,k))*                          &
-!>   &                (LapT(i,j)-LapT(i,j-1))
-!>
+!^            FE(i,j)=cff*                                              &
+!^   &                (Hz(i,j,k)+Hz(i,j-1,k))*                          &
+!^   &                (LapT(i,j)-LapT(i,j-1))
+!^
               tl_FE(i,j)=cff*                                           &
      &                   ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*                &
      &                    (LapT(i,j)-LapT(i,j-1))+                      &
      &                    (Hz(i,j,k)+Hz(i,j-1,k))*                      &
      &                    (tl_LapT(i,j)-tl_LapT(i,j-1)))
 #ifdef MASKING
-!>            FE(i,j)=FE(i,j)*vmask(i,j)
-!>
+!^            FE(i,j)=FE(i,j)*vmask(i,j)
+!^
               tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
 #endif
 #ifdef WET_DRY_NOT_YET
@@ -559,15 +571,15 @@
 !
           DO j=Jstr,Jend
             DO i=Istr,Iend
-!>            cff=dt(ng)*pm(i,j)*pn(i,j)*                               &
-!>   &                   (FX(i+1,j)-FX(i,j)+                            &
-!>   &                    FE(i,j+1)-FE(i,j))
-!>
+!^            cff=dt(ng)*pm(i,j)*pn(i,j)*                               &
+!^   &                   (FX(i+1,j)-FX(i,j)+                            &
+!^   &                    FE(i,j+1)-FE(i,j))
+!^
               tl_cff=dt(ng)*pm(i,j)*pn(i,j)*                            &
      &                      (tl_FX(i+1,j)-tl_FX(i,j)+                   &
      &                       tl_FE(i,j+1)-tl_FE(i,j))
-!>            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff
-!>
+!^            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff
+!^
               tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff
 #ifdef DIAGNOSTICS_TS
 !!            DiaTwrk(i,j,k,itrc,iThdif)=-cff
@@ -578,4 +590,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE tl_t3dmix4_tile
+      END SUBROUTINE tl_t3dmix4_s_tile
+
+      END MODULE tl_t3dmix4_mod

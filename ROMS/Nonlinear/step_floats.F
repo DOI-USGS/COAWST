@@ -2,9 +2,10 @@
       MODULE step_floats_mod
 #if defined NONLINEAR && defined FLOATS
 !
-!svn $Id: step_floats.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: step_floats.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group        John M. Klinck   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group        John M. Klinck   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -95,9 +96,6 @@
       USE mod_ncparam
       USE mod_ocean
       USE mod_scalars
-# ifdef DIAPAUSE
-      USE interp_floats_diapW_mod
-# endif
 !
 # ifdef FLOAT_BIOLOGY
       USE biology_floats_mod, ONLY : biology_floats
@@ -117,8 +115,8 @@
 !
 # ifdef ASSUMED_SHAPE
       integer, intent(in) :: Ftype(:)
-      real(r8), intent(inout) :: Tinfo(0:,:)
-      real(r8), intent(inout) :: Fz0(:)
+      real(r8), intent(in) :: Tinfo(0:,:)
+      real(r8), intent(in) :: Fz0(:)
 
       logical, intent(inout) :: bounded(:)
 #  if defined SOLVE3D && defined FLOAT_STICKY
@@ -127,8 +125,8 @@
       real(r8), intent(inout) :: track(:,0:,:)
 # else
       integer, intent(in) :: Ftype(Nfloats(ng))
-      real(r8), intent(inout) :: Tinfo(0:izrhs,Nfloats(ng))
-      real(r8), intent(inout) :: Fz0(Nfloats(ng))
+      real(r8), intent(in) :: Tinfo(0:izrhs,Nfloats(ng))
+      real(r8), intent(in) :: Fz0(Nfloats(ng))
 
       logical, intent(inout) :: bounded(Nfloats(ng))
 #  if defined SOLVE3D && defined FLOAT_STICKY
@@ -156,23 +154,11 @@
       real(r8) :: oHz, p1, p2, q1, q2, xrhs, yrhs, zrhs, zfloat
       real(r8) :: HalfDT
 
-# ifdef DIAPAUSE
-!      logical :: downward , upward
-      real(r8) :: RiseStart,RiseEnd,SinkStart,SinkEnd
-      real(r8) :: wNCsink,wNCrise
-      real(dp) :: yday, dtdays
-      real(r8) :: cff,diapW
-      integer :: FloatPhase
-# endif
-
       real(r8), dimension(Lstr:Lend) :: nudg
 
 # ifdef DISTRIBUTE
       real(r8) :: Xstr, Xend, Ystr, Yend
       real(r8), dimension(Nfloats(ng)*NFV(ng)*(NFT+1)) :: Fwrk
-# endif
-# ifdef DIAPAUSE
-      CALL caldate (tdays(ng), yd_dp=yday)
 # endif
 !
 !  Set tile array bounds.
@@ -235,20 +221,6 @@
         nudg(l)=0.0_r8
       END DO
 # endif
-
-# ifdef DIAPAUSE
-
-           RiseStart=   1.0d0  ! Date NC begin to move upward (Day of Year)
-           RiseEnd  =  90.00d0 ! 90 Date NC stop moving upward (Day of Year)
-           SinkStart= 166.0d0  !166 Date NC begin to move downward (Day of Year)
-           SinkEnd  = 365.0d0  ! 365.Date NC stop moving downward (Day of Year)
-           wNCrise  =  10.0d0
-           wNCsink  =  -10.0d0
-
-           diapW=0.0
-           dtdays = dt(ng)*sec2day
-
-# endif
 # if defined SOLVE3D && defined FLOAT_VWALK
 !
 !-----------------------------------------------------------------------
@@ -257,10 +229,6 @@
 !-----------------------------------------------------------------------
 !
       CALL vwalk_floats (ng, Lstr, Lend, .TRUE., my_thread, nudg)
-# else
-      DO l=Lstr,Lend
-        nudg(l)=0.0_r8
-      END DO
 # endif
 !
 !-----------------------------------------------------------------------
@@ -347,8 +315,7 @@
               zfloat=Fz0(l)+cff9
             END IF
 !
-            DO k=N(ng),0,-1
-!            DO k=N(ng)-1,0,-1
+            DO k=N(ng)-1,0,-1
 #  ifdef MASKING
               cff7=p1*q1*GRID(ng)%z_w(i1,j1,k)*GRID(ng)%rmask(i1,j1)+   &
      &             p2*q1*GRID(ng)%z_w(i2,j1,k)*GRID(ng)%rmask(i2,j1)+   &
@@ -374,16 +341,6 @@
               END IF
               cff6=cff5
             END DO
-! Check for shallowing water
-            IF (zfloat < cff5) THEN
-              print *, 'STEP_FLOAT getting too shallow', zfloat, cff5, l
-              Fz0(l) = cff5 + 5.0
-            END IF
-          ELSE
-            track(izgrd,nfp1,l)=track(izgrd,nfm3,l)+                    &
-     &                          dt(ng)*(cff1*track(izrhs,nf  ,l)-       &
-     &                                  cff2*track(izrhs,nfm1,l)+       &
-     &                                  cff1*track(izrhs,nfm2,l))
           END IF
 # endif
         END IF
@@ -419,75 +376,17 @@
      &                    my_thread, bounded, track)
 
 #  if !defined FLOAT_VWALK
-#   ifdef DIAPAUSE
-!  Based on date, determine if NCa are going upwards or downwards
-
-!      DO l=Lstr,Lend
-!        cff1=wNCrise *GRID(ng) % Hz(i,j,k)
-
-      IF ( ( RiseStart.lt.RiseEnd .and.                                 &
-     &       yday.ge.RiseStart .and. yday.le.RiseEnd ) .or.             &
-     &     ( RiseStart.gt.RiseEnd .and.                                 &
-     &      ( yday.ge.RiseStart .or. yday.le.RiseEnd ) ) )  THEN
-        FloatPhase=1
-        diapW=wNCrise*sec2day !Scale to m/sec
-
-      ELSE IF ( ( SinkStart.lt.SinkEnd .and.                            &
-     &       yday.ge.SinkStart .and. yday.le.SinkEnd ) .or.             &
-     &     ( SinkStart.gt.SinkEnd .and.                                 &
-     &      ( yday.ge.SinkStart .or. yday.le.SinkEnd ) ) )  THEN
-        FloatPhase=3
-        diapW=wNCsink*sec2day !Scale to m/sec
-
-       ELSE IF ( ( RiseEnd.lt.SinkStart .and.                          &
-     &       yday.ge.RiseEnd .and. yday.le.SinkStart ) .or.            &
-     &     (RiseEnd.gt.SinkStart .and.                                 &
-     &      ( yday.ge.RiseEnd .or. yday.le.SinkStart ) ) )  THEN
-       FloatPhase=2
-       diapW=wNCrise*sec2day
-        ELSE IF ( (SinkEnd.gt.RiseStart .and.                         &
-     &       yday.ge.SinkEnd .or. yday.le.RiseStart ) .or.            &
-     &     (RiseStart.gt.SinkEnd .and.                                &
-     &      ( yday.ge.SinkEnd .and. yday.le.RiseStart ) ) )  THEN
-        FloatPhase=4
-        diapW=999
-      END IF
-
-!      print*,'track=',track(idpth,nfp1,l)
-!           print*,'upward=',upward,'downward=',downward
-!      END DO
-
-      IF ( diapW.ne.999)THEN
-
-      CALL interp_floats_diapW(ng, LBi, UBi, LBj, UBj, 0, N(ng),        &
-     &                    Lstr, Lend, nf, izrhs,                        &
-     &                    -w3dvar, Lmask, spval, nudg,                  &
-     &                    GRID(ng) % pm,                                &
-     &                    GRID(ng) % pn,                                &
-     &                    GRID(ng) % Hz,                                &
-# ifdef MASKING
-     &                    GRID(ng) % rmask,                             &
-# endif
-     &                    diapW,                                        &
-     &                    OCEAN(ng) % W,                                &
-     &                    my_thread, bounded, track,                     &
-     &                    FloatPhase      )
-          ENDIF
-
-#   else
-
       CALL interp_floats (ng, LBi, UBi, LBj, UBj, 0, N(ng),             &
      &                    Lstr, Lend, nfp1, izrhs, isBw3d,              &
      &                    -w3dvar, Lmask, spval, nudg,                  &
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
      &                    GRID(ng) % Hz,                                &
-#    ifdef MASKING
+#   ifdef MASKING
      &                    GRID(ng) % rmask,                             &
-#    endif
+#   endif
      &                    OCEAN(ng) % W,                                &
      &                    my_thread, bounded, track)
-#   endif
 #  endif
 #  if defined FLOAT_BIOLOGY
       CALL interp_floats (ng, LBi, UBi, LBj, UBj, 1, N(ng),             &
@@ -652,8 +551,7 @@
               zfloat=Fz0(l)+cff9
             END IF
 !
-!           DO k=N(ng)-1,0,-1
-            DO k=N(ng),0,-1
+            DO k=N(ng)-1,0,-1
 #  ifdef MASKING
               cff7=p1*q1*GRID(ng)%z_w(i1,j1,k)*GRID(ng)%rmask(i1,j1)+   &
      &             p2*q1*GRID(ng)%z_w(i2,j1,k)*GRID(ng)%rmask(i2,j1)+   &
@@ -676,17 +574,6 @@
               END IF
               cff6=cff5
             END DO
-! Check for shallowing water
-            IF (zfloat < cff5) THEN
-              print *, 'STEP_FLOAT getting too shallow', zfloat, cff5, l
-              Fz0(l) = cff5 + 5.0
-            END IF
-          ELSE
-            track(izgrd,nfp1,l)=cff1*track(izgrd,nf  ,l)-               &
-     &                          cff2*track(izgrd,nfm2,l)+               &
-     &                          dt(ng)*(cff3*track(izrhs,nfp1,l)+       &
-     &                                  cff4*track(izrhs,nf  ,l)-       &
-     &                                  cff3*track(izrhs,nfm1,l))
           END IF
 # endif
         END IF

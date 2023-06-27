@@ -2,9 +2,10 @@
       MODULE mod_bbl
 #ifdef BBL_MODEL
 !
-!svn $Id: mod_bbl.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_bbl.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +32,17 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_bbl
+        PUBLIC :: deallocate_bbl
+        PUBLIC :: initialize_bbl
+!
+!-----------------------------------------------------------------------
+!  Define T_BBL structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_BBL
 
           integer,  pointer :: Iconv(:,:)
@@ -50,11 +59,11 @@
           real(r8), pointer :: bvstrcwmax(:,:)
 
         END TYPE T_BBL
-
+!
         TYPE (T_BBL), allocatable :: BBL(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_bbl (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -66,7 +75,7 @@
 !
       USE mod_param
 !
-!  Local variable declarations.
+!  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
@@ -121,7 +130,82 @@
 
       RETURN
       END SUBROUTINE allocate_bbl
+!
+      SUBROUTINE deallocate_bbl (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+# ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_bbl"
 
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_BBL structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+      IF (.not.destroy(ng, BBL(ng)%Iconv, MyFile,                       &
+     &                 __LINE__, 'BBL(ng)%Iconv')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%Ubot, MyFile,                        &
+     &                 __LINE__, 'BBL(ng)%Ubot')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%Ur, MyFile,                          &
+     &                 __LINE__, 'BBL(ng)%Ur')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%Vbot, MyFile,                        &
+     &                 __LINE__, 'BBL(ng)%Vbot')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%Vr, MyFile,                          &
+     &                 __LINE__, 'BBL(ng)%Vr')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bustrc, MyFile,                      &
+     &                 __LINE__, 'BBL(ng)%bustrc')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bvstrc, MyFile,                      &
+     &                 __LINE__, 'BBL(ng)%bvstrc')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bustrw, MyFile,                      &
+     &                 __LINE__, 'BBL(ng)%bustrw')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bvstrw, MyFile,                      &
+     &                 __LINE__, 'BBL(ng)%bvstrw')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bustrcwmax, MyFile,                  &
+     &                 __LINE__, 'BBL(ng)%bustrcwmax')) RETURN
+
+      IF (.not.destroy(ng, BBL(ng)%bvstrcwmax, MyFile,                  &
+     &                 __LINE__, 'BBL(ng)%bvstrcwmax')) RETURN
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type BBL structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(BBL)) deallocate ( BBL )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_bbl
+!
       SUBROUTINE initialize_bbl (ng, tile)
 !
 !=======================================================================
@@ -203,7 +287,7 @@
           BBL(ng) % bvstrcwmax(i,j) = IniVal
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE initialize_bbl
 #endif

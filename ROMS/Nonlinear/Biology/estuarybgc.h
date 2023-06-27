@@ -1,4 +1,4 @@
-      SUBROUTINE biology (ng,tile)
+      MODULE biology_mod
 !
 !svn $Id: estuarybgc.h 2232 2019-01-03 18:55:20Z arango $
 !***********************************************************************
@@ -90,6 +90,17 @@
 !      ocean: Simulations for the Northwest North Atlantic.            !
 !      Geophys. Res. Letters 35, L24608, doi:10.1029/2008GL036147.     !
 !                                                                      !
+!***********************************************************************
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE biology (ng,tile)
 !***********************************************************************
 !
       USE mod_param
@@ -2626,4 +2637,5 @@
       END SUBROUTINE pCO2_water
 # endif
 #endif
- 
+
+      END MODULE biology_mod 

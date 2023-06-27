@@ -18,12 +18,24 @@ function plot_contact(G, S)
 %                 [S, G] = contact (Gnames, Cname, ...)
 %
 
-% svn $Id: plot_contact.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: plot_contact.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
+
+%--------------------------------------------------------------------------
+% Check if the nested grid structure has the 'perimeter' field. If not,
+% determine the perimeter sub-structure.
+%--------------------------------------------------------------------------
+
+if (~isfield(S.grid, 'perimeter'))
+  P = grid_perimeter(G);
+  for ng=1:S.Ngrids
+    S.grid(ng).perimeter = P.grid(ng).perimeter;
+  end
+end
 
 %--------------------------------------------------------------------------
 % Plot perimeters and boundary edged conectivity.

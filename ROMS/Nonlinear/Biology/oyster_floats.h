@@ -1,13 +1,14 @@
 #undef GROWTH_ONLY
 
-      SUBROUTINE biology_floats (ng, Lstr, Lend, Predictor, my_thread)
+      MODULE biology_floats_mod
 !
-!svn $Id: oyster_floats.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group      Diego A. Narvaez   !
+!git $Id$
+!svn $Id: oyster_floats.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group      Diego A. Narvaez   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This routine sets behavior for Lagrangian particles that simulates  !
 !  planktonic larvae.  The  planktonic behavior is based on the model  !
@@ -65,6 +66,17 @@
 !      dispersal of Eastern oyster (Crassostrea virginica) larvae in   !
 !      Delaware Bay, J. Mar. Res., in review.                          !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: biology_floats
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE biology_floats (ng, Lstr, Lend, Predictor, my_thread)
 !***********************************************************************
 !
       USE mod_param
@@ -90,13 +102,13 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 10, __LINE__, MyFile)
 #endif
-      CALL biology_floats_tile (ng, Lstr, Lend,                         &
-     &                          nfm3(ng), nfm2(ng), nfm1(ng), nf(ng),   &
-     &                          nfp1(ng),                               &
-     &                          Predictor, my_thread,                   &
-     &                          DRIFTER(ng) % bounded,                  &
-     &                          DRIFTER(ng) % Tinfo,                    &
-     &                          DRIFTER(ng) % track)
+      CALL oyster_floats_tile (ng, Lstr, Lend,                          &
+     &                         nfm3(ng), nfm2(ng), nfm1(ng), nf(ng),    &
+     &                         nfp1(ng),                                &
+     &                         Predictor, my_thread,                    &
+     &                         DRIFTER(ng) % bounded,                   &
+     &                         DRIFTER(ng) % Tinfo,                     &
+     &                         DRIFTER(ng) % track)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 10, __LINE__, MyFile)
 #endif
@@ -105,10 +117,10 @@
       END SUBROUTINE biology_floats
 !
 !***********************************************************************
-      SUBROUTINE biology_floats_tile (ng, Lstr, Lend,                   &
-     &                                nfm3, nfm2, nfm1, nf, nfp1,       &
-     &                                Predictor, my_thread, bounded,    &
-     &                                Tinfo, track)
+      SUBROUTINE oyster_floats_tile (ng, Lstr, Lend,                    &
+     &                               nfm3, nfm2, nfm1, nf, nfp1,        &
+     &                               Predictor, my_thread, bounded,     &
+     &                               Tinfo, track)
 !***********************************************************************
 !
       USE mod_param
@@ -442,4 +454,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE biology_floats_tile
+      END SUBROUTINE oyster_floats_tile
+
+      END MODULE biology_floats_mod

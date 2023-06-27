@@ -2,9 +2,10 @@
 #if defined TL_IOMS && !defined SOLVE3D
       SUBROUTINE rp_main2d (RunInterval)
 !
-!svn $Id: rp_main2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_main2d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -27,6 +28,9 @@
       USE mod_stepping
 !
       USE dateclock_mod,           ONLY : time_string
+# ifdef TIDE_GENERATING_FORCES
+      USE equilibrium_tide_mod,    ONLY : equilibrium_tide
+# endif
 # if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
       USE ocean_coupler_mod,       ONLY : atmos_coupling
 # endif
@@ -188,6 +192,9 @@
 # endif
 # ifdef DIAGNOSTICS
 !!          CALL rp_set_diags (ng, tile)
+# endif
+# ifdef TIDE_GENERATING_FORCES
+            CALL equilibrium_tide (ng, tile, iRPM)
 # endif
             CALL rp_diag (ng, tile)
           END DO

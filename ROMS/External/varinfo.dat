@@ -1988,15 +1988,6 @@
   'r2dvar'
   1.0d0
 
-'tide_Pamp'                                        ! Input
-  'tidal potential elevation amplitude'
-  'meter'                                          ! [m]
-  'SSH_Pamp, scalar, series'
-  'tide_period'
-  'idTpam'
-  'r2dvar'
-  1.0d0
-
 'tide_Pphase'                                      ! Input
   'tidal potential elevation phase angle'
   'degrees'                                        ! [radians]
@@ -2630,15 +2621,6 @@
 !  metadata is set internally in "mod_ncparam".
 !------------------------------------------------------------------------------
 !
-
-'zeta'                                             ! Input
-  'sea surface height climatology'
-  'meter'                                          ! [m]
-  'zeta, scalar, series'
-  'zeta_time'
-  'idSSHc'
-  'r2dvar'
-  1.0d0
 
 'ubar'                                             ! Input
   'vertically integrated u-momentum climatology'
@@ -8549,6 +8531,64 @@
   '_vdiff, scalar, series'
   'ocean_time'
   'idDtrc(iTvdif)'
+  'r3dvar'
+  1.0d0
+
+!
+!  InWave diagnostics terms. 
+!
+
+'AC_rate'                                          ! Input/Output
+  'time rate of change'
+  'Joules s m-2 rad-1 second-1'                    ! [1/s AC]
+  'AC_rate, scalar, series'
+  'ocean_time'
+  'idIinw(idIrate)'
+  'r3dvar'
+  1.0d0
+
+'AC_xadv'                                            ! Input/Output
+  'horizontal XI-advection term'
+  'Joules s m-2 rad-1 second-1'                      ! [1/s AC]
+  'AC_xadv, scalar, series'
+  'ocean_time'
+  'idIinw(idIxadv)'
+  'r3dvar'
+  1.0d0
+
+'AC_yadv'                                            ! Input/Output
+  'horizontal ETA-advection term'
+  'Joules s m-2 rad-1 second-1'                      ! [1/s AC]
+  'AC_yadv, scalar, series'
+  'ocean_time'
+  'idIinw(idIyadv)'
+  'r3dvar'
+  1.0d0
+
+'AC_tadv'                                            ! Input/Output
+  'directional advection term'
+  'Joules s m-2 rad-1 second-1'                      ! [1/s AC]
+  'AC_tadv, scalar, series'
+  'ocean_time'
+  'idIinw(idItadv)'
+  'r3dvar'
+  1.0d0
+
+'AC_fric'                                            ! Input/Output
+  'wave friction dissipation term'
+  'Joules s m-2 rad-1 second-1'                      ! [1/s AC]
+  'AC_fric, scalar, series'
+  'ocean_time'
+  'idIinw(idIfric)'
+  'r3dvar'
+  1.0d0
+
+'AC_brak'                                            ! Input/Output
+  'wave breaking dissipation term'
+  'Joules s m-2 rad-1 second-1'                      ! [1/s AC]
+  'AC_brak, scalar, series'
+  'ocean_time'
+  'idIinw(idIbrak)'
   'r3dvar'
   1.0d0
 

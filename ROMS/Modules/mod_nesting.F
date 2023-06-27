@@ -3,9 +3,10 @@
 
 #ifdef NESTING
 !
-!svn $Id: mod_nesting.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_nesting.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -55,6 +56,10 @@
       USE mod_kinds
 !
       implicit none
+!
+      PUBLIC :: allocate_nesting
+      PUBLIC :: deallocate_nesting
+      PUBLIC :: initialize_nesting
 !
 !-----------------------------------------------------------------------
 !  Nesting identification index of variables to process.
@@ -275,7 +280,7 @@
         real(r8), pointer :: Vweight(:,:,:)        ! vertical weights
 # endif
       END TYPE T_NGC
-
+!
       TYPE (T_NGC), allocatable :: Rcontact(:)  ! RHO-points, [Ncontact]
       TYPE (T_NGC), allocatable :: Ucontact(:)  ! U-points,   [Ncontact]
       TYPE (T_NGC), allocatable :: Vcontact(:)  ! V-points,   [Ncontact]
@@ -324,7 +329,7 @@
         real(r8), pointer :: Tflux(:,:,:)  ! perimeter tracer flux
 # endif
       END TYPE T_BCP
-
+!
       TYPE (T_BCP), allocatable :: BRY_CONTACT(:,:)    ! [4,Ncontact]
 !
 !-----------------------------------------------------------------------
@@ -363,7 +368,7 @@
          real(r8), pointer :: Xv(:)        ! X V-coordinate (m or deg)
          real(r8), pointer :: Yv(:)        ! Y V-coordinate (m or deg)
        END TYPE T_NGM
-
+!
        TYPE (T_NGM), allocatable :: CONTACT_METRIC(:)    ! [Ncontact]
 !
 !-----------------------------------------------------------------------
@@ -709,9 +714,500 @@
           END DO
         END IF
       END DO
-
+!
       RETURN
       END SUBROUTINE allocate_nesting
+!
+      SUBROUTINE deallocate_nesting
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates and initializes nesting structure for 2D     !
+!  state variables.                                                    !
+!                                                                      !
+!=======================================================================
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Local variable declarations.
+!
+      integer ::  cr, ibry
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_nesting"
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_BCP boundary
+!  connectivity structure separately.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+        DO ibry=1,4
+          IF (.not.destroy(ng, BRY_CONTACT(ibry,cr)%Ib, MyFile,         &
+     &                     __LINE__, 'BRY_CONTACT(ibry,cr)%Ib')) RETURN
+
+          IF (.not.destroy(ng, BRY_CONTACT(ibry,cr)%Jb, MyFile,         &
+     &                     __LINE__, 'BRY_CONTACT(ibry,cr)%Jb')) RETURN
+
+          IF (.not.destroy(ng, BRY_CONTACT(ibry,cr)%C2Bindex, MyFile,   &
+     &                __LINE__, 'BRY_CONTACT(ibry,cr)%C2Bindex')) RETURN
+
+#  ifdef NESTING_DEBUG
+          IF (.not.destroy(ng, BRY_CONTACT(ibry,cr)%Mflux, MyFile,      &
+     &                __LINE__, 'BRY_CONTACT(ibry,cr)%Mflux')) RETURN
+#  endif
+
+#  ifdef SOLVE3D
+          IF (.not.destroy(ng, BRY_CONTACT(ibry,cr)%Tflux, MyFile,      &
+     &                __LINE__, 'BRY_CONTACT(ibry,cr)%Tflux')) RETURN
+#  endif
+        END DO
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_NGC grid connectivity
+!  structure separately.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+        IF (.not.destroy(ng, Rcontact(cr)%Irg, MyFile,                  &
+     &                   __LINE__, 'Rcontact(cr)%Irg')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Irg, MyFile,                  &
+     &                   __LINE__, 'Ucontact(cr)%Irg')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Irg, MyFile,                  &
+     &                   __LINE__, 'Vcontact(cr)%Irg')) RETURN
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Jrg, MyFile,                  &
+     &                   __LINE__, 'Rcontact(cr)%Jrg')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Jrg, MyFile,                  &
+     &                   __LINE__, 'Ucontact(cr)%Jrg')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Jrg, MyFile,                  &
+     &                   __LINE__, 'Vcontact(cr)%Jrg')) RETURN
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Idg, MyFile,                  &
+     &                   __LINE__, 'Rcontact(cr)%Idg')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Idg, MyFile,                  &
+     &                   __LINE__, 'Ucontact(cr)%Idg')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Idg, MyFile,                  &
+     &                   __LINE__, 'Vcontact(cr)%Idg')) RETURN
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Jdg, MyFile,                  &
+     &                   __LINE__, 'Rcontact(cr)%Jdg')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Jdg, MyFile,                  &
+     &                   __LINE__, 'Ucontact(cr)%Jdg')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Jdg, MyFile,                  &
+     &                   __LINE__, 'Vcontact(cr)%Jdg')) RETURN
+
+#  ifdef SOLVE3D
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Kdg, MyFile,                  &
+     &                   __LINE__, 'Rcontact(cr)%Kdg')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Kdg, MyFile,                  &
+     &                   __LINE__, 'Ucontact(cr)%Kdg')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Kdg, MyFile,                  &
+     &                   __LINE__, 'Vcontact(cr)%Kdg')) RETURN
+#  endif
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Lweight, MyFile,              &
+     &                   __LINE__, 'Rcontact(cr)%Lweight')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Lweight, MyFile,              &
+     &                   __LINE__, 'Ucontact(cr)%Lweight')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Lweight, MyFile,              &
+     &                   __LINE__, 'Vcontact(cr)%Lweight')) RETURN
+!
+#  ifdef WET_DRY
+        IF (.not.destroy(ng, Rcontact(cr)%LweightUnmasked, MyFile,      &
+     &              __LINE__, 'Rcontact(cr)%LweightUnmasked')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%LweightUnmasked, MyFile,      &
+     &              __LINE__, 'Ucontact(cr)%LweightUnmasked')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%LweightUnmasked, MyFile,      &
+     &              __LINE__, 'Vcontact(cr)%LweightUnmasked')) RETURN
+#  endif
+
+#  ifdef QUADRATIC_WEIGHTS
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Qweight, MyFile,              &
+     &                   __LINE__, 'Rcontact(cr)%Qweight')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Qweight, MyFile,              &
+     &                   __LINE__, 'Ucontact(cr)%Qweight')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Qweight, MyFile,              &
+     &                   __LINE__, 'Vcontact(cr)%Qweight')) RETURN
+
+#   ifdef WET_DRY
+!
+        IF (.not.destroy(ng, Rcontact(cr)%QweightUnmasked, MyFile,      &
+     &              __LINE__, 'Rcontact(cr)%QweightUnmasked')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%QweightUnmasked, MyFile,      &
+     &              __LINE__, 'Ucontact(cr)%QweightUnmasked')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%QweightUnmasked, MyFile,      &
+     &              __LINE__, 'Vcontact(cr)%QweightUnmasked')) RETURN
+#   endif
+#  endif
+
+#  ifdef SOLVE3D
+!
+        IF (.not.destroy(ng, Rcontact(cr)%Vweight, MyFile,              &
+     &                   __LINE__, 'Rcontact(cr)%Vweight')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%Vweight, MyFile,              &
+     &                   __LINE__, 'Ucontact(cr)%Vweight')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%Vweight, MyFile,              &
+     &                   __LINE__, 'Vcontact(cr)%Vweight')) RETURN
+
+#   if defined TANGENT || defined TL_IOMS
+!
+        IF (.not.destroy(ng, Rcontact(cr)%tl_Vweight, MyFile,           &
+     &                   __LINE__, 'Rcontact(cr)%tl_Vweight')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%tl_Vweight, MyFile,           &
+     &                   __LINE__, 'Ucontact(cr)%tl_Vweight')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%tl_Vweight, MyFile,           &
+     &                   __LINE__, 'Vcontact(cr)%tl_Vweight')) RETURN
+#   endif
+
+#   ifdef ADJOINT
+!
+        IF (.not.destroy(ng, Rcontact(cr)%ad_Vweight, MyFile,           &
+     &                   __LINE__, 'Rcontact(cr)%ad_Vweight')) RETURN
+        IF (.not.destroy(ng, Ucontact(cr)%ad_Vweight, MyFile,           &
+     &                   __LINE__, 'Ucontact(cr)%ad_Vweight')) RETURN
+        IF (.not.destroy(ng, Vcontact(cr)%ad_Vweight, MyFile,           &
+     &                   __LINE__, 'Vcontact(cr)%ad_Vweight')) RETURN
+#   endif
+#  endif
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_NGC contact region
+!  metrics structure separately.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%angler, MyFile,         &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%angler')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%dndx, MyFile,           &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%dndx')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%dmde, MyFile,           &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%dmde')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%f, MyFile,              &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%f')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%h, MyFile,              &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%h')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%rmask, MyFile,          &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%rmask')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%umask, MyFile,          &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%umask')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%vmask, MyFile,          &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%vmask')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%pm, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%pm')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%pn, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%pn')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Xr, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Xr')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Yr, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Yr')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Xu, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Xu')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Yu, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Yu')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Xv, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Xv')) RETURN
+
+        IF (.not.destroy(ng, CONTACT_METRIC(cr)%Yv, MyFile,             &
+     &                   __LINE__, 'CONTACT_METRIC(cr)%Yv')) RETURN
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_COMPOSITE for
+!  composite grids contact region structure separately.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+        IF (.not.destroy(ng, COMPOSITE(cr)%bustr, MyFile,               &
+     &                   __LINE__, 'COMPOSITE(cr)%bustr')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%bvstr, MyFile,               &
+     &                   __LINE__, 'COMPOSITE(cr)%bvstr')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ubar, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%ubar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%vbar, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%vbar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%zeta, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%zeta')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%rzeta, MyFile,               &
+     &                   __LINE__, 'COMPOSITE(cr)%rzeta')) RETURN
+
+#   if defined TANGENT || defined TL_IOMS
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_bustr, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_bustr')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_bvstr, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_bvstr')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_ubar, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_ubar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_vbar, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_vbar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_zeta, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_zeta')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_rzeta, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_rzeta')) RETURN
+#   endif
+
+#   ifdef ADJOINT
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_bustr, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_bustr')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_bvstr, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_bvstr')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_ubar, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_ubar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_vbar, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_vbar')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_zeta, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_zeta')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_rzeta, MyFile,            &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_rzeta')) RETURN
+#   endif
+
+#  ifdef SOLVE3D
+        IF (.not.destroy(ng, COMPOSITE(cr)%DU_avg1, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%DU_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%DV_avg1, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%DV_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%Zt_avg1, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%Zt_avg1')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%u, MyFile,                   &
+     &                   __LINE__, 'COMPOSITE(cr)%u')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%v, MyFile,                   &
+     &                   __LINE__, 'COMPOSITE(cr)%v')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%Huon, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%Huon')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%Hvom, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%Hvom')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%t, MyFile,                   &
+     &                   __LINE__, 'COMPOSITE(cr)%t')) RETURN
+
+#   if defined TANGENT || defined TL_IOMS
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_DU_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_DU_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_DV_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_DV_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_Zt_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_Zt_avg1')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_u, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_u')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_v, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_v')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_Huon, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_Huon')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_Hvom, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_Hvom')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%tl_t, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%tl_t')) RETURN
+#   endif
+
+#   ifdef ADJOINT
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_DU_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_DU_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_DV_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_DV_avg1')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_Zt_avg1, MyFile,          &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_Zt_avg1')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_u, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_u')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_v, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_v')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_Huon, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_Huon')) RETURN
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_Hvom, MyFile,             &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_Hvom')) RETURN
+
+        IF (.not.destroy(ng, COMPOSITE(cr)%ad_t, MyFile,                &
+     &                   __LINE__, 'COMPOSITE(cr)%ad_t')) RETURN
+#   endif
+#  endif
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_REFINED for
+!  refinement grids contact region structure separately.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+        IF (.not.destroy(ng, REFINED(cr)%ubar, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%ubar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%vbar, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%vbar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%zeta, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%zeta')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%DU_avg2, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%DU_avg2')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%DV_avg2, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%DV_avg2')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%on_u, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%on_u')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%om_v, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%om_v')) RETURN
+
+#  if defined TANGENT || defined TL_IOMS
+        IF (.not.destroy(ng, REFINED(cr)%tl_ubar, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%tl_ubar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%tl_vbar, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%tl_vbar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%tl_zeta, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%tl_zeta')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%tl_DU_avg2, MyFile,            &
+     &                   __LINE__, 'REFINED(cr)%tl_DU_avg2')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%tl_DV_avg2, MyFile,            &
+     &                   __LINE__, 'REFINED(cr)%tl_DV_avg2')) RETURN
+#  endif
+
+#  ifdef ADJOINT
+        IF (.not.destroy(ng, REFINED(cr)%ad_ubar, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%ad_ubar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%ad_vbar, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%ad_vbar')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%ad_zeta, MyFile,               &
+     &                   __LINE__, 'REFINED(cr)%ad_zeta')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%ad_DU_avg2, MyFile,            &
+     &                   __LINE__, 'REFINED(cr)%ad_DU_avg2')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%ad_DV_avg2, MyFile,            &
+     &                   __LINE__, 'REFINED(cr)%ad_DV_avg2')) RETURN
+#  endif
+
+#  ifdef SOLVE3D
+        IF (.not.destroy(ng, REFINED(cr)%u, MyFile,                     &
+     &                   __LINE__, 'REFINED(cr)%u')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%v, MyFile,                     &
+     &                   __LINE__, 'REFINED(cr)%v')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%t, MyFile,                     &
+     &                   __LINE__, 'REFINED(cr)%t')) RETURN
+
+#   if defined TANGENT || defined TL_IOMS
+        IF (.not.destroy(ng, REFINED(cr)%tl_u, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%tl_u')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%tl_v, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%tl_v')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%tl_t, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%tl_t')) RETURN
+#   endif
+
+#   ifdef ADJOINT
+        IF (.not.destroy(ng, REFINED(cr)%ad_u, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%ad_u')) RETURN
+        IF (.not.destroy(ng, REFINED(cr)%ad_v, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%ad_v')) RETURN
+
+        IF (.not.destroy(ng, REFINED(cr)%ad_t, MyFile,                  &
+     &                   __LINE__, 'REFINED(cr)%ad_t')) RETURN
+#   endif
+#  endif
+      END DO
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type structures:
+!-----------------------------------------------------------------------
+!
+!  Boundary connectivity.
+
+      IF (allocated(BRY_CONTACT)) deallocate ( BRY_CONTACT )
+!
+!  Grid connectivity.
+!
+      IF (allocated(Rcontact)) deallocate ( Rcontact )
+      IF (allocated(Ucontact)) deallocate ( Ucontact )
+      IF (allocated(Vcontact)) deallocate ( Vcontact )
+!
+!  Contact region metrics.
+!
+      IF (allocated(CONTACT_METRIC)) deallocate ( CONTACT_METRIC )
+!
+!  Composite grid contact regions.
+!
+      IF (allocated(COMPOSITE)) deallocate ( COMPOSITE )
+!
+!  Deallocate refinement grids contact regions structure.
+!
+      IF (allocated(REFINED)) deallocate ( REFINED )
+!
+!-----------------------------------------------------------------------
+!  Deallocate other variables in module.
+!-----------------------------------------------------------------------
+!
+      IF (allocated(ContactRegion)) THEN
+        deallocate ( CoarserDonor )
+      END IF
+
+      IF (allocated(FinerDonor)) THEN
+        deallocate ( FinerDonor )
+      END IF
+
+      IF (allocated(DonorToFiner)) THEN
+        deallocate ( DonorToFiner )
+      END IF
+
+      IF (allocated(RefineSteps)) THEN
+        deallocate ( RefineSteps )
+      END IF
+
+      IF (allocated(RefineStepsCounter)) THEN
+        deallocate ( RefineStepsCounter )
+      END IF
+
+      IF (allocated(TwoWayInterval)) THEN
+        deallocate ( TwoWayInterval )
+      END IF
+
+      IF (allocated(Telescoping)) THEN
+        deallocate ( Telescoping )
+      END IF
+
+      IF (allocated(RollingIndex)) THEN
+        deallocate ( RollingIndex )
+      END IF
+
+      IF (allocated(RollingTime)) THEN
+        deallocate ( RollingTime )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_nesting
 !
       SUBROUTINE initialize_nesting
 !

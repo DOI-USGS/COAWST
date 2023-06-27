@@ -1,42 +1,70 @@
 netcdf frc_tides {
 
 dimensions:
-	xi_rho = 111 ;
-	eta_rho = 241 ;
-	xi_u = 110 ;
-	eta_u = 241 ;
-	xi_v = 111 ;
-	eta_v = 240 ;
-	tide_period = 7 ;
+	eta_rho = 106 ;
+	xi_rho = 242 ;
+	two = 2 ;
+	tide_period = UNLIMITED ; // (11 currently)
 
 variables:
+	double zero_phase_date ;
+		zero_phase_date:long_name = "tidal reference date for zero phase" ;
+		zero_phase_date:units = "days as %Y%m%d.%f" ;
+		zero_phase_date:C_format = "%13.4f" ;
+		zero_phase_date:FORTRAN_format = "(f13.4)" ;
+	double lat_rho(eta_rho, xi_rho) ;
+		lat_rho:long_name = "latitude of RHO-points" ;
+		lat_rho:units = "degree_north" ;
+		lat_rho:field = "lat_rho, scalar" ;
+	double lon_rho(eta_rho, xi_rho) ;
+		lon_rho:long_name = "longitude of RHO-points" ;
+		lon_rho:units = "degree_east" ;
+		lon_rho:field = "lon_rho, scalar" ;
+	double mask_rho(eta_rho, xi_rho) ;
+		mask_rho:long_name = "mask on RHO-points" ;
+		mask_rho:option_0 = "land" ;
+		mask_rho:option_1 = "water" ;
 	double tide_period(tide_period) ;
 		tide_period:long_name = "tide angular period" ;
 		tide_period:units = "hours" ;
+		tide_period:field = "tide_period, scalar, series" ;
 	double tide_Ephase(tide_period, eta_rho, xi_rho) ;
 		tide_Ephase:long_name = "tidal elevation phase angle" ;
-		tide_Ephase:units = "degrees, time of maximum elevation with respect chosen time origin" ;
+		tide_Ephase:units = "degrees, time of maximum elevation with respect to chosen time origin" ;
+		tide_Ephase:field = "tide_Ephase, scalar, series" ;
 	double tide_Eamp(tide_period, eta_rho, xi_rho) ;
 		tide_Eamp:long_name = "tidal elevation amplitude" ;
 		tide_Eamp:units = "meter" ;
+		tide_Eamp:field = "tide_Eamp, scalar, series" ;
 	double tide_Cphase(tide_period, eta_rho, xi_rho) ;
 		tide_Cphase:long_name = "tidal current phase angle" ;
 		tide_Cphase:units = "degrees, time of maximum velocity with respect chosen time origin" ;
+		tide_Cphase:field = "tide_Cphase, scalar" ;
 	double tide_Cangle(tide_period, eta_rho, xi_rho) ;
 		tide_Cangle:long_name = "tidal current inclination angle" ;
 		tide_Cangle:units = "degrees between semi-major axis and East" ;
+		tide_Cangle:field = "tide_Cangle, scalar" ;
 	double tide_Cmin(tide_period, eta_rho, xi_rho) ;
 		tide_Cmin:long_name = "minimum tidal current, ellipse semi-minor axis" ;
 		tide_Cmin:units = "meter second-1" ;
+		tide_Cmin:field = "tide_Cmin, scalar" ;
 	double tide_Cmax(tide_period, eta_rho, xi_rho) ;
 		tide_Cmax:long_name = "maximum tidal current, ellipse semi-major axis" ;
 		tide_Cmax:units = "meter second-1" ;
+		tide_Cmax:field = "tide_Cmax, scalar" ;
+	char tidal_constituents(tide_period, two) ;
+		tidal_constituents:long_name = "Tidal Constituent Names" ;
 
 // global attributes:
-		:type = "ROMS FORCING file" ;
-                :title = "NJB Tidal Forcing from ADCIRC" ;
-                :grd_file = "njb1_grid_a.nc" ;
-                :components = "O1, K1, N2, M2, S2', M4, M6" ;
-		:history = "FORCING file, 1.0, Thursday - July 12, 2001 - 10:55:42.8034 AM" ;
+		:type = "ROMS Forcing File" ;
+		:title = "DOPPIO Tidal Forcing from OTPS" ;
+		:grid_file = "grid_doppio.nc" ;
+		:source = "OTPS" ;
+		:tidal_constituents = "m2, s2, n2, k2, k1, o1, p1, q1, m4, ms, mn" ;
+		:source_url = "http://www.coas.oregonstate.edu/research/po/research/tide/region.html" ;
+		:history = "FORCING file, Tuwsday - April 2, 2014 - 14:28:53" ;
 
+data:
+
+ zero_phase_date = 20060101.0000 ;
 }

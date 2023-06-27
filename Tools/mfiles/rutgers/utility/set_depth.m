@@ -71,9 +71,9 @@ function [z]=set_depth(Vtransform, Vstretching, ...
 %    z             Depths (m, negative), 3D array
 %
 
-% svn $Id: set_depth.m 1048 2020-11-19 19:04:13Z arango $
+% svn $Id: set_depth.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

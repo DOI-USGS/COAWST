@@ -36,6 +36,7 @@
       SUBROUTINE wec_vf (ng, tile)
 !***********************************************************************
 !
+      USE mod_param
       USE mod_forces
       USE mod_grid
       USE mod_mixing
@@ -45,8 +46,17 @@
       USE mod_diags
 # endif
 !
+!
+!  Imported variable declarations.
+!
       integer, intent(in) :: ng, tile
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 # include "tile.h"
+
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)
 # endif

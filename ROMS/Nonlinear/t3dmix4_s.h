@@ -1,15 +1,27 @@
-      SUBROUTINE t3dmix4 (ng, tile)
+      MODULE t3dmix4_mod
 !
-!svn $Id: t3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
-!***********************************************************************
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: t3dmix4_s.h 1151 2023-02-09 03:08:53Z arango $
+!=======================================================================
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
-!****************************************** Alexander F. Shchepetkin ***
+!========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine computes horizontal biharmonic mixing of tracers    !
 !  along S-coordinate levels surfaces.                                 !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC t3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE t3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -38,40 +50,40 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 27, __LINE__, MyFile)
 #endif
-      CALL t3dmix4_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nrhs(ng), nstp(ng), nnew(ng),                  &
+      CALL t3dmix4_s_tile (ng, tile,                                    &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
+     &                     nrhs(ng), nstp(ng), nnew(ng),                &
 #ifdef MASKING
-     &                   GRID(ng) % umask,                              &
-     &                   GRID(ng) % vmask,                              &
+     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % vmask,                            &
 #endif
 #ifdef WET_DRY
-     &                   GRID(ng) % umask_diff,                         &
-     &                   GRID(ng) % vmask_diff,                         &
+     &                     GRID(ng) % umask_wet,                        &
+     &                     GRID(ng) % vmask_wet,                        &
 #endif
-     &                   GRID(ng) % Hz,                                 &
-     &                   GRID(ng) % pmon_u,                             &
-     &                   GRID(ng) % pnom_v,                             &
-     &                   GRID(ng) % pm,                                 &
-     &                   GRID(ng) % pn,                                 &
+     &                     GRID(ng) % Hz,                               &
+     &                     GRID(ng) % pmon_u,                           &
+     &                     GRID(ng) % pnom_v,                           &
+     &                     GRID(ng) % pm,                               &
+     &                     GRID(ng) % pn,                               &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-     &                   MIXING(ng) % diff3d_u,                         &
-     &                   MIXING(ng) % diff3d_v,                         &
+     &                     MIXING(ng) % diff3d_u,                       &
+     &                     MIXING(ng) % diff3d_v,                       &
 # else
-     &                   MIXING(ng) % diff3d_r,                         &
+     &                     MIXING(ng) % diff3d_r,                       &
 # endif
 #else
-     &                   MIXING(ng) % diff4,                            &
+     &                     MIXING(ng) % diff4,                          &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                   CLIMA(ng) % tclm,                              &
+     &                     CLIMA(ng) % tclm,                            &
 #endif
 #ifdef DIAGNOSTICS_TS
-     &                   DIAGS(ng) % DiaTwrk,                           &
+     &                     DIAGS(ng) % DiaTwrk,                         &
 #endif
-     &                   OCEAN(ng) % t)
+     &                     OCEAN(ng) % t)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 27, __LINE__, MyFile)
 #endif
@@ -80,33 +92,33 @@
       END SUBROUTINE t3dmix4
 !
 !***********************************************************************
-      SUBROUTINE t3dmix4_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nrhs, nstp, nnew,                        &
+      SUBROUTINE t3dmix4_s_tile (ng, tile,                              &
+     &                           LBi, UBi, LBj, UBj,                    &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
+     &                           nrhs, nstp, nnew,                      &
 #ifdef MASKING
-     &                         umask, vmask,                            &
+     &                           umask, vmask,                          &
 #endif
 #ifdef WET_DRY
-     &                         umask_diff, vmask_diff,                  &
+     &                           umask_wet, vmask_wet,                  &
 #endif
-     &                         Hz, pmon_u, pnom_v, pm, pn,              &
+     &                           Hz, pmon_u, pnom_v, pm, pn,            &
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-     &                         diff3d_u, diff3d_v,                      &
+     &                           diff3d_u, diff3d_v,                    &
 # else
-     &                         diff3d_r,                                &
+     &                           diff3d_r,                              &
 # endif
 #else
-     &                         diff4,                                   &
+     &                           diff4,                                 &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                         tclm,                                    &
+     &                           tclm,                                  &
 #endif
 #ifdef DIAGNOSTICS_TS
-     &                         DiaTwrk,                                 &
+     &                           DiaTwrk,                               &
 #endif
-     &                         t)
+     &                           t)
 !***********************************************************************
 !
       USE mod_param
@@ -126,8 +138,8 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_diff(LBi:,LBj:)
-      real(r8), intent(in) :: vmask_diff(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -157,8 +169,8 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_diff(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vmask_diff(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -246,7 +258,7 @@
               cff=cff*umask(i,j)
 #endif
 #ifdef WET_DRY
-              cff=cff*umask_diff(i,j)
+              cff=cff*umask_wet(i,j)
 #endif
 #if defined TS_MIX_STABILITY
               FX(i,j)=cff*                                              &
@@ -292,7 +304,7 @@
               cff=cff*vmask(i,j)
 #endif
 #ifdef WET_DRY
-              cff=cff*vmask_diff(i,j)
+              cff=cff*vmask_wet(i,j)
 #endif
 #if defined TS_MIX_STABILITY
               FE(i,j)=cff*                                              &
@@ -415,7 +427,7 @@
               FX(i,j)=FX(i,j)*umask(i,j)
 #endif
 #ifdef WET_DRY
-              FX(i,j)=FX(i,j)*umask_diff(i,j)
+              FX(i,j)=FX(i,j)*umask_wet(i,j)
 #endif
             END DO
           END DO
@@ -439,7 +451,7 @@
               FE(i,j)=FE(i,j)*vmask(i,j)
 #endif
 #ifdef WET_DRY
-              FE(i,j)=FE(i,j)*vmask_diff(i,j)
+              FE(i,j)=FE(i,j)*vmask_wet(i,j)
 #endif
             END DO
           END DO
@@ -464,4 +476,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE t3dmix4_tile
+      END SUBROUTINE t3dmix4_s_tile
+
+      END MODULE t3dmix4_mod

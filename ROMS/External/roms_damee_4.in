@@ -1,9 +1,10 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: roms_damee_4.in 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: roms_damee_4.in 1151 2023-02-09 03:08:53Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -73,7 +74,7 @@
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-     VARNAME = ROMS/External/varinfo.dat
+     VARNAME = ROMS/External/varinfo.yaml
 
 ! Number of nested grids.
 
@@ -410,6 +411,11 @@ LtracerSponge == F F                            ! temperature, salinity, inert
         RHO0 =  1025.0d0                   ! kg/m3
      BVF_BAK =  1.0d-5                     ! 1/s2
 
+! If tide generating forces, set switch (T/F) to apply a 18.6-year lunar
+! nodal correction to equilibrium tide constituents.
+
+      Lnodal =  T
+
 ! Time-stamp assigned for model initialization, reference time
 ! origin for tidal forcing, and model reference time for output
 ! NetCDF units attribute.
@@ -425,16 +431,6 @@ LtracerSponge == F F                            ! temperature, salinity, inert
        ZNUDG == 0.0d0                      ! days
       M2NUDG == 0.0d0                      ! days
       M3NUDG == 0.0d0                      ! days
-
-! Nudging/relaxation time scale for surface salinity nudging, inverse
-! scales will be computed internally, [1:Ngrids].
-
-       TNUDG_SSS == 90.0d0                 ! days
-
-! Threshold to trigger SSS correction toward climatolgy,
-! needs SCORRECTION and SSSC_THRESHOLD defined
-
-       SSS_MISMATCH_THRESHOLD = 0.2d0
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -894,7 +890,70 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
        NUSER =  0
         USER =  0.d0
 
-! NetCDF-4/HDF5 compression parameters for output files.
+! Input and Output files processing library to use:
+!
+!   [1] Standard NetCDF-3 or NetCDF-4 library
+!   [2] Serial or Parallel I/O with Parallel-IO (PIO) library (MPI only)
+
+     INP_LIB =  1
+     OUT_LIB =  1
+
+! PIO library methods for reading/writing NetCDF files:
+!
+!   [0] parallel read and write of PnetCDF (CDF-5, not recommended)
+!   [1] parallel read and write of NetCDF3 (64-bit offset)
+!   [2] serial   read and write of NetCDF3 (64-bit offset)
+!   [3] parallel read and serial write of NetCDF4/HDF5
+!   [4] parallel read and write of NETCDF4/HDF5
+
+  PIO_METHOD =  2
+
+! PIO library MPI processes set-up:
+
+ PIO_IOTASKS =  1                 ! number of I/O tasks to define
+  PIO_STRIDE =  1                 ! stride in the MPI-ran between I/O tasks
+    PIO_BASE =  0                 ! offset for the first I/O task
+  PIO_AGGREG =  1                 ! number of MPI-aggregators to use
+
+! PIO library rearranger methods for moving data between computational and I/O
+! processes:
+!
+!   [1] Box rearrangement
+!   [2] Subset rearrangement
+
+   PIO_REARR =  1
+
+! PIO library rearranger flag for MPI communications between computational
+! and I/O processes:
+!
+!   [0] Point-to-Point (low-level communications)
+!   [1] Collective (high-level grouped communications)
+
+PIO_REARRCOM =  0
+
+! PIO library rearranger flow control direction flag for MPI communications
+! between computational and I/O processes:
+!
+!   [0] Enable computational to I/O processes, and vice versa
+!   [2] Enable computational to I/O processes only
+!   [3] Enable I/O to computational processes only
+!   [4] Disable flow control
+
+PIO_REARRDIR = 0
+
+! PIO rearranger options for computational to I/O processes (C2I):
+
+  PIO_C2I_HS = T                  ! Enable C2I handshake (T/F)
+PIO_C2I_Send = T                  ! Enable C2I Isends (T/F)
+PIO_C2I_Preq = 64                 ! Maximum pending C2I requests
+
+! PIO rearranger options for I/O to computational processes (I2C):
+
+  PIO_I2C_HS = T                  ! Enable I2C handshake (T/F)
+PIO_I2C_Send = T                  ! Enable I2C Isends (T/F)
+PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
+
+! If OUT_LIB=1, NetCDF-4/HDF5 compression parameters for output files.
 
   NC_SHUFFLE =  1                 ! if non-zero, turn on shuffle filter
   NC_DEFLATE =  1                 ! if non-zero, turn on deflate filter
@@ -965,7 +1024,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input Sources/Sinks forcing (like river runoff) file name.
 
-     NSSFFILES == 1
      SSFNAME == damee4_rivers.nc
 
 ! Input tidal forcing file name.
@@ -2050,6 +2108,14 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !              1.0E-4 to 1.0E-6.
 !
 !------------------------------------------------------------------------------
+! Tide Genearting Forces (TGF) parameter.
+!------------------------------------------------------------------------------
+!
+! Lnodal       Switch to account for the slow modulation of the equilibrium
+!                tides constituents due primarily to the 18.6-year lunar nodal
+!                cycle.
+!
+!------------------------------------------------------------------------------
 ! Time Stamps.
 !------------------------------------------------------------------------------
 !
@@ -2064,10 +2130,41 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                It is called truncated or modified Julian day because an
 !                offset of 2440000 needs to be added.
 !
-! TIDE_START   Reference time origin for tidal forcing (days). This is the
-!                time used when processing input tidal model data. It is needed
-!                in routine "set_tides" to compute the correct phase lag with
-!                respect ROMS/TOMS initialization time.
+! TIDE_START   Reference time origin for tidal forcing (days since application
+!                reference date, TIME_REF). It is defined as the time of phase
+!                zero when preparing the input forcing tidal boundary data. The
+!                tide reference time is important and often ignored parameter
+!                by the users. If TIDE_START=0.0, it implies that the date of
+!                zero phase is the same as the application date reference,
+!                TIME_REF.
+!
+!                To avoid any ambiguity with the tide generating forcing in the
+!                pressure gradient, it is preferable if the "zero_phase_date"
+!                variable is available in the input tidal forcing NetCDF file.
+!                It is a floating-point variable of the form YYYYMMDD.dddd with
+!                the following metadata:
+!
+!       double zero_phase_date
+!             zero_phase_date:long_name = "tidal reference date for zero phase"
+!             zero_phase_date:units = "days as %Y%m%d.%f"
+!             zero_phase_date:C_format = "%13.4f"
+!             zero_phase_date:FORTRAN_format = "(f13.4)"
+!
+!                Use "forcing/add_tide_date.m" from the ROMS Matlab repository
+!                to add the "zero_phase_date" variable to your existing tidal
+!                forcing NetCDF file. It is highly recommended to use this
+!                approach. If such a variable is found, the TIDE_START value
+!                will overwritten during execution.
+!
+!                Notice that it is possible to have different reference values
+!                for "zero_phase_date" and ROMS clock defined as seconds from
+!                reference date TIME_REF. If TIME_REF is earlier than variable
+!                "zero_phase_date", the frequencies (omega) to harmonic terms
+!                will be negative since they are computed as follows:
+!
+!                tide_start = Rclock%tide_DateNumber(2) -
+!                             Rclock%DateNumber(2))
+!                omega = 2 * pi * (time - tide_start) / Tperiod
 !
 ! TIME_REF     Reference time (yyyymmdd.f) used to compute relative time:
 !                elapsed time interval since reference-time.  The "units"
@@ -2112,10 +2209,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
-!
-! TNUDG_SSS    Nudging time scale (days) for surface salinity.
-!
-! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the
@@ -2787,16 +2880,166 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                if perturbing and reporting the same variable.
 !
 !------------------------------------------------------------------------------
-! I/O NetCDF files parameters.
+! I/O options and parameters. A more complete description of the available
+! options can be found in WikiROMS (https://myroms.org/wiki/IO).
 !------------------------------------------------------------------------------
 !
-! NetCDF-4/HDF5 compression parameters for output files. This capability
-! is used when both HDF5 and DEFLATE C-preprocessing options are
-! activated. The user needs to compile with the NetCDF-4/HDF5 and MPI
-! libraries. File deflation cannot be used in parallel I/O for writing
-! because the compression makes it impossible for the HDF5 library
-! to exactly map the data to the disk location.  For more information,
-! check NetCDF official website: www.unidata.ucar.edu/software/netcdf.
+! The ROMS input and output NetCDF files can be processed using the standard
+! NetCDF library developed by UNIDATA, the Parallel-IO (PIO) library developed
+! at NCAR, or the SCORPIO library available in E3SM (Sreepathi et al., 2013;
+! doi:10.1109/HiPC.2013.6799128). The SCORPIO library was forked from the PIO
+! library several years ago, and they have evolved separately. In addition to
+! the standard NetCDF library, ROMS can be compiled with either the PIO or
+! SCORPIO libraries. Check  www.myroms.org/wiki/External_Libraries  for more
+! information on how to obtain and install these libraries. The user has the
+! choice to select which library is used to process input and output NetCDF
+! files. For parallel I/O, we recommend using the PIO library because it is
+! more efficient than the SCORPIO library in our benchmark tests.
+!
+! The Parallel I/O using the PIO or SCORPIO libraries is restricted to
+! distributed-memory applications because it uses MPI-IO implementations
+! like ROMIO.
+!
+! * ROMS Input and Output NetCDF library to use flag: [1 or 2]
+!
+!   [1] Standard NetCDF3 or NetCDF4 library (Unidata)
+!   [2] Serial/Parallel I/O using Paralle-IO (PIO) library (MPI applications)
+!
+! INP_LIB      Reading library flag for input NetCDF files
+!
+! OUT_LIB      Creation/writing library flag for output NetCDF files
+!
+! * PIO method flag for reading/writing NetCDF files: [0,1,2,3,4]
+!
+!   [0] parallel read and write of PnetCDF files (CDF-5 type)
+!   [1] parallel read and write of PnetCDF files (NetCDF3 64-bit offset type)
+!   [2] serial   read and write of NetCDF3 files (NetCDF3 64-bit offset type)
+!   [3] parallel read and serial write of NetCDF4/HDF5 files (NetCDF4 type)
+!   [4] parallel read and write of NETCDF4/HDF5 files (NetCDF4 type)
+!
+! PIO_METHOD   PIO library file type for reading or writing. Depending on
+!                the build of the PIO library, not all the I/O types are
+!                available. If NetCDF library does not support parallel I/O,
+!                PIO_METHOD=3,4 are not available. Notice that we can create
+!                CDF-5 type PnetCDF files (PIO_METHOD=0), but it is not
+!                recommended because portability and post-processing
+!                constraints. Currently, NetCDF4/HDF5 data compression is
+!                possible with PIO_METHOD=3 during serial write.
+!
+! * PIO library processes set-up:
+!
+! PIO_IOTASKS  Number of MPI processors used for I/O. If I/O decomposition is
+!                identical to the computational decomposition, PIO_IOTASK is
+!                equal to NtileI*NtileJ.  Typically, it is advantageous and
+!                highly recommended to define the I/O decomposition in smaller
+!                number of processes for efficiency and to avoid MPI
+!                communication bottlenecks.
+!
+! PIO_STRIDE   Stride step in the MPI-rank between I/O tasks.
+!
+! PIO_BASE     Offset for the first I/O task (usually, PIO_BASE=1).
+!
+! PIO_AGGREG   Number of MPI-aggregators to use in intra-communication mode to
+!              improve MPI collective I/O performance.
+!
+!              In intra-communications mode, all processors in OCN_COMM_WORLD
+!              are involved in computations. A subset or all processors does
+!              I/O (and also computations). The PIO_IOTASKS and PIO_STRIDE
+!              parameters specify the total number of I/O tasks and the stride
+!              between them with respect to the ROMS MPI-communicator object,
+!              OCN_COMM_WORLD. The optional PIO_BASE parameter is used to shift
+!              the first I/O task away from the first computational task. This
+!              is often desirable because the application's first computational
+!              task usually has higher memory requirements than other processes.
+!              If the MPI-processes are spread over several hardware nodes, it
+!              is highly recommended to use a value for PIO_STRIDE that scatters
+!              the I/O processes over all nodes.  Avoid all the I/O processes
+!              occupying the same node.
+!
+!              In the inter-communications (asynchronous) mode, the I/O tasks
+!              are a disjointed set of dedicated I/O processes and do not
+!              perform computations. It is possible to have several groups of
+!              computational units running separate models (coupling) where
+!              all the I/O data are sent to dedicated processes. Asynchronous
+!              I/O is still under development and not recommended for use at
+!              this time.
+!
+!
+! * PIO rearranger methods for moving data between computational and I/O
+!   processes:
+!
+!   [1] Box rearrangement
+!   [2] Subset rearrangement
+!
+! PIO_REARR    Rearrangement method between computational and I/O processes. It
+!                provides the ability to rearrange data between computational
+!                and parallel I/O decompositions.
+!
+!              In the box method, data is rearranged from computational to I/O
+!              processes in a continuous manner to the data ordering in the
+!              file. Since the ordering of data between computational and I/O
+!              partitions may be different, the rearrangement will require
+!              all-to-all MPI communications. Also, notice that each computing
+!              tile may transfer data to one or more I/O processes.
+!
+!              In the subset method, each I/O process is associated with a
+!              subset of computing processes. The computing tile sends its data
+!              to a unique I/O process. The data on I/O processes may be more
+!              fragmented to the ordering on disk, which may increase the
+!              communications to the storage medium. However, the rearrangement
+!              scales better since all-to-all MPI communications are not
+!              required.
+!
+! * PIO rearranger MPI communication flag:
+!
+!   [0] Point-to-Point (basic send/receive individual operations)
+!   [1] Collective (high-level gather/scatter grouped operations)
+!
+! PIO_REARRCOM  Type of communications between computational to I/O processes.
+!               In some systems with a generic MPI library implementation, the
+!               Point-to-Point communications are more efficient.
+!
+! * PIO rearranger MPI communications direction control flag:
+!
+!   [0] Enable computational to I/O processes, and vice versa
+!   [1] Enable computational to I/O processes only
+!   [2] Enable I/O to computational processes only
+!   [3] Disable flow control
+!
+! PIO_REARRDIR Flow control algorithm between computational and I/O processes:
+!
+!              Optimally, MPI communications should be designed to send a modest
+!              number messages evenly distributed across a number of processes.
+!              An excessive number of messages to a single MPI-process can
+!              exhaust the buffer space which can affect efficiency or failure
+!              due to the slowdown in the retransmitting of dropped messages.
+!              PIO only send messages (Isend) when the receiver is ready and
+!              has sufficient resources.
+!
+! * PIO rearranger options for communications from computational to I/O
+!   processes (C2I):
+!
+! PIO_C2I_HS   Logical switch (T/F) to enable C2I exchange handshake
+! PIO_C2I_Send Logical switch (T/F) to enable C2I MPI-Isends
+! PIO_C2I_Preq Maximum pending C2I requests
+!
+! * PIO rearranger options for communications from I/O to computational
+!   processes (I2C):
+!
+! PIO_I2C_HS   Logical switch (T/F) to enable I2C exchange handshake
+! PIO_I2C_Send Logical switch (T/F) to enable I2C MPI-Isends
+! PIO_I2C_Preq Maximum pending I2C requests
+!
+! * NetCDF-4/HDF5 compression parameters for output files:
+!
+!   This capability is used when both HDF5 and DEFLATE C-preprocessing
+!   options are  activated. The user needs to compile with the NetCDF-4
+!   (HDF5) and MPI libraries. File deflation cannot be used in parallel
+!   I/O for writing because the compression makes it impossible for the
+!   HDF5 library to exactly map the data to the disk location.  For more
+!   information, check NetCDF official website:
+!
+!   www.unidata.ucar.edu/software/netcdf
 !
 ! NC_SHUFFLE   Shuffle filter integer flag. If non-zero, turn on shuffle
 !                filter.
@@ -2879,8 +3122,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  physical, biology, and sediment state variables. The model will scan
 !  the file list and will read the needed data from the first file in the
 !  list containing the lateral boundary variable. Therefore, the order of
-!  the filenames is critcal. It is also possible to split input data time
-!  records into several NetCDF files.
+!  the filenames is critical. It is also possible to split input data
+!  time records into several NetCDF files.
 !
 !    NBCFILES == 2                            ! number of boundary files
 !
@@ -2959,7 +3202,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! FRCNAME      Input forcing fields filename per nested grid.
 !
 !  The USER has the option to enter several filenames for forcing fields
-!  and/or split input data time records for each nested grid. For example,
+!  and or split input data time records for each nested grid. For example,
 !  the USER may have different files for wind products, heat fluxes, etc.
 !  The model will scan the file list and will read the needed data from
 !  the first file in the list containing the forcing field. Therefore,

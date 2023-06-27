@@ -2,9 +2,10 @@
       MODULE wetdry_mod
 #ifdef WET_DRY
 !
-!svn $Id: wetdry.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: wetdry.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !==================================================== John C. Warner ===
@@ -50,8 +51,6 @@
 # ifdef SOLVE3D
      &                        OCEAN(ng)%ubar(:,:,Tindex),               &
      &                        OCEAN(ng)%vbar(:,:,Tindex),               &
-     &                        GRID(ng)%umask_diff,                      &
-     &                        GRID(ng)%vmask_diff,                      &
 # endif
      &                        GRID(ng)%pmask_wet,                       &
      &                        GRID(ng)%pmask_full,                      &
@@ -77,8 +76,6 @@
      &                    COUPLING(ng)%DU_avg1,                         &
      &                    COUPLING(ng)%DV_avg1,                         &
      &                    GRID(ng)%rmask_wet_avg,                       &
-     &                    GRID(ng)%umask_diff,                          &
-     &                    GRID(ng)%vmask_diff,                          &
 # endif
      &                    GRID(ng)%pmask_wet,                           &
      &                    GRID(ng)%pmask_full,                          &
@@ -104,7 +101,6 @@
 # ifdef SOLVE3D
      &                        DU_avg1, DV_avg1,                         &
      &                        rmask_wet_avg,                            &
-     &                        umask_diff, vmask_diff,                   &
 # endif
      &                        pmask_wet, pmask_full,                    &
      &                        rmask_wet, rmask_full,                    &
@@ -141,8 +137,6 @@
       real(r8), intent(in) :: DU_avg1(LBi:,LBj:)
       real(r8), intent(in) :: DV_avg1(LBi:,LBj:)
       real(r8), intent(inout) :: rmask_wet_avg(LBi:,LBj:)
-      real(r8), intent(out) :: umask_diff(LBi:,LBj:)
-      real(r8), intent(out) :: vmask_diff(LBi:,LBj:)
 #  endif
       real(r8), intent(out) :: pmask_full(LBi:,LBj:)
       real(r8), intent(out) :: rmask_full(LBi:,LBj:)
@@ -168,8 +162,6 @@
       real(r8), intent(in) :: DU_avg1(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: DV_avg1(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rmask_wet_avg(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: umask_diff(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vmask_diff(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(out) :: pmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: rmask_full(LBi:UBi,LBj:UBj)
@@ -276,8 +268,7 @@
      &                             DU_avg1, DV_avg1,                    &
      &                             wetdry,                              &
      &                             pmask_wet, rmask_wet,                &
-     &                             umask_wet, vmask_wet,                &
-     &                             umask_diff, vmask_diff)
+     &                             umask_wet, vmask_wet)
       END IF
 # endif
 !
@@ -370,7 +361,6 @@
      &                            h, zeta,                              &
 # ifdef SOLVE3D
      &                            ubar, vbar,                           &
-     &                            umask_diff, vmask_diff,               &
 # endif
      &                            pmask_wet, pmask_full,                &
      &                            rmask_wet, rmask_full,                &
@@ -406,8 +396,6 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: ubar(LBi:,LBj:)
       real(r8), intent(in) :: vbar(LBi:,LBj:)
-      real(r8), intent(out) :: umask_diff(LBi:,LBj:)
-      real(r8), intent(out) :: vmask_diff(LBi:,LBj:)
 #  endif
       real(r8), intent(out) :: pmask_full(LBi:,LBj:)
       real(r8), intent(out) :: rmask_full(LBi:,LBj:)
@@ -432,8 +420,6 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: umask_diff(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vmask_diff(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(out) :: pmask_full(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: rmask_full(LBi:UBi,LBj:UBj)
@@ -485,8 +471,7 @@
      &                           ubar, vbar,                            &
      &                           wetdry,                                &
      &                           pmask_wet, rmask_wet,                  &
-     &                           umask_wet, vmask_wet,                  &
-     &                           umask_diff, vmask_diff)
+     &                           umask_wet, vmask_wet)
 # else
       CALL wetdry_mask_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -743,8 +728,7 @@
      &                                 DU_avg1, DV_avg1,                &
      &                                 wetdry,                          &
      &                                 pmask_wet, rmask_wet,            &
-     &                                 umask_wet, vmask_wet,            &
-     &                                 umask_diff, vmask_diff)
+     &                                 umask_wet, vmask_wet)
 !***********************************************************************
 !
       USE mod_param
@@ -769,8 +753,6 @@
       real(r8), intent(out) :: rmask_wet(LBi:,LBj:)
       real(r8), intent(out) :: umask_wet(LBi:,LBj:)
       real(r8), intent(out) :: vmask_wet(LBi:,LBj:)
-      real(r8), intent(out) :: umask_diff(LBi:,LBj:)
-      real(r8), intent(out) :: vmask_diff(LBi:,LBj:)
 #  else
       real(r8), intent(in)  :: wetdry(IminS:ImaxS,JminS:JmaxS)
       real(r8), intent(in)  :: DU_avg1(LBi:UBi,LBj:UBj)
@@ -779,8 +761,6 @@
       real(r8), intent(out) :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: vmask_wet(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: umask_diff(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vmask_diff(LBi:UBi,LBj:UBj)
 #  endif
 !
 !  Local variable declarations.
@@ -809,10 +789,6 @@
       DO j=JstrR,JendR
         DO i=Istr,IendR
           cff1=wetdry(i-1,j)+wetdry(i,j)
-          umask_diff(i,j) = 1.0_r8
-          IF (cff1.lt.2.0_r8) THEN
-            umask_diff(i,j) = 0.0_r8
-          END IF
           IF (cff1.eq.1.0_r8) THEN
             cff1=wetdry(i-1,j)-wetdry(i,j)
           END IF
@@ -833,10 +809,6 @@
       DO j=Jstr,JendR
         DO i=IstrR,IendR
           cff1=wetdry(i,j-1)+wetdry(i,j)
-          vmask_diff(i,j) = 1.0_r8
-          IF (cff1.lt.2.0_r8) THEN
-            vmask_diff(i,j) = 0.0_r8
-          END IF
           IF (cff1.eq.1.0_r8) THEN
             cff1=wetdry(i,j-1)-wetdry(i,j)
           END IF
@@ -924,12 +896,6 @@
         CALL exchange_v2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          vmask_wet)
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          umask_diff)
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          vmask_diff)
       END IF
 
 #  ifdef DISTRIBUTE
@@ -939,11 +905,6 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    pmask_wet, rmask_wet, umask_wet, vmask_wet)
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    umask_diff, vmask_diff)
 #  endif
 
       RETURN

@@ -3,9 +3,10 @@
 
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: mod_fourdvar.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_fourdvar.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -138,10 +139,15 @@
         USE mod_param
 !
         implicit none
-
-# ifdef OBSERVATIONS
 !
-!  Define module structure.
+        PUBLIC :: allocate_fourdvar
+        PUBLIC :: deallocate_fourdvar
+        PUBLIC :: initialize_fourdvar
+!
+# ifdef OBSERVATIONS
+!-----------------------------------------------------------------------
+!  Define T_FOURDVAR structure.
+!-----------------------------------------------------------------------
 !
         TYPE T_FOURDVAR
 
@@ -202,10 +208,12 @@
 #  endif
 
         END TYPE T_FOURDVAR
-
+!
         TYPE (T_FOURDVAR), allocatable :: FOURDVAR(:)
 !
-!  Define other module arrays.
+!-----------------------------------------------------------------------
+!  Define other module variables.
+!-----------------------------------------------------------------------
 !
         integer,  allocatable :: ObsType(:)
         integer,  allocatable :: ObsState2Type(:)
@@ -231,6 +239,15 @@
 #  endif
         real(r8), allocatable :: ADmodVal(:)
         real(r8), allocatable :: NLmodVal(:)
+
+        real(r8), allocatable :: misfit(:)
+        real(r8), allocatable :: unvetted(:)
+        real(r8), allocatable :: uradial(:)
+        real(r8), allocatable :: vradial(:)
+#  ifndef VERIFICATION
+        real(r8), allocatable :: uBgErr(:)
+        real(r8), allocatable :: vBgErr(:)
+#  endif
 #  ifdef SP4DVAR
         real(r8), allocatable :: ADmodVal_S(:,:)
         real(r8), allocatable :: harnoldi(:,:,:)
@@ -327,7 +344,7 @@
 # endif
 !
 !-----------------------------------------------------------------------
-!  Observations parameters.
+!  Define observations parameters.
 !-----------------------------------------------------------------------
 !
 !  Switches indicating that at input observations vertical position were
@@ -901,9 +918,9 @@
 !
         real(r8), allocatable :: ForceTime(:)
 # endif
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_fourdvar
 !
 !=======================================================================
@@ -1126,19 +1143,16 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 # endif
-
+!
       RETURN
       END SUBROUTINE allocate_fourdvar
-
-# if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
+!
       SUBROUTINE deallocate_fourdvar
 !
 !=======================================================================
 !                                                                      !
-!  This routine deallocates several variables in module associated     !
+!  This routine deallocates only the variables in module associated    !
 !  with observation dimension parameters Ndatum, Nsurvey, and Mobs.    !
-!  It is used in the observations impacts for the analysis-forecast    !
-!  cycle.                                                              !
 !                                                                      !
 !=======================================================================
 !
@@ -1159,7 +1173,7 @@
           deallocate (FOURDVAR(ng) % SurveyTime)
         END IF
 
-#  ifdef RPCG
+# ifdef RPCG
         IF (allocated(FOURDVAR(ng) % cg_pxsave)) THEN
           deallocate (FOURDVAR(ng) % cg_pxsave)
         END IF
@@ -1184,18 +1198,18 @@
           deallocate (FOURDVAR(ng) % ad_cg_pxsave)
         END IF
 
-#  endif
+# endif
       END DO
 !
 !-----------------------------------------------------------------------
 !  deallocate and initialize model and observation variables.
 !-----------------------------------------------------------------------
 !
-#  ifdef CURVGRID
+# ifdef CURVGRID
       IF (allocated(ObsAngler)) THEN
         deallocate (ObsAngler)
       END IF
-#  endif
+# endif
 
       IF (allocated(ObsType)) THEN
         deallocate (ObsType)
@@ -1217,11 +1231,11 @@
         deallocate (ObsScale)
       END IF
 
-#  ifndef WEAK_CONSTRAINT
+# ifndef WEAK_CONSTRAINT
       IF (allocated(ObsScaleGlobal)) THEN
         deallocate (ObsScaleGlobal)
       END IF
-#  endif
+# endif
 
       IF (allocated(ObsVetting)) THEN
         deallocate (ObsVetting)
@@ -1243,11 +1257,11 @@
         deallocate (Yobs)
       END IF
 
-#  ifdef SOLVE3D
+# ifdef SOLVE3D
       IF (allocated(Zobs)) THEN
         deallocate (Zobs)
       END IF
-#  endif
+# endif
 
       IF (allocated(ADmodVal)) THEN
         deallocate (ADmodVal)
@@ -1257,7 +1271,33 @@
         deallocate (NLmodVal)
       END IF
 
-#  ifdef FOUR_DVAR
+      IF (allocated(misfit)) THEN
+        deallocate (misfit)
+      END IF
+
+      IF (allocated(unvetted)) THEN
+        deallocate (unvetted)
+      END IF
+
+      IF (allocated(uradial)) THEN
+        deallocate (uradial)
+      END IF
+
+      IF (allocated(vradial)) THEN
+        deallocate (vradial)
+      END IF
+
+# ifndef VERIFICATION
+      IF (allocated(uBgErr)) THEN
+        deallocate (uBgErr)
+      END IF
+
+      IF (allocated(vBgErr)) THEN
+        deallocate (vBgErr)
+      END IF
+# endif
+
+# ifdef FOUR_DVAR
       IF (allocated(BgErr)) THEN
         deallocate (BgErr)
       END IF
@@ -1273,28 +1313,28 @@
       IF (allocated(residual)) THEN
         deallocate (residual)
       END IF
-#  endif
+# endif
 
-#  ifdef BGQC
+# ifdef BGQC
       IF (allocated(BgThresh)) THEN
         deallocate (BgThresh)
       END IF
-#  endif
+# endif
 
-#  ifdef TLM_OBS
+# ifdef TLM_OBS
       IF (allocated(TLmodVal)) THEN
         deallocate (TLmodVal)
       END IF
 
-#   if defined ARRAY_MODES       || defined CLIPPING    || \
-       defined RBL4DVAR          || defined R4DVAR      || \
-       defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
-       defined TL_R4DVAR
+#  if defined ARRAY_MODES       || defined CLIPPING    || \
+      defined RBL4DVAR          || defined R4DVAR      || \
+      defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+      defined TL_R4DVAR
       IF (allocated(TLmodVal_S)) THEN
         deallocate (TLmodVal_S)
       END IF
 
-#    if defined RPCG              && \
+#   if defined RPCG              && \
        (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
         defined TL_R4DVAR)
 
@@ -1305,23 +1345,23 @@
       IF (allocated(ad_TLmodVal_S)) THEN
         deallocate (ad_TLmodVal_S)
       END IF
-#    endif
-
 #   endif
 
-#   if defined SENSITIVITY_4DVAR || defined RBL4DVAR || \
+#  endif
+
+#  if defined SENSITIVITY_4DVAR || defined RBL4DVAR || \
        defined TL_RBL4DVAR
 
       IF (allocated(BCKmodVal)) THEN
         deallocate (BCKmodVal)
       END IF
 
-#    ifdef RPCG
+#   ifdef RPCG
       IF (allocated(Hbk)) THEN
         deallocate (Hbk)
       END IF
-#     if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
-         defined TL_R4DVAR
+#    if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR
 
       IF (allocated(tl_BCKmodVal)) THEN
         deallocate (tl_BCKmodVal)
@@ -1335,17 +1375,17 @@
       IF (allocated(ad_Hbk)) THEN
         deallocate (ad_Hbk)
       END IF
-#     endif
 #    endif
 #   endif
 #  endif
+# endif
 
-#  ifdef WEAK_CONSTRAINT
+# ifdef WEAK_CONSTRAINT
 !
 !  Deallocate and initialize weak constraint conjugate gradient vectors.
 !
-#   if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
-       defined TL_R4DVAR
+#  if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+      defined TL_R4DVAR
       IF (allocated(ad_zcglwk)) THEN
         deallocate (ad_zcglwk)
       END IF
@@ -1382,18 +1422,18 @@
         deallocate (tl_ObsVal)
       END IF
 
-#    ifdef IMPACT_INNER
+#   ifdef IMPACT_INNER
       IF (allocated(ad_ObsVal)) THEN
         deallocate (ad_ObsVal)
       END IF
-#    else
+#   else
       IF (allocated(ad_ObsVal)) THEN
         deallocate (ad_ObsVal)
       END IF
-#    endif
 #   endif
+#  endif
 
-#   ifdef RPCG
+#  ifdef RPCG
       IF (allocated(zcglwk)) THEN
         deallocate (zcglwk)
       END IF
@@ -1422,11 +1462,11 @@
         deallocate (cg_innov)
       END IF
 
-#    if defined RBL4DVAR_ANA_SENSITIVITY || \
-        defined RBL4DVAR_FCT_SENSITIVITY || \
-        defined R4DVAR_ANA_SENSITIVITY   || \
-        defined TL_RBL4DVAR              || \
-        defined TL_R4DVAR
+#   if defined RBL4DVAR_ANA_SENSITIVITY || \
+       defined RBL4DVAR_FCT_SENSITIVITY || \
+       defined R4DVAR_ANA_SENSITIVITY   || \
+       defined TL_RBL4DVAR              || \
+       defined TL_R4DVAR
 
       IF (allocated(ad_vcglwk)) THEN
         deallocate (ad_vcglwk)
@@ -1491,9 +1531,9 @@
       IF (allocated(ad_cg_Gnorm_v)) THEN
         deallocate (ad_cg_Gnorm_v)
       END IF
-#    endif
+#   endif
 
-#   else
+#  else
 
       IF (allocated(cg_pxsave)) THEN
         deallocate (cg_pxsave)
@@ -1531,13 +1571,12 @@
         deallocate (cg_pxsave)
       END IF
 
-#   endif
 #  endif
-
+# endif
+!
       RETURN
       END SUBROUTINE deallocate_fourdvar
-# endif
-
+!
       SUBROUTINE initialize_fourdvar
 !
 !=======================================================================
@@ -1552,6 +1591,9 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
+# if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+# endif
 !
       USE strings_mod, ONLY : FoundError
       USE strings_mod, ONLY : uppercase
@@ -1583,7 +1625,17 @@
 !  "survey" dimension.
 !
       DO ng=1,Ngrids
-        CALL netcdf_get_dim(ng, iNLM, TRIM(OBS(ng)%name))
+        SELECT CASE (OBS(ng)%IOtype)
+          CASE (io_nf90)
+            CALL netcdf_get_dim (ng, iNLM, TRIM(OBS(ng)%name))
+#  if defined PIO_LIB && defined DISTRIBUTE
+          CASE (io_pio)
+            CALL pio_netcdf_get_dim (ng, iNLM, TRIM(OBS(ng)%name))
+#  endif
+          CASE DEFAULT
+            IF (Master) WRITE (stdout,10) OBS(ng)%IOtype
+            exit_flag=3
+        END SELECT
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
         Ndatum(ng)=0
@@ -1598,12 +1650,12 @@
           END IF
         END DO
         IF (Ndatum(ng).eq.0) THEN
-          WRITE (stdout,10) 'datum', TRIM(OBS(ng)%name)
+          WRITE (stdout,20) 'datum', TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (Nsurvey(ng).eq.0) THEN
-          WRITE (stdout,10) 'survey', TRIM(OBS(ng)%name)
+          WRITE (stdout,20) 'survey', TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
@@ -1899,23 +1951,42 @@
 !
       DO ng=1,Ngrids
 !
-!  Read in number of observations available per survey.
+!  Read in number of observations available per survey and the time of
+!  each observation survey.
 !
-        CALL netcdf_get_ivar (ng, iNLM, TRIM(OBS(ng)%name),             &
-     &                        TRIM(Vname(1,idNobs)),                    &
-     &                        FOURDVAR(ng)%NobsSurvey,                  &
-     &                        start = (/1/),                            &
-     &                        total = (/Nsurvey(ng)/))
-        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        SELECT CASE (OBS(ng)%IOtype)
+          CASE (io_nf90)
+            CALL netcdf_get_ivar (ng, iNLM, TRIM(OBS(ng)%name),         &
+     &                            TRIM(Vname(1,idNobs)),                &
+     &                            FOURDVAR(ng)%NobsSurvey,              &
+     &                            start = (/1/),                        &
+     &                            total = (/Nsurvey(ng)/))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-!  Read in the time of each observation survey.
+            CALL netcdf_get_fvar (ng, iNLM, TRIM(OBS(ng)%name),         &
+     &                            TRIM(Vname(1,idOday)),                &
+     &                            FOURDVAR(ng)%SurveyTime,              &
+     &                            start = (/1/),                        &
+     &                            total = (/Nsurvey(ng)/))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+          CASE (io_pio)
+            CALL pio_netcdf_get_ivar (ng, iNLM, TRIM(OBS(ng)%name),     &
+     &                                TRIM(Vname(1,idNobs)),            &
+     &                                FOURDVAR(ng)%NobsSurvey,          &
+     &                                start = (/1/),                    &
+     &                                total = (/Nsurvey(ng)/))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-        CALL netcdf_get_fvar (ng, iNLM, TRIM(OBS(ng)%name),             &
-     &                        TRIM(Vname(1,idOday)),                    &
-     &                        FOURDVAR(ng)%SurveyTime,                  &
-     &                        start = (/1/),                            &
-     &                        total = (/Nsurvey(ng)/))
-        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+            CALL pio_netcdf_get_fvar (ng, iNLM, TRIM(OBS(ng)%name),     &
+     &                                TRIM(Vname(1,idOday)),            &
+     &                                FOURDVAR(ng)%SurveyTime,          &
+     &                                start = (/1/),                    &
+     &                                total = (/Nsurvey(ng)/))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#  endif
+        END SELECT
 !
 !  Determine maximum size of observation arrays.
 !
@@ -2034,6 +2105,44 @@
         Dmem(1)=Dmem(1)+REAL(Mobs,r8)
       END IF
       NLmodVal = IniVal
+
+      IF (.not.allocated(misfit)) THEN
+        allocate ( misfit(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      misfit = IniVal
+
+      IF (.not.allocated(unvetted)) THEN
+        allocate ( unvetted(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      unvetted = IniVal
+
+      IF (.not.allocated(uradial)) THEN
+        allocate ( uradial(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      uradial = IniVal
+
+      IF (.not.allocated(vradial)) THEN
+        allocate ( vradial(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      vradial = IniVal
+
+#  ifndef VERIFICATION
+      IF (.not.allocated(uBgErr)) THEN
+        allocate ( uBgErr(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      uBgErr = IniVal
+
+      IF (.not.allocated(vBgErr)) THEN
+        allocate ( vBgErr(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      vBgErr = IniVal
+#  endif
 
 #  ifdef SP4DVAR
       IF (.not.allocated(ADmodVal_S)) THEN
@@ -2953,8 +3062,10 @@
 
 # ifdef OBSERVATIONS
 !
- 10   FORMAT (/,' MOD_FOURDVAR - error inquiring dimension: ',a,2x,     &
-     &          ' in input NetCDF file: ',a)
+ 10   FORMAT (/,' INITIALIZE_FOURDVAR - Illegal output type,',          &
+     &        ' io_type = ',i0)
+ 20   FORMAT (/,' INITIALIZE_FOURDVAR - error inquiring dimension:',    &
+     &        1x,a,2x,'in input NetCDF file: ',a)
 # endif
 
       RETURN

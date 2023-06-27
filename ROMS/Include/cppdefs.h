@@ -2,9 +2,9 @@
 ** Include file "cppdefs.h"
 **
 ** git $Id$
-** svn $Id: cppdefs.h 1110 2022-02-27 21:37:32Z arango $
+** svn $Id: cppdefs.h 1151 2023-02-09 03:08:53Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2022 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -45,9 +45,14 @@
 ** UV_LDRAG                to turn ON or OFF linear bottom friction          **
 ** UV_QDRAG                to turn ON or OFF quadratic bottom friction       **
 ** UV_WAVEDRAG             to turn ON or OFF extra linear bottom wave drag   **
+** OMEGA_IMPLICT           to add adaptive implicit vertical advection       **
 ** SPLINES_VVISC           if splines reconstruction of vertical viscosity   **
 **                                                                           **
-** OPTIONS associated with tracers equations:                                **
+** OPTION to not allow the bottom stress components to change the direction  **
+** of bottom momentum (change sign of velocity components.                   **
+**                                                                           **
+** LIMIT_BSTRESS           to limit the magnitude of bottom stress           **
+**      in coawst, this is automatically activated with wet_dry
 **                                                                           **
 ** OPTIONS associated with tracers equations:                                **
 **                                                                           **
@@ -61,19 +66,15 @@
 ** QCORRECTION             if net heat flux correction                       **
 ** SALINITY                if having salinity                                **
 ** SCORRECTION             if freshwater flux correction                     **
-** SSSC_THRESHOLD          limit on freshwater flux correction               **
 ** SOLAR_SOURCE            if solar radiation source term                    **
 ** SPLINES_VDIFF           if splines reconstruction of vertical diffusion   **
 ** SRELAXATION             if salinity relaxation as a freshwater flux       **
-** TRC_PSOURCE             if source of inert passive tracers (dyes, etc)    **
-** ONE_TRACER_SOURCE       if one value per tracer for all sources           **
-** TWO_D_TRACER_SOURCE     if one value per tracer per source                **
 ** WTYPE_GRID              to turn ON spatially varying Jerlov water type    **
 **                                                                           **
 ** OPTION to suppress further surface cooling if the SST is at freezing      **
 ** point or below and the net surface heat flux is cooling:                  **
 **                                                                           **
-** LIMIT_STFLX_COOLING     to suppress SST cooling below freezing point      **
+** LIMIT_STFLX_COOLING use to suppress SST cooling below freezing point      **
 **                                                                           **
 ** OPTIONS for MPDATA 3D Advection: Hadvection(itrc,ng)%MPDATA and           **
 **                                  Vadvection(itrc,ng)%MPDATA switches      **
@@ -112,9 +113,6 @@
 ** LONGWAVE                if computing net longwave radiation               **
 ** LONGWAVE_OUT            if computing outgoing longwave radiation          **
 ** EMINUSP                 if computing E-P                                  **
-** EMINUSP_SSH             if computing changes in SSH due to E-P            **
-** RUNOFF                  if adding runoff as a second rain field           **
-** RUNOFF_SSH              if adjusting zeta based on runoff field           **
 ** WIND_MINUS_CURRENT      if compute effective wind by removing current     **
 **                                                                           **
 ** OPTIONS for wave roughness formulation in bulk fluxes:                    **
@@ -163,7 +161,6 @@
 ** FLOAT_STICKY            to reflect/stick floats that hit surface/bottom   **
 ** FLOAT_VWALK             if vertical random walk                           **
 ** VWALK_FORWARD           if forward time stepping vertical random walk     **
-** DIAPA                   to simulate diapa                                 **
 **                                                                           **
 ** OPTIONS for analytical fields configuration:                              **
 **                                                                           **
@@ -191,11 +188,9 @@
 ** ANA_PASSIVE             if analytical inert tracers initial conditions    **
 ** ANA_PERTURB             if analytical perturbation of initial conditions  **
 ** ANA_PSOURCE             if analytical point Sources/Sinks                 **
-** ANA_PTOBC               if analytical passive tracers boundary conditions **
 ** ANA_RAIN                if analytical rain fall rate                      **
 ** ANA_SEDIMENT            if analytical sediment initial fields             **
 ** ANA_SMFLUX              if analytical surface momentum stress             **
-** ANA_SNOW                for analytic snowfall rate                        **
 ** ANA_SPFLUX              if analytical surface passive tracers fluxes      **
 ** ANA_SPINNING            if analytical time-varying rotation force         **
 ** ANA_SPONGE              if analytical enhanced viscosity/diffusion sponge **
@@ -208,7 +203,6 @@
 ** ANA_TAIR                if analytical surface air temperature             **
 ** ANA_TCLIMA              if analytical tracers climatology                 **
 ** ANA_TOBC                if analytical tracers boundary conditions         **
-** ANA_TRC_PSOURCE         if analytical point sources of inert tracers      **
 ** ANA_VMIX                if analytical vertical mixing coefficients        **
 ** ANA_WINDS               if analytical surface winds                       **
 ** ANA_WWAVE               if analytical wind induced waves                  **
@@ -279,7 +273,6 @@
 ** LMD_RIMIX               to add diffusivity due to shear instability       **
 ** LMD_SHAPIRO             if Shapiro filtering boundary layer depth         **
 ** LMD_SKPP                if surface boundary layer KPP mixing              **
-** M2TIDE_DIFF             to add simulated tidal diffusion                  **
 ** RI_SPLINES              if splines reconstruction for Richardson Number   **
 **                                                                           **
 ** OPTIONS in the K-profile parameterization to activate smoothing of        **
@@ -342,17 +335,11 @@
 **                                                                           **
 ** SSH_TIDES               if imposing tidal elevation                       **
 ** UV_TIDES                if imposing tidal currents                        **
-** POT_TIDES               if imposing potential tides                       **
 ** RAMP_TIDES              if ramping (over one day) tidal forcing           **
 ** TIDE_GENERATING_FORCES  adds tide generation forces to pressure gradient  **
 ** FSOBC_REDUCED           if SSH data and reduced physics conditions        **
 ** ADD_FSOBC               to add tidal elevation to processed OBC data      **
 ** ADD_M2OBC               to add tidal currents  to processed OBC data      **
-**                                                                           **
-** OPTIONS for reading and processing of climatological fields:              **
-**                                                                           **
-** OCLIMATOLOGY            if processing 3D vertical momentum climatology    **
-** AKTCLIMATOLOGY          if processing 3D vertical salinity diffustion     **
 **                                                                           **
 ** ROMS/TOMS driver OPTIONS:                                                 **
 **                                                                           **
@@ -372,8 +359,9 @@
 ** INNER_PRODUCT              if tangent/adjoint inner product check         **
 ** I4DVAR                     if incremental 4D-Var data assimilation        **
 ** I4DVAR_ANA_SENSITIVITY     if I4D-Var observations sensitivity            **
+** INITIALIZE_AUTOMATIC       to initialize automatic arrays in step2d       **
 ** JEDI                       if using Joint Effort for DA Integration       **
-** LCZ_FINAL                  it computing 4D-Var Hessian singular vectors   **
+** LCZ_FINAL                  if computing 4D-Var Hessian singular vectors   **
 ** OPT_OBSERVATIONS           if optimal observations                        **
 ** OPT_PERTURBATION           if optimal perturbations, singular vectors     **
 ** PICARD_TEST                if representer tangent linear model test       **
@@ -400,6 +388,7 @@
 ** OPTIONS associated with tangent linear, representer and adjoint models:   **
 **                                                                           **
 ** AD_IMPULSE              to force adjoint model with intermittent impulses **
+** AD_OUTPUT_STATE         to write full adjoint state by adding time levels **
 ** ADJUST_BOUNDARY         if including boundary conditions in 4DVar state   **
 ** ADJUST_STFLUX           if including surface tracer flux in 4DVar state   **
 ** ADJUST_WSTRESS          if including wind-stress in 4DVar state           **
@@ -487,14 +476,6 @@
 ** SEAGRASS_LIGHT      add N sink (seagrass proxy) as function of light      **
 ** SEAGRASS_LIGHT_CONST constant N sink (seagrass proxy) if light exceeded   **
 **                                                                           **
-** Bering Sea biology model OPTIONS:                                         **
-**                                                                           **
-** BEST_NPZ                if Gibson et al. Bering Sea model                 **
-** STATIONARY              if ??                                             **
-** BENTHIC                 if benthic components                             **
-** ICE_BIO                 if ice algae                                      **
-** JELLY                   if jellyfish                                      **
-** CLIM_ICE_1D             if one-D with ice                                 **
 **                                                                           **
 ** NPZD biology model OPTIONS:                                               **
 **                                                                           **
@@ -520,8 +501,8 @@
 ** NEMURO_SED1             if Nemuro sediment remineralization               **
 ** PRIMARY_PROD            if primary productivity output                    **
 ** BIO_SEDIMENT            to restore fallen material to the nutrient pool   **
-** HOLLING_GRAZING         Holling-type s-shaped curve grazing (implicit)    **
-** IVLEV_EXPLICIT          Ivlev explicit grazing algorithm                  **
+** HOLLING_GRAZING         if Holling-type s-shaped curve grazing (implicit) **
+** IVLEV_EXPLICIT          if Ivlev explicit grazing algorithm               **
 **                                                                           **
 ** Red tide biological model OPTIONS:                                        **
 **                                                                           **
@@ -630,17 +611,22 @@
 **                                                                           **
 ** NetCDF input/output OPTIONS:                                              **
 **                                                                           **
+** CHECKSUM                to report checksum when processing I/O            **
+** CHECK_OPEN_FILES        to report number opened/closed/created files      **
 ** DEFLATE                 to set compression NetCDF-4/HDF5 format files     **
 ** HDF5                    to create NetCDF-4/HDF5 format files              **
+** METADATA_REPORT         to report/dump YAML metadata dictionary           **
 ** NO_LBC_ATT              to not check NLM_LBC global attribute on restart  **
 ** NO_READ_GHOST           to not include ghost points during read/scatter   **
 ** NO_WRITE_GRID           if not writing grid arrays                        **
 ** PARALLEL_IO             if parallel I/O via HDF5 or pnetcdf libraries     **
 ** PERFECT_RESTART         to include perfect restart variables              **
+** PIO_LIB                 to include Parallel-IO from the PIO library       **
 ** PNETCDF                 if parallel I/O with pnetcdf (classic format)     **
 ** POSITIVE_ZERO           to impose positive zero in ouput data             **
 ** READ_WATER              if only reading water points data                 **
 ** REGRID_SHAPIRO          to apply Shapiro Filter to regridded data         **
+** ROMS_STDOUT             to write standard output into the 'log.roms' file **
 ** WRITE_WATER             if only writing water points data                 **
 ** RST_SINGLE              if writing single precision restart fields        **
 ** OUT_DOUBLE              if writing double precision output fields         **

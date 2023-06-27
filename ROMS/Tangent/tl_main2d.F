@@ -2,9 +2,10 @@
 #if defined TANGENT && !defined SOLVE3D
       SUBROUTINE tl_main2d (RunInterval)
 !
-!svn $Id: tl_main2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_main2d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,41 +26,44 @@
       USE mod_scalars
       USE mod_stepping
 !
-      USE dateclock_mod,      ONLY : time_string
+      USE dateclock_mod,        ONLY : time_string
 # ifdef TLM_CHECK
-      USE dotproduct_mod,     ONLY : tl_dotproduct
+      USE dotproduct_mod,       ONLY : tl_dotproduct
+# endif
+# ifdef TIDE_GENERATING_FORCES
+      USE equilibrium_tide_mod, ONLY : equilibrium_tide
 # endif
 # if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
-      USE ocean_coupler_mod,  ONLY : atmos_coupling
+      USE ocean_coupler_mod,    ONLY : atmos_coupling
 # endif
 # if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
-      USE ocean_coupler_mod,  ONLY : waves_coupling
+      USE ocean_coupler_mod,    ONLY : waves_coupling
 # endif
-      USE strings_mod,        ONLY : FoundError
-      USE tl_diag_mod,        ONLY : tl_diag
+      USE strings_mod,          ONLY : FoundError
+      USE tl_diag_mod,          ONLY : tl_diag
 # if defined WEAK_CONSTRAINT || defined FORCING_SV
-      USE tl_forcing_mod,     ONLY : tl_forcing
+      USE tl_forcing_mod,       ONLY : tl_forcing
 # endif
 # ifdef ADJUST_WSTRESS
-      USE tl_frc_adjust_mod,  ONLY : tl_frc_adjust
+      USE tl_frc_adjust_mod,    ONLY : tl_frc_adjust
 # endif
-      USE tl_ini_fields_mod,  ONLY : tl_ini_fields, tl_ini_zeta
+      USE tl_ini_fields_mod,    ONLY : tl_ini_fields, tl_ini_zeta
 # ifdef ADJUST_BOUNDARY
-      USE tl_obc_adjust_mod,  ONLY : tl_obc_adjust
+      USE tl_obc_adjust_mod,    ONLY : tl_obc_adjust
 # endif
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE tl_radiation_stress_mod, ONLY : tl_radiation_stress
 # endif
 # ifdef TL_AVERAGES
-      USE tl_set_avg_mod,     ONLY : tl_set_avg
+      USE tl_set_avg_mod,       ONLY : tl_set_avg
 # endif
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
-!!    USE tl_set_tides_mod, ONLY : tl_set_tides
+!!    USE tl_set_tides_mod,     ONLY : tl_set_tides
 # endif
-      USE tl_set_vbc_mod,     ONLY : tl_set_vbc
-      USE tl_step2d_mod,      ONLY : tl_step2d
+      USE tl_set_vbc_mod,       ONLY : tl_set_vbc
+      USE tl_step2d_mod,        ONLY : tl_step2d
 # ifdef FLOATS_NOT_YET
-!!    USE tl_step_floats_mod, ONLY : tl_step_floats
+!!    USE tl_step_floats_mod,   ONLY : tl_step_floats
 # endif
 !
       implicit none
@@ -204,6 +208,9 @@
 # endif
 # ifdef DIAGNOSTICS
 !!          CALL set_diags (ng, tile)
+# endif
+# ifdef TIDE_GENERATING_FORCES
+            CALL equilibrium_tide (ng, tile, iTLM)
 # endif
             CALL tl_diag (ng, tile)
 # ifdef TLM_CHECK

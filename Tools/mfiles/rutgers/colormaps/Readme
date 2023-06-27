@@ -1,0 +1,15 @@
+Colormaps Information:
+=====================
+
+* To use CMAP colors check the following link for ColorCET:
+
+  https://colorcet.com/index.html
+
+  For example, use
+
+  colormap(cmap('L10'));     % for Linear      color maps 'L1' - 'L19'
+  colormap(cmap('C1'));      % for Cyclic      color maps 'C1' - 'C11'
+  colormap(cmap('C1'));      % for Diverging   color maps 'D1' - 'D13'
+  colormap(cmap('R1'));      % for Rainbow     color maps 'R1' - 'R4'
+  colormap(cmap('I1'));      % for Isoliminant color maps 'I1' - 'I3'
+

@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# svn $Id: build_roms.sh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: build_roms.sh 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -161,6 +162,7 @@ export     MY_PROJECT_DIR=${PWD}
 
  export           USE_MPI=on            # distributed-memory parallelism
  export        USE_MPIF90=on            # compile with mpif90 script
+#export         which_MPI=intel         # compile with mpiifort library
 #export         which_MPI=mpich         # compile with MPICH library
 #export         which_MPI=mpich2        # compile with MPICH2 library
 #export         which_MPI=mvapich2      # compile with MVAPICH2 library
@@ -174,16 +176,44 @@ export     MY_PROJECT_DIR=${PWD}
 
 #export         USE_DEBUG=on            # use Fortran debugging flags
  export         USE_LARGE=on            # activate 64-bit compilation
-#export       USE_NETCDF4=on            # compile with NetCDF-4 library
-#export          USE_HDF5=on            # compile with HDF5 library
-#export   USE_PARALLEL_IO=on            # Parallel I/O with NetCDF-4/HDF5
 
 #--------------------------------------------------------------------------
-# If Earth System Model (ESM) coupling, set location of ESM component
-# libraries and modules. The strategy is to compile and link each ESM
-# component separately first and ROMS last since it is driving the
-# coupled system. Only the ESM components activated are considered and
-# the rest ignored.
+# Building the ROMS executable using the shared library is not recommended
+# because it requires keeping track of the matching libROMS.{so|dylib}
+# which is located in the Build_roms or Build_romsG directory and will be
+# lost and/or replaced with each new build. The option to build the shared
+# version of libROMS was introduced for use in model coupling systems.
+#--------------------------------------------------------------------------
+
+#export            SHARED=on            # build libROMS.{so|dylib}
+ export            STATIC=on            # build libROMS.a
+
+ export              EXEC=on            # build roms{G|M|O|S} executable
+
+# ROMS I/O choices and combinations. A more complete description of the
+# available options can be found in the wiki (https://myroms.org/wiki/IO).
+# Most users will want to enable at least USE_NETCDF4 because that will
+# instruct the ROMS build system to use nf-config to determine the
+# necessary libraries and paths to link into the ROMS executable.
+
+ export       USE_NETCDF4=on            # compile with NetCDF-4 library
+#export   USE_PARALLEL_IO=on            # Parallel I/O with NetCDF-4/HDF5
+#export           USE_PIO=on            # Parallel I/O with PIO library
+#export       USE_SCORPIO=on            # Parallel I/O with SCORPIO library
+
+# If any of the coupling component use the HDF5 Fortran API for primary
+# I/O, we need to compile the main driver with the HDF5 library.
+
+#export          USE_HDF5=on            # compile with HDF5 library
+
+#--------------------------------------------------------------------------
+# If coupling Earth System Models (ESM), set the location of the ESM
+# component libraries and modules. The strategy is to compile and link
+# each ESM component separately first, and then ROMS since it is driving
+# the coupled system. Only the ESM components activated are considered
+# and the rest are ignored.  Some components like WRF cannot be built
+# in a directory specified by the user but in its own root directory,
+# and cannot be moved when debugging with tools like TotalView.
 #--------------------------------------------------------------------------
 
 export        WRF_SRC_DIR=${HOME}/ocean/repository/WRF
@@ -213,7 +243,7 @@ fi
 
 MY_PATHS=${COMPILERS}/my_build_paths.sh
 
-if [ "${USE_MY_LIBS}" = "yes" ]; then
+if [ "${USE_MY_LIBS}" == "yes" ]; then
   source ${MY_PATHS} ${MY_PATHS}
 fi
 

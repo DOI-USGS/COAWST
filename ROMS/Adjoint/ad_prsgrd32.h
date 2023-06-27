@@ -1,11 +1,12 @@
-      SUBROUTINE ad_prsgrd (ng, tile)
+      MODULE ad_prsgrd_mod
 !
-!svn $Id: ad_prsgrd32.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: ad_prsgrd32.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This sub routine evaluates the  adjoint  baroclinic,  hydrostatic   !
 !  pressure gradient term using a  nonconservative  Density-Jacobian   !
@@ -27,6 +28,17 @@
 !      model with non-aligned vertical coordinate, JGR, 108,           !
 !      1-34.                                                           !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: ad_prsgrd
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE ad_prsgrd (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -54,33 +66,37 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iADM, 23, __LINE__, MyFile)
 #endif
-      CALL ad_prsgrd_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     IminS, ImaxS, JminS, JmaxS,                  &
-     &                     nrhs(ng),                                    &
+      CALL ad_prsgrd32_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+     &                       nrhs(ng),                                  &
 #ifdef MASKING
-     &                     GRID(ng) % umask,                            &
-     &                     GRID(ng) % vmask,                            &
+     &                       GRID(ng) % umask,                          &
+     &                       GRID(ng) % vmask,                          &
 #endif
-     &                     GRID(ng) % om_v,                             &
-     &                     GRID(ng) % on_u,                             &
-     &                     GRID(ng) % Hz,                               &
-     &                     GRID(ng) % ad_Hz,                            &
-     &                     GRID(ng) % z_r,                              &
-     &                     GRID(ng) % ad_z_r,                           &
-     &                     GRID(ng) % z_w,                              &
-     &                     GRID(ng) % ad_z_w,                           &
-     &                     OCEAN(ng) % rho,                             &
-     &                     OCEAN(ng) % ad_rho,                          &
+     &                       GRID(ng) % om_v,                           &
+     &                       GRID(ng) % on_u,                           &
+     &                       GRID(ng) % Hz,                             &
+     &                       GRID(ng) % ad_Hz,                          &
+     &                       GRID(ng) % z_r,                            &
+     &                       GRID(ng) % ad_z_r,                         &
+     &                       GRID(ng) % z_w,                            &
+     &                       GRID(ng) % ad_z_w,                         &
+     &                       OCEAN(ng) % rho,                           &
+     &                       OCEAN(ng) % ad_rho,                        &
+#ifdef TIDE_GENERATING_FORCES
+     &                       OCEAN(ng) % eq_tide,                       &
+     &                       OCEAN(ng) % ad_eq_tide,                    &
+#endif
 #ifdef ATM_PRESS
-     &                     FORCES(ng) % Pair,                           &
+     &                       FORCES(ng) % Pair,                         &
 #endif
 #ifdef DIAGNOSTICS_UV
-!!   &                     DIAGS(ng) % DiaRU,                           &
-!!   &                     DIAGS(ng) % DiaRV,                           &
+!!   &                       DIAGS(ng) % DiaRU,                         &
+!!   &                       DIAGS(ng) % DiaRV,                         &
 #endif
-     &                     OCEAN(ng) % ad_ru,                           &
-     &                     OCEAN(ng) % ad_rv)
+     &                       OCEAN(ng) % ad_ru,                         &
+     &                       OCEAN(ng) % ad_rv)
 #ifdef PROFILE
       CALL wclock_off (ng, iADM, 23, __LINE__, MyFile)
 #endif
@@ -89,25 +105,28 @@
       END SUBROUTINE ad_prsgrd
 !
 !***********************************************************************
-      SUBROUTINE ad_prsgrd_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           IminS, ImaxS, JminS, JmaxS,            &
-     &                           nrhs,                                  &
+      SUBROUTINE ad_prsgrd32_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
+     &                             nrhs,                                &
 #ifdef MASKING
-     &                           umask, vmask,                          &
+     &                             umask, vmask,                        &
 #endif
-     &                           om_v, on_u,                            &
-     &                           Hz, ad_Hz,                             &
-     &                           z_r, ad_z_r,                           &
-     &                           z_w, ad_z_w,                           &
-     &                           rho, ad_rho,                           &
+     &                             om_v, on_u,                          &
+     &                             Hz, ad_Hz,                           &
+     &                             z_r, ad_z_r,                         &
+     &                             z_w, ad_z_w,                         &
+     &                             rho, ad_rho,                         &
+#ifdef TIDE_GENERATING_FORCES
+     &                             eq_tide, ad_eq_tide,                 &
+#endif
 #ifdef ATM_PRESS
-     &                           Pair,                                  &
+     &                             Pair,                                &
 #endif
 #ifdef DIAGNOSTICS_UV
-!!   &                           DiaRU, DiaRV,                          &
+!!   &                             DiaRU, DiaRV,                        &
 #endif
-     &                           ad_ru, ad_rv)
+     &                             ad_ru, ad_rv)
 !***********************************************************************
 !
       USE mod_param
@@ -134,6 +153,10 @@
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
 # endif
+# ifdef TIDE_GENERATING_FORCES
+      real(r8), intent(in) :: eq_tide(LBi:,LBj:)
+      real(r8), intent(inout) :: ad_eq_tide(LBi:,LBj:)
+# endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
 !!    real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
@@ -157,6 +180,10 @@
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
+# endif
+# ifdef TIDE_GENERATING_FORCES
+      real(r8), intent(in) :: eq_tide(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: ad_eq_tide(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -280,12 +307,15 @@
           cff1=1.0_r8/(z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
-          P(i,j,N(ng))=GRho0*z_w(i,j,N(ng))+                            &
+          P(i,j,N(ng))=g*z_w(i,j,N(ng))+                                &
 #ifdef ATM_PRESS
      &                 fac*(Pair(i,j)-OneAtm)+                          &
 #endif
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
+#ifdef TIDE_GENERATING_FORCES
+          P(i,j,N(ng))=P(i,j,N(ng))-g*eq_tide(i,j)
+#endif
         END DO
         DO k=N(ng)-1,1,-1
           DO i=IstrU-1,Iend
@@ -350,46 +380,46 @@
 #ifdef DIAGNOSTICS_UV
 !!          DiaRV(i,j,k,nrhs,M3pgrd)=rv(i,j,k,nrhs)
 #endif
-!>          tl_rv(i,j,k,nrhs)=om_v(i,j)*0.5_r8*                         &
-!>   &                        ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*           &
-!>   &                         (P(i,j-1,k)-P(i,j,k)-                    &
-!>   &                          HalfGRho*                               &
-!>   &                          ((rho(i,j,k)+rho(i,j-1,k))*             &
-!>   &                           (z_r(i,j,k)-z_r(i,j-1,k))-             &
-!>   &                           OneFifth*                              &
-!>   &                           ((dRx(i,j)-dRx(i,j-1))*                &
-!>   &                            (z_r(i,j,k)-z_r(i,j-1,k)-             &
-!>   &                             OneTwelfth*                          &
-!>   &                             (dZx(i,j)+dZx(i,j-1)))-              &
-!>   &                            (dZx(i,j)-dZx(i,j-1))*                &
-!>   &                            (rho(i,j,k)-rho(i,j-1,k)-             &
-!>   &                             OneTwelfth*                          &
-!>   &                             (dRx(i,j)+dRx(i,j-1))))))+           &
-!>   &                         (Hz(i,j,k)+Hz(i,j-1,k))*                 &
-!>   &                         (tl_P(i,j-1,k)-tl_P(i,j,k)-              &
-!>   &                          HalfGRho*                               &
-!>   &                          ((tl_rho(i,j,k)+tl_rho(i,j-1,k))*       &
-!>   &                           (z_r(i,j,k)-z_r(i,j-1,k))+             &
-!>   &                           (rho(i,j,k)+rho(i,j-1,k))*             &
-!>   &                           (tl_z_r(i,j,k)-tl_z_r(i,j-1,k))-       &
-!>   &                           OneFifth*                              &
-!>   &                           ((tl_dRx(i,j)-tl_dRx(i,j-1))*          &
-!>   &                            (z_r(i,j,k)-z_r(i,j-1,k)-             &
-!>   &                             OneTwelfth*                          &
-!>   &                             (dZx(i,j)+dZx(i,j-1)))+              &
-!>   &                            (dRx(i,j)-dRx(i,j-1))*                &
-!>   &                            (tl_z_r(i,j,k)-tl_z_r(i,j-1,k)-       &
-!>   &                             OneTwelfth*                          &
-!>   &                             (tl_dZx(i,j)+tl_dZx(i,j-1)))-        &
-!>   &                            (tl_dZx(i,j)-tl_dZx(i,j-1))*          &
-!>   &                            (rho(i,j,k)-rho(i,j-1,k)-             &
-!>   &                             OneTwelfth*                          &
-!>   &                             (dRx(i,j)+dRx(i,j-1)))-              &
-!>   &                            (dZx(i,j)-dZx(i,j-1))*                &
-!>   &                            (tl_rho(i,j,k)-tl_rho(i,j-1,k)-       &
-!>   &                             OneTwelfth*                          &
-!>   &                             (tl_dRx(i,j)+tl_dRx(i,j-1)))))))
-!>
+!^          tl_rv(i,j,k,nrhs)=om_v(i,j)*0.5_r8*                         &
+!^   &                        ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*           &
+!^   &                         (P(i,j-1,k)-P(i,j,k)-                    &
+!^   &                          HalfGRho*                               &
+!^   &                          ((rho(i,j,k)+rho(i,j-1,k))*             &
+!^   &                           (z_r(i,j,k)-z_r(i,j-1,k))-             &
+!^   &                           OneFifth*                              &
+!^   &                           ((dRx(i,j)-dRx(i,j-1))*                &
+!^   &                            (z_r(i,j,k)-z_r(i,j-1,k)-             &
+!^   &                             OneTwelfth*                          &
+!^   &                             (dZx(i,j)+dZx(i,j-1)))-              &
+!^   &                            (dZx(i,j)-dZx(i,j-1))*                &
+!^   &                            (rho(i,j,k)-rho(i,j-1,k)-             &
+!^   &                             OneTwelfth*                          &
+!^   &                             (dRx(i,j)+dRx(i,j-1))))))+           &
+!^   &                         (Hz(i,j,k)+Hz(i,j-1,k))*                 &
+!^   &                         (tl_P(i,j-1,k)-tl_P(i,j,k)-              &
+!^   &                          HalfGRho*                               &
+!^   &                          ((tl_rho(i,j,k)+tl_rho(i,j-1,k))*       &
+!^   &                           (z_r(i,j,k)-z_r(i,j-1,k))+             &
+!^   &                           (rho(i,j,k)+rho(i,j-1,k))*             &
+!^   &                           (tl_z_r(i,j,k)-tl_z_r(i,j-1,k))-       &
+!^   &                           OneFifth*                              &
+!^   &                           ((tl_dRx(i,j)-tl_dRx(i,j-1))*          &
+!^   &                            (z_r(i,j,k)-z_r(i,j-1,k)-             &
+!^   &                             OneTwelfth*                          &
+!^   &                             (dZx(i,j)+dZx(i,j-1)))+              &
+!^   &                            (dRx(i,j)-dRx(i,j-1))*                &
+!^   &                            (tl_z_r(i,j,k)-tl_z_r(i,j-1,k)-       &
+!^   &                             OneTwelfth*                          &
+!^   &                             (tl_dZx(i,j)+tl_dZx(i,j-1)))-        &
+!^   &                            (tl_dZx(i,j)-tl_dZx(i,j-1))*          &
+!^   &                            (rho(i,j,k)-rho(i,j-1,k)-             &
+!^   &                             OneTwelfth*                          &
+!^   &                             (dRx(i,j)+dRx(i,j-1)))-              &
+!^   &                            (dZx(i,j)-dZx(i,j-1))*                &
+!^   &                            (tl_rho(i,j,k)-tl_rho(i,j-1,k)-       &
+!^   &                             OneTwelfth*                          &
+!^   &                             (tl_dRx(i,j)+tl_dRx(i,j-1)))))))
+!^
             adfac=om_v(i,j)*0.5_r8*ad_rv(i,j,k,nrhs)
             adfac1=adfac*(P(i,j-1,k)-P(i,j,k)-                          &
      &                    HalfGRho*                                     &
@@ -438,25 +468,25 @@
             cff1=2.0_r8*FC(i,j)*FC(i,j+1)
             IF (cff1.gt.eps) THEN
               cff2=1.0_r8/(FC(i,j)+FC(i,j+1))
-!>            tl_dRx(i,j)=tl_cff1*cff2+cff1*tl_cff2
-!>
+!^            tl_dRx(i,j)=tl_cff1*cff2+cff1*tl_cff2
+!^
               ad_cff1=ad_cff1+cff2*ad_dRx(i,j)
               ad_cff2=ad_cff2+cff1*ad_dRx(i,j)
               ad_dRx(i,j)=0.0_r8
-!>            tl_cff2=-cff2*cff2*(tl_FC(i,j)+tl_FC(i,j+1))
-!>
+!^            tl_cff2=-cff2*cff2*(tl_FC(i,j)+tl_FC(i,j+1))
+!^
               adfac=-cff2*cff2*ad_cff2
               ad_FC(i,j  )=ad_FC(i,j  )+adfac
               ad_FC(i,j+1)=ad_FC(i,j+1)+adfac
               ad_cff2=0.0_r8
             ELSE
-!>            tl_dRx(i,j)=0.0_r8
-!>
+!^            tl_dRx(i,j)=0.0_r8
+!^
               ad_dRx(i,j)=0.0_r8
             END IF
-!>          tl_cff1=2.0_r8*(tl_FC(i,j)*FC(i,j+1)+                       &
-!>   &                      FC(i,j)*tl_FC(i,j+1))
-!>
+!^          tl_cff1=2.0_r8*(tl_FC(i,j)*FC(i,j+1)+                       &
+!^   &                      FC(i,j)*tl_FC(i,j+1))
+!^
             adfac=2.0_r8*ad_cff1
             ad_FC(i,j  )=ad_FC(i,j  )+FC(i,j+1)*adfac
             ad_FC(i,j+1)=ad_FC(i,j+1)+FC(i,j  )*adfac
@@ -465,25 +495,25 @@
             cff=2.0_r8*aux(i,j)*aux(i,j+1)
             IF (cff.gt.eps) THEN
               cff1=1.0_r8/(aux(i,j)+aux(i,j+1))
-!>            tl_dZx(i,j)=tl_cff*cff1+cff*tl_cff1
-!>
+!^            tl_dZx(i,j)=tl_cff*cff1+cff*tl_cff1
+!^
               ad_cff=ad_cff+cff1*ad_dZx(i,j)
               ad_cff1=ad_cff1+cff*ad_dZx(i,j)
               ad_dZx(i,j)=0.0_r8
-!>            tl_cff1=-cff1*cff1*(tl_aux(i,j)+tl_aux(i,j+1))
-!>
+!^            tl_cff1=-cff1*cff1*(tl_aux(i,j)+tl_aux(i,j+1))
+!^
               adfac=-cff1*cff1*ad_cff1
               ad_aux(i,j  )=ad_aux(i,j  )+adfac
               ad_aux(i,j+1)=ad_aux(i,j+1)+adfac
               ad_cff1=0.0_r8
             ELSE
-!>            tl_dZx(i,j)=0.0_r8
-!>
+!^            tl_dZx(i,j)=0.0_r8
+!^
               ad_dZx(i,j)=0.0_r8
             END IF
-!>          tl_cff=2.0_r8*(tl_aux(i,j)*aux(i,j+1)+                      &
-!>   &                     aux(i,j)*tl_aux(i,j+1))
-!>
+!^          tl_cff=2.0_r8*(tl_aux(i,j)*aux(i,j+1)+                      &
+!^   &                     aux(i,j)*tl_aux(i,j+1))
+!^
             adfac=2.0_r8*ad_cff
             ad_aux(i,j  )=ad_aux(i,j  )+aux(i,j+1)*adfac
             ad_aux(i,j+1)=ad_aux(i,j+1)+aux(i,j  )*adfac
@@ -493,22 +523,22 @@
         DO j=JstrV-1,Jend+1
           DO i=Istr,Iend
 #ifdef MASKING
-!>          tl_FC(i,j)=tl_FC(i,j)*vmask(i,j)
-!>
+!^          tl_FC(i,j)=tl_FC(i,j)*vmask(i,j)
+!^
             ad_FC(i,j)=ad_FC(i,j)*vmask(i,j)
 #endif
-!>          tl_FC(i,j)=tl_rho(i,j,k)-tl_rho(i,j-1,k)
-!>
+!^          tl_FC(i,j)=tl_rho(i,j,k)-tl_rho(i,j-1,k)
+!^
             ad_rho(i,j-1,k)=ad_rho(i,j-1,k)-ad_FC(i,j)
             ad_rho(i,j,  k)=ad_rho(i,j  ,k)+ad_FC(i,j)
             ad_FC(i,j)=0.0_r8
 #ifdef MASKING
-!>          tl_aux(i,j)=tl_aux(i,j)*vmask(i,j)
-!>
+!^          tl_aux(i,j)=tl_aux(i,j)*vmask(i,j)
+!^
             ad_aux(i,j)=ad_aux(i,j)*vmask(i,j)
 #endif
-!>          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i,j-1,k)
-!>
+!^          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i,j-1,k)
+!^
             ad_z_r(i,j-1,k)=ad_z_r(i,j-1,k)-ad_aux(i,j)
             ad_z_r(i,j  ,k)=ad_z_r(i,j  ,k)+ad_aux(i,j)
             ad_aux(i,j)=0.0_r8
@@ -561,46 +591,46 @@
 #ifdef DIAGNOSTICS_UV
 !!          DiaRU(i,j,k,nrhs,M3pgrd)=ru(i,j,k,nrhs)
 #endif
-!>          tl_ru(i,j,k,nrhs)=on_u(i,j)*0.5_r8*                         &
-!>   &                        ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*           &
-!>   &                         (P(i-1,j,k)-P(i,j,k)-                    &
-!>   &                          HalfGRho*                               &
-!>   &                          ((rho(i,j,k)+rho(i-1,j,k))*             &
-!>   &                           (z_r(i,j,k)-z_r(i-1,j,k))-             &
-!>   &                            OneFifth*                             &
-!>   &                            ((dRx(i,j)-dRx(i-1,j))*               &
-!>   &                             (z_r(i,j,k)-z_r(i-1,j,k)-            &
-!>   &                              OneTwelfth*                         &
-!>   &                              (dZx(i,j)+dZx(i-1,j)))-             &
-!>   &                             (dZx(i,j)-dZx(i-1,j))*               &
-!>   &                             (rho(i,j,k)-rho(i-1,j,k)-            &
-!>   &                              OneTwelfth*                         &
-!>   &                              (dRx(i,j)+dRx(i-1,j))))))+          &
-!>   &                         (Hz(i,j,k)+Hz(i-1,j,k))*                 &
-!>   &                         (tl_P(i-1,j,k)-tl_P(i,j,k)-              &
-!>   &                          HalfGRho*                               &
-!>   &                          ((tl_rho(i,j,k)+tl_rho(i-1,j,k))*       &
-!>   &                           (z_r(i,j,k)-z_r(i-1,j,k))+             &
-!>   &                           (rho(i,j,k)+rho(i-1,j,k))*             &
-!>   &                           (tl_z_r(i,j,k)-tl_z_r(i-1,j,k))-       &
-!>   &                            OneFifth*                             &
-!>   &                            ((tl_dRx(i,j)-tl_dRx(i-1,j))*         &
-!>   &                             (z_r(i,j,k)-z_r(i-1,j,k)-            &
-!>   &                              OneTwelfth*                         &
-!>   &                              (dZx(i,j)+dZx(i-1,j)))+             &
-!>   &                             (dRx(i,j)-dRx(i-1,j))*               &
-!>   &                             (tl_z_r(i,j,k)-tl_z_r(i-1,j,k)-      &
-!>   &                              OneTwelfth*                         &
-!>   &                              (tl_dZx(i,j)+tl_dZx(i-1,j)))-       &
-!>   &                             (tl_dZx(i,j)-tl_dZx(i-1,j))*         &
-!>   &                             (rho(i,j,k)-rho(i-1,j,k)-            &
-!>   &                              OneTwelfth*                         &
-!>   &                              (dRx(i,j)+dRx(i-1,j)))-             &
-!>   &                             (dZx(i,j)-dZx(i-1,j))*               &
-!>   &                             (tl_rho(i,j,k)-tl_rho(i-1,j,k)-      &
-!>   &                              OneTwelfth*                         &
-!>   &                              (tl_dRx(i,j)+tl_dRx(i-1,j)))))))
-!>
+!^          tl_ru(i,j,k,nrhs)=on_u(i,j)*0.5_r8*                         &
+!^   &                        ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*           &
+!^   &                         (P(i-1,j,k)-P(i,j,k)-                    &
+!^   &                          HalfGRho*                               &
+!^   &                          ((rho(i,j,k)+rho(i-1,j,k))*             &
+!^   &                           (z_r(i,j,k)-z_r(i-1,j,k))-             &
+!^   &                            OneFifth*                             &
+!^   &                            ((dRx(i,j)-dRx(i-1,j))*               &
+!^   &                             (z_r(i,j,k)-z_r(i-1,j,k)-            &
+!^   &                              OneTwelfth*                         &
+!^   &                              (dZx(i,j)+dZx(i-1,j)))-             &
+!^   &                             (dZx(i,j)-dZx(i-1,j))*               &
+!^   &                             (rho(i,j,k)-rho(i-1,j,k)-            &
+!^   &                              OneTwelfth*                         &
+!^   &                              (dRx(i,j)+dRx(i-1,j))))))+          &
+!^   &                         (Hz(i,j,k)+Hz(i-1,j,k))*                 &
+!^   &                         (tl_P(i-1,j,k)-tl_P(i,j,k)-              &
+!^   &                          HalfGRho*                               &
+!^   &                          ((tl_rho(i,j,k)+tl_rho(i-1,j,k))*       &
+!^   &                           (z_r(i,j,k)-z_r(i-1,j,k))+             &
+!^   &                           (rho(i,j,k)+rho(i-1,j,k))*             &
+!^   &                           (tl_z_r(i,j,k)-tl_z_r(i-1,j,k))-       &
+!^   &                            OneFifth*                             &
+!^   &                            ((tl_dRx(i,j)-tl_dRx(i-1,j))*         &
+!^   &                             (z_r(i,j,k)-z_r(i-1,j,k)-            &
+!^   &                              OneTwelfth*                         &
+!^   &                              (dZx(i,j)+dZx(i-1,j)))+             &
+!^   &                             (dRx(i,j)-dRx(i-1,j))*               &
+!^   &                             (tl_z_r(i,j,k)-tl_z_r(i-1,j,k)-      &
+!^   &                              OneTwelfth*                         &
+!^   &                              (tl_dZx(i,j)+tl_dZx(i-1,j)))-       &
+!^   &                             (tl_dZx(i,j)-tl_dZx(i-1,j))*         &
+!^   &                             (rho(i,j,k)-rho(i-1,j,k)-            &
+!^   &                              OneTwelfth*                         &
+!^   &                              (dRx(i,j)+dRx(i-1,j)))-             &
+!^   &                             (dZx(i,j)-dZx(i-1,j))*               &
+!^   &                             (tl_rho(i,j,k)-tl_rho(i-1,j,k)-      &
+!^   &                              OneTwelfth*                         &
+!^   &                              (tl_dRx(i,j)+tl_dRx(i-1,j)))))))
+!^
             adfac=on_u(i,j)*0.5_r8*ad_ru(i,j,k,nrhs)
             adfac1=adfac*(P(i-1,j,k)-P(i,j,k)-                          &
      &                    HalfGRho*                                     &
@@ -649,25 +679,25 @@
             cff1=2.0_r8*FC(i,j)*FC(i+1,j)
             IF (cff1.gt.eps) THEN
               cff2=1.0_r8/(FC(i,j)+FC(i+1,j))
-!>            tl_dRx(i,j)=tl_cff1*cff2+cff1*tl_cff2
-!>
+!^            tl_dRx(i,j)=tl_cff1*cff2+cff1*tl_cff2
+!^
               ad_cff1=ad_cff1+cff2*ad_dRx(i,j)
               ad_cff2=ad_cff2+cff1*ad_dRx(i,j)
               ad_dRx(i,j)=0.0_r8
-!>            tl_cff2=-cff2*cff2*(tl_FC(i,j)+tl_FC(i+1,j))
-!>
+!^            tl_cff2=-cff2*cff2*(tl_FC(i,j)+tl_FC(i+1,j))
+!^
               adfac=-cff2*cff2*ad_cff2
               ad_FC(i  ,j)=ad_FC(i  ,j)+adfac
               ad_FC(i+1,j)=ad_FC(i+1,j)+adfac
               ad_cff2=0.0_r8
             ELSE
-!>            tl_dRx(i,j)=0.0_r8
-!>
+!^            tl_dRx(i,j)=0.0_r8
+!^
               ad_dRx(i,j)=0.0_r8
             END IF
-!>          tl_cff1=2.0_r8*(tl_FC(i,j)*FC(i+1,j)+                       &
-!>   &                      FC(i,j)*tl_FC(i+1,j)
-!>
+!^          tl_cff1=2.0_r8*(tl_FC(i,j)*FC(i+1,j)+                       &
+!^   &                      FC(i,j)*tl_FC(i+1,j)
+!^
             adfac=2.0_r8*ad_cff1
             ad_FC(i  ,j)=ad_FC(i  ,j)+FC(i+1,j)*adfac
             ad_FC(i+1,j)=ad_FC(i+1,j)+FC(i  ,j)*adfac
@@ -676,25 +706,25 @@
             cff=2.0_r8*aux(i,j)*aux(i+1,j)
             IF (cff.gt.eps) THEN
               cff1=1.0_r8/(aux(i,j)+aux(i+1,j))
-!>            tl_dZx(i,j)=tl_cff*cff1+cff*tl_cff1
-!>
+!^            tl_dZx(i,j)=tl_cff*cff1+cff*tl_cff1
+!^
               ad_cff=ad_cff+cff1*ad_dZx(i,j)
               ad_cff1=ad_cff1+cff*ad_dZx(i,j)
               ad_dZx(i,j)=0.0_r8
-!>            tl_cff1=-cff1*cff1*(tl_aux(i,j)+tl_aux(i+1,j))
-!>
+!^            tl_cff1=-cff1*cff1*(tl_aux(i,j)+tl_aux(i+1,j))
+!^
               adfac=-cff1*cff1*ad_cff1
               ad_aux(i  ,j)=ad_aux(i  ,j)+adfac
               ad_aux(i+1,j)=ad_aux(i+1,j)+adfac
               ad_cff1=0.0_r8
             ELSE
-!>            tl_dZx(i,j)=0.0_r8
-!>
+!^            tl_dZx(i,j)=0.0_r8
+!^
               ad_dZx(i,j)=0.0_r8
             END IF
-!>          tl_cff=2.0_r8*(tl_aux(i,j)*aux(i+1,j)+                      &
-!>   &                     aux(i,j)*tl_aux(i+1,j)
-!>
+!^          tl_cff=2.0_r8*(tl_aux(i,j)*aux(i+1,j)+                      &
+!^   &                     aux(i,j)*tl_aux(i+1,j)
+!^
             adfac=2.0_r8*ad_cff
             ad_aux(i  ,j)=ad_aux(i  ,j)+aux(i+1,j)*adfac
             ad_aux(i+1,j)=ad_aux(i+1,j)+aux(i  ,j)*adfac
@@ -704,22 +734,22 @@
         DO j=Jstr,Jend
           DO i=IstrU-1,Iend+1
 #ifdef MASKING
-!>          tl_FC(i,j)=tl_FC(i,j)*umask(i,j)
-!>
+!^          tl_FC(i,j)=tl_FC(i,j)*umask(i,j)
+!^
             ad_FC(i,j)=ad_FC(i,j)*umask(i,j)
 #endif
-!>          tl_FC(i,j)=tl_rho(i,j,k)-tl_rho(i-1,j,k)
-!>
+!^          tl_FC(i,j)=tl_rho(i,j,k)-tl_rho(i-1,j,k)
+!^
             ad_rho(i-1,j,k)=ad_rho(i-1,j,k)-ad_FC(i,j)
             ad_rho(i  ,j,k)=ad_rho(i  ,j,k)+ad_FC(i,j)
             ad_FC(i,j)=0.0_r8
 #ifdef MASKING
-!>          tl_aux(i,j)=tl_aux(i,j)*umask(i,j)
-!>
+!^          tl_aux(i,j)=tl_aux(i,j)*umask(i,j)
+!^
             ad_aux(i,j)=ad_aux(i,j)*umask(i,j)
 #endif
-!>          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i-1,j,k)
-!>
+!^          tl_aux(i,j)=tl_z_r(i,j,k)-tl_z_r(i-1,j,k)
+!^
             ad_z_r(i-1,j,k)=ad_z_r(i-1,j,k)-ad_aux(i,j)
             ad_z_r(i  ,j,k)=ad_z_r(i  ,j,k)+ad_aux(i,j)
             ad_aux(i,j)=0.0_r8
@@ -764,31 +794,31 @@
 !
         DO k=1,N(ng)-1
           DO i=IstrU-1,Iend
-!>          tl_P(i,j,k)=tl_P(i,j,k+1)+tl_cff
-!>
+!^          tl_P(i,j,k)=tl_P(i,j,k+1)+tl_cff
+!^
             ad_cff=ad_cff+ad_P(i,j,k)
-!>          tl_cff=HalfGRho*((tl_rho(i,j,k+1)+tl_rho(i,j,k))*           &
-!>   &                       (z_r(i,j,k+1)-z_r(i,j,k))+                 &
-!>   &                       (rho(i,j,k+1)+rho(i,j,k))*                 &
-!>   &                       (tl_z_r(i,j,k+1)-tl_z_r(i,j,k))-           &
-!>   &                       OneFifth*                                  &
-!>   &                       ((tl_dR(i,k+1)-tl_dR(i,k))*                &
-!>   &                        (z_r(i,j,k+1)-z_r(i,j,k)-                 &
-!>   &                         OneTwelfth*                              &
-!>   &                         (dZ(i,k+1)+dZ(i,k)))+                    &
-!>   &                        (dR(i,k+1)-dR(i,k))*                      &
-!>   &                        (tl_z_r(i,j,k+1)-tl_z_r(i,j,k)-           &
-!>   &                         OneTwelfth*                              &
-!>   &                         (tl_dZ(i,k+1)+tl_dZ(i,k)))-              &
-!>   &                        (tl_dZ(i,k+1)-tl_dZ(i,k))*                &
-!>   &                        (rho(i,j,k+1)-rho(i,j,k)-                 &
-!>   &                         OneTwelfth*                              &
-!>   &                         (dR(i,k+1)+dR(i,k)))-                    &
-!>   &                        (dZ(i,k+1)-dZ(i,k))*                      &
-!>   &                        (tl_rho(i,j,k+1)-tl_rho(i,j,k)-           &
-!>   &                         OneTwelfth*                              &
-!>   &                         (tl_dR(i,k+1)+tl_dR(i,k)))))
-!>
+!^          tl_cff=HalfGRho*((tl_rho(i,j,k+1)+tl_rho(i,j,k))*           &
+!^   &                       (z_r(i,j,k+1)-z_r(i,j,k))+                 &
+!^   &                       (rho(i,j,k+1)+rho(i,j,k))*                 &
+!^   &                       (tl_z_r(i,j,k+1)-tl_z_r(i,j,k))-           &
+!^   &                       OneFifth*                                  &
+!^   &                       ((tl_dR(i,k+1)-tl_dR(i,k))*                &
+!^   &                        (z_r(i,j,k+1)-z_r(i,j,k)-                 &
+!^   &                         OneTwelfth*                              &
+!^   &                         (dZ(i,k+1)+dZ(i,k)))+                    &
+!^   &                        (dR(i,k+1)-dR(i,k))*                      &
+!^   &                        (tl_z_r(i,j,k+1)-tl_z_r(i,j,k)-           &
+!^   &                         OneTwelfth*                              &
+!^   &                         (tl_dZ(i,k+1)+tl_dZ(i,k)))-              &
+!^   &                        (tl_dZ(i,k+1)-tl_dZ(i,k))*                &
+!^   &                        (rho(i,j,k+1)-rho(i,j,k)-                 &
+!^   &                         OneTwelfth*                              &
+!^   &                         (dR(i,k+1)+dR(i,k)))-                    &
+!^   &                        (dZ(i,k+1)-dZ(i,k))*                      &
+!^   &                        (tl_rho(i,j,k+1)-tl_rho(i,j,k)-           &
+!^   &                         OneTwelfth*                              &
+!^   &                         (tl_dR(i,k+1)+tl_dR(i,k)))))
+!^
             adfac=HalfGRho*ad_cff
             adfac1=adfac*(z_r(i,j,k+1)-z_r(i,j,k))
             adfac2=adfac*(rho(i,j,k+1)+rho(i,j,k))
@@ -817,27 +847,32 @@
           cff1=1.0_r8/(z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
-!>        tl_P(i,j,N(ng))=GRho0*tl_z_w(i,j,N(ng))+                      &
-!>   &                    GRho*((tl_rho(i,j,N(ng))+tl_cff2)*            &
-!>   &                          (z_w(i,j,N(ng))-z_r(i,j,N(ng)))+        &
-!>   &                          (rho(i,j,N(ng))+cff2)*                  &
-!>   &                          (tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng))))
-!>
+#ifdef TIDE_GENERATING_FORCES
+!^        tl_P(i,j,N(ng))=tl_P(i,j,N(ng))-g*tl_eq_tide(i,j)
+!^
+          ad_eq_tide(i,j)=ad_eq_tide(i,j)-g*ad_P(i,j,N(ng))
+#endif
+!^        tl_P(i,j,N(ng))=g*tl_z_w(i,j,N(ng))+                          &
+!^   &                    GRho*((tl_rho(i,j,N(ng))+tl_cff2)*            &
+!^   &                          (z_w(i,j,N(ng))-z_r(i,j,N(ng)))+        &
+!^   &                          (rho(i,j,N(ng))+cff2)*                  &
+!^   &                          (tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng))))
+!^
           adfac=GRho*ad_P(i,j,N(ng))
           adfac1=adfac*(z_w(i,j,N(ng))-z_r(i,j,N(ng)))
           adfac2=adfac*(rho(i,j,N(ng))+cff2)
           ad_z_r(i,j,N(ng))=ad_z_r(i,j,N(ng))-adfac2
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac2+                   &
-     &                      GRho0*ad_P(i,j,N(ng))
+     &                      g*ad_P(i,j,N(ng))
           ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))+adfac1
           ad_cff2=ad_cff2+adfac1
           ad_P(i,j,N(ng))=0.0_r8
-!>        tl_cff2=0.5_r8*((tl_rho(i,j,N(ng))-tl_rho(i,j,N(ng)-1))*      &
-!>   &                    (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1+         &
-!>   &                    (rho(i,j,N(ng))-rho(i,j,N(ng)-1))*            &
-!>   &                    ((tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)))*cff1+  &
-!>   &                     (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*tl_cff1))
-!>
+!^        tl_cff2=0.5_r8*((tl_rho(i,j,N(ng))-tl_rho(i,j,N(ng)-1))*      &
+!^   &                    (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1+         &
+!^   &                    (rho(i,j,N(ng))-rho(i,j,N(ng)-1))*            &
+!^   &                    ((tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)))*cff1+  &
+!^   &                     (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*tl_cff1))
+!^
           adfac=0.5_r8*ad_cff2
           adfac1=adfac*(z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
           adfac2=adfac*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))
@@ -848,8 +883,8 @@
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac3
           ad_cff1=ad_cff1+(z_w(i,j,N(ng))-z_r(i,j,N(ng)))*adfac2
           ad_cff2=0.0_r8
-!>        tl_cff1=-cff1*cff1*(tl_z_r(i,j,N(ng))-tl_z_r(i,j,N(ng)-1))
-!>
+!^        tl_cff1=-cff1*cff1*(tl_z_r(i,j,N(ng))-tl_z_r(i,j,N(ng)-1))
+!^
           adfac=-cff1*cff1*ad_cff1
           ad_z_r(i,j,N(ng)-1)=ad_z_r(i,j,N(ng)-1)-adfac
           ad_z_r(i,j,N(ng)  )=ad_z_r(i,j,N(ng)  )+adfac
@@ -861,11 +896,11 @@
 !
         DO k=1,N(ng)
           DO i=IstrU-1,Iend
-!>          tl_dZ(i,k)=(2.0_r8*(tl_dZ(i,k)*dZ1(i,k-1)+                  &
-!>   &                          dZ1(i,k)*tl_dZ(i,k-1))-
-!>   &                  dZ(i,k)*(tl_dZ(i,k)+tl_dZ(i,k-1)))/
-!>   &                 (dZ1(i,k)+dZ1(i,k-1))
-!>                                                             recursive
+!^          tl_dZ(i,k)=(2.0_r8*(tl_dZ(i,k)*dZ1(i,k-1)+                  &
+!^   &                          dZ1(i,k)*tl_dZ(i,k-1))-
+!^   &                  dZ(i,k)*(tl_dZ(i,k)+tl_dZ(i,k-1)))/
+!^   &                 (dZ1(i,k)+dZ1(i,k-1))
+!^                                                             recursive
             adfac=ad_dZ(i,k)/(dZ1(i,k)+dZ1(i,k-1))
             adfac1=adfac*2.0_r8
             adfac2=adfac*dZ(i,k)
@@ -874,22 +909,22 @@
 
             cff=2.0_r8*dR1(i,k)*dR1(i,k-1)
             IF (cff.gt.eps) THEN
-!>            tl_dR(i,k)=(tl_cff-dR(i,k)*(tl_dR(i,k)+tl_dR(i,k-1)))/    &
-!>   &                   (dR1(i,k)+dR1(i,k-1))
-!>
+!^            tl_dR(i,k)=(tl_cff-dR(i,k)*(tl_dR(i,k)+tl_dR(i,k-1)))/    &
+!^   &                   (dR1(i,k)+dR1(i,k-1))
+!^
               adfac=ad_dR(i,k)/(dR1(i,k)+dR1(i,k-1))
               adfac1=adfac*dR(i,k)
               ad_dR(i,k-1)=ad_dR(i,k-1)-adfac1
               ad_dR(i,k  )=-adfac1
               ad_cff=ad_cff+adfac
             ELSE
-!>            tl_dR(i,k)=0.0_r8
-!>
+!^            tl_dR(i,k)=0.0_r8
+!^
               ad_dR(i,k)=0.0_r8
             END IF
-!>          tl_cff=2.0_r8*(tl_dR(i,k)*dR1(i,k-1)+                       &
-!>   &                     dR1(i,k)*tl_dR(i,k-1))
-!>
+!^          tl_cff=2.0_r8*(tl_dR(i,k)*dR1(i,k-1)+                       &
+!^   &                     dR1(i,k)*tl_dR(i,k-1))
+!^
             adfac=2.0_r8*ad_cff
             ad_dR(i,k-1)=ad_dR(i,k-1)+dR1(i,k  )*adfac
             ad_dR(i,k  )=ad_dR(i,k  )+dR1(i,k-1)*adfac
@@ -897,34 +932,34 @@
           END DO
         END DO
         DO i=IstrU-1,Iend
-!>        tl_dZ(i,0)=tl_dZ(i,1)
-!>
+!^        tl_dZ(i,0)=tl_dZ(i,1)
+!^
           ad_dZ(i,1)=ad_dZ(i,1)+ad_dZ(i,0)
           ad_dZ(i,0)=0.0_r8
-!>        tl_dR(i,0)=tl_dR(i,1)
-!>
+!^        tl_dR(i,0)=tl_dR(i,1)
+!^
           ad_dR(i,1)=ad_dR(i,1)+ad_dR(i,0)
           ad_dR(i,0)=0.0_r8
-!>        tl_dZ(i,N(ng))=tl_dZ(i,N(ng)-1)
-!>
+!^        tl_dZ(i,N(ng))=tl_dZ(i,N(ng)-1)
+!^
           ad_dZ(i,N(ng)-1)=ad_dZ(i,N(ng)-1)+ad_dZ(i,N(ng))
           ad_dZ(i,N(ng))=0.0_r8
 
-!>        tl_dR(i,N(ng))=tl_dR(i,N(ng)-1)
-!>
+!^        tl_dR(i,N(ng))=tl_dR(i,N(ng)-1)
+!^
           ad_dR(i,N(ng)-1)=ad_dR(i,N(ng)-1)+ad_dR(i,N(ng))
           ad_dR(i,N(ng))=0.0_r8
         END DO
         DO k=N(ng)-1,1,-1
           DO i=IstrU-1,Iend
-!>          tl_dZ(i,k)=tl_z_r(i,j,k+1)-tl_z_r(i,j,k)
-!>
+!^          tl_dZ(i,k)=tl_z_r(i,j,k+1)-tl_z_r(i,j,k)
+!^
             ad_z_r(i,j,k  )=ad_z_r(i,j,k  )-ad_dZ(i,k)
             ad_z_r(i,j,k+1)=ad_z_r(i,j,k+1)+ad_dZ(i,k)
             ad_dZ(i,k)=0.0_r8
 
-!>          tl_dR(i,k)=tl_rho(i,j,k+1)-tl_rho(i,j,k)
-!>
+!^          tl_dR(i,k)=tl_rho(i,j,k+1)-tl_rho(i,j,k)
+!^
             ad_rho(i,j,k  )=ad_rho(i,j,k  )-ad_dR(i,k)
             ad_rho(i,j,k+1)=ad_rho(i,j,k+1)+ad_dR(i,k)
             ad_dR(i,k)=0.0_r8
@@ -933,4 +968,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE ad_prsgrd_tile
+      END SUBROUTINE ad_prsgrd32_tile
+
+      END MODULE ad_prsgrd_mod

@@ -7,9 +7,8 @@
 
 local_sub  := ROMS/Nonlinear/Vegetation
 
-local_lib  := libNLM_veg.a
 local_src  := $(wildcard $(local_sub)/*.F)
 
-$(eval $(call make-library,$(local_lib),$(local_src)))
+sources    += $(local_src)
 
 $(eval $(compile-rules))

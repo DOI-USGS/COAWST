@@ -3,9 +3,10 @@
 
 #if defined TL_IOMS && defined RPM_RELAXATION && defined SOLVE3D
 !
-!svn $Id: ad_uv3drelax.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_uv3drelax.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -169,12 +170,12 @@
           cff=dt(ng)*0.25_r8
           DO j=Jstr,Jend
             DO i=IstrU,Iend
-!>            tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+                        &
-!>   &                         cff*(pm(i-1,j)+pm(i,j))*                 &
-!>   &                             (pn(i-1,j)+pn(i,j))*                 &
-!>   &                         (UFx(i,j)-UFx(i-1,j)+                    &
-!>   &                          UFe(i,j+1)-UFe(i,j))
-!>
+!^            tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+                        &
+!^   &                         cff*(pm(i-1,j)+pm(i,j))*                 &
+!^   &                             (pn(i-1,j)+pn(i,j))*                 &
+!^   &                         (UFx(i,j)-UFx(i-1,j)+                    &
+!^   &                          UFe(i,j+1)-UFe(i,j))
+!^
               adfac=cff*(pm(i-1,j)+pm(i,j))*                            &
      &              (pn(i-1,j)+pn(i,j))*ad_u(i,j,k,nnew)
               ad_UFx(i,j)=ad_UFx(i,j)+adfac
@@ -185,12 +186,12 @@
           END DO
           DO j=JstrV,Jend
             DO i=Istr,Iend
-!>            tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+                        &
-!>   &                         cff*(pm(i,j)+pm(i,j-1))*                 &
-!>   &                             (pn(i,j)+pn(i,j-1))*                 &
-!>   &                         (VFx(i+1,j)-VFx(i,j)+                    &
-!>   &                          VFe(i,j)-VFe(i,j-1))
-!>
+!^            tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+                        &
+!^   &                         cff*(pm(i,j)+pm(i,j-1))*                 &
+!^   &                             (pn(i,j)+pn(i,j-1))*                 &
+!^   &                         (VFx(i+1,j)-VFx(i,j)+                    &
+!^   &                          VFe(i,j)-VFe(i,j-1))
+!^
               adfac=cff*(pm(i,j)+pm(i,j-1))*                            &
      &              (pn(i,j)+pn(i,j-1))*ad_v(i,j,k,nnew)
               ad_VFx(i+1,j)=ad_VFx(i+1,j)+adfac
@@ -205,11 +206,11 @@
 !
           DO j=JstrV-1,Jend
             DO i=Istr,Iend
-!>            VFe(i,j)=tl_M3diff(ng)*pnom_r(i,j)*                       &
-!>   &                 Hz(i,j,k)*                                       &
-!>   &                 (tl_v(i,j+1,k,nrhs)-v(i,j+1,k,nrhs)-             &
-!>   &                  tl_v(i,j  ,k,nrhs)+v(i,j  ,k,nrhs))
-!>
+!^            VFe(i,j)=tl_M3diff(ng)*pnom_r(i,j)*                       &
+!^   &                 Hz(i,j,k)*                                       &
+!^   &                 (tl_v(i,j+1,k,nrhs)-v(i,j+1,k,nrhs)-             &
+!^   &                  tl_v(i,j  ,k,nrhs)+v(i,j  ,k,nrhs))
+!^
               adfac=tl_M3diff(ng)*pnom_r(i,j)*Hz(i,j,k)*ad_VFe(i,j)
               ad_v(i,j+1,k,nrhs)=ad_v(i,j+1,k,nrhs)+adfac
               ad_v(i,j  ,k,nrhs)=ad_v(i,j  ,k,nrhs)-adfac
@@ -219,16 +220,16 @@
           DO j=JstrV,Jend
             DO i=Istr,Iend+1
 # ifdef MASKING
-!>            VFx(i,j)=VFx(i,j)*pmask(i,j)
-!>
+!^            VFx(i,j)=VFx(i,j)*pmask(i,j)
+!^
               ad_VFx(i,j)=ad_VFx(i,j)*pmask(i,j)
 # endif
-!>            VFx(i,j)=tl_M3diff(ng)*pmon_p(i,j)*                       &
-!>   &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
-!>   &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
-!>   &                 (tl_v(i  ,j,k,nrhs)-v(i  ,j,k,nrhs)-             &
-!>   &                  tl_v(i-1,j,k,nrhs)+v(i-1,j,k,nrhs))
-!>
+!^            VFx(i,j)=tl_M3diff(ng)*pmon_p(i,j)*                       &
+!^   &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
+!^   &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
+!^   &                 (tl_v(i  ,j,k,nrhs)-v(i  ,j,k,nrhs)-             &
+!^   &                  tl_v(i-1,j,k,nrhs)+v(i-1,j,k,nrhs))
+!^
               adfac=tl_M3diff(ng)*pmon_p(i,j)*                          &
      &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
      &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*ad_VFx(i,j)
@@ -240,16 +241,16 @@
           DO j=Jstr,Jend+1
             DO i=IstrU,Iend
 # ifdef MASKING
-!>            UFe(i,j)=UFe(i,j)*pmask(i,j)
-!>
+!^            UFe(i,j)=UFe(i,j)*pmask(i,j)
+!^
               ad_UFe(i,j)=ad_UFe(i,j)*pmask(i,j)
 # endif
-!>            UFe(i,j)=tl_M3diff(ng)*pnom_p(i,j)*                       &
-!>   &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
-!>   &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
-!>   &                 (tl_u(i,j  ,k,nrhs)-u(i,j  ,k,nrhs)-             &
-!>   &                  tl_u(i,j-1,k,nrhs)+u(i,j-1,k,nrhs))
-!>
+!^            UFe(i,j)=tl_M3diff(ng)*pnom_p(i,j)*                       &
+!^   &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
+!^   &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*             &
+!^   &                 (tl_u(i,j  ,k,nrhs)-u(i,j  ,k,nrhs)-             &
+!^   &                  tl_u(i,j-1,k,nrhs)+u(i,j-1,k,nrhs))
+!^
               adfac=tl_M3diff(ng)*pnom_p(i,j)*                          &
      &                 0.25_r8*(Hz(i,j  ,k)+Hz(i-1,j  ,k)+              &
      &                          Hz(i,j-1,k)+Hz(i-1,j-1,k))*ad_UFe(i,j)
@@ -260,11 +261,11 @@
           END DO
           DO j=Jstr,Jend
             DO i=IstrU-1,Iend
-!>            UFx(i,j)=tl_M3diff(ng)*pmon_r(i,j)*                       &
-!>   &                 Hz(i,j,k)*                                       &
-!>   &                 (tl_u(i+1,j,k,nrhs)-u(i+1,j,k,nrhs)-             &
-!>   &                  tl_u(i  ,j,k,nrhs)+u(i  ,j,k,nrhs))
-!>
+!^            UFx(i,j)=tl_M3diff(ng)*pmon_r(i,j)*                       &
+!^   &                 Hz(i,j,k)*                                       &
+!^   &                 (tl_u(i+1,j,k,nrhs)-u(i+1,j,k,nrhs)-             &
+!^   &                  tl_u(i  ,j,k,nrhs)+u(i  ,j,k,nrhs))
+!^
               adfac=tl_M3diff(ng)*pmon_r(i,j)*Hz(i,j,k)*ad_UFx(i,j)
               ad_u(i+1,j,k,nrhs)=ad_u(i+1,j,k,nrhs)+adfac
               ad_u(i  ,j,k,nrhs)=ad_u(i  ,j,k,nrhs)-adfac

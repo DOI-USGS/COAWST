@@ -25,8 +25,8 @@
 #define UV_KIRBY
 #define WET_DRY
 #define MASKING
+#define RAMP_WAVES
 
-#define OUT_DOUBLE
 #define UV_ADV
 #define DJ_GRADPS
 #undef  SALINITY

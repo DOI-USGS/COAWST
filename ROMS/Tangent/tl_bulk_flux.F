@@ -2,9 +2,10 @@
       MODULE tl_bulk_flux_mod
 #if (defined TANGENT || defined TL_IOMS) && defined BULK_FLUXES_NOT_YET
 !
-!svn $Id: tl_bulk_flux.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_bulk_flux.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -582,8 +583,8 @@
           fac=17.502_r8*TseaC(i)/(240.97_r8+TseaC(i))
           tl_fac=17.502_r8*tl_TseaC(i)/(240.97_r8+TseaC(i))-            &
      &           tl_TseaC(i)*fac/(240.97_r8+TseaC(i))
-!>        cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*EXP(fac)
-!>
+!^        cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*EXP(fac)
+!^
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &            EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
           tl_cff=tl_fac*cff
@@ -652,8 +653,8 @@
      &               tl_Wstar(i)*0.11_r8*VisAir(i)/(Wstar(i)*Wstar(i))
           fac=LOG(10.0_r8/Zo10(i))
           tl_fac=-tl_Zo10(i)/Zo10(i)
-!>        Cd10(i)=(vonKar/fac)**2
-!>
+!^        Cd10(i)=(vonKar/fac)**2
+!^
           Cd10(i)=(vonKar/LOG(10.0_r8/Zo10(i)))**2
           tl_Cd10(i)=-2.0_r8*tl_fac*Cd10(i)/fac
           Ch10(i)=0.00115_r8
@@ -661,14 +662,14 @@
           tl_Ct10(i)=-0.5_r8*tl_Cd10(i)*Ct10(i)/Cd10(i)
           fac=vonKar/Ct10(i)
           tl_fac=-tl_Ct10(i)*fac/Ct10(i)
-!>        ZoT10(i)=10.0_r8/EXP(fac)
-!>
+!^        ZoT10(i)=10.0_r8/EXP(fac)
+!^
           ZoT10(i)=10.0_r8/EXP(vonKar/Ct10(i))
           tl_ZoT10(i)=-tl_fac*ZoT10(i)
           fac=LOG(blk_ZW(ng)/Zo10(i))
           tl_fac=-tl_Zo10(i)/Zo10(i)
-!>        Cd=(vonKar/fac)**2
-!>
+!^        Cd=(vonKar/fac)**2
+!^
           Cd=(vonKar/LOG(blk_ZW(ng)/Zo10(i)))**2
           tl_Cd=-2.0_r8*tl_fac*Cd/fac
 !
@@ -676,8 +677,8 @@
 !
           fac=LOG(blk_ZT(ng)/ZoT10(i))
           tl_fac=-tl_ZoT10(i)/ZoT10(i)
-!>        Ct(i)=vonKar/fac                      ! T transfer coefficient
-!>
+!^        Ct(i)=vonKar/fac                      ! T transfer coefficient
+!^
           Ct(i)=vonKar/LOG(blk_ZT(ng)/ZoT10(i)) ! T transfer coefficient
           tl_Ct(i)=-tl_fac*Ct(i)/fac            ! T transfer coefficient
           CC(i)=vonKar*Ct(i)/Cd
@@ -693,9 +694,9 @@
 !
 !  Note tl_delW is zero at this point.
 !
-!>        Ri(i)=-fac*g*blk_ZW(ng)*((delT(i)-delTc(i))+                  &
-!>   &                              0.61_r8*TairK(i)*delQ(i))
-!>
+!^        Ri(i)=-fac*g*blk_ZW(ng)*((delT(i)-delTc(i))+                  &
+!^   &                              0.61_r8*TairK(i)*delQ(i))
+!^
           Ri(i)=-g*blk_ZW(ng)*((delT(i)-delTc(i))+                      &
      &                          0.61_r8*TairK(i)*delQ(i))/              &
      &          (TairK(i)*delW(i)*delW(i))
@@ -710,8 +711,8 @@
           ELSE
             fac=3.0_r8*Ri(i)/CC(i)
             tl_fac=3.0_r8*tl_Ri(i)/CC(i)-tl_CC(i)*fac/CC(i)
-!>          Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                  ! Stable
-!>
+!^          Zetu(i)=CC(i)*Ri(i)/(1.0_r8+fac)                  ! Stable
+!^
             Zetu(i)=CC(i)*Ri(i)/(1.0_r8+3.0_r8*Ri(i)/CC(i))   ! Stable
             tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/(1.0_r8+fac)-    &
      &                 tl_fac*Zetu(i)/(1.0_r8+fac)
@@ -728,8 +729,8 @@
 !
 !  Note tl_delW is zero at this point.
 !
-!>        Wstar(i)=delW(i)*vonKar/(fac2-bulk_psiu(fac1,pi))
-!>
+!^        Wstar(i)=delW(i)*vonKar/(fac2-bulk_psiu(fac1,pi))
+!^
           Wstar(i)=delW(i)*vonKar/(LOG(blk_ZW(ng)/Zo10(i))-             &
      &                             bulk_psiu(blk_ZW(ng)/L10(i),pi))
           tl_Wstar(i)=-(tl_fac2-                                        &
@@ -739,9 +740,9 @@
           tl_fac1=-tl_L10(i)*fac1/L10(i)
           fac2=LOG(blk_ZT(ng)/ZoT10(i))
           tl_fac2=-tl_ZoT10(i)/ZoT10(i)
-!>        Tstar(i)=-(delT(i)-delTc(i))*vonKar/                          &
-!>   &             (fac2-bulk_psit(fac1,pi))
-!>
+!^        Tstar(i)=-(delT(i)-delTc(i))*vonKar/                          &
+!^   &             (fac2-bulk_psit(fac1,pi))
+!^
           Tstar(i)=-(delT(i)-delTc(i))*vonKar/                          &
      &             (LOG(blk_ZT(ng)/ZoT10(i))-                           &
      &              bulk_psit(blk_ZT(ng)/L10(i),pi))
@@ -753,8 +754,8 @@
           tl_fac1=-tl_L10(i)*fac1/L10(i)
           fac2=LOG(blk_ZQ(ng)/ZoT10(i))
           tl_fac2=-tl_ZoT10(i)/ZoT10(i)
-!>          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
-!>   &               (fac2-bulk_psit(fac1,pi))
+!^          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
+!^   &               (fac2-bulk_psit(fac1,pi))
           Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                          &
      &             (LOG(blk_ZQ(ng)/ZoT10(i))-                           &
      &              bulk_psit(blk_ZQ(ng)/L10(i),pi))
@@ -848,14 +849,14 @@
             tl_Wpsi(i)=tl_bulk_psiu(tl_ZoL(i),ZoL(i),pi)
             fac=blk_ZT(ng)/L(i)
             tl_fac=-tl_L(i)*fac/L(i)
-!>          Tpsi(i)=bulk_psit(fac,pi)
-!>
+!^          Tpsi(i)=bulk_psit(fac,pi)
+!^
             Tpsi(i)=bulk_psit(blk_ZT(ng)/L(i),pi)
             tl_Tpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
             fac=blk_ZQ(ng)/L(i)
             tl_fac=-tl_L(i)*fac/L(i)
-!>          Qpsi(i)=bulk_psit(fac,pi)
-!>
+!^          Qpsi(i)=bulk_psit(fac,pi)
+!^
             Qpsi(i)=bulk_psit(blk_ZQ(ng)/L(i),pi)
             tl_Qpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
 # ifdef COOL_SKIN
@@ -879,8 +880,8 @@
             fac3=delW(i)*vonKar/(fac2-Wpsi(i))
             tl_fac3=tl_delW(i)*vonKar/(fac2-Wpsi(i))-                   &
      &             (tl_fac2-tl_Wpsi(i))*fac3/(fac2-Wpsi(i))
-!>          Wstar(i)=MAX(eps,fac3)
-!>
+!^          Wstar(i)=MAX(eps,fac3)
+!^
             Wstar(i)=MAX(eps,delW(i)*vonKar/                            &
      &               (LOG(blk_ZW(ng)/ZoW(i))-Wpsi(i)))
             tl_Wstar(i)=(0.5_r8-SIGN(0.5_r8,eps-fac3))*tl_fac3
@@ -888,8 +889,8 @@
             tl_fac1=-tl_ZoT(i)*fac1/ZoT(i)
             fac2=LOG(fac1)
             tl_fac2=tl_fac1/fac1
-!>          Tstar(i)=-(delT(i)-delTc(i))*vonKar/(fac2-Tpsi(i))
-!>
+!^          Tstar(i)=-(delT(i)-delTc(i))*vonKar/(fac2-Tpsi(i))
+!^
             Tstar(i)=-(delT(i)-delTc(i))*vonKar/                        &
      &               (LOG(blk_ZT(ng)/ZoT(i))-Tpsi(i))
             tl_Tstar(i)=-(tl_delT(i)-tl_delTc(i))*vonKar/(fac2-Tpsi(i))-&
@@ -898,8 +899,8 @@
             tl_fac1=-tl_ZoQ(i)*fac1/ZoQ(i)
             fac2=LOG(fac1)
             tl_fac2=tl_fac1/fac1
-!>          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/(fac2-Qpsi(i))
-!>
+!^          Qstar(i)=-(delQ(i)-delQc(i))*vonKar/(fac2-Qpsi(i))
+!^
             Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
      &               (LOG(blk_ZQ(ng)/ZoQ(i))-Qpsi(i))
             tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/(fac2-Qpsi(i))-&
@@ -983,8 +984,8 @@
               fac3=(fac2/fac1)**0.75_r8
               tl_fac3=0.75_r8*(fac2/fac1)**(0.75_r8-1.0_r8)*            &
      &                (tl_fac2/fac1-tl_fac1*fac2/(fac1*fac1))
-!>            lambd=6.0_r8/(1.0_r8+fac3)**r3
-!>
+!^            lambd=6.0_r8/(1.0_r8+fac3)**r3
+!^
               lambd=6.0_r8/                                             &
      &              (1.0_r8+(Clam*Qbouy/(Wstar(i)+eps)**4)**0.75_r8)**r3
               tl_lambd=-r3*6.0_r8*tl_fac3/(1.0_r8+fac3)**(r3+1.0_r8)
@@ -996,8 +997,8 @@
               END IF
               fac2=fac1*Wstar(i)+eps
               tl_fac2=tl_fac1*Wstar(i)+fac1*tl_Wstar(i)
-!>            Hcool=lambd*blk_visw/fac2
-!>
+!^            Hcool=lambd*blk_visw/fac2
+!^
               Hcool=lambd*blk_visw/(SQRT(rhoAir(i)/rhoSea(i))*          &
      &                              Wstar(i)+eps)
               tl_Hcool=tl_lambd*blk_visw/fac2-tl_fac2*Hcool/fac2
@@ -1048,8 +1049,8 @@
             fac=0.622_r8*(cff*Hlv(i,j)*diffw)/(blk_Cpa*diffh)
             tl_fac=0.622_r8*diffw*(tl_cff*Hlv(i,j)+cff*tl_Hlv(i,j))/    &
      &             (blk_Cpa*diffh)
-!>          wet_bulb=1.0_r8/(1.0_r8+fac)
-!>
+!^          wet_bulb=1.0_r8/(1.0_r8+fac)
+!^
             wet_bulb=1.0_r8/(1.0_r8+0.622_r8*(cff*Hlv(i,j)*diffw)/      &
      &                       (blk_Cpa*diffh))
             tl_wet_bulb=-tl_fac*wet_bulb*wet_bulb
@@ -1163,49 +1164,49 @@
       cff=1.0_r8/rhow
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        lrflx(i,j)=LRad(i,j)*Hscale
-!>
+!^        lrflx(i,j)=LRad(i,j)*Hscale
+!^
           tl_lrflx(i,j)=tl_LRad(i,j)*Hscale
-!>        lhflx(i,j)=-LHeat(i,j)*Hscale
-!>
+!^        lhflx(i,j)=-LHeat(i,j)*Hscale
+!^
           tl_lhflx(i,j)=-tl_LHeat(i,j)*Hscale
-!>        shflx(i,j)=-SHeat(i,j)*Hscale
-!>
+!^        shflx(i,j)=-SHeat(i,j)*Hscale
+!^
           tl_shflx(i,j)=-tl_SHeat(i,j)*Hscale
-!>        stflux(i,j,itemp)=(srflx(i,j)+lrflx(i,j)+                     &
-!>   &                       lhflx(i,j)+shflx(i,j))
-!>
+!^        stflux(i,j,itemp)=(srflx(i,j)+lrflx(i,j)+                     &
+!^   &                       lhflx(i,j)+shflx(i,j))
+!^
           tl_stflux(i,j,itemp)=(tl_lrflx(i,j)+                          &
      &                          tl_lhflx(i,j)+tl_shflx(i,j))
 # ifdef MASKING
-!>        stflux(i,j,itemp)=stflx(i,j,itemp)*rmask(i,j)
-!>
+!^        stflux(i,j,itemp)=stflx(i,j,itemp)*rmask(i,j)
+!^
           tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)*rmask(i,j)
 # endif
 # ifdef WET_DRY
-!>        stflux(i,j,itemp)=stflx(i,j,itemp)*rmask_wet(i,j)
-!>
+!^        stflux(i,j,itemp)=stflx(i,j,itemp)*rmask_wet(i,j)
+!^
           tl_stflux(i,j,itemp)=tl_stflx(i,j,itemp)*rmask_wet(i,j)
 # endif
 # ifdef EMINUSP
           evap(i,j)=LHeat(i,j)/Hlv(i,j)
           tl_evap(i,j)=tl_LHeat(i,j)/Hlv(i,j)-                          &
      &                 tl_Hlv(i,j)*evap(i,j)/Hlv(i,j)
-!>        stflux(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
-!>
+!^        stflux(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
+!^
           tl_stflx(i,j,isalt)=cff*tl_evap(i,j)
 #  ifdef MASKING
           evap(i,j)=evap(i,j)*rmask(i,j)
           tl_evap(i,j)=tl_evap(i,j)*rmask(i,j)
-!>        stflux(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
-!>
+!^        stflux(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
+!^
           tl_stflux(i,j,isalt)=tl_stflx(i,j,isalt)*rmask(i,j)
 #  endif
 #  ifdef WET_DRY
           evap(i,j)=evap(i,j)*rmask_wet(i,j)
           tl_evap(i,j)=tl_evap(i,j)*rmask_wet(i,j)
-!>        stflux(i,j,isalt)=stflx(i,j,isalt)*rmask_wet(i,j)
-!>
+!^        stflux(i,j,isalt)=stflx(i,j,isalt)*rmask_wet(i,j)
+!^
           tl_stflux(i,j,isalt)=tl_stflx(i,j,isalt)*rmask_wet(i,j)
 #  endif
 # endif
@@ -1217,34 +1218,34 @@
       cff=0.5_r8/rho0
       DO j=JstrR,JendR
         DO i=Istr,IendR
-!>        sustr(i,j)=cff*(Taux(i-1,j)+Taux(i,j))
-!>
+!^        sustr(i,j)=cff*(Taux(i-1,j)+Taux(i,j))
+!^
           tl_sustr(i,j)=cff*(tl_Taux(i-1,j)+tl_Taux(i,j))
 # ifdef MASKING
-!>        sustr(i,j)=sustr(i,j)*umask(i,j)
-!>
+!^        sustr(i,j)=sustr(i,j)*umask(i,j)
+!^
           tl_sustr(i,j)=tl_sustr(i,j)*umask(i,j)
 # endif
 # ifdef WET_DRY
-!>        sustr(i,j)=sustr(i,j)*umask_wet(i,j)
-!>
+!^        sustr(i,j)=sustr(i,j)*umask_wet(i,j)
+!^
           tl_sustr(i,j)=tl_sustr(i,j)*umask_wet(i,j)
 # endif
         END DO
       END DO
       DO j=Jstr,JendR
         DO i=IstrR,IendR
-!>        svstr(i,j)=cff*(Tauy(i,j-1)+Tauy(i,j))
-!>
+!^        svstr(i,j)=cff*(Tauy(i,j-1)+Tauy(i,j))
+!^
           tl_svstr(i,j)=cff*(tl_Tauy(i,j-1)+tl_Tauy(i,j))
 # ifdef MASKING
-!>        svstr(i,j)=svstr(i,j)*vmask(i,j)
-!>
+!^        svstr(i,j)=svstr(i,j)*vmask(i,j)
+!^
           tl_svstr(i,j)=tl_svstr(i,j)*vmask(i,j)
 # endif
 # ifdef WET_DRY
-!>        svstr(i,j)=svstr(i,j)*vmask_wet(i,j)
-!>
+!^        svstr(i,j)=svstr(i,j)*vmask_wet(i,j)
+!^
           tl_svstr(i,j)=tl_svstr(i,j)*vmask_wet(i,j)
 # endif
         END DO
@@ -1255,74 +1256,74 @@
 !-----------------------------------------------------------------------
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          lrflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          lrflx)
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_lrflx)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          lhflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          lhflx)
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_lhflx)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          shflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          shflx)
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_shflx)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          stflux(:,:,itemp))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          stflux(:,:,itemp))
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_stflux(:,:,itemp))
 # ifdef EMINUSP
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          stflux(:,:,isalt))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          stflux(:,:,isalt))
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_stflux(:,:,isalt))
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          evap)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          evap)
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_evap)
 # endif
-!>      CALL exchange_u2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          sustr)
-!>
+!^      CALL exchange_u2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          sustr)
+!^
         CALL exchange_u2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_sustr)
-!>      CALL exchange_v2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          svstr)
-!>
+!^      CALL exchange_v2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          svstr)
+!^
         CALL exchange_v2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_svstr)
       END IF
 
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 4,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    lrflx, lhflx, shflx,                          &
-!>   &                    stflux(:,:,itemp))
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 4,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    lrflx, lhflx, shflx,                          &
+!^   &                    stflux(:,:,itemp))
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
@@ -1330,13 +1331,13 @@
      &                    tl_lrflx, tl_lhflx, tl_shflx,                 &
      &                    tl_stflux(:,:,itemp))
 #  ifdef EMINUSP
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    evap,                                         &
-!>   &                    stflux(:,:,isalt))
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    evap,                                         &
+!^   &                    stflux(:,:,isalt))
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
@@ -1344,12 +1345,12 @@
      &                    tl_evap,                                      &
      &                    tl_stflux(:,:,isalt))
 #  endif
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    sustr, svstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    sustr, svstr)
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

@@ -2,9 +2,10 @@
       MODULE tl_set_depth_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_set_depth.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_set_depth.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -181,20 +182,20 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
 #  if defined SEDIMENT && defined SED_MORPH
-!>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
-!>
+!^          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
+!^
             tl_h(i,j)=tl_h(i,j)-                                        &
      &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
 #  endif
 #  if defined WET_DRY
             IF (h(i,j).eq.0.0_r8) THEN
-!>            h(i,j)=eps
-!>
+!^            h(i,j)=eps
+!^
               tl_h(i,j)=0.0_r8
             END IF
 #  endif
-!>          z_w(i,j,0)=-h(i,j)
-!>
+!^          z_w(i,j,0)=-h(i,j)
+!^
             tl_z_w(i,j,0)=-tl_h(i,j)
           END DO
           DO k=1,N(ng)
@@ -214,8 +215,8 @@
               z_w0=cff_w+cff1_w*hwater
               tl_z_w0=cff1_w*tl_hwater
 
-!>            z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
-!>
+!^            z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
+!^
               tl_z_w(i,j,k)=tl_z_w0+                                    &
      &                      tl_Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)+         &
      &                      Zt_avg1(i,j)*(tl_z_w0*hinv+z_w0*tl_hinv)
@@ -223,17 +224,17 @@
               z_r0=cff_r+cff1_r*hwater
               tl_z_r0=cff1_r*tl_hwater
 
-!>            z_r(i,j,k)=z_r0+Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)
-!>
+!^            z_r(i,j,k)=z_r0+Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)
+!^
               tl_z_r(i,j,k)=tl_z_r0+                                    &
      &                      tl_Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)+         &
      &                      Zt_avg1(i,j)*(tl_z_r0*hinv+z_r0*tl_hinv)
 #  ifdef ICESHELF
-!>            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
-!>            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+!^            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+!^            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
 #  endif
-!>            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
-!>
+!^            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
+!^
               tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
             END DO
           END DO
@@ -254,20 +255,20 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
 #  if defined SEDIMENT && defined SED_MORPH
-!>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
-!>
+!^          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
+!^
             tl_h(i,j)=tl_h(i,j)-                                        &
      &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
 #  endif
 #  if defined WET_DRY
             IF (h(i,j).eq.0.0_r8) THEN
-!>            h(i,j)=eps
-!>
+!^            h(i,j)=eps
+!^
               tl_h(i,j)=0.0_r8
             END IF
 #  endif
-!>          z_w(i,j,0)=-h(i,j)
-!>
+!^          z_w(i,j,0)=-h(i,j)
+!^
             tl_z_w(i,j,0)=-tl_h(i,j)
           END DO
           DO k=1,N(ng)
@@ -288,9 +289,9 @@
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
 
-!>            z_w(i,j,k)=Zt_avg1(i,j)+                                  &
-!>   &                   (Zt_avg1(i,j)+hwater)*cff2_w
-!>
+!^            z_w(i,j,k)=Zt_avg1(i,j)+                                  &
+!^   &                   (Zt_avg1(i,j)+hwater)*cff2_w
+!^
               tl_z_w(i,j,k)=tl_Zt_avg1(i,j)+                            &
      &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_w+         &
      &                      (Zt_avg1(i,j)+hwater)*tl_cff2_w
@@ -299,19 +300,19 @@
               tl_cff2_r=cff1_r*tl_hwater*hinv+                          &
      &                  (cff_r+cff1_r*hwater)*tl_hinv
 
-!>            z_r(i,j,k)=Zt_avg1(i,j)+                                  &
-!>   &                   (Zt_avg1(i,j)+hwater)*cff2_r
-!>
+!^            z_r(i,j,k)=Zt_avg1(i,j)+                                  &
+!^   &                   (Zt_avg1(i,j)+hwater)*cff2_r
+!^
               tl_z_r(i,j,k)=tl_Zt_avg1(i,j)+                            &
      &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_r+         &
      &                      (Zt_avg1(i,j)+hwater)*tl_cff2_r
 
 #  ifdef ICESHELF
-!>            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
-!>            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+!^            z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+!^            z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
 #  endif
-!>            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
-!>
+!^            Hz(i,j,k)=z_w(i,j,k)-z_w(i,j,k-1)
+!^
               tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
             END DO
           END DO
@@ -323,65 +324,65 @@
 !-----------------------------------------------------------------------
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          h)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          h)
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_h)
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          z_w)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          z_w)
+!^
         CALL exchange_w3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
      &                          tl_z_w)
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          z_r)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          z_r)
+!^
         CALL exchange_r3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
      &                          tl_z_r)
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          Hz)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          Hz)
+!^
         CALL exchange_r3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
      &                          tl_Hz)
       END IF
 
 #  ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    h)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    h)
+!^
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_h)
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    z_w)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    z_w)
+!^
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_z_w)
-!>    CALL mp_exchange3d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    z_r, Hz)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    z_r, Hz)
+!^
       CALL mp_exchange3d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
@@ -509,26 +510,26 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
               tl_z_w0=cff1_w*tl_hwater
-!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_west(j)*(1.0_r8+z_w0*hinv)
-!>
+!^            Zw(k)=z_w0+BOUNDARY(ng)%zeta_west(j)*(1.0_r8+z_w0*hinv)
+!^
               tl_Zw(k)=tl_z_w0+                                         &
      &                 BOUNDARY(ng)%tl_zeta_west(j)*                    &
      &                 (1.0_r8+z_w0*hinv)+                              &
      &                 BOUNDARY(ng)%zeta_west(j)*                       &
      &                 (tl_z_w0*hinv+z_w0*tl_hinv)
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -545,26 +546,26 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
               tl_z_w0=cff1_w*tl_hwater
-!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_east(j)*(1.0_r8+z_w0*hinv)
-!>
+!^            Zw(k)=z_w0+BOUNDARY(ng)%zeta_east(j)*(1.0_r8+z_w0*hinv)
+!^
               tl_Zw(k)=tl_z_w0+                                         &
      &                 BOUNDARY(ng)%tl_zeta_east(j)*                    &
      &                 (1.0_r8+z_w0*hinv)+                              &
      &                 BOUNDARY(ng)%zeta_east(j)*                       &
      &                 (tl_z_w0*hinv+z_w0*tl_hinv)
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -581,26 +582,26 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
               tl_z_w0=cff1_w*tl_hwater
-!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_south(i)*(1.0_r8+z_w0*hinv)
-!>
+!^            Zw(k)=z_w0+BOUNDARY(ng)%zeta_south(i)*(1.0_r8+z_w0*hinv)
+!^
               tl_Zw(k)=tl_z_w0+                                         &
      &                 BOUNDARY(ng)%tl_zeta_south(i)*                   &
      &                 (1.0_r8+z_w0*hinv)+                              &
      &                 BOUNDARY(ng)%zeta_south(i)*                      &
      &                 (tl_z_w0*hinv+z_w0*tl_hinv)
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -617,26 +618,26 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
               tl_z_w0=cff1_w*tl_hwater
-!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_north(i)*(1.0_r8+z_w0*hinv)
-!>
+!^            Zw(k)=z_w0+BOUNDARY(ng)%zeta_north(i)*(1.0_r8+z_w0*hinv)
+!^
               tl_Zw(k)=tl_z_w0+                                         &
      &                 BOUNDARY(ng)%tl_zeta_north(i)*                   &
      &                 (1.0_r8+z_w0*hinv)+                              &
      &                 BOUNDARY(ng)%zeta_north(i)*                      &
      &                 (tl_z_w0*hinv+z_w0*tl_hinv)
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -666,8 +667,8 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
@@ -675,19 +676,19 @@
               cff2_w=(cff_w+cff1_w*hwater)*hinv
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>            Zw(k)=BOUNDARY(ng)%zeta_west(j)+                          &
-!>   &              (BOUNDARY(ng)%zeta_west(j)+hwater)*cff2_w
-!>
+!^            Zw(k)=BOUNDARY(ng)%zeta_west(j)+                          &
+!^   &              (BOUNDARY(ng)%zeta_west(j)+hwater)*cff2_w
+!^
               tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)+                    &
      &                 (BOUNDARY(ng)%tl_zeta_west(j)+                   &
      &                  tl_hwater)*cff2_w+                              &
      &                 (BOUNDARY(ng)%zeta_west(j)+                      &
      &                  hwater)*tl_cff2_w
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -704,8 +705,8 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
@@ -713,19 +714,19 @@
               cff2_w=(cff_w+cff1_w*hwater)*hinv
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>            Zw(k)=BOUNDARY(ng)%zeta_east(j)+                          &
-!>   &              (BOUNDARY(ng)%zeta_east(j)+hwater)*cff2_w
-!>
+!^            Zw(k)=BOUNDARY(ng)%zeta_east(j)+                          &
+!^   &              (BOUNDARY(ng)%zeta_east(j)+hwater)*cff2_w
+!^
               tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)+                    &
      &                 (BOUNDARY(ng)%tl_zeta_east(j)+                   &
      &                  tl_hwater)*cff2_w+                              &
      &                 (BOUNDARY(ng)%zeta_east(j)+                      &
      &                  hwater)*tl_cff2_w
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -742,8 +743,8 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
@@ -751,19 +752,19 @@
               cff2_w=(cff_w+cff1_w*hwater)*hinv
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>            Zw(k)=BOUNDARY(ng)%zeta_south(i)+                         &
-!>   &              (BOUNDARY(ng)%zeta_south(i)+hwater)*cff2_w
-!>
+!^            Zw(k)=BOUNDARY(ng)%zeta_south(i)+                         &
+!^   &              (BOUNDARY(ng)%zeta_south(i)+hwater)*cff2_w
+!^
               tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)+                   &
      &                 (BOUNDARY(ng)%tl_zeta_south(i)+                  &
      &                  tl_hwater)*cff2_w+                              &
      &                 (BOUNDARY(ng)%zeta_south(i)+                     &
      &                  hwater)*tl_cff2_w
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -780,8 +781,8 @@
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
             tl_hinv=-hinv*hinv*tl_hwater
-!>          Zw(0)=-h(i,j)
-!>
+!^          Zw(0)=-h(i,j)
+!^
             tl_Zw(0)=-tl_h(i,j)
             DO k=1,N(ng)
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
@@ -789,19 +790,19 @@
               cff2_w=(cff_w+cff1_w*hwater)*hinv
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>            Zw(k)=BOUNDARY(ng)%zeta_north(i)+                         &
-!>   &              (BOUNDARY(ng)%zeta_north(i)+hwater)*cff2_w
-!>
+!^            Zw(k)=BOUNDARY(ng)%zeta_north(i)+                         &
+!^   &              (BOUNDARY(ng)%zeta_north(i)+hwater)*cff2_w
+!^
               tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)+                   &
      &                 (BOUNDARY(ng)%tl_zeta_north(i)+                  &
      &                  tl_hwater)*cff2_w+                              &
      &                 (BOUNDARY(ng)%zeta_north(i)+                     &
      &                  hwater)*tl_cff2_w
 #   ifdef ICESHELF
-!>            Zw(k)=Zw(k)-ABS(zice(i,j))
+!^            Zw(k)=Zw(k)-ABS(zice(i,j))
 #   endif
-!>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
-!>
+!^            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
+!^
               tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
@@ -815,12 +816,12 @@
 !-----------------------------------------------------------------------
 !
       DO ibry=1,4
-!>      CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
-!>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(ng), NSperiodic(ng),         &
-!>   &                          Hz_bry(:,:,ibry))
-!>
+!^      CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
+!^   &                          LBij, UBij, 1, N(ng),                   &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(ng), NSperiodic(ng),         &
+!^   &                          Hz_bry(:,:,ibry))
+!^
         CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
      &                          LBij, UBij, 1, N(ng),                   &
      &                          NghostPoints,                           &

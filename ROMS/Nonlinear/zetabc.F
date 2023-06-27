@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE zetabc_mod
 !
-!svn $Id: zetabc.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: zetabc.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -799,7 +800,7 @@
           END DO
         END IF
       END IF
-
+!
       IF (.not.NSperiodic(ng)) THEN
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=Istr,Iend
@@ -822,7 +823,7 @@
           END DO
         END IF
       END IF
-
+!
       IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Istr-1).and.                          &

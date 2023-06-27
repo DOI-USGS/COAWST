@@ -1,6 +1,7 @@
-# svn $Id: CMakeLists.txt 1053 2020-12-29 00:41:48Z arango $
+# git $Id$
+# svn $Id: CMakeLists.txt 1151 2023-02-09 03:08:53Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -100,6 +101,13 @@ if( IN_ECBUILD )
   link_libraries(${MPI_Fortran_LIBRARIES})
 endif()
 
+# SCORPIO Include directories
+
+if( SCORPIO )
+  include_directories( ${PIO_INCDIR} )
+  message( STATUS "SCORPIO included: ${PIO_INCDIR}" )
+endif()
+
 ###########################################################################
 # ROMS
 ###########################################################################
@@ -111,6 +119,8 @@ add_subdirectory( "ROMS/Modules" )
 add_subdirectory( "ROMS/Nonlinear" )
 add_subdirectory( "ROMS/Nonlinear/Biology" )
 add_subdirectory( "ROMS/Nonlinear/Sediment" )
+add_subdirectory( "ROMS/Nonlinear/Vegetation" )
+add_subdirectory( "ROMS/Nonlinear/Wec" )
 add_subdirectory( "ROMS/Utility" )
 
 include_directories(
@@ -125,6 +135,8 @@ include_directories(
   "ROMS/Nonlinear"
   "ROMS/Nonlinear/Biology"
   "ROMS/Nonlinear/Sediment"
+  "ROMS/Nonlinear/Vegetation"
+  "ROMS/Nonlinear/Wec" 
   "ROMS/Utility"
 )
 
@@ -142,6 +154,8 @@ list(APPEND srcs
      ${ROMS_Nonlinear_files}
      ${ROMS_Nonlinear_Biology_files}
      ${ROMS_Nonlinear_Sediment_files}
+     ${ROMS_Nonlinear_Vegetation_files}
+     ${ROMS_Nonlinear_Wec_files}
      ${ROMS_Utility_files}
 )
 
@@ -314,7 +328,7 @@ endif()
 # manually here.
 #
 # I would have done all the files in "Master" here to simplify things
-# but "ocean_control.F", "coupler.F", and "propagator.F" include
+# but "roms_kernel.F", "coupler.F", and "propagator.F" include
 # modules needed in other parts of the code outside "Master".
 
 if( ROMS_EXECUTABLE )
@@ -339,6 +353,15 @@ if( ROMS_EXECUTABLE )
     link_directories( ${PARPACK_LIBDIR} ${ARPACK_LIBDIR} )
   endif()
 
+  # If parallel I/O using SCORPIO is requested, add directory for the
+  # linker. The "link_directories" and "target_link_libraries" for
+  # are separated because "link_libraries" has to be set before
+  # "add_executable" and "target_link_libraries" has to be set after.
+
+  if( SCORPIO )
+    link_directories( ${PNETCDF_LIBDIR} ${PIO_LIBDIR} )
+  endif()
+
   preprocess_fortran( Master/master.F )
   set( master_f90 "${f90srcs}" )
   add_executable( "${BIN}" ${master_f90} )
@@ -357,10 +380,18 @@ if( ROMS_EXECUTABLE )
     Message( FATAL_ERROR "Unknown configuration!" )
   endif()
 
-  # If ARPACK is needed, add to linking library list. The path to the library is set above.
+  # If ARPACK is needed, add to linking library list.
+  # The path to the library is set above.
 
   if( ARPACK )
     target_link_libraries( "${BIN}" parpack arpack )
+  endif()
+
+  # If parallel I/O with SCORPIO is requested, add to linking library list.
+  # The path to the libraries are set above.
+
+  if( SCORPIO )
+    target_link_libraries( "${BIN}" pnetcdf piof pioc )
   endif()
 
   install( TARGETS "${BIN}" RUNTIME )

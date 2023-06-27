@@ -109,18 +109,21 @@
       real(r8), parameter :: eps_inv=1.0E14_r8
       real(r8) :: Hs, Td, depth, RR, zws, w_s
       real(r8) :: cff, worb1, worb2, worb 
-!      
-      worb1=pi*Hs*zws/(Td*depth)
+      real(r8), parameter :: eps = 1.0E-14_r8
+!
+      worb1=pi*Hs*zws/(Td*depth+eps)
       worb2=worb1*2.0_r8*(RR+RR-1.0_r8)
 !
 !  Using the SANTOSS model formulation 
 ! 
       cff=1.0_r8/8.0_r8
       worb=cff*worb1*SQRT(64.0_r8-(-worb1+                              &
-     &          SQRT(worb1**2.0_r8+32.0_r8*                             &
-     &               worb2**2.0_r8))**2.0_r8/(worb2**2.0_r8))+          &
+     &          SQRT(worb1**2+32.0_r8*                                  &
+     &               worb2**2+eps))**2/(worb2**2+eps))+                 &
      &               worb2*SIN(2.0_r8*ACOS(cff*(-worb1+                 &
-     &          SQRT(worb1**2.0_r8+32.0_r8*worb2**2.0_r8))/worb2))
+     &          SQRT(worb1**2+32.0_r8*worb2**2))/                       &
+     &              (worb2+eps)))
+
 !
 ! Prevent worb from going to Infinity when worb2=0.0 
 ! 
@@ -290,7 +293,7 @@
       c1=2.6_r8
       ratio=ahat/ksw
       IF(ratio.gt.1.587_r8) THEN
-        cff1=MAX( (T_iu/T_i),0.0_r8 )
+        cff1=MAX( (T_iu/(T_i+eps)),0.0_r8 )
         cff2=(2.0_r8*cff1)**c1
         cff3=cff2*ratio
 !

@@ -2,9 +2,10 @@
       MODULE bulk_flux_mod
 #ifdef BULK_FLUXES
 !
-!svn $Id: bulk_flux.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: bulk_flux.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -312,7 +313,7 @@
       real(r8), parameter :: eps = 1.0E-20_r8
       real(r8), parameter :: r3 = 1.0_r8/3.0_r8
 
-      real(r8) :: Bf, Cd, Hl, Hlw, Hscale, Hscale2, Hs, Hsr, IER
+      real(r8) :: Bf, Cd, Hl, Hlw, Hscale, Hs, Hsr, IER
       real(r8) :: PairM,  RH, Taur
       real(r8) :: Wspeed, ZQoL, ZToL
 
@@ -430,7 +431,6 @@
 !  Compute Atmosphere-ocean fluxes using a bulk flux parameterization.
 !
       Hscale=rho0*Cp
-      Hscale2=1.0_r8/(rho0*Cp)
       twopi_inv=0.5_r8/pi
       DO j=Jstr-1,JendR
         DO i=Istr-1,IendR
@@ -884,12 +884,13 @@
 !  ocean. It is  multiplied by surface salinity when computing state
 !  variable stflx(:,:,isalt) in "set_vbc.F".
 !
+      Hscale=1.0_r8/(rho0*Cp)
       cff=1.0_r8/rhow
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          lrflx(i,j)=LRad(i,j)*Hscale2
-          lhflx(i,j)=-LHeat(i,j)*Hscale2
-          shflx(i,j)=-SHeat(i,j)*Hscale2
+          lrflx(i,j)=LRad(i,j)*Hscale
+          lhflx(i,j)=-LHeat(i,j)*Hscale
+          shflx(i,j)=-SHeat(i,j)*Hscale
           stflux(i,j,itemp)=(srflx(i,j)+lrflx(i,j)+                     &
      &                       lhflx(i,j)+shflx(i,j))
 # ifdef MASKING

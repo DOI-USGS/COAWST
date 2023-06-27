@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE check_multifile (ng, model)
 !
-!svn $Id: check_multifile.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: check_multifile.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -85,7 +86,7 @@
         Tintrp(2,i,ng)=0.0_r8
         Vtime(1,i,ng)=0.0_r8
         Vtime(2,i,ng)=0.0_r8
-        ncFRCid(i,ng)=-1
+        FRCncid(i,ng)=-1
       END DO
 !
 !  Get initialization time string.
@@ -97,8 +98,8 @@
       IF (model.eq.iADM) THEN
         Tfinal=time(ng)-ntimes(ng)*dt(ng)
       ELSE
-!       Tfinal=time(ng)+ntimes(ng)*dt(ng)
-        Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
+        Tfinal=time(ng)+ntimes(ng)*dt(ng)
+!       Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
       END IF
       CALL time_string (tfinal, F_code)
 !
@@ -251,8 +252,8 @@
       IF (model.eq.iADM) THEN
         Tfinal=time(ng)-ntimes(ng)*dt(ng)
       ELSE
-!       Tfinal=time(ng)+ntimes(ng)*dt(ng)
-        Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
+        Tfinal=time(ng)+ntimes(ng)*dt(ng)
+!       Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
       END IF
 !
 !  Set minimum and maximum time values.
@@ -260,7 +261,7 @@
       Nfiles=S(ng)%Nfiles
       DO ifile=1,Nfiles
         ncname=TRIM(S(ng)%files(ifile))
-        foundit=check_file(ng, model, Nfiles, ncname,                   &
+        foundit=check_file(ng, model, Nfiles, ncname, S(ng)%IOtype,     &
      &                     Tmin, Tmax, Tscale,  Lcheck)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         S(ng)%time_min(ifile)=Tmin
@@ -420,8 +421,8 @@
       IF (model.eq.iADM) THEN
         Tfinal=time(ng)-ntimes(ng)*dt(ng)
       ELSE
-!       Tfinal=time(ng)+ntimes(ng)*dt(ng)
-        Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
+        Tfinal=time(ng)+ntimes(ng)*dt(ng)
+!       Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
       END IF
 !
 !  Set minimum and maximum time values.
@@ -430,7 +431,7 @@
         Nfiles=S(i,ng)%Nfiles
         DO ifile=1,Nfiles
           ncname=TRIM(S(i,ng)%files(ifile))
-          foundit=check_file(ng, model, Nfiles, ncname,                 &
+          foundit=check_file(ng, model, Nfiles, ncname, S(i,ng)%IOtype, &
      &                       Tmin, Tmax, Tscale, Lcheck)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           S(i,ng)%time_min(ifile)=Tmin
@@ -529,8 +530,8 @@
       RETURN
       END SUBROUTINE multifile_info_s2d
 !
-      FUNCTION check_file (ng, model, Nfiles, ncname, Tmin, Tmax,       &
-     &                     Tscale, Lcheck) RESULT (foundit)
+      FUNCTION check_file (ng, model, Nfiles, ncname, IOtype,           &
+     &                     Tmin, Tmax, Tscale, Lcheck) RESULT (foundit)
 !
 !=======================================================================
 !                                                                      !
@@ -545,6 +546,9 @@
 !     model        Calling model identifier.                           !
 !     Nfiles       Number of multi-files.                              !
 !     ncname       NetCDF file name to process (string).               !
+!     IOtype       I/O processing library (integer):                   !
+!                     io_nf90    Standard NetCDF libray                !
+!                     io_pio     Parallel I/O library                  !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -561,7 +565,11 @@
       USE mod_param
       USE mod_parallel
       USE mod_iounits
+      USE mod_ncparam
       USE mod_netcdf
+#if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+#endif
       USE mod_scalars
 !
       USE strings_mod, ONLY : FoundError, lowercase
@@ -572,7 +580,7 @@
 !
       logical, intent(out) :: Lcheck
 !
-      integer, intent(in) :: ng, model, Nfiles
+      integer, intent(in) :: ng, model, Nfiles, IOtype
 !
       character (*), intent(in) :: ncname
 !
@@ -588,6 +596,12 @@
 
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", check_file"
+
+#if defined PIO_LIB && defined DISTRIBUTE
+!
+      TYPE (File_desc_t) :: pioFile
+      TYPE (Var_desc_t)  :: TvarDesc
+#endif
 !
       SourceFile=MyFile
 !
@@ -608,7 +622,14 @@
 !
 !  Open NetCDF file for reading.
 !
-      CALL netcdf_open (ng, model, ncname, 0, ncid)
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL netcdf_open (ng, model, ncname, 0, ncid)
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_open (ng, model, ncname, 0, pioFile)
+#endif
+      END SELECT
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
         IF (Master) WRITE (stdout,10) TRIM(ncname)
         RETURN
@@ -616,8 +637,16 @@
 !
 !  Inquire about all the variables
 !
-      CALL netcdf_inq_var (ng, model, ncname,                           &
-     &                     ncid = ncid)
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL netcdf_inq_var (ng, model, ncname,                       &
+     &                         ncid = ncid)
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_inq_var (ng, model, ncname,                   &
+     &                             pioFile = pioFile)
+#endif
+      END SELECT
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Search for the time variable: any 1D array variable with the string
@@ -647,12 +676,24 @@
 !
 !  Inquire about requested variable.
 !
-      CALL netcdf_inq_var (ng, model, ncname,                           &
-     &                     ncid = ncid,                                 &
-     &                     MyVarName = TRIM(TvarName),                  &
-     &                     VarID = TvarID,                              &
-     &                     nVarDim = nvdim,                             &
-     &                     nVarAtt = nvatt)
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL netcdf_inq_var (ng, model, ncname,                       &
+     &                         ncid = ncid,                             &
+     &                         MyVarName = TRIM(TvarName),              &
+     &                         VarID = TvarID,                          &
+     &                         nVarDim = nvdim,                         &
+     &                         nVarAtt = nvatt)
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_inq_var (ng, model, ncname,                   &
+     &                             pioFile = pioFile,                   &
+     &                             MyVarName = TRIM(TvarName),          &
+     &                             pioVar = TvarDesc,                   &
+     &                             nVarDim = nvdim,                     &
+     &                             nVarAtt = nvatt)
+#endif
+      END SELECT
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set number of records available and check the 'units' attribute.
@@ -694,23 +735,51 @@
 !
 !  Read in time variable minimum and maximun values (input time units).
 !
-      CALL netcdf_get_time (ng, model, ncname, TvarName,                &
-     &                      Rclock%DateNumber, Tmin,                    &
-     &                      ncid = ncid,                                &
-     &                      start = (/1/),                              &
-     &                      total = (/1/))
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL netcdf_get_time (ng, model, ncname, TvarName,            &
+     &                          Rclock%DateNumber, Tmin,                &
+     &                          ncid = ncid,                            &
+     &                          start = (/1/),                          &
+     &                          total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-      CALL netcdf_get_time (ng, model, ncname, TvarName,                &
-     &                      Rclock%DateNumber, Tmax,                    &
-     &                      ncid = ncid,                                &
-     &                      start = (/Nrec/),                           &
-     &                      total = (/1/))
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          CALL netcdf_get_time (ng, model, ncname, TvarName,            &
+     &                          Rclock%DateNumber, Tmax,                &
+     &                          ncid = ncid,                            &
+     &                          start = (/Nrec/),                       &
+     &                          total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_get_time (ng, model, ncname, TvarName,        &
+     &                              Rclock%DateNumber, Tmin,            &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/1/),                      &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+          CALL pio_netcdf_get_time (ng, model, ncname, TvarName,        &
+     &                              Rclock%DateNumber, Tmax,            &
+     &                              pioFile = pioFile,                  &
+     &                              start = (/Nrec/),                   &
+     &                              total = (/1/))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#endif
+      END SELECT
+
 !
 !  Close NetCDF file.
 !
-      CALL netcdf_close (ng, model, ncid, ncname, .FALSE.)
+      SELECT CASE (IOtype)
+        CASE (io_nf90)
+          CALL netcdf_close (ng, model, ncid, ncname, .FALSE.)
+#if defined PIO_LIB && defined DISTRIBUTE
+        CASE (io_pio)
+          CALL pio_netcdf_close (ng, model, pioFile, ncname, .FALSE.)
+#endif
+      END SELECT
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
  10   FORMAT (/, ' CHECK_FILE - unable to open grid NetCDF file: ',a)

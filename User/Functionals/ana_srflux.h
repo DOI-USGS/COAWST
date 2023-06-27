@@ -1,8 +1,9 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_srflux.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,7 +34,7 @@
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      GRID(ng) % lonr,                            &
      &                      GRID(ng) % latr,                            &
-#ifdef ALBEDO_CLOUD
+#ifdef ALBEDO
      &                      FORCES(ng) % cloud,                         &
      &                      FORCES(ng) % Hair,                          &
      &                      FORCES(ng) % Tair,                          &
@@ -59,7 +60,7 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
-#ifdef ALBEDO_CLOUD
+#ifdef ALBEDO
      &                            cloud, Hair, Tair, Pair,              &
 #endif
      &                            srflx)
@@ -83,7 +84,7 @@
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: lonr(LBi:,LBj:)
       real(r8), intent(in) :: latr(LBi:,LBj:)
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       real(r8), intent(in) :: cloud(LBi:,LBj:)
       real(r8), intent(in) :: Hair(LBi:,LBj:)
       real(r8), intent(in) :: Tair(LBi:,LBj:)
@@ -93,7 +94,7 @@
 #else
       real(r8), intent(in) :: lonr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: latr(LBi:UBi,LBj:UBj)
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
@@ -105,11 +106,12 @@
 !  Local variable declarations.
 !
       integer :: i, j
-#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
+!
+#if defined ALBEDO || defined DIURNAL_SRFLUX
       real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad
-      real(r8) :: cff1, cff2, hour, yday
-# ifdef ALBEDO_CLOUD
+      real(r8) :: cff1, cff2
+# ifdef ALBEDO
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
 #endif
@@ -119,12 +121,12 @@
 
 #include "set_bounds.h"
 
-#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
+#if defined ALBEDO || defined DIURNAL_SRFLUX
 !
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
 !
-!  ALBEDO_CLOUD option: Compute shortwave radiation flux using the Laevastu
+!  ALBEDO option: Compute shortwave radiation flux using the Laevastu
 !                 cloud correction to the Zillman equation for cloudless
 !  radiation (Parkinson and Washington 1979, JGR, 84, 311-337).  Notice
 !  that flux is scaled from W/m2 to degC m/s by dividing by (rho0*Cp).
@@ -159,7 +161,7 @@
 !
       Hangle=(12.0_r8-hour)*pi/12.0_r8
 !
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       Rsolar=Csolar/(rho0*Cp)
 # endif
       DO j=JstrT,JendT
@@ -172,7 +174,7 @@
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
           cff2=COS(LatRad)*COS(Dangle)
-# if defined ALBEDO_CLOUD
+# if defined ALBEDO
 !
 !  Estimate variation in optical thickness of the atmosphere over
 !  the course of a day under cloudless skies (Zillman, 1972). To

@@ -25,9 +25,10 @@
 
 #ifdef PROPAGATOR
 !
-!svn $Id: packing.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: packing.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -335,7 +336,7 @@
       END SUBROUTINE r_norm2
 # endif
 
-# if defined ADJOINT && (defined FORCING_SV || defined SO_SEMI)
+# if defined ADJOINT && defined FORCING_SV
 !
       SUBROUTINE ad_pack (ng, tile, Mstr, Mend, ad_state)
 !
@@ -1225,7 +1226,7 @@
 
 #  ifdef SOLVE3D
 !
-!  Load adjoint of tracers variables.
+!  Load adjoint of surface tracer flux variables.
 !
       DO itrc=1,NT(ng)
         IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
@@ -1253,6 +1254,703 @@
 #   else
               is=(i+Ioff)+(j-Joff)*Imax+offset(isTsur(itrc))
               ad_state(is)=scale*ad_stflx(i,j,itrc)
+#   endif
+            END DO
+          END DO
+        END IF
+      END DO
+#  endif
+!
+      RETURN
+      END SUBROUTINE ad_pack_tile
+
+# elif defined SO_SEMI
+!
+      SUBROUTINE ad_pack (ng, tile, Mstr, Mend, ad_state)
+!
+!=======================================================================
+!                                                                      !
+!  This routine packs the adjoint variables into the state vector.     !
+!  The state vector contains only interior water points.               !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_grid
+      USE mod_stepping
+#  ifdef DISTRIBUTE
+      USE mod_storage
+#  endif
+#  ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_scatter_state
+#  endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: Mstr, Mend
+#  ifdef ASSUMED_SHAPE
+      real(r8), intent(out) :: ad_state(Mstr:)
+#  else
+      real(r8), intent(out) :: ad_state(Mstr:Mend)
+#  endif
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_pack"
+!
+#  include "tile.h"
+!
+#  ifdef PROFILE
+      CALL wclock_on (ng, iADM, 2, __LINE__, MyFile)
+#  endif
+
+      CALL ad_pack_tile (ng, tile,                                      &
+     &                   LBi, UBi, LBj, UBj,                            &
+     &                   IminS, ImaxS, JminS, JmaxS,                    &
+     &                   kstp(ng),                                      &
+#  ifdef SOLVE3D
+     &                   nstp(ng),                                      &
+#  endif
+#  ifdef MASKING
+     &                   GRID(ng) % IJwaterR,                           &
+     &                   GRID(ng) % IJwaterU,                           &
+     &                   GRID(ng) % IJwaterV,                           &
+     &                   GRID(ng) % rmask,                              &
+     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % vmask,                              &
+#  endif
+#  ifdef DISTRIBUTE
+     &                   1, Mstate(ng), Swork)
+#  else
+     &                   Mstr, Mend, ad_state)
+#  endif
+
+#  ifdef PROFILE
+      CALL wclock_off (ng, iADM, 2, __LINE__, MyFile)
+#  endif
+
+#  ifdef DISTRIBUTE
+!
+!  Scatter (global to threaded) adjoint state solution to all
+!  distributed nodes.
+!
+      CALL mp_scatter_state (ng, iADM, Mstr, Mend, Mstate(ng),          &
+     &                       Swork, ad_state)
+#  endif
+!
+      RETURN
+      END SUBROUTINE ad_pack
+!
+!***********************************************************************
+      SUBROUTINE ad_pack_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
+     &                         kstp,                                    &
+#  ifdef SOLVE3D
+     &                         nstp,                                    &
+#  endif
+#  ifdef MASKING
+     &                         IJwaterR, IJwaterU, IJwaterV,            &
+     &                         rmask, umask, vmask,                     &
+#  endif
+     &                         Mstr, Mend, ad_state)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_forces
+      USE mod_ncparam
+      USE mod_scalars
+      USE mod_ocean
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+      integer, intent(in) :: Mstr, Mend
+      integer, intent(in) :: kstp
+#  ifdef SOLVE3D
+      integer, intent(in) :: nstp
+#  endif
+!
+#  ifdef ASSUMED_SHAPE
+#   ifdef MASKING
+      integer, intent(in) :: IJwaterR(LBi:,LBj:)
+      integer, intent(in) :: IJwaterU(LBi:,LBj:)
+      integer, intent(in) :: IJwaterV(LBi:,LBj:)
+
+      real(r8), intent(in) :: rmask(LBi:,LBj:)
+      real(r8), intent(in) :: umask(LBi:,LBj:)
+      real(r8), intent(in) :: vmask(LBi:,LBj:)
+#   endif
+      real(r8), intent(out) :: ad_state(Mstr:)
+#  else
+#   ifdef MASKING
+      integer, intent(in) :: IJwaterR(LBi:UBi,LBj:UBj)
+      integer, intent(in) :: IJwaterU(LBi:UBi,LBj:UBj)
+      integer, intent(in) :: IJwaterV(LBi:UBi,LBj:UBj)
+
+      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#   endif
+      real(r8), intent(out) :: ad_state(Mstr:Mend)
+#  endif
+!
+!  Local variable declarations.
+!
+#  ifndef MASKING
+      integer :: Imax, Ioff, Jmax, Joff
+#  endif
+      integer :: Uoff, Voff
+      integer :: i, iadd, is, itrc, j, k
+
+      integer, dimension(7+2*NT(ng)) :: offset
+
+      real(r8), parameter :: Aspv = 0.0_r8
+
+      real(r8) :: cff, scale
+
+#  include "set_bounds.h"
+
+#  ifdef DISTRIBUTE
+!
+!-----------------------------------------------------------------------
+!  Initialize adjoint state vector with special value (zero) to
+!  facilitate gathering/scattering communications between all nodes.
+!  This is achieved by summing all the buffers.
+!-----------------------------------------------------------------------
+!
+      DO is=Mstr,Mend
+        ad_state(is)=Aspv
+      END DO
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Load adjoint STATE and FORCING variables from full 1D state vector.
+!-----------------------------------------------------------------------
+!
+!  Set offsets for momentum variables due to periodic boundary
+!  conditions. Recall that in East-West periodic boundary conditions
+!  IstrU=1. Otherwise, IstrU=2. Similarly, in North-South periodic
+!  applications IstrV=1 or else IstrV=2.
+!
+      IF (EWperiodic(ng)) THEN
+        Uoff=0
+      ELSE
+        Uoff=1
+      END IF
+!
+      IF (NSperiodic(ng)) THEN
+        Voff=0
+      ELSE
+        Voff=1
+      END IF
+!
+!  Determine the index offset for each variable in the state vector.
+#  ifdef MASKING
+!  Notice that in Land/Sea masking application the state vector only
+!  contains water points to avoid large null space.
+#  endif
+!
+!  First clear the "offset" array.
+!
+      offset=0
+!
+#  ifdef SOLVE3D
+#   ifdef MASKING
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUvel)) THEN
+        offset(isUvel)=offset(isFsur)+NwaterR(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVvel)) THEN
+        offset(isVvel)=offset(isUvel)+NwaterU(ng)*N(ng)
+      END IF
+      iadd=NwaterV(ng)*N(ng)
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
+         offset(isTvar(itrc))=offset(isTvar(itrc)-1)+iadd
+         iadd=NwaterR(ng)*N(ng)
+        END IF
+      END DO
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+        offset(isVstr)=offset(isUstr)+NwaterU(ng)
+      END IF
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
+          IF (itrc.eq.1) THEN
+            offset(isTsur(itrc))=offset(isVstr)+NwaterV(ng)
+          ELSE
+            offset(isTsur(itrc))=offset(isTsur(itrc-1))+NwaterR(ng)
+          END IF
+        END IF
+      END DO
+#   else
+#    ifdef FULL_GRID
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUvel)) THEN
+        offset(isUvel)=offset(isFsur)+(Lm(ng)+2)*(Mm(ng)+2)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVvel)) THEN
+        offset(isVvel)=offset(isUvel)+(Lm(ng)+1)*(Mm(ng)+2)*N(ng)
+      END IF
+      iadd=(Lm(ng)+2)*(Mm(ng)+1)*N(ng)
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
+          offset(isTvar(itrc))=offset(isTvar(itrc)-1)+iadd
+          iadd=(Lm(ng)+2)*(Mm(ng)+2)*N(ng)
+        END IF
+      END DO
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+        offset(isVstr)=offset(isUstr)+(Lm(ng)+1)*(Mm(ng)+2)
+      END IF
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
+          IF (itrc.eq.1) THEN
+            offset(isTsur(itrc))=offset(isVstr)+                        &
+     &                           (Lm(ng)+2)*(Mm(ng)+1)
+          ELSE
+            offset(isTsur(itrc))=offset(isTsur(itrc-1))+                &
+     &                           (Lm(ng)+2)*(Mm(ng)+2)
+          END IF
+        END IF
+      END DO
+#    else
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUvel)) THEN
+        offset(isUvel)=offset(isFsur)+Lm(ng)*Mm(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVvel)) THEN
+        offset(isVvel)=offset(isUvel)+(Lm(ng)-Uoff)*Mm(ng)*N(ng)
+      END IF
+      iadd=Lm(ng)*(Mm(ng)-Voff)*N(ng)
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
+          offset(isTvar(itrc))=offset(isTvar(itrc)-1)+iadd
+          iadd=Lm(ng)*Mm(ng)*N(ng)
+        END IF
+      END DO
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+        offset(isVstr)=offset(isUstr)+(Lm(ng)-Uoff)*Mm(ng)
+      END IF
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
+          IF (itrc.eq.1) THEN
+            offset(isTsur(itrc))=offset(isVstr)+Lm(ng)*(Mm(ng)-Voff)
+          ELSE
+            offset(isTsur(itrc))=offset(isTsur(itrc-1))+Lm(ng)*Mm(ng)
+          END IF
+        END IF
+      END DO
+#    endif
+#   endif
+#  else
+#   ifdef MASKING
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUbar)) THEN
+        offset(isUbar)=offset(isFsur)+NwaterR(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVbar)) THEN
+        offset(isVbar)=offset(isUbar)+NwaterU(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+        offset(isVstr)=offset(isUstr)+NwaterU(ng)
+      END IF
+#   else
+#    ifdef FULL_GRID
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUbar)) THEN
+        offset(isUbar)=offset(isFsur)+(Lm(ng)+2)*(Mm(ng)+2)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVbar) THEN
+        offset(isVbar)=offset(isUbar)+(Lm(ng)+1)*(Mm(ng)+2)
+      END IF
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+        offset(isVstr)=offset(isUstr)+(Lm(ng)+1)*(Mm(ng)+2)
+      END IF
+#    else
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        offset(isFsur)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUbar)) THEN
+        offset(isUbar)=offset(isFsur)+Lm(ng)*Mm(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVbar) THEN
+        offset(isVbar)=offset(isUbar)+(Lm(ng)-Uoff)*Mm(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isUstr)=0
+      END IF
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        offset(isVstr)=offset(isUstr)+(Lm(ng)-Uoff)*Mm(ng)
+      END IF
+#    endif
+#   endif
+#  endif
+!
+!  Load adjoint of free-surface.
+!
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+#  ifndef MASKING
+#   ifdef FULL_GRID
+        Imax=Lm(ng)+2
+        Ioff=1
+        Joff=0
+#   else
+        Imax=Lm(ng)
+        Ioff=0
+        Joff=1
+#   endif
+#  endif
+#  ifdef ENERGYNORM_SCALE
+        scale=1.0_r8/SQRT(0.5_r8*g*rho0)
+#  else
+        scale=1.0_r8
+#  endif
+        DO j=JR_RANGE
+          DO i=IR_RANGE
+#  ifdef MASKING
+            IF (rmask(i,j).gt.0.0_r8) THEN
+              is=IJwaterR(i,j)+offset(isFsur)
+              ad_state(is)=scale*OCEAN(ng)%ad_zeta(i,j,kstp)
+            END IF
+#  else
+            is=(i+Ioff)+(j-Joff)*Imax+offset(isFsur)
+            ad_state(is)=scale*OCEAN(ng)%ad_zeta(i,j,kstp)
+#  endif
+          END DO
+        END DO
+      END IF
+
+#  ifndef SOLVE3D
+!
+!  Load adjoint of 2D U-velocity.
+!
+      IF (SCALARS(ng)%Fstate(isUbar)) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+        Imax=Lm(ng)+1
+        Ioff=0
+        Joff=0
+#    else
+        Imax=Lm(ng)-Uoff
+        Ioff=Uoff
+        Joff=1
+#    endif
+#   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
+        scale=1.0_r8
+#   endif
+        DO j=JR_RANGE
+          DO i=IU_RANGE
+#   ifdef MASKING
+            IF (umask(i,j).gt.0.0_r8) THEN
+              is=IJwaterU(i,j)+offset(isUbar)
+              ad_state(is)=scale*OCEAN(ng)%ad_ubar(i,j,kstp)
+            END IF
+#   else
+              is=(i-Ioff)+(j-Joff)*Imax+offset(isUbar)
+              ad_state(is)=scale*OCEAN(ng)%ad_ubar(i,j,kstp)
+#   endif
+          END DO
+        END DO
+      END IF
+!
+!  Load adjoint of 2D V-velocity.
+!
+      IF (SCALARS(ng)%Fstate(isVbar)) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+        Imax=Lm(ng)+2
+        Ioff=1
+        Joff=1
+#    else
+        Imax=Lm(ng)
+        Ioff=0
+        Joff=1+Voff
+#    endif
+#   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
+        scale=1.0_r8
+#   endif
+        DO j=JV_RANGE
+          DO i=IR_RANGE
+#   ifdef MASKING
+            IF (vmask(i,j).gt.0.0_r8) THEN
+              is=IJwaterV(i,j)+offset(isVbar)
+              ad_state(is)=scale*OCEAN(ng)%ad_vbar(i,j,kstp)
+            END IF
+#   else
+            is=(i+Ioff)+(j-Joff)*Imax+offset(isVbar)
+            ad_state(is)=scale*OCEAN(ng)%ad_vbar(i,j,kstp)
+#   endif
+          END DO
+        END DO
+      END IF
+
+#  else
+!
+!  Load adjoint of 3D U-velocity.
+!
+      IF (SCALARS(ng)%Fstate(isUvel)) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+        Imax=Lm(ng)+1
+        Jmax=Mm(ng)+2
+        Ioff=0
+        Joff=0
+#    else
+        Imax=Lm(ng)-Uoff
+        Jmax=Mm(ng)
+        Ioff=Uoff
+        Joff=1
+#    endif
+#   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
+        scale=1.0_r8
+#   endif
+        DO k=1,N(ng)
+#   ifdef MASKING
+          iadd=(k-1)*NwaterU(ng)+offset(isUvel)
+#   else
+          iadd=(k-1)*Imax*Jmax+offset(isUvel)
+#   endif
+          DO j=JR_RANGE
+            DO i=IU_RANGE
+#   ifdef MASKING
+              IF (umask(i,j).gt.0.0_r8) THEN
+                is=IJwaterU(i,j)+iadd
+                ad_state(is)=scale*OCEAN(ng)%ad_u(i,j,k,nstp)
+              END IF
+#   else
+              is=(i-Ioff)+(j-Joff)*Imax+iadd
+              ad_state(is)=scale*OCEAN(ng)%ad_u(i,j,k,nstp)
+#   endif
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Load adjoint of 3D V-velocity.
+!
+      IF (SCALARS(ng)%Fstate(isVvel)) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+        Imax=Lm(ng)+2
+        Jmax=Mm(ng)+1
+        Ioff=1
+        Joff=1
+#    else
+        Imax=Lm(ng)
+        Jmax=Mm(ng)-Voff
+        Ioff=0
+        Joff=1+Voff
+#    endif
+#   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
+        scale=1.0_r8
+#   endif
+        DO k=1,N(ng)
+#   ifdef MASKING
+          iadd=(k-1)*NwaterV(ng)+offset(isVvel)
+#   else
+          iadd=(k-1)*Imax*Jmax+offset(isVvel)
+#   endif
+          DO j=JV_RANGE
+            DO i=IR_RANGE
+#   ifdef MASKING
+              IF (vmask(i,j).gt.0.0_r8) THEN
+                is=IJwaterV(i,j)+iadd
+                ad_state(is)=scale*OCEAN(ng)%ad_v(i,j,k,nstp)
+              END IF
+#   else
+              is=(i+Ioff)+(j-Joff)*Imax+iadd
+              ad_state(is)=scale*OCEAN(ng)%ad_v(i,j,k,nstp)
+#   endif
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Load adjoint of tracers variables.
+!
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+          Imax=Lm(ng)+2
+          Jmax=Mm(ng)+2
+          Ioff=1
+          Joff=0
+#    else
+          Imax=Lm(ng)
+          Jmax=Mm(ng)
+          Ioff=0
+          Joff=1
+#    endif
+#   endif
+#   ifdef ENERGYNORM_SCALE
+          IF (itrc.eq.itemp) THEN
+            cff=0.5_r8*rho0*Tcoef(ng)*Tcoef(ng)*g*g/bvf_bak
+          ELSE IF (itrc.eq.isalt) THEN
+            cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+          ELSE
+            cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+          END IF
+#   else
+          scale=1.0_r8
+#   endif
+          DO k=1,N(ng)
+#   ifdef MASKING
+            iadd=(k-1)*NwaterR(ng)+offset(isTvar(itrc))
+#   else
+            iadd=(k-1)*Imax*Jmax+offset(isTvar(itrc))
+#   endif
+            DO j=JR_RANGE
+              DO i=IR_RANGE
+#   ifdef MASKING
+                IF (rmask(i,j).gt.0.0_r8) THEN
+                  is=IJwaterR(i,j)+iadd
+                  ad_state(is)=scale*OCEAN(ng)%ad_t(i,j,k,nstp,itrc)
+                END IF
+#   else
+                is=(i+Ioff)+(j-Joff)*Imax+iadd
+                ad_state(is)=scale*OCEAN(ng)%ad_t(i,j,k,nstp,itrc)
+#   endif
+              END DO
+            END DO
+          END DO
+        END IF
+     END DO
+#  endif
+!
+!  Load adjoint of surface U-stress.
+!
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+#  ifndef MASKING
+#   ifdef FULL_GRID
+        Imax=Lm(ng)+1
+        Ioff=0
+        Joff=0
+#   else
+        Imax=Lm(ng)-Uoff
+        Ioff=Uoff
+        Joff=1
+#   endif
+#  endif
+        scale=1.0_r8
+        DO j=JR_RANGE
+          DO i=IU_RANGE
+#  ifdef MASKING
+            IF (umask(i,j).gt.0.0_r8) THEN
+              is=IJwaterU(i,j)+offset(isUstr)
+              ad_state(is)=scale*FORCES(ng)%ad_sustr(i,j)
+            END IF
+#  else
+            is=(i-Ioff)+(j-Joff)*Imax+offset(isUstr)
+            ad_state(is)=scale*FORCES(ng)%ad_sustr(i,j)
+#  endif
+          END DO
+        END DO
+      END IF
+!
+!  Load adjoint of surface V-stress.
+!
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
+#  ifndef MASKING
+#   ifdef FULL_GRID
+        Imax=Lm(ng)+2
+        Ioff=1
+        Joff=1
+#   else
+        Imax=Lm(ng)
+        Ioff=0
+        Joff=1+Voff
+#   endif
+#  endif
+        scale=1.0_r8
+        DO j=JV_RANGE
+          DO i=IR_RANGE
+#  ifdef MASKING
+            IF (vmask(i,j).gt.0.0_r8) THEN
+              is=IJwaterV(i,j)+offset(isVstr)
+              ad_state(is)=scale*FORCES(ng)%ad_svstr(i,j)
+            END IF
+#  else
+            is=(i+Ioff)+(j-Joff)*Imax+offset(isVstr)
+            ad_state(is)=scale*FORCES(ng)%ad_svstr(i,j)
+#  endif
+          END DO
+        END DO
+      END IF
+
+#  ifdef SOLVE3D
+!
+!  Load adjoint of surface tracer flux variables.
+!
+      DO itrc=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
+#   ifndef MASKING
+#    ifdef FULL_GRID
+          Imax=Lm(ng)+2
+          Jmax=Mm(ng)+2
+          Ioff=1
+          Joff=0
+#    else
+          Imax=Lm(ng)
+          Jmax=Mm(ng)
+          Ioff=0
+          Joff=1
+#    endif
+#   endif
+          scale=1.0_r8
+          DO j=JR_RANGE
+            DO i=IR_RANGE
+#   ifdef MASKING
+              IF (rmask(i,j).gt.0.0_r8) THEN
+                is=IJwaterR(i,j)+offset(isTsur(itrc))
+                ad_state(is)=scale*FORCES(ng)%ad_stflx(i,j,itrc)
+              END IF
+#   else
+              is=(i+Ioff)+(j-Joff)*Imax+offset(isTsur(itrc))
+              ad_state(is)=scale*FORCES(ng)%ad_stflx(i,j,itrc)
 #   endif
             END DO
           END DO
@@ -2233,7 +2931,10 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
-      USE mod_ocean
+!!    USE mod_ocean
+# if defined PIO_LIB && defined DISTRIBUTE
+      USE mod_pio_netcdf
+# endif
       USE mod_scalars
       USE mod_storage
 !
@@ -2315,7 +3016,7 @@
       integer :: Imax, Ioff, Jmax, Joff
 #  endif
       integer :: Uoff, Voff
-      integer :: i, iadd, icount, is, itrc, j, k
+      integer :: i, iadd, icount, ifield, is, itrc, j, k
       integer :: Fcount, Irec, Nrec
       integer :: gtype, status
       integer :: Vsize(4), ntAD, ntTL, Iinp
@@ -2335,6 +3036,11 @@
 !
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", ad_so_pack_red_tile"
+
+# if defined PIO_LIB && defined DISTRIBUTE
+!
+      TYPE (IO_Desc_t), pointer :: ioDesc
+# endif
 
 #  include "set_bounds.h"
 
@@ -2573,25 +3279,55 @@
 !  Process free-surface.
 !
         IF (SCALARS(ng)%Fstate(isFsur)) THEN
-          gtype=r2dvar
-          status=nf_fread2d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idFsur), ADM(ng)%Vid(idFsur),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=r2dvar
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idFsur),          &
+     &                          ADM(ng)%Vid(idFsur), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
 # ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
+     &                          GRID(ng) % rmask,                       &
 # endif
-     &                      ad_zeta(:,:,Iinp))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idFsur)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_zeta(:,:,Iinp))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idFsur)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+# if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_zeta).eq.8) THEN
+                ioDesc => ioDesc_dp_r2dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_r2dvar(ng)
+              END IF
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idFsur),       &
+     &                          ADM(ng)%pioVar(idFsur), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#  ifdef MASKING
+     &                          GRID(ng) % rmask,                       &
+#  endif
+     &                          ad_zeta(:,:,Iinp))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idFsur)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of free-surface.
 !
@@ -2634,25 +3370,55 @@
 !  Process 2D U-momentum.
 !
         IF (SCALARS(ng)%Fstate(isUbar)) THEN
-          gtype=u2dvar
-          status=nf_fread2d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idUbar), ADM(ng)%Vid(idUbar),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=u2dvar
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idUbar),          &
+     &                          ADM(ng)%Vid(idUbar), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % umask,                           &
+     &                          GRID(ng) % umask,                       &
 #  endif
-     &                      ad_ubar(:,:,Iinp))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUbar)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_ubar(:,:,Iinp))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUbar)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_ubar).eq.8) THEN
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idUbar),       &
+     &                          ADM(ng)%pioVar(idUbar), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#   endif
+     &                          ad_ubar(:,:,Iinp))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUbar)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of 2D U-velocity.
 !
@@ -2697,25 +3463,55 @@
 !  Process 2D V-momentum.
 !
         IF (SCALARS(ng)%Fstate(isVbar)) THEN
-          gtype=v2dvar
-          status=nf_fread2d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idVbar), ADM(ng)%Vid(idVbar),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=v2dvar
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idVbar),          &
+     &                          ADM(ng)%Vid(idVbar), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % vmask,                           &
+     &                          GRID(ng) % vmask,                       &
 #  endif
-     &                      ad_vbar(:,:,Iinp))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVbar)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_vbar(:,:,Iinp))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVbar)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_vbar).eq.8) THEN
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idVbar),       &
+     &                          ADM(ng)%pioVar(idVbar), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#   endif
+     &                          ad_vbar(:,:,Iinp))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVbar)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of 2D V-velocity.
 !
@@ -2762,25 +3558,55 @@
 !  Process 3D U-momentum.
 !
         IF (SCALARS(ng)%Fstate(isUvel)) THEN
-          gtype=u3dvar
-          status=nf_fread3d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idUvel), ADM(ng)%Vid(idUvel),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=u3dvar
+              status=nf_fread3d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idUvel),          &
+     &                          ADM(ng)%Vid(idUvel), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % umask,                           &
+     &                          GRID(ng) % umask,                       &
 #  endif
-     &                      ad_u(:,:,:,Iinp))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUvel)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_u(:,:,:,Iinp))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUvel)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_u).eq.8) THEN
+                ioDesc => ioDesc_dp_u3dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_u3dvar(ng)
+              END IF
+              status=nf_fread3d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idUvel),       &
+     &                          ADM(ng)%pioVar(idUvel), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#   endif
+     &                          ad_u(:,:,:,Iinp))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUvel)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of 3D U-velocity.
 !
@@ -2839,25 +3665,55 @@
 !  Process 3D V-momentum.
 !
         IF (SCALARS(ng)%Fstate(isVvel)) THEN
-          gtype=v3dvar
-          status=nf_fread3d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idVvel), ADM(ng)%Vid(idVvel),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=v3dvar
+              status=nf_fread3d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idVvel),          &
+     &                          ADM(ng)%Vid(idVvel), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % vmask,                           &
+     &                          GRID(ng) % vmask,                       &
 #  endif
-     &                      ad_v(:,:,:,Iinp))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVvel)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_v(:,:,:,Iinp))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVvel)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_v).eq.8) THEN
+                ioDesc => ioDesc_dp_v3dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_v3dvar(ng)
+              END IF
+              status=nf_fread3d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idVvel),       &
+     &                          ADM(ng)%pioVar(idVvel), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#   endif
+     &                          ad_v(:,:,:,Iinp))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVvel)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of 3D V-velocity.
 !
@@ -2916,26 +3772,59 @@
 !  Process tracer type variables.
 !
         DO itrc=1,NT(ng)
-          IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
-            gtype=r3dvar
-            status=nf_fread3d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,     &
-     &                        Vname(1,idTvar(itrc)), ADM(ng)%Tid(itrc), &
-     &                        Irec, gtype, Vsize,                       &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        scale, Fmin, Fmax,                        &
+          ifield=isTvar(itrc)
+          IF (SCALARS(ng)%Fstate(ifield)) THEN
+            SELECT CASE (ADM(ng)%IOtype)
+              CASE (io_nf90)
+                gtype=r3dvar
+                status=nf_fread3d(ng, iADM, ADM(ng)%name,               &
+     &                            ADM(ng)%ncid, Vname(1,ifield),        &
+     &                            ADM(ng)%Tid(itrc), Irec,              &
+     &                            gtype, Vsize,                         &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            scale, Fmin, Fmax,                    &
 #  ifdef MASKING
-     &                        GRID(ng) % rmask,                         &
+     &                            GRID(ng) % rmask,                     &
 #  endif
-     &                        ad_t(:,:,:,Iinp,itrc))
-            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-              IF (Master) THEN
-                WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), Irec,    &
-     &                            TRIM(ADM(ng)%name)
-              END IF
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
+     &                            ad_t(:,:,:,Iinp,itrc))
+
+                IF (FoundError(status, nf90_noerr,                      &
+     &                         __LINE__, MyFile)) THEN
+                  IF (Master) WRITE (stdout,10) TRIM(Vname(1,ifield)),  &
+     &                                          Irec, TRIM(ADM(ng)%name)
+                  exit_flag=2
+                  ioerror=status
+                  RETURN
+                END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+              CASE (io_pio)
+                IF (KIND(ad_t).eq.8) THEN
+                  ioDesc => ioDesc_dp_r3dvar(ng)
+                ELSE
+                  ioDesc => ioDesc_sp_r3dvar(ng)
+                END IF
+                status=nf_fread3d(ng, iADM, ADM(ng)%name,               &
+     &                            ADM(ng)%pioFile, Vname(1,ifield),     &
+     &                            ADM(ng)%pioTrc(itrc), Irec,           &
+     &                            ioDesc, Vsize,                        &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            scale, Fmin, Fmax,                    &
+#   ifdef MASKING
+     &                            GRID(ng) % rmask,                     &
+#   endif
+     &                            ad_t(:,:,:,Iinp,itrc))
+#  endif
+
+                IF (FoundError(status, PIO_noerr,                       &
+     &                         __LINE__, MyFile)) THEN
+                  IF (Master) WRITE (stdout,10) TRIM(Vname(1,ifield)),  &
+     &                                          Irec, TRIM(ADM(ng)%name)
+                  exit_flag=2
+                  ioerror=status
+                  RETURN
+                END IF
+            END SELECT
 !
 !  Load adjoint of tracers variables.
 !
@@ -3002,25 +3891,55 @@
 !  Process 2D U-momentum stress.
 !
         IF (SCALARS(ng)%Fstate(isUstr)) THEN
-          gtype=u2dvar
-          status=nf_fread2d(ng, iADM, ADM(ng)%name,  ADM(ng)%ncid,      &
-     &                      Vname(1,idUsms), ADM(ng)%Vid(idUsms),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=u2dvar
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idUsms),          &
+     &                          ADM(ng)%Vid(idUsms), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % umask,                           &
+     &                          GRID(ng) % umask,                       &
 #  endif
-     &                      ad_sustr(:,:))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUsms)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_sustr(:,:))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUsms)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_sustr).eq.8) THEN
+                ioDesc => ioDesc_dp_u2dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_u2dvar(ng)
+              END IF
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idUsms),       &
+     &                          ADM(ng)%pioVar(idUsms), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#  ifdef MASKING
+     &                          GRID(ng) % umask,                       &
+#  endif
+     &                          ad_sustr(:,:))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idUsms)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of surface U-stress.
 !
@@ -3057,25 +3976,55 @@
 !  Process 2D V-momentum stress.
 !
         IF (SCALARS(ng)%Fstate(isVstr)) THEN
-          gtype=v2dvar
-          status=nf_fread2d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,       &
-     &                      Vname(1,idVsms), ADM(ng)%Vid(idVsms),       &
-     &                      Irec, gtype, Vsize,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+          SELECT CASE (ADM(ng)%IOtype)
+            CASE (io_nf90)
+              gtype=v2dvar
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%ncid, Vname(1,idVsms),          &
+     &                          ADM(ng)%Vid(idVsms), Irec,              &
+     &                          gtype, Vsize,                           &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
 #  ifdef MASKING
-     &                      GRID(ng) % vmask,                           &
+     &                          GRID(ng) % vmask,                       &
 #  endif
-     &                      ad_svstr(:,:))
-          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVsms)), Irec,            &
-     &                          TRIM(ADM(ng)%name)
-            END IF
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
+     &                          ad_svstr(:,:))
+
+              IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVsms)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+
+#  if defined PIO_LIB && defined DISTRIBUTE
+            CASE (io_pio)
+              IF (KIND(ad_svstr).eq.8) THEN
+                ioDesc => ioDesc_dp_v2dvar(ng)
+              ELSE
+                ioDesc => ioDesc_sp_v2dvar(ng)
+              END IF
+              status=nf_fread2d(ng, iADM, ADM(ng)%name,                 &
+     &                          ADM(ng)%pioFile, Vname(1,idVsms),       &
+     &                          ADM(ng)%pioVar(idVsms), Irec,           &
+     &                          ioDesc, Vsize,                          &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          scale, Fmin, Fmax,                      &
+#   ifdef MASKING
+     &                          GRID(ng) % vmask,                       &
+#   endif
+     &                          ad_svstr(:,:))
+#  endif
+
+              IF (FoundError(status, PIO_noerr, __LINE__, MyFile)) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idVsms)),    &
+     &                                        Irec, TRIM(ADM(ng)%name)
+                exit_flag=2
+                ioerror=status
+                RETURN
+              END IF
+          END SELECT
 !
 !  Load adjoint of surface V-stress.
 !
@@ -3114,27 +4063,59 @@
 !  Process surface tracer flux.
 !
         DO itrc=1,NT(ng)
-          IF (SCALARS(ng)%Fstate(isTsur(itrc))) THEN
-            gtype=r2dvar
-            status=nf_fread2d(ng, iADM, ADM(ng)%name, ADM(ng)%ncid,     &
-     &                        Vname(1,idTsur(itrc)),                    &
-     &                        ADM(ng)%Vid(idTsur(itrc)),                &
-     &                        Irec, gtype, Vsize,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        scale, Fmin, Fmax,                        &
+          ifield=idTsur(itrc)
+          IF (SCALARS(ng)%Fstate(ifield)) THEN
+            SELECT CASE (ADM(ng)%IOtype)
+              CASE (io_nf90)
+                gtype=r2dvar
+                status=nf_fread2d(ng, iADM, ADM(ng)%name,               &
+     &                            ADM(ng)%ncid, Vname(1,ifield),        &
+     &                            ADM(ng)%Vid(ifield), Irec,            &
+     &                            gtype, Vsize,                         &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            scale, Fmin, Fmax,                    &
 # ifdef MASKING
-     &                        GRID(ng) % rmask,                         &
+     &                            GRID(ng) % rmask,                     &
 # endif
-     &                        ad_stflx(:,:,itrc))
-            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-              IF (Master) THEN
-                WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))), Irec,    &
-     &                            TRIM(ADM(ng)%name)
-              END IF
-              exit_flag=2
-              ioerror=status
-              RETURN
-            END IF
+     &                            ad_stflx(:,:,itrc))
+
+                IF (FoundError(status, nf90_noerr,                      &
+     &                         __LINE__, MyFile)) THEN
+                  IF (Master) WRITE (stdout,10) TRIM(Vname(1,ifield)),  &
+     &                                          Irec, TRIM(ADM(ng)%name)
+                  exit_flag=2
+                  ioerror=status
+                  RETURN
+                END IF
+
+# if defined PIO_LIB && defined DISTRIBUTE
+              CASE (io_pio)
+                IF (KIND(ad_stflx).eq.8) THEN
+                  ioDesc => ioDesc_dp_r2dvar(ng)
+                ELSE
+                  ioDesc => ioDesc_sp_r2dvar(ng)
+                END IF
+                status=nf_fread2d(ng, iADM, ADM(ng)%name,               &
+     &                            ADM(ng)%pioFile, Vname(1,ifield),     &
+     &                            ADM(ng)%pioVar(ifield), Irec,         &
+     &                            ioDesc, Vsize,                        &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            scale, Fmin, Fmax,                    &
+#  ifdef MASKING
+     &                            GRID(ng) % rmask,                     &
+#  endif
+     &                            ad_stflx(:,:,itrc))
+# endif
+
+                IF (FoundError(status, PIO_noerr,                       &
+     &                         __LINE__, MyFile)) THEN
+                  IF (Master) WRITE (stdout,10) TRIM(Vname(1,ifield)),  &
+     &                                          Irec, TRIM(ADM(ng)%name)
+                  exit_flag=2
+                  ioerror=status
+                  RETURN
+                END IF
+            END SELECT
 !
 !  Load surface tracer flux.
 !
@@ -6703,7 +7684,7 @@
       END IF
       IF (SCALARS(ng)%Fstate(isVvel)) THEN
         offset(isVvel)=offset(isUvel)+(Lm(ng)-Uoff)*Mm(ng)*N(ng)
-     END IF.
+      END IF
       iadd=Lm(ng)*(Mm(ng)-Voff)*N(ng)
       DO itrc=1,NT(ng)
         IF (SCALARS(ng)%Fstate(isTvar(itrc))) THEN
@@ -7094,7 +8075,7 @@
                 END IF
 #   else
                 is=(i+Ioff)+(j-Joff)*Imax+iadd
-                tl_t(i,j,k,nstp,itrc)=scale*state(is)
+                f_t(i,j,k,itrc)=scale*state(is)
 #   endif
               END DO
             END DO
@@ -7843,7 +8824,7 @@
       real(r8) :: cff, cff1, cff2
 
 #   ifdef DISTRIBUTE
-      real(r8), dimension(3) :: buffer
+      real(r8), dimension(3) :: rbuffer
 
       character (len=3), dimension(3) :: op_handle
 #   endif
@@ -7928,13 +8909,13 @@
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 #   ifdef DISTRIBUTE
-          buffer(1)=SOnorm
-          buffer(2)=SOnorm1
+          rbuffer(1)=SOnorm
+          rbuffer(2)=SOnorm1
           op_handle(1)='SUM'
           op_handle(2)='SUM'
-          CALL mp_reduce (ng, iADM, 2, buffer, op_handle)
-          SOnorm=buffer(1)
-          SOnorm1=buffer(2)
+          CALL mp_reduce (ng, iADM, 2, rbuffer, op_handle)
+          SOnorm=rbuffer(1)
+          SOnorm1=rbuffer(2)
 #   endif
         END IF
 !$OMP END CRITICAL (SO_NORM)

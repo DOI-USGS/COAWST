@@ -2,9 +2,10 @@
 #if defined MODEL_COUPLING && !defined MCT_LIB
       SUBROUTINE read_CouplePar (model)
 !
-!svn $Id: read_couplepar.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: read_couplepar.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,16 +37,16 @@
 !
       logical :: Lwrite
       logical :: Lvalue(1)
-
-      integer :: Npts, Nval, i, ic, j, inp, ng, out, status
+!
+      integer :: Npts, Nval, i, ic, io_err, j, inp, ng, out, status
       integer :: Ivalue(1)
-
+!
       real(r8), dimension(nRval) :: Rval
 
       real(r8), allocatable :: MyRval(:)
-
-      character (len=40) :: KeyWord
-      character (len=256) :: line
+!
+      character (len=40 ) :: KeyWord
+      character (len=256) :: io_errmsg, line
       character (len=256) :: Cname
       character (len=256), dimension(nCval) :: Cval
 !
@@ -67,22 +68,22 @@
         WRITE(stdout,*) 'Coupled Input File name = ', TRIM(Cname)
       END IF
       OPEN (inp, FILE=TRIM(Cname), FORM='formatted', STATUS='old',      &
-     &      ERR=10)
-      GO TO 30
- 10   WRITE (stdout,20)
-      IF (Master) WRITE(stdout,*) 'MyRank = ', MyRank, TRIM(Cname)
-      exit_flag=4
-      RETURN
- 20   FORMAT (/,' INP_PAR - Unable to open coupling input script.',     &
-     &        /,11x,'In distributed-memory applications, the input',    &
-     &        /,11x,'script file is processed in parallel. The Unix',   &
-     &        /,11x,'routine GETARG is used to get script file name.',  &
-     &        /,11x,'For example, in MPI applications make sure that',  &
-     &        /,11x,'command line is something like:',/,                &
-     &        /,11x,'mpirun -np 4 masterM coupling.in',/,               &
-     &        /,11x,'and not',/,                                        &
-     &        /,11x,'mpirun -np 4 masterM < coupling.in',/)
- 30   CONTINUE
+     &      IOSTAT=io_err, IOMSG=io_errmsg)
+      IF (io_err.ne.0) THEN
+        IF (MyRank.eq.0) WRITE (stdout,10) TRIM(io_errmsg)
+        exit_flag=5
+        RETURN
+ 10     FORMAT (/,' READ_COUPLEPAR - Unable to open coupling input',    &
+     &          ' script.',/18x,'ERROR: ',a,/,                          &
+     &          /,18x,'In distributed-memory applications, the input',  &
+     &          /,18x,'script file is processed in parallel. The Unix', &
+     &          /,18x,'routine GETARG is used to get script file name.',&
+     &          /,18x,'For example, in MPI applications make sure that',&
+     &          /,18x,'command line is something like:',/,              &
+     &          /,18x,'mpirun -np 4 romsM coupling.in',/,               &
+     &          /,18x,'and not',/,                                      &
+     &          /,18x,'mpirun -np 4 romsM < coupling.in',/)
+      END IF
 # else
       Lwrite=Master
       inp=stdinp
@@ -95,7 +96,7 @@
 !-----------------------------------------------------------------------
 !
       DO WHILE (.TRUE.)
-        READ (inp,'(a)',ERR=40,END=50) line
+        READ (inp,'(a)',ERR=20,END=30) line
         status=decode_line(line, KeyWord, Nval, Cval, Rval)
         IF (status.gt.0) THEN
           SELECT CASE (TRIM(KeyWord))
@@ -296,13 +297,13 @@
           END SELECT
         END IF
       END DO
-  40  IF (Master) WRITE (out,60) line
+  20  IF (Master) WRITE (out,40) line
       exit_flag=4
       RETURN
-  50  CLOSE (inp)
-
-  60  FORMAT (/,' READ_CouplePar - Error while processing line: ',/,a)
-
+  30  CLOSE (inp)
+!
+  40  FORMAT (/,' READ_CouplePar - Error while processing line: ',/,a)
+!
       RETURN
       END SUBROUTINE read_CouplePar
 #else

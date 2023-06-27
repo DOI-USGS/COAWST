@@ -4,9 +4,10 @@
 #if defined NONLINEAR && defined FLOATS && defined FLOAT_VWALK && \
     defined SOLVE3D
 !
-!svn $Id: vwalk_floats.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: vwalk_floats.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group         Mark Hadfield   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group         Mark Hadfield   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -217,60 +218,6 @@
           nudg(l)=0.0_r8
         END IF
       END DO
-
-# ifdef DIAPAUSE
-!  Based on date, determine if NCa are going upwards or downwards
-        
-     
-      IF ( ( RiseStart.lt.RiseEnd .and.                                 &
-     &       yday.ge.RiseStart .and. yday.le.RiseEnd ) .or.             &
-     &     ( RiseStart.gt.RiseEnd .and.                                 &
-     &      ( yday.ge.RiseStart .or. yday.le.RiseEnd ) ) )  THEN
-        FloatPhase=1
-        diapW=wNCrise*sec2day !Scale to m/sec
-        
-      ELSE IF ( ( SinkStart.lt.SinkEnd .and.                            &
-     &       yday.ge.SinkStart .and. yday.le.SinkEnd ) .or.             &
-     &     ( SinkStart.gt.SinkEnd .and.                                 &
-     &      ( yday.ge.SinkStart .or. yday.le.SinkEnd ) ) )  THEN
-        FloatPhase=3
-        diapW=wNCsink*sec2day !Scale to m/sec
-        
-       ELSE IF ( ( RiseEnd.lt.SinkStart .and.                          &
-     &       yday.ge.RiseEnd .and. yday.le.SinkStart ) .or.            &
-     &     (RiseEnd.gt.SinkStart .and.                                 &
-     &      ( yday.ge.RiseEnd .or. yday.le.SinkStart ) ) )  THEN
-       FloatPhase=2
-       diapW=wNCrise*sec2day
-        ELSE IF ( (SinkEnd.gt.RiseStart .and.                         &
-     &       yday.ge.SinkEnd .or. yday.le.RiseStart ) .or.            &
-     &     (RiseStart.gt.SinkEnd .and.                                &
-     &      ( yday.ge.SinkEnd .and. yday.le.RiseStart ) ) )  THEN
-        FloatPhase=4
-          diapW=999 
-      END IF
-      
-!      print*,'track=',track(idpth,nfp1,l)
-!      END DO
-         
-          IF ( diapW.ne.999)THEN
-          
-     CALL interp_floats_diapW(ng, LBi, UBi, LBj, UBj, 0, N(ng),         &
-     &                    Lstr, Lend, nf, izrhs,                        &
-     &                    -w3dvar, Lmask, spval, nudg,                  &
-     &                    GRID(ng) % pm,                                &
-     &                    GRID(ng) % pn,                                &
-     &                    GRID(ng) % Hz,                                &
-#  ifdef MASKING
-     &                    GRID(ng) % rmask,                             &
-#  endif
-     &                    diapW,                                        &
-     &                    OCEAN(ng) % W,                                &
-     &                    my_thread, bounded, track,                    &
-     &                    FloatPhase      )
-     
-          ENDIF 
-#else   
 !
 !  Interpolate vertical slopes using nudging velocity coefficients.
 !
@@ -285,7 +232,6 @@
 # endif
      &                    OCEAN(ng) % W,                                &
      &                    my_thread, bounded, track)
-#endif
 !
 !  If newly relased float, initialize all time levels.
 !

@@ -29,9 +29,9 @@ function [dist,bearing]=gcircle(lon1,lat1,lon2,lat2,BEARING);
 % Adapted from routine written by Pat J. Haley (Harvard University).
 %
 
-% svn $Id: gcircle.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: gcircle.m 1156 2023-02-18 01:44:37Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%
@@ -64,9 +64,6 @@ elat = lat2.*deg2rad;
 %----------------------------------------------------------------------------
 
 alpha = sin(slat).*sin(elat) + cos(slat).*cos(elat).*cos(elon-slon);
-
-%jcw = maybe try https://en.wikipedia.org/wiki/Great-circle_distance
-%Vincenty formula
 
 ind = find (abs(alpha)>1);
 if (~isempty(ind)), alpha(ind) = sign(alpha(ind)); end;

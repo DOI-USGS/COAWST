@@ -1,11 +1,12 @@
-     SUBROUTINE ad_biology (ng,tile)
+      MODULE ad_biology_mod
 !
-!svn $Id: ad_npzd_Franks.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: ad_npzd_Franks.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Nutrient-Phytoplankton-Zooplankton-Detritus Model.                  !
 !                                                                      !
@@ -18,6 +19,17 @@
 !      food-level acclimation by herbivores, Marine Biology, 91,       !
 !      121-129.                                                        !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: ad_biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE ad_biology (ng,tile)
 !***********************************************************************
 !
       USE mod_param
@@ -51,21 +63,21 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iADM, 15, __LINE__, MyFile)
 #endif
-      CALL ad_biology_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nstp(ng), nnew(ng),                         &
+      CALL ad_npzd_franks_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, N(ng), NT(ng),      &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nstp(ng), nnew(ng),                     &
 #ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
+     &                          GRID(ng) % rmask,                       &
 #endif
-     &                      GRID(ng) % Hz,                              &
-     &                      GRID(ng) % ad_Hz,                           &
-     &                      GRID(ng) % z_r,                             &
-     &                      GRID(ng) % ad_z_r,                          &
-     &                      GRID(ng) % z_w,                             &
-     &                      GRID(ng) % ad_z_w,                          &
-     &                      OCEAN(ng) % t,                              &
-     &                      OCEAN(ng) % ad_t)
+     &                          GRID(ng) % Hz,                          &
+     &                          GRID(ng) % ad_Hz,                       &
+     &                          GRID(ng) % z_r,                         &
+     &                          GRID(ng) % ad_z_r,                      &
+     &                          GRID(ng) % z_w,                         &
+     &                          GRID(ng) % ad_z_w,                      &
+     &                          OCEAN(ng) % t,                          &
+     &                          OCEAN(ng) % ad_t)
 
 #ifdef PROFILE
       CALL wclock_off (ng, iADM, 15, __LINE__, MyFile)
@@ -74,15 +86,15 @@
       END SUBROUTINE ad_biology
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE ad_biology_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj, UBk, UBt,         &
-     &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            nstp, nnew,                           &
+      SUBROUTINE ad_npzd_franks_tile (ng, tile,                         &
+     &                                LBi, UBi, LBj, UBj, UBk, UBt,     &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
+     &                                nstp, nnew,                       &
 #ifdef MASKING
-     &                            rmask,                                &
+     &                                rmask,                            &
 #endif
-     &                            Hz, ad_Hz, z_r, ad_z_r, z_w, ad_z_w,  &
-     &                            t, ad_t)
+     &                                Hz, ad_Hz, z_r, ad_z_r,           &
+     &                                z_w, ad_z_w, t, ad_t)
 !-----------------------------------------------------------------------
 !
       USE mod_param
@@ -650,13 +662,13 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
-!>            tl_t(i,j,k,nnew,ibio)=tl_t(i,j,k,nnew,ibio)+              &
-!>   &                              tl_cff*Hz(i,j,k)+cff*tl_Hz(i,j,k)
-!>
+!^            tl_t(i,j,k,nnew,ibio)=tl_t(i,j,k,nnew,ibio)+              &
+!^   &                              tl_cff*Hz(i,j,k)+cff*tl_Hz(i,j,k)
+!^
               ad_Hz(i,j,k)=ad_Hz(i,j,k)+cff*ad_t(i,j,k,nnew,ibio)
               ad_cff=ad_cff+Hz(i,j,k)*ad_t(i,j,k,nnew,ibio)
-!>            tl_cff=tl_Bio(i,k,ibio)-tl_Bio_old(i,k,ibio)
-!>
+!^            tl_cff=tl_Bio(i,k,ibio)-tl_Bio_old(i,k,ibio)
+!^
               ad_Bio_old(i,k,ibio)=ad_Bio_old(i,k,ibio)-ad_cff
               ad_Bio(i,k,ibio)=ad_Bio(i,k,ibio)+ad_cff
               ad_cff=0.0_r8
@@ -1163,10 +1175,10 @@
             END DO
             DO k=1,N(ng)
               DO i=Istr,Iend
-!>              tl_Bio(i,k,ibio)=tl_qc(i,k)+                            &
-!>   &                           (tl_FC(i,k)-tl_FC(i,k-1))*Hz_inv(i,k)+ &
-!>   &                           (FC(i,k)-FC(i,k-1))*tl_Hz_inv(i,k)
-!>
+!^              tl_Bio(i,k,ibio)=tl_qc(i,k)+                            &
+!^   &                           (tl_FC(i,k)-tl_FC(i,k-1))*Hz_inv(i,k)+ &
+!^   &                           (FC(i,k)-FC(i,k-1))*tl_Hz_inv(i,k)
+!^
                 adfac=Hz_inv(i,k)*ad_Bio(i,k,ibio)
                 ad_FC(i,k-1)=ad_FC(i,k-1)-adfac
                 ad_FC(i,k  )=ad_FC(i,k  )+adfac
@@ -1183,26 +1195,26 @@
               DO i=Istr,Iend
                 ks=ksource(i,k)
                 cu=MIN(1.0_r8,(WL(i,k)-z_w(i,j,ks-1))*Hz_inv(i,ks))
-!>              tl_FC(i,k-1)=tl_FC(i,k-1)+                              &
-!>   &                       (tl_Hz(i,j,ks)*cu+Hz(i,j,ks)*tl_cu)*       &
-!>   &                       (bL(i,ks)+                                 &
-!>   &                        cu*(0.5_r8*(bR(i,ks)-bL(i,ks))-           &
-!>   &                            (1.5_r8-cu)*                          &
-!>   &                            (bR(i,ks)+bL(i,ks)-                   &
-!>   &                             2.0_r8*qc(i,ks))))+                  &
-!>   &                       Hz(i,j,ks)*cu*                             &
-!>   &                       (tl_bL(i,ks)+                              &
-!>   &                        tl_cu*(0.5_r8*(bR(i,ks)-bL(i,ks))-        &
-!>   &                               (1.5_r8-cu)*                       &
-!>   &                               (bR(i,ks)+bL(i,ks)-                &
-!>   &                               2.0_r8*qc(i,ks)))+                 &
-!>   &                        cu*(0.5_r8*(tl_bR(i,ks)-tl_bL(i,ks))+     &
-!>   &                            tl_cu*                                &
-!>   &                            (bR(i,ks)+bL(i,ks)-2.0_r8*qc(i,ks))-  &
-!>   &                            (1.5_r8-cu)*                          &
-!>   &                            (tl_bR(i,ks)+tl_bL(i,ks)-             &
-!>   &                             2.0_r8*tl_qc(i,ks))))
-!>
+!^              tl_FC(i,k-1)=tl_FC(i,k-1)+                              &
+!^   &                       (tl_Hz(i,j,ks)*cu+Hz(i,j,ks)*tl_cu)*       &
+!^   &                       (bL(i,ks)+                                 &
+!^   &                        cu*(0.5_r8*(bR(i,ks)-bL(i,ks))-           &
+!^   &                            (1.5_r8-cu)*                          &
+!^   &                            (bR(i,ks)+bL(i,ks)-                   &
+!^   &                             2.0_r8*qc(i,ks))))+                  &
+!^   &                       Hz(i,j,ks)*cu*                             &
+!^   &                       (tl_bL(i,ks)+                              &
+!^   &                        tl_cu*(0.5_r8*(bR(i,ks)-bL(i,ks))-        &
+!^   &                               (1.5_r8-cu)*                       &
+!^   &                               (bR(i,ks)+bL(i,ks)-                &
+!^   &                               2.0_r8*qc(i,ks)))+                 &
+!^   &                        cu*(0.5_r8*(tl_bR(i,ks)-tl_bL(i,ks))+     &
+!^   &                            tl_cu*                                &
+!^   &                            (bR(i,ks)+bL(i,ks)-2.0_r8*qc(i,ks))-  &
+!^   &                            (1.5_r8-cu)*                          &
+!^   &                            (tl_bR(i,ks)+tl_bL(i,ks)-             &
+!^   &                             2.0_r8*tl_qc(i,ks))))
+!^
                 adfac=(bL(i,ks)+                                        &
      &                 cu*(0.5_r8*(bR(i,ks)-bL(i,ks))-                  &
      &                 (1.5_r8-cu)*                                     &
@@ -1223,12 +1235,12 @@
                 ad_bR(i,ks)=ad_bR(i,ks)+0.5_r8*adfac2-adfac3
                 ad_bL(i,ks)=ad_bL(i,ks)-0.5_r8*adfac2-adfac3
                 ad_qc(i,ks)=ad_qc(i,ks)+2.0_r8*adfac3
-!>              tl_cu=(0.5_r8+SIGN(0.5_r8,                              &
-!>   &                             (1.0_r8-(WL(i,k)-z_w(i,j,ks-1))*     &
-!>   &                             Hz_inv(i,ks))))*                     &
-!>   &                ((tl_WL(i,k)-tl_z_w(i,j,ks-1))*Hz_inv(i,ks)+      &
-!>   &                 (WL(i,k)-z_w(i,j,ks-1))*tl_Hz_inv(i,ks))
-!>
+!^              tl_cu=(0.5_r8+SIGN(0.5_r8,                              &
+!^   &                             (1.0_r8-(WL(i,k)-z_w(i,j,ks-1))*     &
+!^   &                             Hz_inv(i,ks))))*                     &
+!^   &                ((tl_WL(i,k)-tl_z_w(i,j,ks-1))*Hz_inv(i,ks)+      &
+!^   &                 (WL(i,k)-z_w(i,j,ks-1))*tl_Hz_inv(i,ks))
+!^
                 adfac=(0.5_r8+SIGN(0.5_r8,                              &
      &                             (1.0_r8-(WL(i,k)-z_w(i,j,ks-1))*     &
      &                             Hz_inv(i,ks))))*ad_cu
@@ -1260,8 +1272,8 @@
               DO ks=k,N(ng)-1
                 DO i=Istr,Iend
                   IF (WL(i,k).gt.z_w(i,j,ks)) THEN
-!>                  tl_FC(i,k-1)=tl_FC(i,k-1)+tl_WR(i,ks)
-!>
+!^                  tl_FC(i,k-1)=tl_FC(i,k-1)+tl_WR(i,ks)
+!^
                     ad_WR(i,ks)=ad_WR(i,ks)+ad_FC(i,k-1)
                   END IF
                 END DO
@@ -1269,23 +1281,23 @@
             END DO
             DO k=1,N(ng)
               DO i=Istr,Iend
-!>              tl_WR(i,k)=tl_Hz(i,j,k)*qc(i,k)+Hz(i,j,k)*tl_qc(i,k)
-!>
+!^              tl_WR(i,k)=tl_Hz(i,j,k)*qc(i,k)+Hz(i,j,k)*tl_qc(i,k)
+!^
                 ad_Hz(i,j,k)=ad_Hz(i,j,k)+qc(i,k)*ad_WR(i,k)
                 ad_qc(i,k)=ad_qc(i,k)+Hz(i,j,k)*ad_WR(i,k)
                 ad_WR(i,k)=0.0_r8
-!>              tl_WL(i,k)=tl_z_w(i,j,k-1)+tl_cff
-!>
+!^              tl_WL(i,k)=tl_z_w(i,j,k-1)+tl_cff
+!^
                 ad_z_w(i,j,k-1)=ad_z_w(i,j,k-1)+ad_WL(i,k)
                 ad_cff=ad_cff+ad_WL(i,k)
                 ad_WL(i,k)=0.0_r8
-!>              tl_FC(i,k-1)=0.0_r8
-!>
+!^              tl_FC(i,k-1)=0.0_r8
+!^
                 ad_FC(i,k-1)=0.0_r8
               END DO
             END DO
-!>          tl_cff=dtdays*SIGN(1.0_r8,Wbio(isink))*tl_Wbio(isink)
-!>
+!^          tl_cff=dtdays*SIGN(1.0_r8,Wbio(isink))*tl_Wbio(isink)
+!^
             ad_Wbio(isink)=ad_Wbio(isink)+                              &
      &                     dtdays*SIGN(1.0_r8,Wbio(isink))*ad_cff
             ad_cff=0.0_r8
@@ -1391,49 +1403,49 @@
                 dltL=qc(i,k)-bL(i,k)
                 cffR=2.0_r8*dltR
                 cffL=2.0_r8*dltL
-!>              tl_bL(i,k)=tl_qc(i,k)-tl_dltL
-!>
+!^              tl_bL(i,k)=tl_qc(i,k)-tl_dltL
+!^
                 ad_qc(i,k)=ad_qc(i,k)+ad_bL(i,k)
                 ad_dltL=ad_dltL-ad_bL(i,k)
                 ad_bL(i,k)=0.0_r8
-!>              tl_bR(i,k)=tl_qc(i,k)+tl_dltR
-!>
+!^              tl_bR(i,k)=tl_qc(i,k)+tl_dltR
+!^
                 ad_qc(i,k)=ad_qc(i,k)+ad_bR(i,k)
                 ad_dltR=ad_dltR+ad_bR(i,k)
                 ad_bR(i,k)=0.0_r8
                 IF ((dltR*dltL).lt.0.0_r8) THEN
-!>                tl_dltR=0.0_r8
-!>
+!^                tl_dltR=0.0_r8
+!^
                   ad_dltR=0.0_r8
-!>                tl_dltL=0.0_r8
-!>
+!^                tl_dltL=0.0_r8
+!^
                   ad_dltL=0.0_r8
                 ELSE IF (ABS(dltR).gt.ABS(cffL)) THEN
-!>                tl_dltR=tl_cffL
-!>
+!^                tl_dltR=tl_cffL
+!^
                   ad_cffL=ad_cffL+ad_dltR
                   ad_dltR=0.0_r8
                 ELSE IF (ABS(dltL).gt.ABS(cffR)) THEN
-!>                tl_dltL=tl_cffR
-!>
+!^                tl_dltL=tl_cffR
+!^
                   ad_cffR=ad_cffR+ad_dltL
                   ad_dltL=0.0_r8
                 END IF
-!>              tl_cffL=2.0_r8*tl_dltL
-!>
+!^              tl_cffL=2.0_r8*tl_dltL
+!^
                 ad_dltL=ad_dltL+2.0_r8*ad_cffL
                 ad_cffL=0.0_r8
-!>              tl_cffR=2.0_r8*tl_dltR
-!>
+!^              tl_cffR=2.0_r8*tl_dltR
+!^
                 ad_dltR=ad_dltR+2.0_r8*ad_cffR
                 ad_cffR=0.0_r8
-!>              tl_dltL=tl_qc(i,k)-tl_bL(i,k)
-!>
+!^              tl_dltL=tl_qc(i,k)-tl_bL(i,k)
+!^
                 ad_qc(i,k)=ad_qc(i,k)+ad_dltL
                 ad_bL(i,k)=ad_bL(i,k)-ad_dltL
                 ad_dltL=0.0_r8
-!>              tl_dltR=tl_bR(i,k)-tl_qc(i,k)
-!>
+!^              tl_dltR=tl_bR(i,k)-tl_qc(i,k)
+!^
                 ad_bR(i,k)=ad_bR(i,k)+ad_dltR
                 ad_qc(i,k)=ad_qc(i,k)-ad_dltR
                 ad_dltR=0.0_r8
@@ -1441,30 +1453,30 @@
             END DO
             DO i=Istr,Iend
 #if defined LINEAR_CONTINUATION
-!>            tl_bR(i,1)=tl_bL(i,2)
-!>
+!^            tl_bR(i,1)=tl_bL(i,2)
+!^
               ad_bL(i,2)=ad_bL(i,2)+ad_bR(i,1)
               ad_bR(i,1)=0.0_r8
-!>            tl_bL(i,1)=2.0_r8*tl_qc(i,1)-tl_bR(i,1)
-!>
+!^            tl_bL(i,1)=2.0_r8*tl_qc(i,1)-tl_bR(i,1)
+!^
               ad_qc(i,1)=ad_qc(i,1)+2.0_r8*ad_bL(i,1)
               ad_bR(i,1)=ad_bR(i,1)-ad_bL(i,1)
               ad_bL(i,1)=0.0_r8
 #elif defined NEUMANN
-!>            tl_bR(i,1)=tl_bL(i,2)
-!>
+!^            tl_bR(i,1)=tl_bL(i,2)
+!^
               ad_bL(i,2)=ad_bL(i,2)+ad_bR(i,1)
               ad_bR(i,1)=0.0_r8
-!>            tl_bL(i,1)=1.5_r8*tl_qc(i,1)-0.5_r8*tl_bR(i,1)
-!>
+!^            tl_bL(i,1)=1.5_r8*tl_qc(i,1)-0.5_r8*tl_bR(i,1)
+!^
               ad_qc(i,1)=ad_qc(i,1)+1.5_r8*ad_bL(i,1)
               ad_bR(i,1)=ad_bR(i,1)-0.5_r8*ad_bL(i,1)
               ad_bL(i,1)=0.0_r8
 #else
-!>            tl_bL(i,2)=tl_qc(i,1)         ! bottom grid boxes are
-!>            tl_bR(i,1)=tl_qc(i,1)         ! re-assumed to be
-!>            tl_bL(i,1)=tl_qc(i,1)         ! piecewise constant.
-!>
+!^            tl_bL(i,2)=tl_qc(i,1)         ! bottom grid boxes are
+!^            tl_bR(i,1)=tl_qc(i,1)         ! re-assumed to be
+!^            tl_bL(i,1)=tl_qc(i,1)         ! piecewise constant.
+!^
               ad_qc(i,1)=ad_qc(i,1)+ad_bL(i,1)+                         &
      &                              ad_bR(i,1)+                         &
      &                              ad_bL(i,2)
@@ -1473,30 +1485,30 @@
               ad_bL(i,2)=0.0_r8
 #endif
 #if defined LINEAR_CONTINUATION
-!>            tl_bL(i,N(ng))=tl_bR(i,N(ng)-1)
-!>
+!^            tl_bL(i,N(ng))=tl_bR(i,N(ng)-1)
+!^
               ad_bR(i,N(ng)-1)=ad_bR(i,N(ng)-1)+ad_bL(i,N(ng))
               ad_bL(i,N(ng))=0.0_r8
-!>            tl_bR(i,N(ng))=2.0_r8*tl_qc(i,N(ng))-tl_bL(i,N(ng))
-!>
+!^            tl_bR(i,N(ng))=2.0_r8*tl_qc(i,N(ng))-tl_bL(i,N(ng))
+!^
               ad_qc(i,N(ng))=ad_qc(i,N(ng))+2.0_r8*ad_bR(i,N(ng))
               ad_bL(i,N(ng))=ad_bL(i,N(ng))-ad_bR(i,N(ng))
               ad_bR(i,N(ng))=0.0_r8
 #elif defined NEUMANN
-!>            tl_bL(i,N(ng))=tl_bR(i,N(ng)-1)
-!>
+!^            tl_bL(i,N(ng))=tl_bR(i,N(ng)-1)
+!^
               ad_bR(i,N(ng)-1)=ad_bR(i,N(ng)-1)+ad_bL(i,N(ng))
               ad_bL(i,N(ng))=0.0_r8
-!>            tl_bR(i,N(ng))=1.5_r8*tl_qc(i,N(ng))-0.5_r8*tl_bL(i,N(ng))
-!>
+!^            tl_bR(i,N(ng))=1.5_r8*tl_qc(i,N(ng))-0.5_r8*tl_bL(i,N(ng))
+!^
               ad_qc(i,N(ng))=ad_qc(i,N(ng))+1.5_r8*ad_bR(i,N(ng))
               ad_bL(i,N(ng))=ad_bL(i,N(ng))-0.5_r8*ad_bR(i,N(ng))
               ad_bR(i,N(ng))=0.0_r8
 #else
-!>            tl_bR(i,N(ng))=tl_qc(i,N(ng)) ! default strictly monotonic
-!>            tl_bL(i,N(ng))=tl_qc(i,N(ng)) ! conditions
-!>            tl_bR(i,N(ng)-1)=tl_qc(i,N(ng))
-!>
+!^            tl_bR(i,N(ng))=tl_qc(i,N(ng)) ! default strictly monotonic
+!^            tl_bL(i,N(ng))=tl_qc(i,N(ng)) ! conditions
+!^            tl_bR(i,N(ng)-1)=tl_qc(i,N(ng))
+!^
               ad_qc(i,N(ng))=ad_qc(i,N(ng))+ad_bR(i,N(ng)-1)+           &
      &                                      ad_bL(i,N(ng))+             &
      &                                      ad_bR(i,N(ng))
@@ -1573,15 +1585,15 @@
                 bR(i,k)=(dltR*bR(i,k)+dltL*bL(i,k+1))/(dltR+dltL)
                 bL1(i,k+1)=bL(i,k+1)
                 bL(i,k+1)=bR(i,k)
-!>              tl_bL(i,k+1)=tl_bR(i,k)
-!>
+!^              tl_bL(i,k+1)=tl_bR(i,k)
+!^
                 ad_bR(i,k)=ad_bR(i,k)+ad_bL(i,k+1)
                 ad_bL(i,k+1)=0.0_r8
-!>              tl_bR(i,k)=(tl_dltR*bR1(i,k  )+dltR*tl_bR(i,k  )+       &
-!>   &                      tl_dltL*bL1(i,k+1)+dltL*tl_bL(i,k+1))/      &
-!>   &                      (dltR+dltL)-                                &
-!>   &                      (tl_dltR+tl_dltL)*bR(i,k)/(dltR+dltL)
-!>
+!^              tl_bR(i,k)=(tl_dltR*bR1(i,k  )+dltR*tl_bR(i,k  )+       &
+!^   &                      tl_dltL*bL1(i,k+1)+dltL*tl_bL(i,k+1))/      &
+!^   &                      (dltR+dltL)-                                &
+!^   &                      (tl_dltR+tl_dltL)*bR(i,k)/(dltR+dltL)
+!^
                 adfac=ad_bR(i,k)/(dltR+dltL)
                 adfac1=ad_bR(i,k)*bR(i,k)/(dltR+dltL)
                 ad_dltR=ad_dltR+adfac*bR1(i,k)
@@ -1590,15 +1602,15 @@
                 ad_dltR=ad_dltR-adfac1
                 ad_dltL=ad_dltL-adfac1
                 ad_bR(i,k)=dltR*adfac
-!>              tl_dltR=(0.5_r8-SIGN(0.5_r8,cff-WR(i,k+1)))*            &
-!>   &                  tl_WR(i,k+1)
-!>
+!^              tl_dltR=(0.5_r8-SIGN(0.5_r8,cff-WR(i,k+1)))*            &
+!^   &                  tl_WR(i,k+1)
+!^
                 ad_WR(i,k+1)=ad_WR(i,k+1)+                              &
      &                       (0.5_r8-SIGN(0.5_r8,cff-WR(i,k+1)))*       &
      &                       ad_dltR
                 ad_dltR=0.0_r8
-!>              tl_dltL=(0.5_r8-SIGN(0.5_r8,cff-WL(i,k  )))*            &
-!>   &                  tl_WL(i,k  )
+!^              tl_dltL=(0.5_r8-SIGN(0.5_r8,cff-WL(i,k  )))*            &
+!^   &                  tl_WL(i,k  )
                 ad_WL(i,k  )=ad_WL(i,k  )+                              &
      &                       (0.5_r8-SIGN(0.5_r8,cff-WL(i,k  )))*       &
      &                       ad_dltL
@@ -1641,27 +1653,27 @@
                 cff=(dltR-dltL)*Hz_inv3(i,k)
                 dltR=dltR-cff*Hz(i,j,k+1)
                 dltL=dltL+cff*Hz(i,j,k-1)
-!>              tl_WL(i,k)=2.0_r8*(dltR-2.0_r8*dltL)*                   &
-!>   &                            (tl_dltR-2.0_r8*tl_dltL)
-!>
+!^              tl_WL(i,k)=2.0_r8*(dltR-2.0_r8*dltL)*                   &
+!^   &                            (tl_dltR-2.0_r8*tl_dltL)
+!^
                 adfac=ad_WL(i,k)*2.0_r8*(dltR-2.0_r8*dltL)
                 ad_dltR=ad_dltR+adfac
                 ad_dltL=ad_dltL-2.0_r8*adfac
                 ad_WL(i,k)=0.0_r8
-!>              tl_WR(i,k)=2.0_r8*(2.0_r8*dltR-dltL)*                   &
-!>   &                            (2.0_r8*tl_dltR-tl_dltL)
-!>
+!^              tl_WR(i,k)=2.0_r8*(2.0_r8*dltR-dltL)*                   &
+!^   &                            (2.0_r8*tl_dltR-tl_dltL)
+!^
                 adfac=ad_WR(i,k)*2.0_r8*(2.0_r8*dltR-dltL)
                 ad_dltR=ad_dltR+2.0_r8*adfac
                 ad_dltL=ad_dltL-adfac
                 ad_WR(i,k)=0.0_r8
-!>              tl_bL(i,k)=tl_qc(i,k)-tl_dltL
-!>
+!^              tl_bL(i,k)=tl_qc(i,k)-tl_dltL
+!^
                 ad_qc(i,k)=ad_qc(i,k)+ad_bL(i,k)
                 ad_dltL=ad_dltL-ad_bL(i,k)
                 ad_bL(i,k)=0.0_r8
-!>              tl_bR(i,k)=tl_qc(i,k)+tl_dltR
-!>
+!^              tl_bR(i,k)=tl_qc(i,k)+tl_dltR
+!^
                 ad_qc(i,k)=ad_qc(i,k)+ad_bR(i,k)
                 ad_dltR=ad_dltR+ad_bR(i,k)
                 ad_bR(i,k)=0.0_r8
@@ -1688,17 +1700,17 @@
                 END IF
 
                 cff=(dltR-dltL)*Hz_inv3(i,k)
-!>              tl_dltL=tl_dltL+tl_cff*Hz(i,j,k-1)+cff*tl_Hz(i,j,k-1)
-!>
+!^              tl_dltL=tl_dltL+tl_cff*Hz(i,j,k-1)+cff*tl_Hz(i,j,k-1)
+!^
                 ad_cff=ad_cff+ad_dltL*Hz(i,j,k-1)
                 ad_Hz(i,j,k-1)=ad_Hz(i,j,k-1)+cff*ad_dltL
-!>              tl_dltR=tl_dltR-tl_cff*Hz(i,j,k+1)-cff*tl_Hz(i,j,k+1)
-!>
+!^              tl_dltR=tl_dltR-tl_cff*Hz(i,j,k+1)-cff*tl_Hz(i,j,k+1)
+!^
                 ad_cff=ad_cff-ad_dltR*Hz(i,j,k+1)
                 ad_Hz(i,j,k+1)=ad_Hz(i,j,k+1)-cff*ad_dltR
-!>              tl_cff=(tl_dltR-tl_dltL)*Hz_inv3(i,k)+                  &
-!>   &                 (dltR-dltL)*tl_Hz_inv3(i,k)
-!>
+!^              tl_cff=(tl_dltR-tl_dltL)*Hz_inv3(i,k)+                  &
+!^   &                 (dltR-dltL)*tl_Hz_inv3(i,k)
+!^
                 adfac=ad_cff*Hz_inv3(i,k)
                 ad_dltR=ad_dltR+adfac
                 ad_dltL=ad_dltL-adfac
@@ -1714,46 +1726,46 @@
                 cffL=cff*FC(i,k-1)
 
                 IF ((dltR*dltL).le.0.0_r8) THEN
-!>                tl_dltR=0.0_r8
-!>
+!^                tl_dltR=0.0_r8
+!^
                   ad_dltR=0.0_r8
-!>                tl_dltL=0.0_r8
-!>
+!^                tl_dltL=0.0_r8
+!^
                   ad_dltL=0.0_r8
                 ELSE IF (ABS(dltR).gt.ABS(cffL)) THEN
-!>                tl_dltR=tl_cffL
-!>
+!^                tl_dltR=tl_cffL
+!^
                   ad_cffL=ad_cffL+ad_dltR
                   ad_dltR=0.0_r8
                 ELSE IF (ABS(dltL).gt.ABS(cffR)) THEN
-!>                tl_dltL=tl_cffR
-!>
+!^                tl_dltL=tl_cffR
+!^
                   ad_cffR=ad_cffR+ad_dltL
                   ad_dltL=0.0_r8
                 END IF
-!>              tl_cffL=tl_cff*FC(i,k-1)+cff*tl_FC(i,k-1)
-!>
+!^              tl_cffL=tl_cff*FC(i,k-1)+cff*tl_FC(i,k-1)
+!^
                 ad_cff=ad_cff+ad_cffL*FC(i,k-1)
                 ad_FC(i,k-1)=ad_FC(i,k-1)+cff*ad_cffL
                 ad_cffL=0.0_r8
-!>              tl_cffR=tl_cff*FC(i,k)+cff*tl_FC(i,k)
-!>
+!^              tl_cffR=tl_cff*FC(i,k)+cff*tl_FC(i,k)
+!^
                 ad_cff=ad_cff+ad_cffR*FC(i,k)
                 ad_FC(i,k)=ad_FC(i,k)+cff*ad_cffR
                 ad_cffR=0.0_r8
-!>              tl_cff=tl_Hz(i,j,k-1)+2.0_r8*tl_Hz(i,j,k)+tl_Hz(i,j,k+1)
-!>
+!^              tl_cff=tl_Hz(i,j,k-1)+2.0_r8*tl_Hz(i,j,k)+tl_Hz(i,j,k+1)
+!^
                 ad_Hz(i,j,k-1)=ad_Hz(i,j,k-1)+ad_cff
                 ad_Hz(i,j,k)=ad_Hz(i,j,k)+2.0_r8*ad_cff
                 ad_Hz(i,j,k+1)=ad_Hz(i,j,k+1)+ad_cff
                 ad_cff=0.0_r8
-!>              tl_dltL=tl_Hz(i,j,k)*FC(i,k-1)+Hz(i,j,k)*tl_FC(i,k-1)
-!>
+!^              tl_dltL=tl_Hz(i,j,k)*FC(i,k-1)+Hz(i,j,k)*tl_FC(i,k-1)
+!^
                 ad_Hz(i,j,k)=ad_Hz(i,j,k)+ad_dltL*FC(i,k-1)
                 ad_FC(i,k-1)=ad_FC(i,k-1)+ad_dltL*Hz(i,j,k)
                 ad_dltL=0.0_r8
-!>              tl_dltR=tl_Hz(i,j,k)*FC(i,k)+Hz(i,j,k)*tl_FC(i,k)
-!>
+!^              tl_dltR=tl_Hz(i,j,k)*FC(i,k)+Hz(i,j,k)*tl_FC(i,k)
+!^
                 ad_Hz(i,j,k)=ad_Hz(i,j,k)+ad_dltR*FC(i,k)
                 ad_FC(i,k)=ad_FC(i,k)+ad_dltR*Hz(i,j,k)
                 ad_dltR=0.0_r8
@@ -1761,9 +1773,9 @@
             END DO
             DO k=N(ng)-1,1,-1
               DO i=Istr,Iend
-!>              tl_FC(i,k)=(tl_qc(i,k+1)-tl_qc(i,k))*Hz_inv2(i,k)+      &
-!>   &                     (qc(i,k+1)-qc(i,k))*tl_Hz_inv2(i,k)
-!>
+!^              tl_FC(i,k)=(tl_qc(i,k+1)-tl_qc(i,k))*Hz_inv2(i,k)+      &
+!^   &                     (qc(i,k+1)-qc(i,k))*tl_Hz_inv2(i,k)
+!^
                 adfac=ad_FC(i,k)*Hz_inv2(i,k)
                 ad_qc(i,k+1)=ad_qc(i,k+1)+adfac
                 ad_qc(i,k)=ad_qc(i,k)-adfac
@@ -1774,8 +1786,8 @@
             END DO
             DO k=1,N(ng)
               DO i=Istr,Iend
-!>              tl_qc(i,k)=tl_Bio(i,k,ibio)
-!>
+!^              tl_qc(i,k)=tl_Bio(i,k,ibio)
+!^
                 ad_Bio(i,k,ibio)=ad_Bio(i,k,ibio)+ad_qc(i,k)
                 ad_qc(i,k)=0.0_r8
               END DO
@@ -2092,13 +2104,13 @@
           cff2=1.0_r8/(1.0_r8+cff1)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
-!>   &                          tl_Bio(i,k,iSDet)*cff1
-!>
+!^            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
+!^   &                          tl_Bio(i,k,iSDet)*cff1
+!^
               ad_Bio(i,k,iSDet)=ad_Bio(i,k,iSDet)+                      &
      &                          cff1*ad_Bio(i,k,iNO3_)
-!>            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)*cff2
-!>
+!^            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)*cff2
+!^
               ad_Bio(i,k,iSDet)=cff2*ad_Bio(i,k,iSDet)
             END DO
           END DO
@@ -2110,18 +2122,18 @@
           cff3=dtdays*ZooMD(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
-!>   &                          tl_Bio(i,k,iZoop)*cff3
-!>
+!^            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
+!^   &                          tl_Bio(i,k,iZoop)*cff3
+!^
               ad_Bio(i,k,iZoop)=ad_Bio(i,k,iZoop)+                      &
      &                          cff3*ad_Bio(i,k,iSDet)
-!>            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
-!>   &                          tl_Bio(i,k,iZoop)*cff2
-!>
+!^            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
+!^   &                          tl_Bio(i,k,iZoop)*cff2
+!^
               ad_Bio(i,k,iZoop)=ad_Bio(i,k,iZoop)+                      &
      &                          cff2*ad_Bio(i,k,iNO3_)
-!>            tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)*cff1
-!>
+!^            tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)*cff1
+!^
               ad_Bio(i,k,iZoop)=cff1*ad_Bio(i,k,iZoop)
             END DO
           END DO
@@ -2136,50 +2148,50 @@
             DO i=Istr,Iend
               cff=Bio1(i,k,iZoop)*Bio1(i,k,iPhyt)*cff1/                 &
      &            (cff3+Bio1(i,k,iPhyt)*Bio1(i,k,iPhyt))
-!>            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
-!>   &                          tl_Bio(i,k,iPhyt)*cff*ZooEC(ng)+        &
-!>   &                          Bio(i,k,iPhyt)*tl_cff*ZooEC(ng)
-!>
+!^            tl_Bio(i,k,iNO3_)=tl_Bio(i,k,iNO3_)+                      &
+!^   &                          tl_Bio(i,k,iPhyt)*cff*ZooEC(ng)+        &
+!^   &                          Bio(i,k,iPhyt)*tl_cff*ZooEC(ng)
+!^
               ad_cff=ad_cff+                                            &
      &               Bio(i,k,iPhyt)*ZooEC(ng)*ad_Bio(i,k,iNO3_)
               ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+                      &
      &                          cff*ZooEC(ng)*ad_Bio(i,k,iNO3_)
-!>            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
-!>   &                          tl_Bio(i,k,iPhyt)*                      &
-!>   &                          (cff2+cff*(ZooGA(ng)-ZooEC(ng)))+       &
-!>   &                          Bio(i,k,iPhyt)*                         &
-!>   &                          tl_cff*(ZooGA(ng)-ZooEC(ng))
-!>
+!^            tl_Bio(i,k,iSDet)=tl_Bio(i,k,iSDet)+                      &
+!^   &                          tl_Bio(i,k,iPhyt)*                      &
+!^   &                          (cff2+cff*(ZooGA(ng)-ZooEC(ng)))+       &
+!^   &                          Bio(i,k,iPhyt)*                         &
+!^   &                          tl_cff*(ZooGA(ng)-ZooEC(ng))
+!^
               ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+                      &
      &                          (cff2+cff*(ZooGA(ng)-ZooEC(ng)))*       &
      &                          ad_Bio(i,k,iSDet)
               ad_cff=ad_cff+                                            &
      &               Bio(i,k,iPhyt)*(ZooGA(ng)-ZooEC(ng))*              &
      &               ad_Bio(i,k,iSDet)
-!>            tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)+                      &
-!>   &                          tl_Bio(i,k,iPhyt)*                      &
-!>   &                          cff*(1.0_r8-ZooGA(ng))+                 &
-!>   &                          Bio(i,k,iPhyt)*                         &
-!>   &                          tl_cff*(1.0_r8-ZooGA(ng))
-!>
+!^            tl_Bio(i,k,iZoop)=tl_Bio(i,k,iZoop)+                      &
+!^   &                          tl_Bio(i,k,iPhyt)*                      &
+!^   &                          cff*(1.0_r8-ZooGA(ng))+                 &
+!^   &                          Bio(i,k,iPhyt)*                         &
+!^   &                          tl_cff*(1.0_r8-ZooGA(ng))
+!^
               ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+                      &
      &                          cff*(1.0_r8-ZooGA(ng))*                 &
      &                          ad_Bio(i,k,iZoop)
               ad_cff=ad_cff+                                            &
      &               Bio(i,k,iPhyt)*(1.0_r8-ZooGA(ng))*                 &
      &               ad_Bio(i,k,iZoop)
-!>            tl_Bio(i,k,iPhyt)=(tl_Bio(i,k,iPhyt)-                     &
-!>   &                           tl_cff*Bio(i,k,iPhyt))/                &
-!>   &                          (1.0_r8+cff+cff2)
-!>
+!^            tl_Bio(i,k,iPhyt)=(tl_Bio(i,k,iPhyt)-                     &
+!^   &                           tl_cff*Bio(i,k,iPhyt))/                &
+!^   &                          (1.0_r8+cff+cff2)
+!^
               adfac=ad_Bio(i,k,iPhyt)/(1.0_r8+cff+cff2)
               ad_cff=ad_cff-Bio(i,k,iPhyt)*adfac
               ad_Bio(i,k,iPhyt)=adfac
-!>            tl_cff=((tl_Bio(i,k,iZoop)*Bio1(i,k,iPhyt)+               &
-!>   &                 Bio1(i,k,iZoop)*tl_Bio(i,k,iPhyt))*cff1-         &
-!>   &                2.0_r8*Bio1(i,k,iPhyt)*tl_Bio(i,k,iPhyt)*cff)/    &
-!>   &               (cff3+Bio1(i,k,iPhyt)*Bio1(i,k,iPhyt))
-!>
+!^            tl_cff=((tl_Bio(i,k,iZoop)*Bio1(i,k,iPhyt)+               &
+!^   &                 Bio1(i,k,iZoop)*tl_Bio(i,k,iPhyt))*cff1-         &
+!^   &                2.0_r8*Bio1(i,k,iPhyt)*tl_Bio(i,k,iPhyt)*cff)/    &
+!^   &               (cff3+Bio1(i,k,iPhyt)*Bio1(i,k,iPhyt))
+!^
               adfac=ad_cff/(cff3+Bio1(i,k,iPhyt)*Bio1(i,k,iPhyt))
               adfac1=adfac*cff1
               ad_Bio(i,k,iZoop)=ad_Bio(i,k,iZoop)+                      &
@@ -2501,26 +2513,26 @@
               cff=Bio1(i,k,iPhyt)*                                      &
      &            cff1*EXP(K_ext(ng)*z_r(i,j,k))/                       &
      &            (K_NO3(ng)+Bio1(i,k,iNO3_))
-!>            tl_Bio(i,k,iPhyt)=tl_Bio(i,k,iPhyt)+                      &
-!>   &                          tl_Bio(i,k,iNO3_)*cff+                  &
-!>   &                          Bio(i,k,iNO3_)*tl_cff
-!>
+!^            tl_Bio(i,k,iPhyt)=tl_Bio(i,k,iPhyt)+                      &
+!^   &                          tl_Bio(i,k,iNO3_)*cff+                  &
+!^   &                          Bio(i,k,iNO3_)*tl_cff
+!^
               ad_Bio(i,k,iNO3_)=ad_Bio(i,k,iNO3_)+                      &
      &                          ad_Bio(i,k,iPhyt)*cff
               ad_cff=ad_cff+Bio(i,k,iNO3_)*ad_Bio(i,k,iPhyt)
-!>            tl_Bio(i,k,iNO3_)=(tl_Bio(i,k,iNO3_)-                     &
-!>   &                           tl_cff*Bio(i,k,iNO3_))/                &
-!>   &                          (1.0_r8+cff)
-!>
+!^            tl_Bio(i,k,iNO3_)=(tl_Bio(i,k,iNO3_)-                     &
+!^   &                           tl_cff*Bio(i,k,iNO3_))/                &
+!^   &                          (1.0_r8+cff)
+!^
               adfac=ad_Bio(i,k,iNO3_)/(1.0_r8+cff)
               ad_cff=ad_cff-Bio(i,k,iNO3_)*adfac
               ad_Bio(i,k,iNO3_)=adfac
-!>            tl_cff=(tl_Bio(i,k,iPhyt)*                                &
-!>   &                cff1*EXP(K_ext(ng)*z_r(i,j,k))-                   &
-!>   &                tl_Bio(i,k,iNO3_)*cff)/                           &
-!>   &               (K_NO3(ng)+Bio1(i,k,iNO3_))+                       &
-!>   &               K_ext(ng)*tl_z_r(i,j,k)*cff
-!>
+!^            tl_cff=(tl_Bio(i,k,iPhyt)*                                &
+!^   &                cff1*EXP(K_ext(ng)*z_r(i,j,k))-                   &
+!^   &                tl_Bio(i,k,iNO3_)*cff)/                           &
+!^   &               (K_NO3(ng)+Bio1(i,k,iNO3_))+                       &
+!^   &               K_ext(ng)*tl_z_r(i,j,k)*cff
+!^
               adfac=ad_cff/(K_NO3(ng)+Bio1(i,k,iNO3_))
               ad_Bio(i,k,iPhyt)=ad_Bio(i,k,iPhyt)+                      &
      &                          adfac*cff1*EXP(K_ext(ng)*z_r(i,j,k))
@@ -2572,13 +2584,13 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-!>              tl_Bio(i,k,ibio)=(0.5_r8-                               &
-!>   &                            SIGN(0.5_r8,eps-Bio_old(i,k,ibio)))*  &
-!>   &                           tl_Bio_old(i,k,ibio)-                  &
-!>   &                           tl_cff1*                               &
-!>   &                           (SIGN(0.5_r8, REAL(itrmx-ibio,r8)**2)+ &
-!>   &                            SIGN(0.5_r8,-REAL(itrmx-ibio,r8)**2))
-!>
+!^              tl_Bio(i,k,ibio)=(0.5_r8-                               &
+!^   &                            SIGN(0.5_r8,eps-Bio_old(i,k,ibio)))*  &
+!^   &                           tl_Bio_old(i,k,ibio)-                  &
+!^   &                           tl_cff1*                               &
+!^   &                           (SIGN(0.5_r8, REAL(itrmx-ibio,r8)**2)+ &
+!^   &                            SIGN(0.5_r8,-REAL(itrmx-ibio,r8)**2))
+!^
                 ad_Bio_old(i,k,ibio)=ad_Bio_old(i,k,ibio)+              &
      &                               (0.5_r8-                           &
      &                                SIGN(0.5_r8,                      &
@@ -2593,22 +2605,22 @@
             ELSE
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-!>              tl_Bio(i,k,ibio)=tl_Bio_old(i,k,ibio)
-!>
+!^              tl_Bio(i,k,ibio)=tl_Bio_old(i,k,ibio)
+!^
                 ad_Bio_old(i,k,ibio)=ad_Bio_old(i,k,ibio)+              &
      &                               ad_Bio(i,k,ibio)
                 ad_Bio(i,k,ibio)=0.0_r8
               END DO
             END IF
-!>          tl_cff1=-(0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iNO3_)-eps))*      &
-!>   &               tl_Bio_old(i,k,iNO3_)-                             &
-!>   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iPhyt)-eps))*      &
-!>   &               tl_Bio_old(i,k,iPhyt)-                             &
-!>   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iZoop)-eps))*      &
-!>   &               tl_Bio_old(i,k,iZoop)-                             &
-!>   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iSDet)-eps))*      &
-!>   &               tl_Bio_old(i,k,iSDet)
-!>
+!^          tl_cff1=-(0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iNO3_)-eps))*      &
+!^   &               tl_Bio_old(i,k,iNO3_)-                             &
+!^   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iPhyt)-eps))*      &
+!^   &               tl_Bio_old(i,k,iPhyt)-                             &
+!^   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iZoop)-eps))*      &
+!^   &               tl_Bio_old(i,k,iZoop)-                             &
+!^   &               (0.5_r8-SIGN(0.5_r8,Bio_old(i,k,iSDet)-eps))*      &
+!^   &               tl_Bio_old(i,k,iSDet)
+!^
             ad_Bio_old(i,k,iNO3_)=ad_Bio_old(i,k,iNO3_)-                &
      &                            (0.5_r8-                              &
      &                             SIGN(0.5_r8,                         &
@@ -2633,8 +2645,8 @@
           ibio=idbio(itrc)
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            tl_Bio_old(i,k,ibio)=tl_t(i,j,k,nstp,ibio)
-!>
+!^            tl_Bio_old(i,k,ibio)=tl_t(i,j,k,nstp,ibio)
+!^
               ad_t(i,j,k,nstp,ibio)=ad_t(i,j,k,nstp,ibio)+              &
      &                              ad_Bio_old(i,k,ibio)
               ad_Bio_old(i,k,ibio)=0.0_r8
@@ -2646,10 +2658,10 @@
 !
         DO k=2,N(ng)-1
           DO i=Istr,Iend
-!>          tl_Hz_inv3(i,k)=-Hz_inv3(i,k)*Hz_inv3(i,k)*                 &
-!>   &                      (tl_Hz(i,j,k-1)+tl_Hz(i,j,k)+               &
-!>   &                       tl_Hz(i,j,k+1))
-!>
+!^          tl_Hz_inv3(i,k)=-Hz_inv3(i,k)*Hz_inv3(i,k)*                 &
+!^   &                      (tl_Hz(i,j,k-1)+tl_Hz(i,j,k)+               &
+!^   &                       tl_Hz(i,j,k+1))
+!^
             adfac=-Hz_inv3(i,k)*Hz_inv3(i,k)*ad_Hz_inv3(i,k)
             ad_Hz(i,j,k-1)=ad_Hz(i,j,k-1)+adfac
             ad_Hz(i,j,k  )=ad_Hz(i,j,k  )+adfac
@@ -2659,9 +2671,9 @@
         END DO
         DO k=1,N(ng)-1
           DO i=Istr,Iend
-!>          tl_Hz_inv2(i,k)=-Hz_inv2(i,k)*Hz_inv2(i,k)*                 &
-!>   &                      (tl_Hz(i,j,k)+tl_Hz(i,j,k+1))
-!>
+!^          tl_Hz_inv2(i,k)=-Hz_inv2(i,k)*Hz_inv2(i,k)*                 &
+!^   &                      (tl_Hz(i,j,k)+tl_Hz(i,j,k+1))
+!^
             adfac=-Hz_inv2(i,k)*Hz_inv2(i,k)*ad_Hz_inv2(i,k)
             ad_Hz(i,j,k  )=ad_Hz(i,j,k  )+adfac
             ad_Hz(i,j,k+1)=ad_Hz(i,j,k+1)+adfac
@@ -2670,8 +2682,8 @@
         END DO
         DO k=1,N(ng)
           DO i=Istr,Iend
-!>          tl_Hz_inv(i,k)=-Hz_inv(i,k)*Hz_inv(i,k)*tl_Hz(i,j,k)
-!>
+!^          tl_Hz_inv(i,k)=-Hz_inv(i,k)*Hz_inv(i,k)*tl_Hz(i,j,k)
+!^
             ad_Hz(i,j,k)=ad_Hz(i,j,k)-                                  &
      &                   Hz_inv(i,k)*Hz_inv(i,k)*ad_Hz_inv(i,k)
             ad_Hz_inv(i,k)=0.0_r8
@@ -2683,10 +2695,12 @@
 !
 !  Adjoint vertical sinking velocity vector.
 !
-!>    tl_Wbio(1)=tl_wDet(ng)          ! Small detritus
-!>
+!^    tl_Wbio(1)=tl_wDet(ng)          ! Small detritus
+!^
       ad_wDet(ng)=ad_wDet(ng)+ad_Wbio(1)
       ad_Wbio(1)=0.0_r8
 
       RETURN
-      END SUBROUTINE ad_biology_tile
+      END SUBROUTINE ad_npzd_franks_tile
+
+      END MODULE ad_biology_mod

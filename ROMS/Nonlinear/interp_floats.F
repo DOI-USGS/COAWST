@@ -2,9 +2,10 @@
       MODULE interp_floats_mod
 #if defined NONLINEAR && defined FLOATS
 !
-!svn $Id: interp_floats.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: interp_floats.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group         Mark Hadfield   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group         Mark Hadfield   !
 !    Licensed under a MIT/X style license             John M. Klinck   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -80,11 +81,7 @@
 
       logical, intent(in) :: maskit
       logical, intent(in) :: my_thread(Lstr:Lend)
-# ifdef OFFLINE_FLOATS
-      logical, intent(inout) :: bounded(Nfloats(ng))
-# else
       logical, intent(in) :: bounded(Nfloats(ng))
-# endif
 
       real(dp), intent(in) :: Fspval
 
@@ -279,13 +276,7 @@
      &                  p2*q2*r2*Amask(i2,j2)*t222)*nudg(l)
                   track(ifield,itime,l)=cff2/cff1+cff3
                 ELSE
-# ifdef OFFLINE_FLOATS
-! Float has likely moved into land, maybe becuase offline DT is too big??
-                  track(ifield,itime,l)=spval
-                  bounded(l)=.FALSE.
-#else
                   track(ifield,itime,l)=0.0_r8
-#endif
                 END IF
 # endif
               ELSE

@@ -1,8 +1,9 @@
 #!/bin/csh -f
 #
-# svn $Id: build_roms.csh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: build_roms.csh 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -160,6 +161,7 @@ setenv MY_PROJECT_DIR        ${PWD}
 
  setenv USE_MPI             on          # distributed-memory parallelism
  setenv USE_MPIF90          on          # compile with mpif90 script
+#setenv which_MPI           intel       # compile with mpiifort library
 #setenv which_MPI           mpich       # compile with MPICH library
 #setenv which_MPI           mpich2      # compile with MPICH2 library
 #setenv which_MPI           mvapich2    # compile with MVAPICH2 library
@@ -173,8 +175,35 @@ setenv MY_PROJECT_DIR        ${PWD}
 
 #setenv USE_DEBUG           on          # use Fortran debugging flags
  setenv USE_LARGE           on          # activate 64-bit compilation
-#setenv USE_NETCDF4         on          # compile with NetCDF-4 library
+
+#--------------------------------------------------------------------------
+# Building the ROMS executable using the shared library is not recommended
+# because it requires keeping track of the matching libROMS.{so|dylib}
+# which is located in the Build_roms or Build_romsG directory and will be
+# lost and/or replaced with each new build. The option to build the shared
+# version of libROMS was introduced for use in model coupling systems.
+#--------------------------------------------------------------------------
+
+#setenv SHARED              on          # build libROMS.{so|dylib}
+ setenv STATIC              on          # build libROMS.a
+
+ setenv EXEC                on          # build roms{G|M|O|S} executable
+
+# ROMS I/O choices and combinations. A more complete description of the
+# available options can be found in the wiki (https://myroms.org/wiki/IO).
+# Most users will want to enable at least USE_NETCDF4 because that will
+# instruct the ROMS build system to use nf-config to determine the
+# necessary libraries and paths to link into the ROMS executable.
+
+ setenv USE_NETCDF4         on          # compile with NetCDF-4 library
 #setenv USE_PARALLEL_IO     on          # Parallel I/O with NetCDF-4/HDF5
+#setenv USE_PIO             on          # Parallel I/O with PIO library
+#setenv USE_SCORPIO         on          # Parallel I/O with SCORPIO library
+
+# If any of the coupling component use the HDF5 Fortran API for primary
+# I/O, we need to compile the main driver with the HDF5 library.
+
+#setenv USE_HDF5            on          # compile with HDF5 library
 
 #--------------------------------------------------------------------------
 # If coupling Earth Systems Models (ESM), set the location of the ESM
@@ -182,7 +211,7 @@ setenv MY_PROJECT_DIR        ${PWD}
 # each ESM component separately first, and then ROMS since it is driving
 # the coupled system. Only the ESM components activated are considered
 # and the rest are ignored.  Some components like WRF cannot be built
-# in a directory specified by the user but in it is the root directory,
+# in a directory specified by the user but in its own root directory,
 # and cannot be moved when debugging with tools like TotalView.
 #--------------------------------------------------------------------------
 

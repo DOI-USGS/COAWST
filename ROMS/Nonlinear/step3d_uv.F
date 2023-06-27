@@ -3,9 +3,10 @@
 
 #if defined NONLINEAR && defined SOLVE3D
 !
-!svn $Id: step3d_uv.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: step3d_uv.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -169,8 +170,8 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 # endif
-      USE u3dbc_mod, ONLY : u3dbc_tile
-      USE v3dbc_mod, ONLY : v3dbc_tile
+      USE u3dbc_mod,       ONLY : u3dbc_tile
+      USE v3dbc_mod,       ONLY : v3dbc_tile
 # ifdef UV_WAVEDRAG
       USE mod_tides, only : TIDES, drag_scale
 # endif
@@ -210,12 +211,15 @@
       real(r8), intent(in) :: DV_avg1(LBi:,LBj:)
       real(r8), intent(in) :: DU_avg2(LBi:,LBj:)
       real(r8), intent(in) :: DV_avg2(LBi:,LBj:)
-      real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
-      real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #  ifdef WEC
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
 #  endif
+#  ifdef OMEGA_IMPLICIT
+      real(r8), intent(in) :: Wi(LBi:,LBj:,0:)
+#  endif
+      real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
+      real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaU2wrk(LBi:,LBj:,:)
       real(r8), intent(inout) :: DiaV2wrk(LBi:,LBj:,:)
@@ -232,9 +236,6 @@
       real(r8), intent(inout) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(inout) :: v_stokes(LBi:,LBj:,:)
 #  endif
-# if defined OMEGA_IMPLICIT
-      real(r8), intent(in) :: Wi(LBi:,LBj:,0:)
-# endif
       real(r8), intent(out) :: ubar(LBi:,LBj:,:)
       real(r8), intent(out) :: vbar(LBi:,LBj:,:)
       real(r8), intent(out) :: Huon(LBi:,LBj:,:)
@@ -269,12 +270,15 @@
       real(r8), intent(in) :: DV_avg1(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: DU_avg2(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: DV_avg2(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
-      real(r8), intent(inout) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
 #  ifdef WEC
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
 #  endif
+#  ifdef OMEGA_IMPLICIT
+      real(r8), intent(in) :: Wi(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
+      real(r8), intent(inout) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
+      real(r8), intent(inout) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
 #  ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaU2wrk(LBi:UBi,LBj:UBj,NDM2d)
       real(r8), intent(inout) :: DiaV2wrk(LBi:UBi,LBj:UBj,NDM2d)
@@ -291,9 +295,6 @@
       real(r8), intent(inout) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
 #  endif
-# if defined OMEGA_IMPLICIT
-      real(r8), intent(in) :: Wi(LBi:UBi,LBj:UBj,0:N(ng))
-# endif
       real(r8), intent(out) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(out) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(out) :: Huon(LBi:UBi,LBj:UBj,N(ng))
@@ -311,6 +312,11 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+# ifdef OMEGA_IMPLICIT
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCmin
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCmax
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: WK
+# endif
 # ifdef WEC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CFs
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DCs
@@ -320,11 +326,6 @@
 # ifdef DIAGNOSTICS_UV
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: wrk
       real(r8), dimension(IminS:ImaxS,1:NDM2d-1) :: Dwrk
-# endif
-# if defined OMEGA_IMPLICIT
-      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCmin
-      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FCmax
-      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: WK
 # endif
 
 # include "set_bounds.h"
@@ -515,10 +516,10 @@
 !  Implicit vertical advection part for u.
 !
         DO i=IstrU,Iend
-          WK(i,0)=0.5_r8*(Wi(i-1,j,0)+                                 &
+          WK(i,0)=0.5_r8*(Wi(i-1,j,0)+                                  &
      &                    Wi(i  ,j,0))
           DO k=1,N(ng)
-            WK(i,k)=0.5_r8*(Wi(i-1,j,k)+                               &
+            WK(i,k)=0.5_r8*(Wi(i-1,j,k)+                                &
      &                      Wi(i  ,j,k))
             Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
      &                       Hz(i  ,j,k))
@@ -532,8 +533,9 @@
         cff=dt(ng)
         DO k=1,N(ng)-1
           DO i=IstrU,Iend
-            FCmax(i,k)=MAX(WK(i,k),0.0_r8)*cff/(on_u(i,j)*om_u(i,j))
-            FCmin(i,k)=MIN(WK(i,k),0.0_r8)*cff/(on_u(i,j)*om_u(i,j))
+            cff1=cff/(on_u(i,j)*om_u(i,j))
+            FCmax(i,k)=MAX(WK(i,k),0.0_r8)*cff1
+            FCmin(i,k)=MIN(WK(i,k),0.0_r8)*cff1
           END DO
         END DO
         DO i=IstrU,Iend
@@ -570,14 +572,16 @@
 #  ifdef DIAGNOSTICS_UV
           cff1=u(i,j,N(ng),nnew)
 #  endif
-          DC(i,N(ng))=(DC(i,N(ng))+FCmax(i,N(ng)-1)*DC(i,N(ng)-1))/     &
-     &                (BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+          cff=1.0_r8/(BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+          DC(i,N(ng))=cff*(DC(i,N(ng))+                                 &
+     &                     FCmax(i,N(ng)-1)*DC(i,N(ng)-1))
           u(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
           DiaRU(i,j,N(ng),nrhs,M3vadv)=DiaRU(i,j,N(ng),nrhs,M3vadv)+    &
      &                                 u(i,j,N(ng),nnew)-cff1
 #  endif
         END DO
+!
         DO k=N(ng)-1,1,-1
           DO i=IstrU,Iend
 #  ifdef DIAGNOSTICS_UV
@@ -989,12 +993,12 @@
 !  Implicit vertical advection part for v.
 !
           DO i=Istr,Iend
-            WK(i,0)=0.5_r8*(Wi(i,j-1,0)+                                 &
+            WK(i,0)=0.5_r8*(Wi(i,j-1,0)+                                &
      &                      Wi(i,j  ,0))
             DO k=1,N(ng)
-              WK(i,k)=0.5_r8*(Wi(i,j-1,k)+                               &
+              WK(i,k)=0.5_r8*(Wi(i,j-1,k)+                              &
      &                        Wi(i,j  ,k))
-              Hzk(i,k)=0.5_r8*(Hz(i,j-1,k)+                              &
+              Hzk(i,k)=0.5_r8*(Hz(i,j-1,k)+                             &
      &                         Hz(i,j  ,k))
             END DO
           END DO
@@ -1006,8 +1010,9 @@
           cff=dt(ng)
           DO k=1,N(ng)-1
             DO i=Istr,Iend
-              FCmax(i,k)=MAX(WK(i,k),0.0_r8)*cff/(on_v(i,j)*om_v(i,j))
-              FCmin(i,k)=MIN(WK(i,k),0.0_r8)*cff/(on_v(i,j)*om_v(i,j))
+              cff1=cff/(on_v(i,j)*om_v(i,j))
+              FCmax(i,k)=MAX(WK(i,k),0.0_r8)*cff1
+              FCmin(i,k)=MIN(WK(i,k),0.0_r8)*cff1
             END DO
           END DO
           DO i=Istr,Iend
@@ -1044,14 +1049,16 @@
 #  ifdef DIAGNOSTICS_UV
             cff1=v(i,j,N(ng),nnew)
 #  endif
-            DC(i,N(ng))=(DC(i,N(ng))+FCmax(i,N(ng)-1)*DC(i,N(ng)-1))/   &
-     &                  (BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+            cff=1.0_r8/(BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
+            DC(i,N(ng))=cff*(DC(i,N(ng))+                               &
+     &                       FCmax(i,N(ng)-1)*DC(i,N(ng)-1))
             v(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
-            DiaRV(i,j,N(ng),nrhs,M3vadv)=DiaRV(i,j,N(ng),nrhs,M3vadv)+ &
-     &                                  v(i,j,N(ng),nnew)-cff1
+            DiaRV(i,j,N(ng),nrhs,M3vadv)=DiaRV(i,j,N(ng),nrhs,M3vadv)+  &
+     &                                   v(i,j,N(ng),nnew)-cff1
 #  endif
           END DO
+!
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
 #  ifdef DIAGNOSTICS_UV
@@ -1060,7 +1067,7 @@
               DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
               v(i,j,k,nnew)=DC(i,k)
 #  ifdef DIAGNOSTICS_UV
-              DiaRV(i,j,k,nrhs,M3vadv)=DiaRV(i,j,k,nrhs,M3vadv)+       &
+              DiaRV(i,j,k,nrhs,M3vadv)=DiaRV(i,j,k,nrhs,M3vadv)+        &
      &                                 v(i,j,k,nnew)-cff1
 #  endif
             END DO
@@ -1833,6 +1840,7 @@
       END IF
 
 # ifdef DISTRIBUTE
+!
       CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &

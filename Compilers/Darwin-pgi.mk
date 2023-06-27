@@ -1,6 +1,7 @@
-# svn $Id: Darwin-pgi.mk 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: Darwin-pgi.mk 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -17,16 +18,19 @@
 # HDF5_LIBDIR    HDF5 library directory
 # HDF5_LIBS      HDF5 library switches
 # LIBS           Required libraries during linking
+# ROMS_LIB       Directory and name for ROMS library
 # NF_CONFIG      NetCDF Fortran configuration script
-# CC             Name of the C compiler
-# CFLAGS         Flags to the C compiler
-# CXX            Name of the C++ compiler
-# CXXFLAGS       Flags to the C++ compiler
-# CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
-# NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBDIR  NetCDF library directory
 # NETCDF_LIBS    NetCDF library switches
-# LD             Program to load the objects into an executable
+# PIO_INCDIR     Parallel-IO (PIO) from SCORPIO library include directory
+# PIO_LIBDIR     Parallel-IO (PIO) from SCORPIO libary directory
+# PIO_LIBS       Parallel-IO (PIO) from SCORPIO library switches
+# PNETCDF_INCDIR PNetCDF include directory
+# PNETCDF_LIBDIR PNetCDF libary directory
+# PNETCDF_LIBS   PNetCDF library switches
+
+# LD             Program to load the objects into an executable or shared library
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
 # MDEPFLAGS      Flags for sfmakedepend  (-s if you keep .f files)
@@ -38,18 +42,12 @@
        FIXEDFLAGS := -Mnofree
         FREEFLAGS := -Mfree
               CPP := /usr/bin/cpp
-         CPPFLAGS := -P -traditional-cpp
-               CC := gcc
-              CXX := g++
-           CFLAGS :=
-         CXXFLAGS :=
+         CPPFLAGS := -P -traditional-cpp -w          # -w turns off warnings
            INCDIR := /usr/include /usr/local/bin
             SLIBS := -L/usr/local/lib -L/usr/lib
             ULIBS :=
              LIBS :=
-ifdef USE_ROMS
-             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
-endif
+         ROMS_LIB := -L$(SCRATCH_DIR) -lROMS
        MOD_SUFFIX := mod
                LD := $(FC)
           LDFLAGS :=
@@ -58,9 +56,11 @@ endif
             MKDIR := mkdir -p
                CP := cp -p -v
                RM := rm -f
-           RANLIB := ranlib
+           RANLIB := ranlib -no_warning_for_no_symbols
              PERL := perl
              TEST := test
+      ST_LIB_NAME := libROMS.a
+      SH_LIB_NAME := libROMS.dylib
 
 #--------------------------------------------------------------------------
 # Compiling flags for ROMS Applications.
@@ -81,8 +81,18 @@ ifdef USE_ROMS
            FFLAGS += -fastsse -Mipa=fast
  endif
            FFLAGS += -Kieee
-endif
+ ifdef SHARED
+          LDFLAGS += -Wl,-rpath,$(SCRATCH_DIR)
+
+       SH_LDFLAGS += -dynamiclib
+       SH_LDFLAGS += -Wl,-headerpad_max_install_names
+       SH_LDFLAGS += -Wl,-undefined,dynamic_lookup
+
+       SH_LDFLAGS += -install_name @rpath/$(SH_LIB_NAME)
+ endif
+
         MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+endif
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.
@@ -119,6 +129,7 @@ ifdef CICE_APPLICATION
             SLIBS += $(SLIBS) $(LIBS)
 endif
 
+#--------------------------------------------------------------------------
 # Library locations, can be overridden by environment variables.
 #--------------------------------------------------------------------------
 #
@@ -128,7 +139,6 @@ endif
 # archive library. The -u flag fails with version 7.x of the compiler
 # because it expects an argument.
 
-          LDFLAGS := $(FFLAGS)
 
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
@@ -174,6 +184,30 @@ ifdef USE_OpenMP
            FFLAGS += -mp
 endif
 
+ifndef USE_SCRIP
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+             LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
+endif
+
+ifdef USE_SWAN
+           FFLAGS += -assume byterecl
+           FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
+           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/CMakeFiles/swan.exe.dir/swanmain.f.o
+           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
+endif
+
+ifdef USE_WW3
+             LIBS += WW3/build/model/src/CMakeFiles/ww3_shel.dir/ww3_shel.F90.o
+             LIBS += WW3/build/lib/libww3.a
+endif
+
+ifdef USE_MCT
+       MCT_INCDIR ?= /opt/pgisoft/mct/include
+       MCT_LIBDIR ?= /opt/pgisoft/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+           INCDIR += $(MCT_INCDIR) $(INCDIR)
+endif
 
 ifdef USE_ESMF
           ESMF_OS ?= $(OS)
@@ -184,40 +218,53 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
 endif
 
-ifdef USE_CXX
-             LIBS += -lstdc++
-endif
-
-ifndef USE_SCRIP
-             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
-endif
-
-ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
-endif
-
 ifdef USE_WRF
+ ifeq "$(strip $(WRF_LIB_DIR))" "$(WRF_SRC_DIR)"
              FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
-             LIBS += WRF/main/module_wrf_top.o
-             LIBS += WRF/main/libwrflib.a
-             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
-             LIBS += WRF/external/io_grib1/libio_grib1.a
-             LIBS += WRF/external/io_grib_share/libio_grib_share.a
-             LIBS += WRF/external/io_int/libwrfio_int.a
-             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
-             LIBS += WRF/external/RSL_LITE/librsl_lite.a
-             LIBS += WRF/frame/module_internal_header_util.o
-             LIBS += WRF/frame/pack_utils.o
-             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
-#            LIBS += WRF/external/io_netcdf/wrf_io.o
+             LIBS += $(WRF_LIB_DIR)/main/module_wrf_top.o
+             LIBS += $(WRF_LIB_DIR)/main/libwrflib.a
+             LIBS += $(WRF_LIB_DIR)/external/fftpack/fftpack5/libfftpack.a
+             LIBS += $(WRF_LIB_DIR)/external/io_grib1/libio_grib1.a
+             LIBS += $(WRF_LIB_DIR)/external/io_grib_share/libio_grib_share.a
+             LIBS += $(WRF_LIB_DIR)/external/io_int/libwrfio_int.a
+             LIBS += $(WRF_LIB_DIR)/external/esmf_time_f90/libesmf_time.a
+             LIBS += $(WRF_LIB_DIR)/external/RSL_LITE/librsl_lite.a
+             LIBS += $(WRF_LIB_DIR)/frame/module_internal_header_util.o
+             LIBS += $(WRF_LIB_DIR)/frame/pack_utils.o
+             LIBS += $(WRF_LIB_DIR)/external/io_netcdf/libwrfio_nf.a
+     WRF_MOD_DIRS  = main frame phys share external/esmf_time_f90
+ else
+             LIBS += $(WRF_LIB_DIR)/module_wrf_top.o
+             LIBS += $(WRF_LIB_DIR)/libwrflib.a
+             LIBS += $(WRF_LIB_DIR)/libfftpack.a
+             LIBS += $(WRF_LIB_DIR)/libio_grib1.a
+             LIBS += $(WRF_LIB_DIR)/libio_grib_share.a
+             LIBS += $(WRF_LIB_DIR)/libwrfio_int.a
+             LIBS += $(WRF_LIB_DIR)/libesmf_time.a
+             LIBS += $(WRF_LIB_DIR)/librsl_lite.a
+             LIBS += $(WRF_LIB_DIR)/module_internal_header_util.o
+             LIBS += $(WRF_LIB_DIR)/pack_utils.o
+             LIBS += $(WRF_LIB_DIR)/libwrfio_nf.a
+ endif
+endif
+
+ifdef USE_WRFHYDRO
+             FFLAGS += -I $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/main_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_hrldas_netcdf_io.o 
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmpdrv.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmplsm.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_glacier.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_groundwater.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_wrf_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_model_constants.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_date_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/kwm_string_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/CPL/COAWST_cpl/hydro_coupler.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_NoahMP_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/lib/libHYDRO.a
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_myjsfc.o
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_sfclay.o
 endif
 
        clean_list += ifc* work.pc*
@@ -252,7 +299,27 @@ ifdef USE_ROMS
  endif
 endif
 
-#
+#--------------------------------------------------------------------------
+# Model coupling specific rules.
+#--------------------------------------------------------------------------
+
+# Add COAMPS library directory to include path of ESMF coupling files.
+
+ifdef USE_COAMPS
+ $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += -I$(COAMPS_LIB_DIR)
+ $(SCRATCH_DIR)/esmf_esm.o: FFLAGS += -I$(COAMPS_LIB_DIR)
+endif
+
+# Add WRF library directory to include path of ESMF coupling files.
+
+ifdef USE_WRF
+ ifeq "$(strip $(WRF_LIB_DIR))" "$(WRF_SRC_DIR)"
+  $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += $(addprefix -I$(WRF_LIB_DIR)/,$(WRF_MOD_DIRS))
+ else
+  $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += -I$(WRF_LIB_DIR)
+ endif
+endif
+
 # Supress free format in SWAN source files since there are comments
 # beyond column 72.
 

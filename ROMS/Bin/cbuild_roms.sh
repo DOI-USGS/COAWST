@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# svn $Id: cbuild_roms.sh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: cbuild_roms.sh 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -150,16 +151,18 @@ export     MY_PROJECT_DIR=${PWD}
 #export      MY_CPP_FLAGS="${MY_CPP_FLAGS} -DDEBUGGING"
 
 #--------------------------------------------------------------------------
-# Compilation options and paths.
+# Compilation options.
 #--------------------------------------------------------------------------
 
 # Set this option to "on" if you wish to use the "ecbuild" CMake wrapper.
 # Setting this to "off" or commenting it out will use cmake directly.
 
+ export       USE_ECBUILD=off              # don't use "ecbuild" wrapper
 #export       USE_ECBUILD=on               # use "ecbuild" wrapper
 
  export           USE_MPI=on               # distributed-memory parallelism
  export        USE_MPIF90=on               # compile with mpif90 script
+#export         which_MPI=intel            # compile with mpiifort library
 #export         which_MPI=mpich            # compile with MPICH library
 #export         which_MPI=mpich2           # compile with MPICH2 library
 #export         which_MPI=mvapich2         # compile with MVAPICH2 library
@@ -170,7 +173,22 @@ export     MY_PROJECT_DIR=${PWD}
 #export              FORT=pgi
 
 #export         USE_DEBUG=on               # use Fortran debugging flags
-#export       USE_NETCDF4=on               # compile with NetCDF-4 library
+
+# ROMS I/O choices and combinations. A more complete description of the
+# available options can be found in the wiki (https://myroms.org/wiki/IO).
+# Most users will want to enable at least USE_NETCDF4 because that will
+# instruct the ROMS build system to use nf-config to determine the
+# necessary libraries and paths to link into the ROMS executable.
+
+ export       USE_NETCDF4=on               # compile with NetCDF-4 library
+#export   USE_PARALLEL_IO=on               # Parallel I/O with NetCDF-4/HDF5
+#export           USE_PIO=on               # Parallel I/O with PIO library
+#export       USE_SCORPIO=on               # Parallel I/O with SCORPIO library
+
+# If any of the coupling component use the HDF5 Fortran API for primary
+# I/O, we need to compile the main driver with the HDF5 library.
+
+#export          USE_HDF5=on               # compile with HDF5 library
 
 #--------------------------------------------------------------------------
 # If applicable, use my specified library paths.
@@ -226,6 +244,44 @@ else
 fi
 
 #--------------------------------------------------------------------------
+# Add enviromental variables constructed in 'makefile' to MY_CPP_FLAGS
+# so can be passed to ROMS.
+#--------------------------------------------------------------------------
+
+ANALYTICAL_DIR="ANALYTICAL_DIR='${MY_ANALYTICAL_DIR}'"
+HEADER=`echo ${ROMS_APPLICATION} | tr '[:upper:]' '[:lower:]'`.h
+HEADER_DIR="HEADER_DIR='${MY_HEADER_DIR}'"
+ROOT_DIR="ROOT_DIR='${MY_ROMS_SRC}'"
+
+export       MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${ANALYTICAL_DIR}"
+export       MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${HEADER_DIR}"
+export       MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${ROOT_DIR}"
+
+if [[ -d "${MY_ROMS_SRC}/.git" ]]; then
+  cd ${MY_ROMS_SRC}
+  GITURL=$(git config --get remote.origin.url)
+  GITREV=$(git rev-parse --verify HEAD)
+  GIT_URL="GIT_URL='${GITURL}'"
+  GIT_REV="GIT_REV='${GITREV}'"
+  SVN_URL="SVN_URL='https://www.myroms.org/svn/src'"
+
+  export     MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${GIT_URL}"
+  export     MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${GIT_REV}"
+  export     MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${SVN_URL}"
+  cd ${SCRATCH_DIR}
+else
+  cd ${MY_ROMS_SRC}
+  SVNURL=$(svn info | grep '^URL:' | sed 's/URL: //')
+  SVNREV=$(svn info | grep '^Revision:' | sed 's/Revision: //')
+  SVN_URL="SVN_URL='${SVNURL}'"
+  SVN_REV="SVN_REV='${SVNREV}'"
+
+  export     MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${SVN_URL}"
+  export     MY_CPP_FLAGS="${MY_CPP_FLAGS} -D${SVN_REV}"
+  cd ${SCRATCH_DIR}
+fi
+
+#--------------------------------------------------------------------------
 # Configure.
 #--------------------------------------------------------------------------
 
@@ -256,10 +312,35 @@ else
   arpack_ldir=""
 fi
 
+if [ ! -z "${USE_SCORPIO}" ]; then
+  if [[ ! -z "${PIO_LIBDIR}" && ! -z "${PIO_INCDIR}" ]]; then
+    pio_ldir="-DPIO_LIBDIR=${PIO_LIBDIR}"
+    pio_idir="-DPIO_INCDIR=${PIO_INCDIR}"
+    if [[ ! -z "${PNETCDF_LIBDIR}" && ! -z "${PNETCDF_INCDIR}" ]]; then
+      pnetcdf_ldir="-DPNETCDF_LIBDIR=${PNETCDF_LIBDIR}"
+      pnetcdf_idir="-DPNETCDF_INCDIR=${PNETCDF_INCDIR}"
+    else
+      pnetcdf_ldir=""
+      pnetcdf_idir=""
+    fi
+  else
+    pio_ldir=""
+    pio_idir=""
+    pnetcdf_ldir=""
+    pnetcdf_idir=""
+  fi
+fi
+
 if [[ ! -z "${USE_MPI}" && "${USE_MPI}" == "on" ]]; then
   mpi="-DMPI=ON"
 else
   mpi=""
+fi
+
+if [[ ! -z "${USE_MPIF90}" && "${USE_MPIF90}" == "on" ]]; then
+  comm="-DCOMM=${which_MPI}"
+else
+  comm=""
 fi
 
 if [ ! -z "${ROMS_EXECUTABLE}" ]; then
@@ -284,7 +365,7 @@ fi
 
 my_hdir="-DMY_HEADER_DIR=${MY_HEADER_DIR}"
 
-if [ $dprint -eq 0 ]; then
+if [[ $dprint -eq 0 && $clean -eq 1 ]]; then
   if [[ -z ${USE_ECBUILD+x} || "${USE_ECBUILD}" == "off" ]]; then
     conf_com="cmake"
     cmake -DAPP=${ROMS_APPLICATION} \
@@ -293,7 +374,12 @@ if [ $dprint -eq 0 ]; then
                 ${extra_flags} \
                 ${parpack_ldir} \
                 ${arpack_ldir} \
+                ${pio_ldir} \
+                ${pio_idir} \
+                ${pnetcdf_ldir} \
+                ${pnetcdf_idir} \
                 ${mpi} \
+                ${comm} \
                 ${roms_exec} \
                 ${dbg} \
                 ${MY_ROMS_SRC}
@@ -305,7 +391,12 @@ if [ $dprint -eq 0 ]; then
                   ${extra_flags} \
                   ${parpack_ldir} \
                   ${arpack_ldir} \
+                  ${pio_ldir} \
+                  ${pio_idir} \
+                  ${pnetcdf_ldir} \
+                  ${pnetcdf_idir} \
                   ${mpi} \
+                  ${comm} \
                   ${roms_exec} \
                   ${dbg} \
                   ${MY_ROMS_SRC}

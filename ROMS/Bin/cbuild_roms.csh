@@ -1,8 +1,9 @@
 #!/bin/csh -ef
 #
-# svn $Id: cbuild_roms.csh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: cbuild_roms.csh 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -148,13 +149,17 @@ end
 #    setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -DDEBUGGING"
 
 #--------------------------------------------------------------------------
-# Compilation options and paths.
+# Compilation options.
 #--------------------------------------------------------------------------
+
+# Set this option to "on" if you wish to use the "ecbuild" CMake wrapper.
+# Setting this to "off" or commenting it out will use cmake directly.
 
 #setenv USE_ECBUILD          on              # use "ecbuild" wrapper
 
  setenv USE_MPI              on              # distributed-memory
  setenv USE_MPIF90           on              # compile with mpif90 script
+#setenv which_MPI            intel           # compile with mpiifort library
 #setenv which_MPI            mpich           # compile with MPICH library
 #setenv which_MPI            mpich2          # compile with MPICH2 library
 #setenv which_MPI            mvapich2        # compile with MVAPICH2 library
@@ -165,7 +170,22 @@ end
 #setenv FORT                 pgi
 
 #setenv USE_DEBUG            on              # use Fortran debugging flags
-#setenv USE_NETCDF4          on              # use NetCDF4
+
+# ROMS I/O choices and combinations. A more complete description of the
+# available options can be found in the wiki (https://myroms.org/wiki/IO).
+# Most users will want to enable at least USE_NETCDF4 because that will
+# instruct the ROMS build system to use nf-config to determine the
+# necessary libraries and paths to link into the ROMS executable.
+
+ setenv USE_NETCDF4          on              # compile with NetCDF4 library
+#setenv USE_PARALLEL_IO      on              # Parallel I/O with NetCDF-4/HDF5
+#setenv USE_PIO              on              # Parallel I/O with PIO library
+#setenv USE_SCORPIO          on              # Parallel I/O with SCORPIO library
+
+# If any of the coupling component use the HDF5 Fortran API for primary
+# I/O, we need to compile the main driver with the HDF5 library.
+
+#setenv USE_HDF5             on              # compile with HDF5 library
 
 #--------------------------------------------------------------------------
 # If applicable, use my specified library paths.
@@ -192,7 +212,7 @@ endif
 # with other projects.
 
 if ( $?USE_DEBUG ) then
-  if ( "${USE_DEBUG}" = "on" ) then
+  if ( "${USE_DEBUG}" == "on" ) then
     setenv SCRATCH_DIR       ${MY_PROJECT_DIR}/CBuild_romsG
   else
     setenv SCRATCH_DIR       ${MY_PROJECT_DIR}/CBuild_roms
@@ -218,17 +238,55 @@ else
   else
     echo "-noclean option activated when the build directory didn't exist"
     echo "creating the directory and disabling -noclean"
-    clean=1
+    set clean = 1
     mkdir ${SCRATCH_DIR}
     cd ${SCRATCH_DIR}
   endif
 endif
 
 #--------------------------------------------------------------------------
+# Add enviromental variables constructed in 'makefile' to MY_CPP_FLAGS
+# so can be passed to ROMS.
+#--------------------------------------------------------------------------
+
+set ANALYTICAL_DIR = "ANALYTICAL_DIR='${MY_ANALYTICAL_DIR}'"
+set HEADER = `echo ${ROMS_APPLICATION} | tr '[:upper:]' '[:lower:]'`.h
+set HEADER_DIR = "HEADER_DIR='${MY_HEADER_DIR}'"
+set ROOT_DIR = "ROOT_DIR='${MY_ROMS_SRC}'"
+
+setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${ANALYTICAL_DIR}"
+setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${HEADER_DIR}"
+setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${ROOT_DIR}"
+
+if ( -d ${MY_ROMS_SRC}/.git ) then
+  cd ${MY_ROMS_SRC}
+  set GITURL  = "`git config --get remote.origin.url`"
+  set GITREV  = "`git rev-parse --verify HEAD`"
+  set GIT_URL = "GIT_URL='${GITURL}'"
+  set GIT_REV = "GIT_REV='${GITREV}'"
+  set SVN_URL = "SVN_URL='https://www.myroms.org/svn/src'"
+
+  setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${GIT_URL}"
+  setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${GIT_REV}"
+  setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${SVN_URL}"
+  cd ${SCRATCH_DIR}
+else
+  cd ${MY_ROMS_SRC}
+  set SVNURL  = "`svn info | grep '^URL:' | sed 's/URL: //'`"
+  set SVNREV  = "`svn info | grep '^Revision:' | sed 's/Revision: //'`"
+  set SVN_URL = "SVN_URL='${SVNURL}'"
+  set SVN_REV = "SVN_REV='${SVNREV}'"
+
+  setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${SVN_URL}"
+  setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D${SVN_REV}"
+  cd ${SCRATCH_DIR}
+endif
+
+#--------------------------------------------------------------------------
 # Configure.
 #--------------------------------------------------------------------------
 
-# Construct the ecbuild command.
+# Construct the cmake/ecbuild command.
 
 if ( $?LIBTYPE ) then
   set ltype="-DLIBTYPE=${LIBTYPE}"
@@ -255,6 +313,23 @@ else
   set arpack_ldir=""
 endif
 
+if ( $?PIO_LIBDIR && $?PIO_INCDIR ) then
+  set pio_ldir="-DPIO_LIBDIR=${PIO_LIBDIR}"
+  set pio_idir="-DPIO_INCDIR=${PIO_INCDIR}"
+  if ( $?PNETCDF_LIBDIR && $?PNETCDF_INCDIR ) then
+    set pnetcdf_ldir="-DPNETCDF_LIBDIR=${PNETCDF_LIBDIR}"
+    set pnetcdf_idir="-DPNETCDF_INCDIR=${PNETCDF_INCDIR}"
+  else
+    set pnetcdf_ldir=""
+    set pnetcdf_idir=""
+  endif
+else
+  set pio_ldir=""
+  set pio_idir=""
+  set pnetcdf_ldir=""
+  set pnetcdf_idir=""
+endif
+
 # The nested ifs are required to avoid breaking the script, as tcsh
 # apparently does not short-circuit if when the first truth is found
 
@@ -266,6 +341,16 @@ if ( $?USE_MPI ) then
   endif
 else
   set mpi=""
+endif
+
+if ( $?USE_MPIF90 ) then
+  if ( "${USE_MPIF90}" == "on" ) then
+    set comm="-DCOMM=${which_MPI}"
+  else
+    set comm=""
+  endif
+else
+  set comm=""
 endif
 
 if ( $?ROMS_EXECUTABLE ) then
@@ -295,43 +380,55 @@ endif
 set my_hdir="-DMY_HEADER_DIR=${MY_HEADER_DIR}"
 
 if ( $dprint == 0 ) then
-  if ( $?USE_ECBUILD ) then
-    if ( "${USE_ECBUILD}" == "on" ) then
-      set conf_com = "ecbuild"
-    else if ( "${USE_ECBUILD}" == "off" ) then
-      set conf_com = "cmake"
+  if ( $clean == 1 ) then
+    if ( $?USE_ECBUILD ) then
+      if ( "${USE_ECBUILD}" == "on" ) then
+        set conf_com = "ecbuild"
+      else if ( "${USE_ECBUILD}" == "off" ) then
+        set conf_com = "cmake"
+      else
+        set conf_com = "Unknown"
+      endif
     else
-      set conf_com = "Unknown"
+      set conf_com = "cmake"
     endif
-  else
-    set conf_com = "cmake"
-  endif
 
-  if ( "${conf_com}" == "cmake" ) then
-    cmake -DAPP=${ROMS_APPLICATION} \
-                ${my_hdir} \
-                ${ltype} \
-                ${extra_flags} \
-                ${parpack_ldir} \
-                ${arpack_ldir} \
-                ${mpi} \
-                ${roms_exec} \
-                ${dbg} \
-                ${MY_ROMS_SRC}
-  else if ( "${conf_com}" == "ecbuild" ) then
-    ecbuild -DAPP=${ROMS_APPLICATION} \
+    if ( "${conf_com}" == "cmake" ) then
+      cmake -DAPP=${ROMS_APPLICATION} \
                   ${my_hdir} \
                   ${ltype} \
                   ${extra_flags} \
                   ${parpack_ldir} \
                   ${arpack_ldir} \
+                  ${pio_ldir} \
+                  ${pio_idir} \
+                  ${pnetcdf_ldir} \
+                  ${pnetcdf_idir} \
                   ${mpi} \
+                  ${comm} \
                   ${roms_exec} \
                   ${dbg} \
                   ${MY_ROMS_SRC}
-  else
-    echo "Unrecognized value, '${USE_ECBUILD}' set for USE_ECBUILD"
-    exit 1
+    else if ( "${conf_com}" == "ecbuild" ) then
+      ecbuild -DAPP=${ROMS_APPLICATION} \
+                    ${my_hdir} \
+                    ${ltype} \
+                    ${extra_flags} \
+                    ${parpack_ldir} \
+                    ${arpack_ldir} \
+                    ${pio_ldir} \
+                    ${pio_idir} \
+                    ${pnetcdf_ldir} \
+                    ${pnetcdf_idir} \
+                    ${mpi} \
+                    ${comm} \
+                    ${roms_exec} \
+                    ${dbg} \
+                    ${MY_ROMS_SRC}
+    else
+      echo "Unrecognized value, '${USE_ECBUILD}' set for USE_ECBUILD"
+      exit 1
+    endif
   endif
 endif
 

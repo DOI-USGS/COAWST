@@ -57,9 +57,9 @@
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 
 #if defined ROMS_COUPLING
-      USE ocean_control_mod, ONLY : ROMS_initialize
-      USE ocean_control_mod, ONLY : ROMS_run
-      USE ocean_control_mod, ONLY : ROMS_finalize
+      USE roms_kernel_mod, ONLY : ROMS_initialize
+      USE roms_kernel_mod, ONLY : ROMS_run
+      USE roms_kernel_mod, ONLY : ROMS_finalize
 #endif
 #if defined SWAN_COUPLING
       USE waves_control_mod, ONLY : SWAN_driver_init
@@ -83,7 +83,7 @@
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
       integer :: MyRank, pelast
       integer :: Ocncolor, Wavcolor, Atmcolor, Hydcolor
-      integer :: ng, iw, io, ia, ih, icc, roms_exit
+      integer :: iw, io, ia, ih, icc, roms_exit
       real(m8) :: lcm, gcdlcm
 
       real(m4) :: CouplingTime             ! single precision
@@ -143,7 +143,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_WAV2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_WAV2OCN,lcm).eq.0.0_m8) THEN
             nWAV2OCN(iw,io)=INT(TI_WAV2OCN/dtwav(iw))
           ELSE
             lcm=gcdlcm(TI_WAV2OCN,lcm)
@@ -155,7 +155,7 @@
       DO io=1,Nocn_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_OCN2WAV,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2WAV,lcm).eq.0.0_m8) THEN
             nOCN2WAV(io,iw)=INT(TI_OCN2WAV/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_OCN2WAV,lcm)
@@ -168,7 +168,7 @@
       DO ia=1,Natm_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_ATM2OCN,lcm).eq.0.0_m8) THEN
             nATM2OCN(ia,io)=INT(TI_ATM2OCN/dtatm(ia))
           ELSE
             lcm=gcdlcm(TI_ATM2OCN,lcm)
@@ -180,7 +180,7 @@
       DO io=1,Nocn_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_OCN2ATM,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2ATM,lcm).eq.0.0_m8) THEN
             nOCN2ATM(io,ia)=INT(TI_OCN2ATM/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_OCN2ATM,lcm)
@@ -193,7 +193,7 @@
       DO ih=1,Nhyd_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dthyd(ih),dtocn(io))
-          IF (MOD(TI_HYD2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_HYD2OCN,lcm).eq.0.0_m8) THEN
             nHYD2OCN(ih,io)=INT(TI_HYD2OCN/dthyd(ih))
           ELSE
             lcm=gcdlcm(TI_HYD2OCN,lcm)
@@ -205,7 +205,7 @@
       DO io=1,Nocn_grids
         DO ih=1,Nhyd_grids
           lcm=gcdlcm(dthyd(ih),dtocn(io))
-          IF (MOD(TI_OCN2HYD,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2HYD,lcm).eq.0.0_m8) THEN
             nOCN2HYD(io,ih)=INT(TI_OCN2HYD/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_OCN2HYD,lcm)
@@ -218,7 +218,7 @@
       DO ia=1,Natm_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_ATM2WAV,lcm).eq.0) THEN
+          IF (DMOD(TI_ATM2WAV,lcm).eq.0.0_m8) THEN
             nATM2WAV(ia,iw)=INT(TI_ATM2WAV/dtatm(ia))
           ELSE
             lcm=gcdlcm(TI_ATM2WAV,lcm)
@@ -230,7 +230,7 @@
       DO iw=1,Nwav_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_WAV2ATM,lcm).eq.0) THEN
+          IF (DMOD(TI_WAV2ATM,lcm).eq.0.0_m8) THEN
             nWAV2ATM(iw,ia)=INT(TI_WAV2ATM/dtwav(iw))
           ELSE
             lcm=gcdlcm(TI_WAV2ATM,lcm)
@@ -249,7 +249,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_OCN2WAV,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2WAV,lcm).eq.0.0_m8) THEN
             nWAVFOCN(iw,io)=INT(TI_OCN2WAV/dtwav(iw))
           ELSE
             lcm=gcdlcm(TI_OCN2WAV,lcm)
@@ -261,7 +261,7 @@
       DO io=1,Nocn_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_WAV2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_WAV2OCN,lcm).eq.0.0_m8) THEN
             nOCNFWAV(io,iw)=INT(TI_WAV2OCN/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_WAV2OCN,lcm)
@@ -274,7 +274,7 @@
       DO ia=1,Natm_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_OCN2ATM,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2ATM,lcm).eq.0.0_m8) THEN
             nATMFOCN(ia,io)=INT(TI_OCN2ATM/dtatm(ia))
           ELSE
             lcm=gcdlcm(TI_OCN2ATM,lcm)
@@ -286,7 +286,7 @@
       DO io=1,Nocn_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_ATM2OCN,lcm).eq.0.0_m8) THEN
             nOCNFATM(io,ia)=INT(TI_ATM2OCN/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_ATM2OCN,lcm)
@@ -299,7 +299,7 @@
       DO ih=1,Nhyd_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dthyd(ih),dtocn(io))
-          IF (MOD(TI_OCN2HYD,lcm).eq.0) THEN
+          IF (DMOD(TI_OCN2HYD,lcm).eq.0.0_m8) THEN
             nHYDFOCN(ih,io)=INT(TI_OCN2HYD/dthyd(ih))
           ELSE
             lcm=gcdlcm(TI_OCN2HYD,lcm)
@@ -311,7 +311,7 @@
       DO io=1,Nocn_grids
         DO ih=1,Nhyd_grids
           lcm=gcdlcm(dthyd(ih),dtocn(io))
-          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
+          IF (DMOD(TI_ATM2OCN,lcm).eq.0.0_m8) THEN
             nOCNFHYD(io,ih)=INT(TI_ATM2OCN/dtocn(io))
           ELSE
             lcm=gcdlcm(TI_ATM2OCN,lcm)
@@ -324,7 +324,7 @@
       DO ia=1,Natm_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_WAV2ATM,lcm).eq.0) THEN
+          IF (DMOD(TI_WAV2ATM,lcm).eq.0.0_m8) THEN
             nATMFWAV(ia,iw)=INT(TI_WAV2ATM/dtatm(ia))
           ELSE
             lcm=gcdlcm(TI_WAV2ATM,lcm)
@@ -336,7 +336,7 @@
       DO iw=1,Nwav_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_ATM2WAV,lcm).eq.0) THEN
+          IF (DMOD(TI_ATM2WAV,lcm).eq.0.0_m8) THEN
             nWAVFATM(iw,ia)=INT(TI_ATM2WAV/dtwav(iw))
           ELSE
             lcm=gcdlcm(TI_ATM2WAV,lcm)
@@ -363,27 +363,27 @@
 !
       N_mctmodels=0
 #ifdef ROMS_COUPLING
-      DO ng=1,Nocn_grids
+      DO io=1,Nocn_grids
         N_mctmodels=N_mctmodels+1
-        ocnids(ng)=N_mctmodels
+        ocnids(io)=N_mctmodels
       END DO
 #endif
 #if defined SWAN_COUPLING || defined WW3_COUPLING
-      DO ng=1,Nwav_grids
+      DO iw=1,Nwav_grids
         N_mctmodels=N_mctmodels+1
-        wavids(ng)=N_mctmodels
+        wavids(iw)=N_mctmodels
       END DO
 #endif
 #ifdef WRF_COUPLING
-      DO ng=1,Natm_grids
+      DO ia=1,Natm_grids
         N_mctmodels=N_mctmodels+1
-        atmids(ng)=N_mctmodels
+        atmids(ia)=N_mctmodels
      END DO
 #endif
 #ifdef HYDRO_COUPLING
-      DO ng=1,Nhyd_grids
+      DO ih=1,Nhyd_grids
         N_mctmodels=N_mctmodels+1
-        hydids(ng)=N_mctmodels
+        hydids(ih)=N_mctmodels
      END DO
 #endif
 !
@@ -414,7 +414,7 @@
         IF (MyRank.eq.0) THEN
           WRITE (stdout,10) pelast+1, Nnodes
  10       FORMAT (/,' mct_coupler - Number assigned processors: '       &
-     &            ,i3.3,/,15x,'not equal to spawned MPI nodes: ',i3.3)
+     &            ,i5.5,/,15x,'not equal to spawned MPI nodes: ',i5.5)
         END IF
         STOP
       ELSE
@@ -423,19 +423,19 @@
  19       FORMAT (/,' Model Coupling: ',/)
 #ifdef ROMS_COUPLING
           WRITE (stdout,20) peOCN_frst, peOCN_last
- 20       FORMAT (/,7x,'Ocean Model MPI nodes: ',i3.3,' - ', i3.3)
+ 20       FORMAT (/,7x,'Ocean Model MPI nodes: ',i5.5,' - ', i5.5)
 #endif
 #if defined SWAN_COUPLING || defined WW3_COUPLING
           WRITE (stdout,21) peWAV_frst, peWAV_last
- 21       FORMAT (/,7x,'Waves Model MPI nodes: ',i3.3,' - ', i3.3)
+ 21       FORMAT (/,7x,'Waves Model MPI nodes: ',i5.5,' - ', i5.5)
 #endif
 #ifdef WRF_COUPLING
           WRITE (stdout,22) peATM_frst, peATM_last
- 22       FORMAT (/,7x,'Atmos Model MPI nodes: ',i3.3,' - ', i3.3)
+ 22       FORMAT (/,7x,'Atmos Model MPI nodes: ',i5.5,' - ', i5.5)
 #endif
 #ifdef HYDRO_COUPLING
           WRITE (stdout,22) peHYD_frst, peHYD_last
- 22       FORMAT (/,7x,'Hydro Model MPI nodes: ',i3.3,' - ', i3.3)
+ 22       FORMAT (/,7x,'Hydro Model MPI nodes: ',i5.5,' - ', i5.5)
 #endif
 !
 !  Write out some coupled model info.
@@ -446,11 +446,11 @@
             WRITE (stdout,25) iw, dtwav(iw),io, dtocn(io),              &
      &                        TI_WAV2OCN, nWAV2OCN(iw,io)
  25         FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ', &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
             WRITE (stdout,26) io, dtocn(io),iw, dtwav(iw),              &
      &                        TI_OCN2WAV, nOCN2WAV(io,iw)
  26         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ', &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
           END DO
         END DO
 #endif
@@ -460,11 +460,11 @@
             WRITE (stdout,27) ia, dtatm(ia),io, dtocn(io),                &
      &                        TI_ATM2OCN, nATM2OCN(ia,io)
  27         FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
             WRITE (stdout,28) io, dtocn(io),ia, dtatm(ia),                &
      &                        TI_OCN2ATM, nOCN2ATM(io,ia)
  28         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
           END DO
         END DO
 #endif
@@ -474,11 +474,11 @@
             WRITE (stdout,29) ia, dtatm(ia),iw, dtwav(iw),                &
      &                        TI_ATM2WAV, nATM2WAV(ia,iw)
  29         FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
             WRITE (stdout,30) iw, dtwav(iw),ia, dtatm(ia),                &
      &                        TI_WAV2ATM, nWAV2ATM(iw,ia)
  30         FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
           END DO
         END DO
 #endif
@@ -488,11 +488,11 @@
             WRITE (stdout,25) ih, dthyd(ih),io, dtocn(io),                &
      &                        TI_HYD2OCN, nHYD2OCN(ih,io)
  25         FORMAT (/,7x,'HYDgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
             WRITE (stdout,26) io, dtocn(io),ih, dthyd(ih),                &
      &                        TI_OCN2HYD, nOCN2HYD(io,ih)
  26         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- HYDgrid ',   &
-     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i5.5)
           END DO
         END DO
 #endif
@@ -571,8 +571,8 @@
         END IF
         IF (exit_flag.eq.NoError) THEN
           run_time=0.0_m8
-          DO ng=1,Ngrids
-            run_time=MAX(run_time, dt(ng)*ntimes(ng))
+          DO io=1,Nocn_grids
+            run_time=MAX(run_time, dt(io)*ntimes(io))
           END DO
           CALL ROMS_run (run_time)
           roms_exit=exit_flag
@@ -656,8 +656,8 @@
       END IF
       stayin=.true.
       DO WHILE (stayin)
-        r=mod(dtB,dtA)
-        IF (r.eq.0) THEN
+        r=dmod(dtB,dtA)
+        IF (r.eq.0.0_m8) THEN
           gcd=dtA
           stayin=.false.
         ELSE

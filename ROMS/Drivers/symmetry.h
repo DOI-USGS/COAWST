@@ -1,8 +1,9 @@
-      MODULE ocean_control_mod
+      MODULE roms_kernel_mod
 !
-!svn $Id: symmetry.h 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: symmetry.h 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,12 +25,36 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_param
+      USE mod_parallel
+      USE mod_arrays
+      USE mod_fourdvar
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_ocean
+      USE mod_scalars
+      USE mod_stepping
+!
+      USE close_io_mod,      ONLY : close_inp, close_out
+      USE convolve_mod,      ONLY : error_covariance
+      USE def_impulse_mod,   ONLY : def_impulse
+      USE def_norm_mod,      ONLY : def_norm
+#ifdef DISTRIBUTE
+      USE distribute_mod,    ONLY : mp_bcastf
+#endif
+      USE get_state_mod,     ONLY : get_state
+      USE inp_par_mod,       ONLY : inp_par
+      USE normalization_mod, ONLY : normalization
+      USE strings_mod,       ONLY : FoundError
+      USE tl_def_ini_mod,    ONLY : tl_def_ini
+      USE wrt_impulse_mod,   ONLY : wrt_impulse
+      USE wrt_rst_mod,       ONLY : wrt_rst
+!
       implicit none
 !
-      PRIVATE
-      PUBLIC  :: ROMS_initialize
-      PUBLIC  :: ROMS_run
-      PUBLIC  :: ROMS_finalize
+      PUBLIC :: ROMS_initialize
+      PUBLIC :: ROMS_run
+      PUBLIC :: ROMS_finalize
 !
       CONTAINS
 !
@@ -41,15 +66,6 @@
 !  and internal and external parameters.                               !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_fourdvar
-      USE mod_iounits
-      USE mod_scalars
-!
-      USE inp_par_mod, ONLY : inp_par
-      USE strings_mod, ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -144,11 +160,9 @@
 !
 !  Allocate and initialize modules variables.
 !
-        CALL mod_arrays (allocate_vars)
-!
-!  Allocate and initialize observation arrays.
-!
-        CALL initialize_fourdvar
+        CALL ROMS_allocate_arrays (allocate_vars)
+        CALL ROMS_initialize_arrays
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       END IF
 !
@@ -162,7 +176,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 10, 10, STD(1,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 10, 10, STD(1,ng), STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 !
@@ -173,7 +187,7 @@
       Tindex=2
       IF (NSA.eq.2) THEN
         DO ng=1,Ngrids
-          CALL get_state (ng, 11, 11, STD(2,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 11, 11, STD(2,ng), STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END DO
       END IF
@@ -185,7 +199,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 12, 12, STD(3,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 12, 12, STD(3,ng), STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 #endif
@@ -196,7 +210,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 13, 13, STD(4,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 13, 13, STD(4,ng), STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 #endif
@@ -212,32 +226,17 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_fourdvar
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_ocean
-      USE mod_scalars
-      USE mod_stepping
-!
-      USE convolve_mod,      ONLY : error_covariance
-#ifdef DISTRIBUTE
-      USE distribute_mod,    ONLY : mp_bcastf
-#endif
-      USE normalization_mod, ONLY : normalization
-      USE strings_mod,       ONLY : FoundError
-!
 !  Imported variable declarations
 !
       real(dp), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
-      logical :: BOUNDED_TL
+      logical :: BOUNDED_TL, Lposterior
 !
       integer :: i, j, ng, tile
-      integer :: Lbck, Lini, Lstate, NRMrec
+      integer :: Lbck, Lini, Lstate, NRMrec, Rec1, Rec2
+      integer :: Fcount
       integer :: IperAD, JperAD, KperAD, ivarAD
       integer :: IoutTL, JoutTL, KoutTL, ivarTL
 #ifdef DISTRIBUTE
@@ -250,7 +249,7 @@
       real(r8), allocatable :: R(:,:,:), Rerr(:,:)
 !
       character (len=8 ) :: driver
-      character (len=20) :: frmt
+      character (len=24) :: frmt
 
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__//", ROMS_run"
@@ -358,19 +357,19 @@
           LwrtNRM(1:4,ng)=.FALSE.
         ELSE
           NRMrec=1
-          CALL get_state (ng, 14, 14, NRM(1,ng)%name, NRMrec, 1)
+          CALL get_state (ng, 14, 14, NRM(1,ng), NRMrec, 1)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           IF (NSA.eq.2) THEN
-            CALL get_state (ng, 15, 15, NRM(2,ng)%name, NRMrec, 2)
+            CALL get_state (ng, 15, 15, NRM(2,ng), NRMrec, 2)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 #ifdef ADJUST_BOUNDARY
-          CALL get_state (ng, 16, 16, NRM(3,ng)%name, NRMrec, 1)
+          CALL get_state (ng, 16, 16, NRM(3,ng), NRMrec, 1)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
-          CALL get_state (ng, 17, 17, NRM(4,ng)%name, NRMrec, 1)
+          CALL get_state (ng, 17, 17, NRM(4,ng), NRMrec, 1)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
         END IF
@@ -427,6 +426,15 @@
       JperAD=INT(user(6))
       KoutTL=INT(user(7))
       KperAD=INT(user(8))
+!
+!  Open tangent linear initial conditions NetCDF file (ITL struc) and
+!  inquire about its variables IDs.
+!
+      DO ng=1,Ngrids
+        LdefITL(ng)=.FALSE.
+        CALL tl_def_ini (ng)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      END DO
 !
 !  Determine number of perturbation iterations.
 !
@@ -576,11 +584,9 @@
      &                      'Sampling   Point: ',                       &
      &                      IoutTL, JoutTL, KoutTL
           WRITE (stdout,30) 'Sampled Representer Matrix: '
-          IF (Lstate.lt.10) THEN
-            WRITE (frmt,'(i1,a)') Lstate, '(1x,1p,e14.7,0p)'
-          ELSE
-            WRITE (frmt,'(i2,a)') Lstate, '(1x,1p,e14.7,0p)'
-          END IF
+          WRITE (frmt,'(a,i0,a)') '(', Lstate, '(1x,1p,e14.7,0p))'
+!!        WRITE (frmt,'(a)') '(*(1x,1p,e14.7,0p))'        ! FORTRAN 2008
+          WRITE (stdout,'(a,a)') 'My Format: ', frmt
           DO i=1,Lstate
             DO j=1,Lstate
               Rerr(i,j)=R(i,j,ng)-R(j,i,ng)
@@ -627,16 +633,6 @@
      &  __FILE__//", ROMS_finalize"
 !
 !-----------------------------------------------------------------------
-!  Compute and report model-observation comparison statistics.
-!-----------------------------------------------------------------------
-!
-      IF (exit_flag.eq.NoError) THEN
-        DO ng=1,Ngrids
-          CALL stats_modobs (ng)
-        END DO
-      END IF
-!
-!-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
 !-----------------------------------------------------------------------
 !
@@ -655,7 +651,11 @@
             END IF
             blowup=exit_flag
             exit_flag=NoError
-            CALL wrt_rst (ng)
+#ifdef DISTRIBUTE
+            CALL wrt_rst (ng, MyRank)
+#else
+            CALL wrt_rst (ng, -1)
+#endif
           END IF
         END DO
       END IF
@@ -692,4 +692,4 @@
       RETURN
       END SUBROUTINE ROMS_finalize
 
-      END MODULE ocean_control_mod
+      END MODULE roms_kernel_mod

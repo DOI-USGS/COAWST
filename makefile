@@ -1,6 +1,7 @@
-# svn $Id: makefile 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id$
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -38,8 +39,22 @@ endif
 #--------------------------------------------------------------------------
 
   sources    :=
-  libraries  :=
-  c_sources  := 
+
+#--------------------------------------------------------------------------
+#  Check that at least one of SHARED, STATIC, or EXEC are set. If none are
+#  set, then ROMS defaults to creating a statically linked executable.
+#  This is to safeguard against old build scripts and misconfigured
+#  new ones (e.g. EXEC defined but neither SHARED nor STATIC defined).
+#--------------------------------------------------------------------------
+
+ifndef SHARED
+ ifndef STATIC
+    STATIC := on
+  ifndef EXEC
+    EXEC   := on
+  endif
+ endif
+endif
 
 #==========================================================================
 #  Start of user-defined options. In some macro definitions below: "on" or
@@ -61,7 +76,7 @@ endif
 #  the .h extension. For example, the upwelling application includes the
 #  "upwelling.h" header file.
 
-ROMS_APPLICATION ?= SHOREFACE
+ROMS_APPLICATION ?= UPWELLING
 
 #  If application header files is not located in "ROMS/Include",
 #  provide an alternate directory FULL PATH.
@@ -111,7 +126,7 @@ MY_CPP_FLAGS ?=
 
 #  If applicable, activate 64-bit compilation:
 
-   USE_LARGE ?=
+   USE_LARGE ?= on
 
 #  If applicable, link with NetCDF-4 library. Notice that the NetCDF-4
 #  library needs both the HDF5 and MPI libraries.
@@ -158,7 +173,7 @@ MY_CPP_FLAGS ?=
 #  Set directory for temporary objects.
 #--------------------------------------------------------------------------
 
-SCRATCH_DIR ?= Build
+SCRATCH_DIR ?= Build_roms
  clean_list := core *.ipo $(SCRATCH_DIR)
 
 ifeq "$(strip $(SCRATCH_DIR))" "."
@@ -170,7 +185,6 @@ ifeq "$(strip $(SCRATCH_DIR))" "./"
   clean_list += $(CURDIR)/*.ipo
 endif
 
-ifdef USE_ROMS
 #--------------------------------------------------------------------------
 #  Notice that the token "libraries" is initialized with the ROMS/Utility
 #  library to account for calls to objects in other ROMS libraries or
@@ -179,9 +193,7 @@ ifdef USE_ROMS
 #  step (beginning and almost the end of ROMS library list).
 #--------------------------------------------------------------------------
 
-   libraries := $(SCRATCH_DIR)/libNLM.a $(SCRATCH_DIR)/libDRIVER.a \
-		$(SCRATCH_DIR)/libUTIL.a
-endif
+   libraries :=
 
 #--------------------------------------------------------------------------
 #  Set Pattern rules.
@@ -219,6 +231,10 @@ ifdef ROMS_APPLICATION
  endif
 endif
 
+#echo "roms cpp is " $(ROMS_CPPFLAGS)
+#ROMS_CPPFLAGS += $(MY_CPP_FLAGS)
+
+
 #--------------------------------------------------------------------------
 #  Internal macro definitions used to select the code to compile and
 #  additional libraries to link. It uses the CPP activated in the
@@ -229,10 +245,10 @@ endif
 
 MAKE_MACROS := $(shell echo ${HOME} | sed 's| |\\ |g')/make_macros.mk
 
-ifneq "$(MAKECMDGOALS)" "clean"
- ifneq "$(MAKECMDGOALS)" "tarfile"
+ifneq ($(MAKECMDGOALS),clean)
+ ifneq ($(MAKECMDGOALS),tarfile)
   MACROS := $(shell cpp -P $(ROMS_CPPFLAGS) Compilers/make_macros.h > \
-		$(MAKE_MACROS); $(CLEAN) $(MAKE_MACROS))
+              $(MAKE_MACROS); $(CLEAN) $(MAKE_MACROS))
 
   GET_MACROS := $(wildcard $(SCRATCH_DIR)/make_macros.*)
 
@@ -258,14 +274,8 @@ source-dir-to-binary-dir = $(addprefix $(SCRATCH_DIR)/, $(notdir $1))
 source-to-object = $(call source-dir-to-binary-dir,   \
                    $(subst .F,.o,$1))
 
-# $(call source-to-object, source-file-list)
-c-source-to-object = $(call source-dir-to-binary-dir,       \
-                     $(subst .c,.o,$(filter %.c,$1))        \
-                     $(subst .cc,.o,$(filter %.cc,$1)))
-
-# $(call make-library, library-name, source-file-list)
-define make-library
-   libraries += $(SCRATCH_DIR)/$1
+# $(call make-static-library, library-name, source-file-list)
+define make-static-library
    sources   += $2
 
    $(SCRATCH_DIR)/$1: $(call source-dir-to-binary-dir,    \
@@ -274,16 +284,11 @@ define make-library
 	$(RANLIB) $$@
 endef
 
-# $(call make-c-library, library-name, source-file-list)
-define make-c-library
-   libraries += $(SCRATCH_DIR)/$1
-   c_sources += $2
-
+# $(call make-shared-library, library-name, source-file-list)
+define make-shared-library
    $(SCRATCH_DIR)/$1: $(call source-dir-to-binary-dir,    \
-                      $(subst .c,.o,$(filter %.c,$2))     \
-                      $(subst .cc,.o,$(filter %.cc,$2)))
-	$(AR) $(ARFLAGS) $$@ $$^
-	$(RANLIB) $$@
+                      $(subst .F,.o,$2))
+	$(LD) $(FFLAGS) $(SH_LDFLAGS) -o $$@ $$^ $(LIBS)
 endef
 
 # $(call f90-source, source-file-list)
@@ -297,13 +302,7 @@ define compile-rules
     $(call f90-source,$f),$f))
 endef
 
-# $(c-compile-rules)
-define c-compile-rules
-  $(foreach f, $(local_c_src),       \
-    $(call one-c-compile-rule,$(call c-source-to-object,$f), $f))
-endef
-
-# $(call one-compile-rule, binary-file, f90-file, source-file)
+# $(call one-compile-rule, binary-file, f90-file, source-files)
 define one-compile-rule
   $1: $2 $3
 	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2)
@@ -314,26 +313,23 @@ define one-compile-rule
 
 endef
 
-# $(call one-c-compile-rule, binary-file, source-file)
-define one-c-compile-rule
-  $1: $2
-	cd $$(SCRATCH_DIR); $$(CXX) -c $$(CXXFLAGS) $$<
-
-endef
-
 #--------------------------------------------------------------------------
 #  Set ROMS/TOMS executable file name.
 #--------------------------------------------------------------------------
 
-BIN := $(BINDIR)/coawstS
-ifdef USE_DEBUG
-  BIN := $(BINDIR)/coawstG
-else
- ifdef USE_MPI
-   BIN := $(BINDIR)/coawstM
- endif
- ifdef USE_OpenMP
-   BIN := $(BINDIR)/coawstO
+ifdef EXEC
+ ifdef USE_DEBUG
+    BIN ?= $(BINDIR)/coawstG
+ else
+   ifdef USE_MPI
+     BIN ?= $(BINDIR)/coawstM
+  else
+    ifdef USE_OpenMP
+      BIN ?= $(BINDIR)/coawstO
+   else
+      BIN ?= $(BINDIR)/coawstS
+   endif
+  endif
  endif
 endif
 
@@ -359,8 +355,18 @@ OS := $(patsubst sn%,UNICOS-sn,$(OS))
 
 CPU := $(shell uname -m | sed 's/[\/ ]/-/g')
 
-SVNURL := $(shell svn info | grep '^URL:' | sed 's/URL: //')
-SVNREV := $(shell svn info | grep '^Revision:' | sed 's/Revision: //')
+
+GITURL := $(shell git config remote.origin.url)
+len := $(shell printf '%s' '$(GITURL)' | wc -c)
+ifeq ($(shell test $(len) -gt 1; echo $$?),0)
+  GITREV := $(shell git log -n 1 --format=%H) 
+  $(info $$gitrev is ${GITREV})
+endif
+
+SVNURL := $(shell grep HeadURL ./ROMS/Version | \
+            sed 's/.* \(https.*\)\/ROMS\/Version.*/\1/')
+SVNREV := $(shell grep Revision ./ROMS/Version | \
+            sed 's/.* \([0-9]*\) .*/\1/')
 
 ROOTDIR := $(shell pwd)
 
@@ -368,8 +374,8 @@ ifndef FORT
   $(error Variable FORT not set)
 endif
 
-ifneq "$(MAKECMDGOALS)" "clean"
- ifneq "$(MAKECMDGOALS)" "tarfile"
+ifneq ($(MAKECMDGOALS),clean)
+ ifneq ($(MAKECMDGOALS),tarfile)
   MKFILE := $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
   include $(MKFILE)
  endif
@@ -379,6 +385,14 @@ ifdef USE_MPI
  ifdef USE_OpenMP
   $(error You cannot activate USE_MPI and USE_OpenMP at the same time!)
  endif
+endif
+
+ifdef STATIC
+  libraries += $(SCRATCH_DIR)/$(ST_LIB_NAME)
+endif
+
+ifdef SHARED
+  libraries += $(SCRATCH_DIR)/$(SH_LIB_NAME)
 endif
 
 #--------------------------------------------------------------------------
@@ -409,6 +423,8 @@ ifdef MY_ANALYTICAL
   CPPFLAGS += -D'MY_ANALYTICAL="$(MY_ANALYTICAL)"'
 endif
 
+CPPFLAGS += -D'GIT_URL="$(GITURL)"'
+CPPFLAGS += -D'GIT_REV="$(GITREV)"'
 CPPFLAGS += -D'SVN_URL="$(SVNURL)"'
 CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
 
@@ -419,13 +435,7 @@ CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
 ifdef USE_ROMS
 .PHONY: all
 
-all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
-endif
-
-ifdef USE_SWAN
-.PHONY: all
-
-all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
+all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(libraries) $(BIN) rm_macros $(CYG_DLL_CP)
 endif
 
  modules  :=
@@ -489,14 +499,18 @@ ifdef MY_HEADER_DIR
  includes +=	$(MY_HEADER_DIR)
 endif
 
+ifdef USE_PIO
+ includes +=	$(PIO_INCDIR)
+endif
+
 ifdef USE_COAMPS
  includes +=	$(COAMPS_LIB_DIR)
 endif
 
-ifdef USE_SWAN
- modules  +=	SWAN/Src
- includes +=	SWAN/Src
-endif
+#ifdef USE_SWAN
+# modules  +=	SWAN/Src
+# includes +=	SWAN/Src
+#endif
 
 ifdef USE_INWAVE
  modules  +=	InWave/Drivers \
@@ -520,6 +534,7 @@ endif
 # endif
 #endif
 
+
 ifdef USE_ROMS
  modules  +=	Master
  includes +=	Master Compilers
@@ -529,13 +544,9 @@ else ifdef USE_SWAN
 else ifdef USE_WW3
  modules  +=	Master
  includes +=	Master Compilers
-#else ifdef USE_WRF
-# modules  +=	Master
-# includes +=	Master Compilers
 endif
 
 vpath %.F $(modules)
-vpath %.cc $(modules)
 vpath %.h $(includes)
 vpath %.f90 $(SCRATCH_DIR)
 vpath %.o $(SCRATCH_DIR)
@@ -556,20 +567,6 @@ $(SCRATCH_DIR):
 	$(shell $(TEST) -d $(SCRATCH_DIR) || $(MKDIR) $(SCRATCH_DIR) )
 
 #--------------------------------------------------------------------------
-#  Add profiling.
-#--------------------------------------------------------------------------
-
-# FFLAGS += -check bounds                 # ifort
-# FFLAGS += -C                            # pgi
-# FFLAGS += -xpg                          # Sun
-# FFLAGS += -pg                           # g95
-# FFLAGS += -qp                           # ifort
-# FFLAGS += -Mprof=func,lines             # pgi
-# FFLAGS += -Mprof=mpi,lines              # pgi
-# FFLAGS += -Mprof=mpi,hwcts              # pgi
-# FFLAGS += -Mprof=func                   # pgi
-
-#--------------------------------------------------------------------------
 #  Special CPP macros for mod_strings.F
 #--------------------------------------------------------------------------
 
@@ -581,11 +578,20 @@ $(SCRATCH_DIR)/mod_strings.f90: CPPFLAGS += -DMY_OS='"$(OS)"' \
 #  ROMS/TOMS libraries.
 #--------------------------------------------------------------------------
 
-MYLIB := libocean.a
+ifdef SHARED
+  $(eval $(call make-shared-library,$(SH_LIB_NAME),$(sources)))
+endif
+
+ifdef STATIC
+  $(eval $(call make-static-library,$(ST_LIB_NAME),$(sources)))
+endif
+
+MYLIB := libroms.a
 
 .PHONY: libraries
 
 libraries: $(libraries)
+
 
 #--------------------------------------------------------------------------
 #  Build MCT coupler param files.
@@ -596,12 +602,74 @@ libraries: $(libraries)
 mct_params:
 	$(shell $(TEST) -d $(SCRATCH_DIR) || $(MKDIR) $(SCRATCH_DIR) )                               \
 	cd $(SCRATCH_DIR);                                                                           \
-	cpp -P $(ROMS_CPPFLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mod_coupler_kinds.F > mod_coupler_kinds.f90; \
-	$(MY_ROMS_SRC)/$(CLEAN) mod_coupler_kinds.f90;                                                              \
-	$(FC) -c $(FFLAGS) mod_coupler_kinds.f90;                                                  \
-	cpp -P $(ROMS_CPPFLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mct_coupler_params.F > mct_coupler_params.f90; \
-	$(MY_ROMS_SRC)/$(CLEAN) mct_coupler_params.f90;                                                             \
-	$(FC) -c $(FFLAGS) mct_coupler_params.f90;
+	echo "";                                                                                     \
+	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mod_coupler_kinds.F > mod_coupler_kinds.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) mod_coupler_kinds.f90;                                               \
+	$(FC) -c $(FFLAGS) mod_coupler_kinds.f90;                                                    \
+	echo "";                                                                                     \
+	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mct_coupler_params.F > mct_coupler_params.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) mct_coupler_params.f90;                                              \
+	$(FC) -c $(FFLAGS) mct_coupler_params.f90;                                                   \
+	echo "";                                                                                     \
+	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mod_coupler_iounits.F > mod_coupler_iounits.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) mod_coupler_iounits.f90;                                             \
+	$(FC) -c $(FFLAGS) mod_coupler_iounits.f90;
+
+#--------------------------------------------------------------------------
+#  Build SWAN.
+#--------------------------------------------------------------------------
+
+SWANDIR := SWAN/src
+SWANDIR_NEW := SWAN/src_coawst
+
+.PHONY: swanclean
+
+swanclean:
+ifdef USE_SWAN
+	rm -rf $(SWANDIR_NEW);  \
+	cd SWAN; ls;            \
+	cmake -P clobber.cmake; \
+	echo "cleaned swan";
+endif
+
+.PHONY: swan
+
+JCW_FTNFILES := $(shell find $(SWANDIR) -maxdepth 1 -name '*.ftn' -exec basename \{} .ftn \;)
+JCW_FTN90FILES := $(shell find $(SWANDIR) -maxdepth 1 -name '*.ftn90' -exec basename \{} .ftn90 \;)
+
+swan:
+ifdef USE_SWAN
+	mkdir $(SWANDIR_NEW);                                                                        \
+	cp -r $(SWANDIR)/* $(SWANDIR_NEW)/;                                                          \
+	cd $(SWANDIR_NEW);                                                                           \
+	echo "";                                                                                     \
+	for file in $(JCW_FTNFILES); do                                                              \
+	mv $$file.ftn $$file.b;                                                                      \
+	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include "$$file.b" > "$$file.ftn";  \
+	$(MY_ROMS_SRC)/$(CLEAN) "$$file.ftn";                                                        \
+	rm $$file.b;                                                                                 \
+	done;                                                                                        \
+	echo "";                                                                                     \
+	for file in $(JCW_FTN90FILES); do                                                            \
+	mv $$file.ftn90 $$file.b;                                                                    \
+	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $$file.b > $$file.ftn90;    \
+	rm $$file.b;                                                                                 \
+	$(MY_ROMS_SRC)/$(CLEAN) "$$file.ftn90";                                                      \
+	done;                                                                                        \
+	echo "";                                                                                     \
+	cd hcat;                                                                                     \
+	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include swanhcat.ftn > swanhcat.b;  \
+	mv swanhcat.b swanhcat.ftn;                                                                  \
+	echo "";                                                                                     \
+	cd ../..; mkdir build;                                                                       \
+	cd build;                                                                                    \
+	cmake .. -G "Unix Makefiles" -DUNIX=ON -DMPI=ON -DNETCDF=ON -DCMAKE_VERBOSE_MAKEFILE=ON;     \
+	make;                                                                                        \
+	echo " "; echo " ";                                                                          \
+	echo "";                                                                                     \
+	echo "-------- Finished compiling SWAN ------------"                                         \
+	echo ""
+endif
 
 #--------------------------------------------------------------------------
 #  Build WW3.
@@ -611,7 +679,8 @@ mct_params:
 
 ww3clean:
 ifdef USE_WW3
-	cd $(COAWST_WW3_DIR)/bin; ls; ./w3_clean -c;
+	cd $(COAWST_WW3_DIR); rm -rf build;                    \
+	cd $(COAWST_WW3_DIR)/model/src; rm -rf cwstwvcp.F90;   \
 	echo "cleaned ww3";
 endif
 
@@ -619,16 +688,23 @@ endif
 
 ww3:
 ifdef USE_WW3
-	cp -p $(BIN) $(BIN).backup;                               \
-	$(RM) $(BIN);                                             \
-        $(RM) $(COAWST_WW3_DIR)/obj_DIST/libWW3.a;                \
-	cd $(COAWST_WW3_DIR); ls;                                 \
-	echo " "; echo " ";                                       \
-	export FC=$(FC);                                          \
-	export "FFLAGS=$(FFLAGS)";                                \
-	./coawst_compile_ww3;                                     \
-	echo "";                                                  \
-	echo "-------- Finished compiling WW3 ------------"
+	cd $(COAWST_WW3_DIR)/model/src; ls;                                   \
+	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include cwstwvcp.h > cwstwvcp.F90;    \
+	$(MY_ROMS_SRC)/$(CLEAN) cwstwvcp.F90;                                 \
+	echo " ";                                                             \
+	cd $(COAWST_WW3_DIR)/model/bin; ls;                                   \
+	cat $(WW3_SWITCH_FILE) | tr '\n' ' ' > switch_coawst;                 \
+	echo -n " COAWST_MODEL" | cat >> switch_coawst;                       \
+	if [ "$(USE_ROMS)" = 'on' ]; then echo -n " WAVES_OCEAN" | cat >> switch_coawst; fi;         \
+	if [ "$(USE_WRF)" = 'on' ]; then echo -n " AIR_WAVES" | cat >> switch_coawst; fi;         \
+	echo " updated switches";                                             \
+	cd $(COAWST_WW3_DIR);                                                 \
+	mkdir build;                                                      \
+	cd build;                                                         \
+	cmake .. -DSWITCH=$(COAWST_WW3_DIR)/model/bin/switch_coawst -DCMAKE_VERBOSE_MAKEFILE=ON; \
+	make --keep-going;                                                             \
+	echo "";                                                          \
+	echo "-------- Finished compiling WW3 ------------"               \
 	echo "";
 endif
 
@@ -717,7 +793,7 @@ endif
 #--------------------------------------------------------------------------
 #  Target to create ROMS/TOMS dependecies.
 #--------------------------------------------------------------------------
-ifneq "$(MAKECMDGOALS)" "tarfile"
+ifneq ($(MAKECMDGOALS),tarfile)
 $(SCRATCH_DIR)/$(NETCDF_MODFILE): | $(SCRATCH_DIR)
 	cp -f $(NETCDF_INCDIR)/$(NETCDF_MODFILE) $(SCRATCH_DIR)
 
@@ -750,7 +826,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.7.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.8.tar *
 
 .PHONY: zipfile
 

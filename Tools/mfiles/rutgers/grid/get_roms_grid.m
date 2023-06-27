@@ -76,9 +76,9 @@ function Gout = get_roms_grid(Ginp, Sinp, Tindex)
 %           variables. That is, NO_WRITE_GRID option was not activated.
 %
 
-% svn $Id: get_roms_grid.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: get_roms_grid.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -92,13 +92,17 @@ process.vertical   = false;
 
 TimeRecord = [];
 
-if (~isstruct(Ginp))
-  Gout.grid_name    = Ginp;
+is3d = false;
 
-  Ginfo = nc_inq(Ginp);
+if (~isstruct(Ginp))
+  Gout.grid_name = Ginp;
+  Ginfo  = nc_inq(Ginp);
   vnames = {Ginfo.Variables.Name};           % Available variables
   anames = {Ginfo.Attributes.Name};          % Available global attributes
   NvarsG = length(Ginfo.Variables);          % Number of variables
+  is3d   = any(strcmp(vnames,'s_rho'));      % 3D ROMS grid application
+else
+  is3d   = ~isempty(Ginp.N);
 end
 if (nargin > 1)
   if (ischar(Sinp))
@@ -146,17 +150,20 @@ if (~isstruct(Ginp))
     Gout.parent_Jmin = [];
     Gout.parent_Jmax = [];
   end
-  Gout.Vtransform    = [];
-  Gout.Vstretching   = [];
-  Gout.theta_s       = [];
-  Gout.theta_b       = [];
-  Gout.Tcline        = [];
-  Gout.hc            = [];
-  Gout.s_rho         = [];
-  Gout.Cs_r          = [];
-  Gout.s_w           = [];
-  Gout.Cs_w          = [];
 
+  if (is3d)
+    Gout.Vtransform    = [];
+    Gout.Vstretching   = [];
+    Gout.theta_s       = [];
+    Gout.theta_b       = [];
+    Gout.Tcline        = [];
+    Gout.hc            = [];
+    Gout.s_rho         = [];
+    Gout.Cs_r          = [];
+    Gout.s_w           = [];
+    Gout.Cs_w          = [];
+  end
+    
   spherical = nc_read(Ginp,'spherical');
   
   if (ischar(spherical))
@@ -219,7 +226,12 @@ varver  = {'Vtransform', 'Vstretching',                                 ...
            'theta_s', 'theta_b', 'Tcline', 'hc',                        ...
            's_rho', 'Cs_r', 's_w', 'Cs_w',                              ...
            'Hz', 'z_rho', 'z_u', 'z_v'};
-varlist = [varhor, varver];
+
+if (is3d)
+  varlist = [varhor, varver];
+else
+  varlist = varhor;
+end
 
 if (isstruct(Ginp))
 
@@ -283,7 +295,9 @@ else
       case 'Cs_w'
         Gout.(field) = nc_read(Ginp,field);
       case 'zeta'
-        process.vertical = true;
+        if (is3d)
+          process.vertical = true;
+        end
         got.zeta  = true;
         zeta_file = Ginp;
     end
@@ -644,7 +658,7 @@ end
 % Add vertical depths.
 %--------------------------------------------------------------------------
 
-if (process.vertical)
+if (process.vertical && is3d)
 
   if (~got.Vtransform  || isempty(Gout.Vtransform ))
     error([' GET_ROMS_GRID: unassigned field ''Vtransform''',           ...

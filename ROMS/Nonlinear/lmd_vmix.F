@@ -2,9 +2,10 @@
       MODULE lmd_vmix_mod
 #if defined NONLINEAR && defined LMD_MIXING && defined SOLVE3D
 !
-!svn $Id: lmd_vmix.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: lmd_vmix.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -342,30 +343,16 @@
 !  Holloway.
 !
             cff=1.0_r8/SQRT(MAX(bvf(i,j,k),1.0E-7_r8))
-# ifdef ISOMIP
-            lmd_iwm=1.0E-3_r8
-            lmd_iws=5.0E-5_r8
-            if (bvf(i,j,k) .lt. 0.0_r8) then
-              lmd_iwm=lmd_iwm*100.0_r8
-              lmd_iws=lmd_iws*100.0_r8
-            endif
-# else
             lmd_iwm=1.0E-6_r8*cff
             lmd_iws=1.0E-7_r8*cff
 !           lmd_iwm=lmd_nuwm
 !           lmd_iws=lmd_nuws
-# endif
 !
 ! Sum contributions due to internal wave breaking, shear instability
 ! and convective diffusivity due to shear instability.
 !
-# ifdef ISOMIP
-            Akv(i,j,k)=lmd_iwm
-            Akt(i,j,k,itemp)=lmd_iws
-# else
             Akv(i,j,k)=lmd_iwm+lmd_nu0m*nu_sx
             Akt(i,j,k,itemp)=lmd_iws+lmd_nu0s*nu_sx
-# endif
 # ifdef SALINITY
             Akt(i,j,k,isalt)=Akt(i,j,k,itemp)
 # endif
@@ -469,10 +456,6 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      nstp(ng),                                   &
      &                      GRID(ng) % Hz,                              &
-# ifdef M2TIDE_DIFF
-     &                      GRID(ng) % z_w,                             &
-     &                      MIXING(ng) % m2_amp,                        &
-# endif
      &                      MIXING(ng) % bvf,                           &
      &                      MIXING(ng) % Akt,                           &
      &                      MIXING(ng) % Akv)
@@ -484,10 +467,6 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            nstp,                                 &
      &                            Hz,                                   &
-# ifdef M2TIDE_DIFF
-     &                            z_w,                                  &
-     &                            m2_amp,                               &
-# endif
      &                            bvf, Akt, Akv)
 !***********************************************************************
 !
@@ -507,20 +486,12 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
-# ifdef M2TIDE_DIFF
-      real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-      real(r8), intent(in) :: m2_amp(LBi:,LBj:)
-# endif
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
 
       real(r8), intent(inout) :: Akt(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
 # else
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
-# ifdef M2TIDE_DIFF
-      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-      real(r8), intent(in) :: m2_amp(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
 
       real(r8), intent(inout) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
@@ -533,15 +504,7 @@
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
-      real(r8) :: cff, nu_sx, nu_sxc, shear2
-# ifdef M2TIDE_DIFF
-      real(r8), parameter :: lmd_k0 = 5.0e-3_r8  ! m2 s-1
-      real(r8), parameter :: lmd_sigma = 3.0_r8
-      real(r8), parameter :: lmd_p = 0.25_r8
-      real(r8), parameter :: lmd_drag = 2.4e-3_r8
-      real(r8), parameter :: eps = 1.e-20_r8
-      real(r8) :: lmd_kz, lmd_ri
-# endif
+      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, nu_sxc, shear2
 
 # include "set_bounds.h"
 !
@@ -550,10 +513,6 @@
 !  the superposition of three processes: local Richardson number
 !  instability due to resolved vertical shear, internal wave
 !  breaking, and double diffusion.
-# ifdef M2TIDE_DIFF
-!  Add in contribution of simulated tidal mixing.
-!   Lee, H.-C. et al., 2006 Ocean Modelling, 11, 464-477.
-# endif
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)-1
@@ -575,54 +534,109 @@
 ! Sum contributions due to internal wave breaking, shear instability
 ! and convective diffusivity due to shear instability.
 !
-# ifndef ISOMIP
             Akv(i,j,k)=Akv(i,j,k)+lmd_nu0c*nu_sxc
             Akt(i,j,k,itemp)=Akt(i,j,k,itemp)+lmd_nu0c*nu_sxc
-#  ifdef SALINITY
+# ifdef SALINITY
             Akt(i,j,k,isalt)=Akt(i,j,k,isalt)+lmd_nu0c*nu_sxc
-#  endif
-#  if defined LIMIT_VDIFF || defined LIMIT_VVISC
+# endif
+# if defined LIMIT_VDIFF || defined LIMIT_VVISC
 !
 !  Limit vertical mixing coefficients with the upper threshold value.
 !  This is an engineering fix but it can be based on the fact that
 !  vertical mixing in the ocean from indirect observations is not
 !  higher than the threshold value.
 !
-#   ifdef LIMIT_VVISC
+#  ifdef LIMIT_VVISC
             Akv(i,j,k)=MIN(Akv_limit(ng), Akv(i,j,k))
-#   endif
-#   ifdef LIMIT_VDIFF
+#  endif
+#  ifdef LIMIT_VDIFF
             Akt(i,j,k,itemp)=MIN(Akt_limit(itemp,ng), Akt(i,j,k,itemp))
-#    ifdef SALINITY
+#   ifdef SALINITY
             Akt(i,j,k,isalt)=MIN(Akt_limit(isalt,ng), Akt(i,j,k,isalt))
-#    endif
 #   endif
 #  endif
 # endif
           END DO
         END DO
       END DO
-!
-# ifdef M2TIDE_DIFF
-!  Add in contribution of simulated tidal mixing.
-!
-      DO k=1,N(ng)-1
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            shear2 = 0.5 * lmd_drag *                                   &
-     &               (m2_amp(i,j)/(vonKar*(z_w(i,j,0)-z_w(i,j,k)) ))**2
-            lmd_ri = max(0.0,bvf(i,j,k)) / (shear2 + eps)
-            lmd_kz = lmd_k0 * (1 + lmd_sigma*lmd_ri)**(-lmd_p)
-            Akt(i,j,k,itemp)=Akt(i,j,k,itemp)+lmd_kz
-#  ifdef SALINITY
-            Akt(i,j,k,isalt)=Akt(i,j,k,isalt)+lmd_kz
-#  endif
-          END DO
-        END DO
-      END DO
-# endif
 !
 !  Apply boundary conditions.
+!
+      DO k=0,N(ng)
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            DO itrc=1,NAT
+              Akt(Istr-1,j,k,itrc)=Akt(Istr,j,k,itrc)
+            END DO
+            Akv(Istr-1,j,k)=Akv(Istr,j,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            DO itrc=1,NAT
+              Akt(Iend+1,j,k,itrc)=Akt(Iend,j,k,itrc)
+            END DO
+            Akv(Iend+1,j,k)=Akv(Iend,j,k)
+          END DO
+
+        END IF
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            DO itrc=1,NAT
+              Akt(i,Jstr-1,k,itrc)=Akt(i,Jstr,k,itrc)
+            END DO
+            Akv(i,Jstr-1,k)=Akv(i,Jstr,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            DO itrc=1,NAT
+              Akt(i,Jend+1,k,itrc)=Akt(i,Jend,k,itrc)
+            END DO
+            Akv(i,Jend+1,k)=Akv(i,Jend,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Istr-1,Jstr-1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Istr  ,Jstr-1,k,itrc)+       &
+     &                                 Akt(Istr-1,Jstr  ,k,itrc))
+          END DO
+          Akv(Istr-1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (Akv(Istr  ,Jstr-1,k)+                   &
+     &                          Akv(Istr-1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Iend+1,Jstr-1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Iend  ,Jstr-1,k,itrc)+       &
+     &                                 Akt(Iend+1,Jstr  ,k,itrc))
+          END DO
+          Akv(Iend+1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (Akv(Iend  ,Jstr-1,k)+                   &
+     &                          Akv(Iend+1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Istr-1,Jend+1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Istr  ,Jend+1,k,itrc)+       &
+     &                                 Akt(Istr-1,Jend  ,k,itrc))
+          END DO
+          Akv(Istr-1,Jend+1,k)=0.5_r8*                                  &
+     &                         (Akv(Istr  ,Jend+1,k)+                   &
+     &                          Akv(Istr-1,Jend  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          DO itrc=1,NAT
+            Akt(Iend+1,Jend+1,k,itrc)=0.5_r8*                           &
+     &                                (Akt(Iend  ,Jend+1,k,itrc)+       &
+     &                                 Akt(Iend+1,Jend  ,k,itrc))
+          END DO
+          Akv(Iend+1,Jend+1,k)=0.5_r8*                                  &
+     &                         (Akv(Iend  ,Jend+1,k)+                   &
+     &                          Akv(Iend+1,Jend  ,k))
+        END IF
+      END DO
 !
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &

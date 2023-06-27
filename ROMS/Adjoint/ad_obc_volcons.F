@@ -2,9 +2,10 @@
       MODULE ad_obc_volcons_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_obc_volcons.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_obc_volcons.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -129,7 +130,7 @@
       real(r8) :: adfac, ad_cff, ad_my_area, ad_my_flux
 
 # ifdef DISTRIBUTE
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
       character (len=3), dimension(2) :: op_handle
 # endif
 !
@@ -146,17 +147,17 @@
 !-----------------------------------------------------------------------
 !
       IF (ANY(ad_VolCons(:,ng))) THEN
-!>      tl_ubar_xs=tl_bc_flux/bc_area-                                  &
-!>   &             tl_bc_area*ubar_xs/bc_area
-!>
+!^      tl_ubar_xs=tl_bc_flux/bc_area-                                  &
+!^   &             tl_bc_area*ubar_xs/bc_area
+!^
         ad_bc_area=-ad_ubar_xs*ubar_xs/bc_area
         ad_bc_flux=ad_ubar_xs/bc_area
         ad_ubar_xs=0.0_r8
-!>      tl_bc_flux=tl_bc_flux+tl_my_flux
-!>
+!^      tl_bc_flux=tl_bc_flux+tl_my_flux
+!^
         ad_my_flux=ad_bc_flux
-!>      tl_bc_area=tl_bc_area+tl_my_area
-!>
+!^      tl_bc_area=tl_bc_area+tl_my_area
+!^
         ad_my_area=ad_bc_area
       END IF
 !
@@ -173,25 +174,25 @@
 # ifdef MASKING
             cff=cff*vmask(i,Jend+1)
 # endif
-!>          tl_my_flux=tl_my_flux-                                      &
-!>   &                 tl_cff*vbar(i,Jend+1,kinp)-                      &
-!>   &                 cff*tl_vbar(i,Jend+1,kinp)
-!>
+!^          tl_my_flux=tl_my_flux-                                      &
+!^   &                 tl_cff*vbar(i,Jend+1,kinp)-                      &
+!^   &                 cff*tl_vbar(i,Jend+1,kinp)
+!^
             ad_vbar(i,Jend+1,kinp)=ad_vbar(i,Jend+1,kinp)-              &
      &                             cff*ad_my_flux
             ad_cff=ad_cff-ad_my_flux*vbar(i,Jend+1,kinp)
-!>          tl_my_area=tl_my_area+tl_cff
-!>
+!^          tl_my_area=tl_my_area+tl_cff
+!^
             ad_cff=ad_cff+ad_my_area
 # ifdef MASKING
-!>          tl_cff=tl_cff*vmask(i,Jend+1)
-!>
+!^          tl_cff=tl_cff*vmask(i,Jend+1)
+!^
             ad_cff=ad_cff*vmask(i,Jend+1)
 # endif
-!>          tl_cff=0.5_r8*om_v(i,Jend+1)*                               &
-!>   &             (tl_zeta(i,Jend  ,kinp)+tl_h(i,Jend  )+              &
-!>   &              tl_zeta(i,Jend+1,kinp)+tl_h(i,Jend+1))
-!>
+!^          tl_cff=0.5_r8*om_v(i,Jend+1)*                               &
+!^   &             (tl_zeta(i,Jend  ,kinp)+tl_h(i,Jend  )+              &
+!^   &              tl_zeta(i,Jend+1,kinp)+tl_h(i,Jend+1))
+!^
             adfac=0.5_r8*om_v(i,Jend+1)*ad_cff
             ad_zeta(i,Jend  ,kinp)=ad_zeta(i,Jend  ,kinp)+adfac
             ad_zeta(i,Jend+1,kinp)=ad_zeta(i,Jend+1,kinp)+adfac
@@ -211,25 +212,25 @@
 # ifdef MASKING
             cff=cff*vmask(i,Jstr)
 # endif
-!>          tl_my_flux=tl_my_flux+                                      &
-!>   &                 tl_cff*vbar(i,JstrV-1,kinp)+                     &
-!>   &                 cff*tl_vbar(i,JstrV-1,kinp)
-!>
+!^          tl_my_flux=tl_my_flux+                                      &
+!^   &                 tl_cff*vbar(i,JstrV-1,kinp)+                     &
+!^   &                 cff*tl_vbar(i,JstrV-1,kinp)
+!^
             ad_vbar(i,JstrV-1,kinp)=ad_vbar(i,JstrV-1,kinp)+            &
      &                              cff*ad_my_flux
             ad_cff=ad_cff+ad_my_flux*vbar(i,JstrV-1,kinp)
-!>          tl_my_area=tl_my_area+tl_cff
-!>
+!^          tl_my_area=tl_my_area+tl_cff
+!^
             ad_cff=ad_cff+ad_my_area
 # ifdef MASKING
-!>          tl_cff=tl_cff*vmask(i,Jstr)
-!>
+!^          tl_cff=tl_cff*vmask(i,Jstr)
+!^
             ad_cff=ad_cff*vmask(i,Jstr)
 # endif
-!>          tl_cff=0.5_r8*om_v(i,Jstr)*                                 &
-!>   &             (tl_zeta(i,Jstr-1,kinp)+tl_h(i,Jstr-1)+              &
-!>   &              tl_zeta(i,Jstr  ,kinp)+tl_h(i,Jstr  ))
-!>
+!^          tl_cff=0.5_r8*om_v(i,Jstr)*                                 &
+!^   &             (tl_zeta(i,Jstr-1,kinp)+tl_h(i,Jstr-1)+              &
+!^   &              tl_zeta(i,Jstr  ,kinp)+tl_h(i,Jstr  ))
+!^
             adfac=0.5_r8*om_v(i,Jstr)*ad_cff
             ad_zeta(i,Jstr-1,kinp)=ad_zeta(i,Jstr-1,kinp)+adfac
             ad_zeta(i,Jstr  ,kinp)=ad_zeta(i,Jstr  ,kinp)+adfac
@@ -249,25 +250,25 @@
 # ifdef MASKING
             cff=cff*umask(Iend+1,j)
 # endif
-!>          tl_my_flux=tl_my_flux-                                      &
-!>   &                 tl_cff*ubar(Iend+1,j,kinp)-                      &
-!>   &                 cff*tl_ubar(Iend+1,j,kinp)
-!>
+!^          tl_my_flux=tl_my_flux-                                      &
+!^   &                 tl_cff*ubar(Iend+1,j,kinp)-                      &
+!^   &                 cff*tl_ubar(Iend+1,j,kinp)
+!^
             ad_ubar(Iend+1,j,kinp)=ad_ubar(Iend+1,j,kinp)-              &
      &                             cff*ad_my_flux
             ad_cff=ad_cff-ad_my_flux*ubar(Iend+1,j,kinp)
-!>          tl_my_area=tl_my_area+tl_cff
-!>
+!^          tl_my_area=tl_my_area+tl_cff
+!^
             ad_cff=ad_cff+ad_my_area
 # ifdef MASKING
-!>          tl_cff=tl_cff*umask(Iend+1,j)
-!>
+!^          tl_cff=tl_cff*umask(Iend+1,j)
+!^
             ad_cff=ad_cff*umask(Iend+1,j)
 # endif
-!>          tl_cff=0.5_r8*on_u(Iend+1,j)*                               &
-!>   &             (tl_zeta(Iend  ,j,kinp)+tl_h(Iend  ,j)+              &
-!>   &              tl_zeta(Iend+1,j,kinp)+tl_h(Iend+1,j))
-!>
+!^          tl_cff=0.5_r8*on_u(Iend+1,j)*                               &
+!^   &             (tl_zeta(Iend  ,j,kinp)+tl_h(Iend  ,j)+              &
+!^   &              tl_zeta(Iend+1,j,kinp)+tl_h(Iend+1,j))
+!^
             adfac=0.5_r8*on_u(Iend+1,j)*ad_cff
             ad_zeta(Iend  ,j,kinp)=ad_zeta(Iend  ,j,kinp)+adfac
             ad_zeta(Iend+1,j,kinp)=ad_zeta(Iend+1,j,kinp)+adfac
@@ -287,25 +288,25 @@
 # ifdef MASKING
             cff=cff*umask(Istr,j)
 # endif
-!>          tl_my_flux=tl_my_flux+                                      &
-!>   &                 tl_cff*ubar(Istr,j,kinp)+                        &
-!>   &                 cff*tl_ubar(Istr,j,kinp)
-!>
+!^          tl_my_flux=tl_my_flux+                                      &
+!^   &                 tl_cff*ubar(Istr,j,kinp)+                        &
+!^   &                 cff*tl_ubar(Istr,j,kinp)
+!^
             ad_ubar(Istr,j,kinp)=ad_ubar(Istr,j,kinp)+                  &
      &                           cff*ad_my_flux
             ad_cff=ad_cff+ad_my_flux*ubar(Istr,j,kinp)
-!>          tl_my_area=tl_my_area+tl_cff
-!>
+!^          tl_my_area=tl_my_area+tl_cff
+!^
             ad_cff=ad_cff+ad_my_area
 # ifdef MASKING
-!>          tl_cff=tl_cff*umask(Istr,j)
-!>
+!^          tl_cff=tl_cff*umask(Istr,j)
+!^
             ad_cff=ad_cff*umask(Istr,j)
 # endif
-!>          tl_cff=0.5_r8*on_u(Istr,j)*                                 &
-!>   &             (tl_zeta(Istr-1,j,kinp)+tl_h(Istr-1,j)+              &
-!>   &              tl_zeta(Istr  ,j,kinp)+tl_h(Istr  ,j))
-!>
+!^          tl_cff=0.5_r8*on_u(Istr,j)*                                 &
+!^   &             (tl_zeta(Istr-1,j,kinp)+tl_h(Istr-1,j)+              &
+!^   &              tl_zeta(Istr  ,j,kinp)+tl_h(Istr  ,j))
+!^
             adfac=0.5_r8*on_u(Istr,j)*ad_cff
             ad_zeta(Istr-1,j,kinp)=ad_zeta(Istr-1,j,kinp)+adfac
             ad_zeta(Istr  ,j,kinp)=ad_zeta(Istr  ,j,kinp)+adfac
@@ -316,9 +317,9 @@
         END IF
       END IF
 
-!>    tl_my_area=0.0_r8
-!>    tl_my_flux=0.0_r8
-!>
+!^    tl_my_area=0.0_r8
+!^    tl_my_flux=0.0_r8
+!^
       ad_my_area=0.0_r8
       ad_my_flux=0.0_r8
 
@@ -404,7 +405,7 @@
       real(r8) :: adfac, adfac1, adfac2, adfac3
       real(r8) :: ad_my_ubar_xs
 # ifdef DISTRIBUTE
-      real(r8) :: buffer
+      real(r8) :: rbuffer
       character (len=3) :: op_handle
 # endif
 
@@ -433,12 +434,12 @@
 ! order numerical stencil.
 !
       IF (ad_VolCons(isouth,ng).or.ad_VolCons(inorth,ng)) THEN
-!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
-!>   &                      IminS, ImaxS, JminS, JmaxS,                 &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_Dvom)
-!>
+!^      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!^   &                      IminS, ImaxS, JminS, JmaxS,                 &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_Dvom)
+!^
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         NghostPoints,                            &
@@ -447,12 +448,12 @@
       END IF
 
       IF (ad_VolCons(iwest,ng).or.ad_VolCons(ieast,ng)) THEN
-!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
-!>   &                      IminS, ImaxS, JminS, JmaxS,                 &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_Duon)
-!>
+!^      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!^   &                      IminS, ImaxS, JminS, JmaxS,                 &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_Duon)
+!^
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         NghostPoints,                            &
@@ -465,17 +466,17 @@
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=-2+I_RANGE+1
 # ifdef MASKING
-!>          tl_Dvom(i,Jend+1)=tl_Dvom(i,Jend+1)*vmask(i,Jend+1)
-!>
+!^          tl_Dvom(i,Jend+1)=tl_Dvom(i,Jend+1)*vmask(i,Jend+1)
+!^
             ad_Dvom(i,Jend+1)=ad_Dvom(i,Jend+1)*vmask(i,Jend+1)
 # endif
-!>          tl_Dvom(i,Jend+1)=0.5_r8*                                   &
-!>   &                        ((tl_Drhs(i,Jend+1)+tl_Drhs(i,Jend))*     &
-!>   &                         (vbar(i,Jend+1,kinp)+ubar_xs)+           &
-!>   &                         (Drhs(i,Jend+1)+Drhs(i,Jend))*           &
-!>   &                         (tl_vbar(i,Jend+1,kinp)+tl_ubar_xs))*    &
-!>   &                        om_v(i,Jend+1)
-!>
+!^          tl_Dvom(i,Jend+1)=0.5_r8*                                   &
+!^   &                        ((tl_Drhs(i,Jend+1)+tl_Drhs(i,Jend))*     &
+!^   &                         (vbar(i,Jend+1,kinp)+ubar_xs)+           &
+!^   &                         (Drhs(i,Jend+1)+Drhs(i,Jend))*           &
+!^   &                         (tl_vbar(i,Jend+1,kinp)+tl_ubar_xs))*    &
+!^   &                        om_v(i,Jend+1)
+!^
             adfac=0.5_r8*om_v(i,Jend+1)*ad_Dvom(i,Jend+1)
             adfac1=adfac*(vbar(i,Jend+1,kinp)+ubar_xs)
             adfac2=adfac*(Drhs(i,Jend+1)+Drhs(i,Jend))
@@ -492,17 +493,17 @@
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=-2+I_RANGE+1
 # ifdef MASKING
-!>          tl_Dvom(i,Jstr)=tl_Dvom(i,Jstr)*vmask(i,Jstr)
-!>
+!^          tl_Dvom(i,Jstr)=tl_Dvom(i,Jstr)*vmask(i,Jstr)
+!^
             ad_Dvom(i,Jstr)=ad_Dvom(i,Jstr)*vmask(i,Jstr)
 # endif
-!>          tl_Dvom(i,Jstr)=0.5_r8*                                     &
-!>   &                      ((tl_Drhs(i,Jstr)+tl_Drhs(i,Jstr-1))*       &
-!>   &                       (vbar(i,Jstr,kinp)-ubar_xs)+               &
-!>   &                       (Drhs(i,Jstr)+Drhs(i,Jstr-1))*             &
-!>   &                       (tl_vbar(i,Jstr,kinp)-tl_ubar_xs))*        &
-!>   &                      om_v(i,Jstr)
-!>
+!^          tl_Dvom(i,Jstr)=0.5_r8*                                     &
+!^   &                      ((tl_Drhs(i,Jstr)+tl_Drhs(i,Jstr-1))*       &
+!^   &                       (vbar(i,Jstr,kinp)-ubar_xs)+               &
+!^   &                       (Drhs(i,Jstr)+Drhs(i,Jstr-1))*             &
+!^   &                       (tl_vbar(i,Jstr,kinp)-tl_ubar_xs))*        &
+!^   &                      om_v(i,Jstr)
+!^
             adfac=0.5_r8*om_v(i,Jstr)*ad_Dvom(i,Jstr)
             adfac1=adfac*(vbar(i,Jstr,kinp)-ubar_xs)
             adfac2=adfac*(Drhs(i,Jstr)+Drhs(i,Jstr-1))
@@ -519,17 +520,17 @@
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=-2+J_RANGE+1
 # ifdef MASKING
-!>          tl_Duon(Iend+1,j)=tl_Duon(Iend+1,j)*umask(Iend+1,j)
-!>
+!^          tl_Duon(Iend+1,j)=tl_Duon(Iend+1,j)*umask(Iend+1,j)
+!^
             ad_Duon(Iend+1,j)=ad_Duon(Iend+1,j)*umask(Iend+1,j)
 # endif
-!>          tl_Duon(Iend+1,j)=0.5_r8*                                   &
-!>   &                        ((tl_Drhs(Iend+1,j)+tl_Drhs(Iend,j))*     &
-!>   &                         (ubar(Iend+1,j,kinp)+ubar_xs)+           &
-!>   &                         (Drhs(Iend+1,j)+Drhs(Iend,j))*           &
-!>   &                         (tl_ubar(Iend+1,j,kinp)+tl_ubar_xs))*    &
-!>   &                        on_u(Iend+1,j)
-!>
+!^          tl_Duon(Iend+1,j)=0.5_r8*                                   &
+!^   &                        ((tl_Drhs(Iend+1,j)+tl_Drhs(Iend,j))*     &
+!^   &                         (ubar(Iend+1,j,kinp)+ubar_xs)+           &
+!^   &                         (Drhs(Iend+1,j)+Drhs(Iend,j))*           &
+!^   &                         (tl_ubar(Iend+1,j,kinp)+tl_ubar_xs))*    &
+!^   &                        on_u(Iend+1,j)
+!^
             adfac=0.5_r8*on_u(Iend+1,j)*ad_Duon(Iend+1,j)
             adfac1=adfac*(ubar(Iend+1,j,kinp)+ubar_xs)
             adfac2=adfac*(Drhs(Iend+1,j)+Drhs(Iend,j))
@@ -546,17 +547,17 @@
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=-2+J_RANGE+1
 # ifdef MASKING
-!>          tl_Duon(Istr,j)=tl_Duon(Istr,j)*umask(Istr,j)
-!>
+!^          tl_Duon(Istr,j)=tl_Duon(Istr,j)*umask(Istr,j)
+!^
             ad_Duon(Istr,j)=ad_Duon(Istr,j)*umask(Istr,j)
 # endif
-!>          tl_Duon(Istr,j)=0.5_r8*                                     &
-!>   &                      ((tl_Drhs(Istr,j)+tl_Drhs(Istr-1,j))*       &
-!>   &                       (ubar(Istr,j,kinp)-ubar_xs)+               &
-!>   &                       (Drhs(Istr,j)+Drhs(Istr-1,j))*             &
-!>   &                       (tl_ubar(Istr,j,kinp)-tl_ubar_xs))*        &
-!>   &                      on_u(Istr,j)
-!>
+!^          tl_Duon(Istr,j)=0.5_r8*                                     &
+!^   &                      ((tl_Drhs(Istr,j)+tl_Drhs(Istr-1,j))*       &
+!^   &                       (ubar(Istr,j,kinp)-ubar_xs)+               &
+!^   &                       (Drhs(Istr,j)+Drhs(Istr-1,j))*             &
+!^   &                       (tl_ubar(Istr,j,kinp)-tl_ubar_xs))*        &
+!^   &                      on_u(Istr,j)
+!^
             adfac=0.5_r8*on_u(Istr,j)*ad_Duon(Istr,j)
             adfac1=adfac*(ubar(Istr,j,kinp)-ubar_xs)
             adfac2=adfac*(Drhs(Istr,j)+Drhs(Istr-1,j))
@@ -596,10 +597,10 @@
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 # ifdef DISTRIBUTE
-          buffer=adfac3
+          rbuffer=adfac3
           op_handle='SUM'
-          CALL mp_reduce (ng, iADM, 1, buffer, op_handle)
-          adfac3=buffer
+          CALL mp_reduce (ng, iADM, 1, rbuffer, op_handle)
+          adfac3=rbuffer
 # endif
           IF (iif(ng).eq.nfast(ng)+1) THEN
             ad_ubar_xs=ad_ubar_xs+adfac3
@@ -665,14 +666,14 @@
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=Istr,Iend
 # ifdef MASKING
-!>          vbar(i,Jend+1,kinp)=vbar(i,Jend+1,kinp)*                    &
-!>   &                          vmask(i,Jend+1)
-!>
+!^          vbar(i,Jend+1,kinp)=vbar(i,Jend+1,kinp)*                    &
+!^   &                          vmask(i,Jend+1)
+!^
             ad_vbar(i,Jend+1,kinp)=ad_vbar(i,Jend+1,kinp)*              &
      &                             vmask(i,Jend+1)
 # endif
-!>          tl_vbar(i,Jend+1,kinp)=(tl_vbar(i,Jend+1,kinp)+tl_ubar_xs)
-!>
+!^          tl_vbar(i,Jend+1,kinp)=(tl_vbar(i,Jend+1,kinp)+tl_ubar_xs)
+!^
             ad_ubar_xs=ad_ubar_xs+ad_vbar(i,Jend+1,kinp)
           END DO
         END IF
@@ -682,14 +683,14 @@
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=Istr,Iend
 # ifdef MASKING
-!>          tl_vbar(i,Jstr,kinp)=tl_vbar(i,Jstr,kinp)*                  &
-!>   &                           vmask(i,Jstr)
-!>
+!^          tl_vbar(i,Jstr,kinp)=tl_vbar(i,Jstr,kinp)*                  &
+!^   &                           vmask(i,Jstr)
+!^
             ad_vbar(i,Jstr,kinp)=ad_vbar(i,Jstr,kinp)*                  &
      &                           vmask(i,Jstr)
 # endif
-!>          tl_vbar(i,Jstr,kinp)=(tl_vbar(i,Jstr,kinp)-tl_ubar_xs)
-!>
+!^          tl_vbar(i,Jstr,kinp)=(tl_vbar(i,Jstr,kinp)-tl_ubar_xs)
+!^
             ad_ubar_xs=ad_ubar_xs-ad_vbar(i,Jstr,kinp)
           END DO
         END IF
@@ -699,14 +700,14 @@
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=Jstr,Jend
 # ifdef MASKING
-!>          tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)*              &
-!>   &                             umask(Iend+1,j)
-!>
+!^          tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)*              &
+!^   &                             umask(Iend+1,j)
+!^
             ad_ubar(Iend+1,j,kinp)=ad_ubar(Iend+1,j,kinp)*              &
      &                             umask(Iend+1,j)
 # endif
-!>          tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)+tl_ubar_xs
-!>
+!^          tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)+tl_ubar_xs
+!^
             ad_ubar_xs=ad_ubar_xs+ad_ubar(Iend+1,j,kinp)
           END DO
         END IF
@@ -716,14 +717,14 @@
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=Jstr,Jend
 # ifdef MASKING
-!>          tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)*                  &
-!>   &                           umask(Istr,j)
-!>
+!^          tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)*                  &
+!^   &                           umask(Istr,j)
+!^
             ad_ubar(Istr,j,kinp)=ad_ubar(Istr,j,kinp)*                  &
      &                           umask(Istr,j)
 # endif
-!>          tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)-tl_ubar_xs
-!>
+!^          tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)-tl_ubar_xs
+!^
             ad_ubar_xs=ad_ubar_xs-ad_ubar(Istr,j,kinp)
           END DO
         END IF

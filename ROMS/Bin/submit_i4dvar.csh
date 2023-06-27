@@ -1,8 +1,9 @@
 #!/bin/csh -f
 #
-# svn $Id: submit_i4dvar.csh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: submit_i4dvar.csh 1151 2023-02-09 03:08:53Z arango $
 #######################################################################
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 ################################################## Hernan G. Arango ###
@@ -117,7 +118,7 @@ set DA_STDINP=da_roms_${PREFIX}.in
 
 #  Set ROMS Metatada variables file.
 
-set VARINFO=${MYROOT}/Data/varinfo.dat
+set VARINFO=${MYROOT}/Data/varinfo.yaml
 
 #  Set 4DVar input script.
 
@@ -245,7 +246,7 @@ while ($DAY <= $END_DAY)
   cp $DA_TEMPLATE $DA_STDINP
 
   $SUBSTITUTE $DA_STDINP MyTITLE $TITLE
-  $SUBSTITUTE $DA_STDINP varinfo.dat $VARINFO
+  $SUBSTITUTE $DA_STDINP varinfo.yaml $VARINFO
   $SUBSTITUTE $DA_STDINP MyNtileI $NtileI
   $SUBSTITUTE $DA_STDINP MyNtileJ $NtileJ
   $SUBSTITUTE $DA_STDINP MyNouter $Nouter
@@ -300,7 +301,7 @@ while ($DAY <= $END_DAY)
   set RSTname=${PREFIX}_rst_${DAY}.nc
 
   $SUBSTITUTE $NL_STDINP MyTITLE $TITLE
-  $SUBSTITUTE $NL_STDINP varinfo.dat $VARINFO
+  $SUBSTITUTE $NL_STDINP varinfo.yaml $VARINFO
   $SUBSTITUTE $NL_STDINP MyNtileI $NtileI
   $SUBSTITUTE $NL_STDINP MyNtileJ $NtileJ
   $SUBSTITUTE $NL_STDINP MyNRST $NRST

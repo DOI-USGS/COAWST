@@ -3,7 +3,7 @@ function nc_append(ncfile,S)
 %
 % NC_APPEND:  It appends new variable(s) to a existing NetCDF file
 %
-% ncid = nc_append(ncfile,mode,S)
+% ncid = nc_append(ncfile,S)
 %
 % This function defines/appends new variables to an existing NetCDF
 % file.  The variable(s) metadata is provided in input structure
@@ -35,9 +35,9 @@ function nc_append(ncfile,S)
 %
 %
 
-% svn $Id: nc_append.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_append.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

@@ -44,6 +44,7 @@
       USE mod_stepping 
       USE mod_grid
       USE mod_ocean
+      USE mod_param
       USE mod_mixing 
       USE mod_vegarr
       USE vegetation_drag_mod

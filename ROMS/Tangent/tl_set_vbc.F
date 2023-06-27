@@ -2,9 +2,10 @@
       MODULE tl_set_vbc_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_set_vbc.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_set_vbc.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -310,11 +311,11 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        stflx(i,j,itemp)=stflux(i,j,itemp)
-!>
+!^        stflx(i,j,itemp)=stflux(i,j,itemp)
+!^
           tl_stflx(i,j,itemp)=0.0_r8                ! not needed in TLM
-!>        btflx(i,j,itemp)=btflux(i,j,itemp)
-!>
+!^        btflx(i,j,itemp)=btflux(i,j,itemp)
+!^
           tl_btflx(i,j,itemp)=0.0_r8                ! not needed in TLM
         END DO
       END DO
@@ -329,9 +330,9 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        stflx(i,j,itemp)=stflx(i,j,itemp)+                            &
-!>   &                     dqdt(i,j)*(t(i,j,N(ng),nrhs,itemp)-sst(i,j))
-!>
+!^        stflx(i,j,itemp)=stflx(i,j,itemp)+                            &
+!^   &                     dqdt(i,j)*(t(i,j,N(ng),nrhs,itemp)-sst(i,j))
+!^
           tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)+                      &
      &                        dqdt(i,j)*tl_t(i,j,N(ng),nrhs,itemp)
         END DO
@@ -362,11 +363,11 @@
           cff2=stflx(i,j,itemp)
           tl_cff2=tl_stflx(i,j,itemp)
           cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,cff1-t(i,j,N(ng),nrhs,itemp)))
-!>        tl_cff3=0.5_r8*SIGN(1.0_r8, cff1-t(i,j,N(ng),nrhs,itemp))*0.0
-!>        tl_cff3=0.0_r8
-!>
-!>        stflx(i,j,itemp)=cff2-cff3*0.5_r8*(cff2-ABS(cff2))
-!>
+!^        tl_cff3=0.5_r8*SIGN(1.0_r8, cff1-t(i,j,N(ng),nrhs,itemp))*0.0
+!^        tl_cff3=0.0_r8
+!^
+!^        stflx(i,j,itemp)=cff2-cff3*0.5_r8*(cff2-ABS(cff2))
+!^
           tl_stflx(i,j,itemp)=(1.0_r8-                                  &
      &                         cff3*0.5_r8*(1.0_r8-SIGN(1.0_r8,cff2)))* &
      &                        tl_cff2
@@ -391,10 +392,10 @@
           EmP=stflux(i,j,isalt)
           tl_EmP=0.0_r8
 #   if defined SCORRECTION
-!>        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
-!>   &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
-!>   &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-!>
+!^        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
+!^   &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
+!^   &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+!^
           tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
      &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)-           &
      &                        Tnudg(isalt,ng)*                          &
@@ -403,22 +404,22 @@
      &                         Hz(i,j,N(ng))*                           &
      &                         tl_t(i,j,N(ng),nrhs,isalt))
 #   elif defined SRELAXATION
-!>        stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
-!>   &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-!>
+!^        stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
+!^   &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
+!^
           tl_stflx(i,j,isalt)=-Tnudg(isalt,ng)*                         &
      &                        (tl_Hz(i,j,N(ng))*                        &
      &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
      &                         Hz(i,j,N(ng))*                           &
      &                         tl_t(i,j,N(ng),nrhs,isalt))
 #   else
-!>        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
-!>
+!^        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
+!^
           tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
      &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)
 #   endif
-!>        btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
-!>
+!^        btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
+!^
           tl_btflx(i,j,isalt)=btflx(i,j,isalt)*                         &
      &                        tl_t(i,j,1,nrhs,isalt)
         END DO
@@ -434,11 +435,11 @@
       DO itrc=NAT+1,NT(ng)
         DO j=JstrR,JendR
           DO i=IstrR,IendR
-!>          stflx(i,j,itrc)=stflux(i,j,itrc)
-!>
+!^          stflx(i,j,itrc)=stflux(i,j,itrc)
+!^
             tl_stflx(i,j,itrc)=0.0_r8
-!>          btflx(i,j,itrc)=btflux(i,j,itrc)
-!>
+!^          btflx(i,j,itrc)=btflux(i,j,itrc)
+!^
             tl_btflx(i,j,itrc)=0.0_r8
           END DO
         END DO
@@ -456,8 +457,8 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             IF (zice(i,j).ne.0.0_r8) THEN
-!>            stflx(i,j,itrc)=0.0_r8
-!>
+!^            stflx(i,j,itrc)=0.0_r8
+!^
               tl_stflx(i,j,itrc)=0.0_r8
             END IF
           END DO
@@ -467,8 +468,8 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           IF (zice(i,j).ne.0.0_r8) THEN
-!>          srflx(i,j)=0.0_r8
-!>
+!^          srflx(i,j)=0.0_r8
+!^
             srflx(i,j)=0.0_r8
           END IF
         END DO
@@ -515,9 +516,9 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-!>          sustr(i,j)=-0.5_r8*(wrk(i-1,j)+wrk(i,j))*                   &
-!>   &                 u(i,j,N(ng),nrhs)*cff2
-!>
+!^          sustr(i,j)=-0.5_r8*(wrk(i-1,j)+wrk(i,j))*                   &
+!^   &                 u(i,j,N(ng),nrhs)*cff2
+!^
             tl_sustr(i,j)=-0.5_r8*                                      &
      &                    ((tl_wrk(i-1,j)+tl_wrk(i,j))*                 &
      &                     u(i,j,N(ng),nrhs)*cff2+                      &
@@ -545,9 +546,9 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-!>          svstr(i,j)=-0.5_r8*(wrk(i,j-1)+wrk(i,j))*                   &
-!>   &                 v(i,j,N(ng),nrhs)*cff2
-!>
+!^          svstr(i,j)=-0.5_r8*(wrk(i,j-1)+wrk(i,j))*                   &
+!^   &                 v(i,j,N(ng),nrhs)*cff2
+!^
             tl_svstr(i,j)=-0.5_r8*                                      &
      &                    ((tl_wrk(i,j-1)+tl_wrk(i,j))*                 &
      &                     v(i,j,N(ng),nrhs)*cff2+                      &
@@ -579,9 +580,9 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-!>          sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
-!>   &                 u(i,j,N(ng),nrhs)*cff2
-!>
+!^          sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
+!^   &                 u(i,j,N(ng),nrhs)*cff2
+!^
             tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
      &                    (tl_u(i,j,N(ng),nrhs)*cff2+                   &
      &                     u(i,j,N(ng),nrhs)*tl_cff2)
@@ -606,9 +607,9 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-!>          svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
-!>   &                 v(i,j,N(ng),nrhs)*cff2
-!>
+!^          svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
+!^   &                 v(i,j,N(ng),nrhs)*cff2
+!^
             tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
      &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
      &                     v(i,j,N(ng),nrhs)*tl_cff2)
@@ -622,9 +623,9 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
-!>   &                 u(i,j,N(ng),nrhs)
-!>
+!^          sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+!^   &                 u(i,j,N(ng),nrhs)
+!^
             tl_sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
      &                    tl_u(i,j,N(ng),nrhs)
           END IF
@@ -633,9 +634,9 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
-!>   &                 v(i,j,N(ng),nrhs)
-!>
+!^          svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!^   &                 v(i,j,N(ng),nrhs)
+!^
             tl_svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
      &                    tl_v(i,j,N(ng),nrhs)
           END IF
@@ -645,8 +646,8 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          sustr(i,j)=0.0_r8
-!>
+!^          sustr(i,j)=0.0_r8
+!^
             tl_sustr(i,j)=0.0_r8
           END IF
         END DO
@@ -654,8 +655,8 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          svstr(i,j)=0.0_r8
-!>
+!^          svstr(i,j)=0.0_r8
+!^
             tl_svstr(i,j)=0.0_r8
           END IF
         END DO
@@ -665,28 +666,28 @@
 !  Apply periodic or gradient boundary conditions for output
 !  purposes only.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  sustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  sustr)
+!^
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_sustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  svstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  svstr)
+!^
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_svstr)
 
 #   ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    sustr, svstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    sustr, svstr)
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
@@ -733,9 +734,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bustr(i,j)=0.5_r8*(wrk(i-1,j)+wrk(i,j))*                      &
-!>   &                u(i,j,1,nrhs)*cff2
-!>
+!^        bustr(i,j)=0.5_r8*(wrk(i-1,j)+wrk(i,j))*                      &
+!^   &                u(i,j,1,nrhs)*cff2
+!^
           tl_bustr(i,j)=0.5_r8*                                         &
      &                  ((tl_wrk(i-1,j)+tl_wrk(i,j))*                   &
      &                   u(i,j,1,nrhs)*cff2+                            &
@@ -760,9 +761,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bvstr(i,j)=0.5_r8*(wrk(i,j-1)+wrk(i,j))*                      &
-!>   &               v(i,j,1,nrhs)*cff2
-!>
+!^        bvstr(i,j)=0.5_r8*(wrk(i,j-1)+wrk(i,j))*                      &
+!^   &               v(i,j,1,nrhs)*cff2
+!^
           tl_bvstr(i,j)=0.5_r8*                                         &
      &                  ((tl_wrk(i,j-1)+tl_wrk(i,j))*                   &
      &                   v(i,j,1,nrhs)*cff2+                            &
@@ -791,9 +792,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
-!>   &               u(i,j,1,nrhs)*cff2
-!>
+!^        bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
+!^   &               u(i,j,1,nrhs)*cff2
+!^
           tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_u(i,j,1,nrhs)*cff2+                         &
      &                   u(i,j,1,nrhs)*tl_cff2)
@@ -815,9 +816,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
-!>   &               v(i,j,1,nrhs)*cff2
-!>
+!^        bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
+!^   &               v(i,j,1,nrhs)*cff2
+!^
           tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_v(i,j,1,nrhs)*cff2+                         &
      &                   v(i,j,1,nrhs)*tl_cff2)
@@ -829,18 +830,18 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
-!>   &               u(i,j,1,nrhs)
-!>
+!^        bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
+!^   &               u(i,j,1,nrhs)
+!^
           tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
      &                  tl_u(i,j,1,nrhs)
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
-!>   &               v(i,j,1,nrhs)
-!>
+!^        bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
+!^   &               v(i,j,1,nrhs)
+!^
           tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
      &                  tl_v(i,j,1,nrhs)
         END DO
@@ -849,28 +850,28 @@
 !
 !  Apply boundary conditions.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  bustr)
+!^
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bvstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  bvstr)
+!^
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bvstr)
 
 #   ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    bustr, bvstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    bustr, bvstr)
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
@@ -1006,18 +1007,18 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
-!>   &               ubar(i,j,krhs)
-!>
+!^        bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
+!^   &               ubar(i,j,krhs)
+!^
           tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
      &                  tl_ubar(i,j,krhs)
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
-!>   &               vbar(i,j,krhs)
-!>
+!^        bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
+!^   &               vbar(i,j,krhs)
+!^
           tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
      &                  tl_vbar(i,j,krhs)
         END DO
@@ -1042,9 +1043,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
-!>   &               ubar(i,j,krhs)*cff2
-!>
+!^        bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
+!^   &               ubar(i,j,krhs)*cff2
+!^
           tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_ubar(i,j,krhs)*cff2+                        &
      &                   ubar(i,j,krhs)*tl_cff2)
@@ -1066,9 +1067,9 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-!>        bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
-!>   &               vbar(i,j,krhs)*cff2
-!>
+!^        bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
+!^   &               vbar(i,j,krhs)*cff2
+!^
           tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_vbar(i,j,krhs)*cff2+                        &
      &                   vbar(i,j,krhs)*tl_cff2)
@@ -1078,28 +1079,28 @@
 !
 !  Apply boundary conditions.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  bustr)
+!^
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bvstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  bvstr)
+!^
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bvstr)
 
 #  ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    bustr, bvstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    bustr, bvstr)
+!^
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

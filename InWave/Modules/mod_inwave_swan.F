@@ -284,7 +284,7 @@
       USE mod_inwave_vars
       USE mod_parallel
       USE mod_scalars
-      USE interpolate_mod
+      USE roms_interpolate_mod
 
       implicit none
 

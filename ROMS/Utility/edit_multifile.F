@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE edit_multifile (task)
 !
-!svn $Id: edit_multifile.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: edit_multifile.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -21,8 +22,10 @@
 !
       USE mod_param
       USE mod_iounits
-      USE mod_netcdf
+      USE mod_ncparam
       USE mod_scalars
+!
+      USE close_io_mod, ONLY : close_file
 !
 !  Imported variable declarations.
 !
@@ -56,10 +59,9 @@
 !  process the NLM background trajectory by the ADM and TLM kernels.
 !
           CASE ('HIS2FWD')
+            FWD(ng)%IOtype=HIS(ng)%IOtype
             IF (ndefHIS(ng).gt.0) THEN
-              IF (HIS(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, HIS(ng), HIS(ng)%name)
               Nfiles=ntimes(ng)/ndefHIS(ng)
               IF (nHIS(ng).eq.ndefHIS(ng)) Nfiles=Nfiles+1
               CALL edit_file_struct (ng, Nfiles, FWD)
@@ -68,7 +70,13 @@
               END DO
               FWD(ng)%name=TRIM(FWD(ng)%files(1))
             ELSE
-              FWD(ng)%ncid=HIS(ng)%ncid
+              IF (FWD(ng)%IOtype.eq.io_nf90) THEN
+                FWD(ng)%ncid=HIS(ng)%ncid
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (FWD(ng)%IOtype.eq.io_pio) THEN
+                FWD(ng)%pioFile=HIS(ng)%pioFile
+#endif
+              END IF
               FWD(ng)%name=TRIM(HIS(ng)%name)
               FWD(ng)%files(1)=TRIM(HIS(ng)%name)
             END IF
@@ -78,10 +86,9 @@
 !  by the ADM and TLM kernels.
 !
           CASE ('HIS2BLK')
+            BLK(ng)%IOtype=HIS(ng)%IOtype
             IF (ndefHIS(ng).gt.0) THEN
-              IF (HIS(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, HIS(ng), HIS(ng)%name)
               Nfiles=ntimes(ng)/ndefHIS(ng)
               IF (nHIS(ng).eq.ndefHIS(ng)) Nfiles=Nfiles+1
               CALL edit_file_struct (ng, Nfiles, BLK)
@@ -90,7 +97,13 @@
               END DO
               BLK(ng)%name=TRIM(BLK(ng)%files(1))
             ELSE
-              BLK(ng)%ncid=-1
+              IF (BLK(ng)%IOtype.eq.io_nf90) THEN
+                BLK(ng)%ncid=-1
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (BLK(ng)%IOtype.eq.io_pio) THEN
+                BLK(ng)%pioFile%fh=-1
+#endif
+              END IF
               BLK(ng)%name=TRIM(HIS(ng)%name)
               BLK(ng)%files(1)=TRIM(HIS(ng)%name)
             END IF
@@ -100,10 +113,9 @@
 !  by the TLM, RPM, and ADM kernels.
 !
           CASE ('QCK2BLK')
+            BLK(ng)%IOtype=QCK(ng)%IOtype
             IF (ndefQCK(ng).gt.0) THEN
-              IF (QCK(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, QCK(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, QCK(ng), QCK(ng)%name)
               Nfiles=ntimes(ng)/ndefQCK(ng)
               IF (nQCK(ng).eq.ndefQCK(ng)) Nfiles=Nfiles+1
               CALL edit_file_struct (ng, Nfiles, BLK)
@@ -112,7 +124,13 @@
               END DO
               BLK(ng)%name=TRIM(BLK(ng)%files(1))
             ELSE
-              BLK(ng)%ncid=-1
+              IF (BLK(ng)%IOtype.eq.io_nf90) THEN
+                BLK(ng)%ncid=-1
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (BLK(ng)%IOtype.eq.io_pio) THEN
+                BLK(ng)%pioFile%fh=-1
+#endif
+              END IF
               BLK(ng)%name=TRIM(QCK(ng)%name)
               BLK(ng)%files(1)=TRIM(QCK(ng)%name)
             END IF
@@ -122,18 +140,23 @@
 !  by the ADM and TLM kernels.
 !
           CASE ('FWD2BLK')
+            BLK(ng)%IOtype=FWD(ng)%IOtype
             Nfiles=FWD(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (BLK(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, BLK(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, BLK(ng), BLK(ng)%name)
               CALL edit_file_struct (ng, Nfiles, BLK)
               DO ifile=1,Nfiles
                 BLK(ng)%files(ifile)=TRIM(FWD(ng)%files(ifile))
               END DO
               BLK(ng)%name=TRIM(BLK(ng)%files(1))
             ELSE
-              BLK(ng)%ncid=-1
+              IF (BLK(ng)%IOtype.eq.io_nf90) THEN
+                BLK(ng)%ncid=-1
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (BLK(ng)%IOtype.eq.io_pio) THEN
+                BLK(ng)%pioFile%fh=-1
+#endif
+              END IF
               BLK(ng)%name=TRIM(FWD(ng)%name)
               BLK(ng)%files(1)=TRIM(FWD(ng)%name)
             END IF
@@ -147,11 +170,10 @@
 !  because of specified input filenames are already split.
 !
           CASE ('FWD2HIS')
+            HIS(ng)%IOtype=FWD(ng)%IOtype
             Nfiles=FWD(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (HIS(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, HIS(ng), HIS(ng)%name)
               CALL edit_file_struct (ng, Nfiles, HIS)
               DO ifile=1,Nfiles
                 HIS(ng)%files(ifile)=TRIM(FWD(ng)%files(ifile))
@@ -170,7 +192,13 @@
                 FWD(ng)%base=TRIM(ADJUSTL(HIS(ng)%name(1:lstr)))
               END IF
             ELSE
-              HIS(ng)%ncid=FWD(ng)%ncid
+              IF (HIS(ng)%IOtype.eq.io_nf90) THEN
+                HIS(ng)%ncid=FWD(ng)%ncid
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (HIS(ng)%IOtype.eq.io_pio) THEN
+                HIS(ng)%pioFile=FWD(ng)%pioFile
+#endif
+              END IF
               HIS(ng)%files(1)=TRIM(FWD(ng)%files(1))
               HIS(ng)%name=TRIM(HIS(ng)%files(1))
               Istring=INDEX(HIS(ng)%name,'_outer',BACK=.FALSE.)
@@ -185,18 +213,23 @@
 !  process the NLM background trajectory by the ADM and TLM kernels.
 !
           CASE ('FCTA2FWD')
+            FWD(ng)%IOtype=FCTA(ng)%IOtype
             Nfiles=FCTA(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (FCTA(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, FCTA(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, FCTA(ng), FCTA(ng)%name)
               CALL edit_file_struct (ng, Nfiles, FWD)
               DO ifile=1,Nfiles
                 FWD(ng)%files(ifile)=TRIM(FCTA(ng)%files(ifile))
               END DO
               FWD(ng)%name=TRIM(FWD(ng)%files(1))
             ELSE
-              FWD(ng)%ncid=FCTA(ng)%ncid
+              IF (FWD(ng)%IOtype.eq.io_nf90) THEN
+                FWD(ng)%ncid=FCTA(ng)%ncid
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (FWD(ng)%IOtype.eq.io_pio) THEN
+                FWD(ng)%pioFile=FCTA(ng)%pioFile
+#endif
+              END IF
               FWD(ng)%name=TRIM(FCTA(ng)%name)
               FWD(ng)%files(1)=TRIM(FCTA(ng)%name)
             END IF
@@ -206,18 +239,23 @@
 !  by the ADM and TLM kernels.
 !
           CASE ('FCTA2BLK')
+            BLK(ng)%IOtype=FCTA(ng)%IOtype
             Nfiles=FCTA(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (FCTA(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, FCTA(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, FCTA(ng), FCTA(ng)%name)
               CALL edit_file_struct (ng, Nfiles, BLK)
               DO ifile=1,Nfiles
                 BLK(ng)%files(ifile)=TRIM(FCTA(ng)%files(ifile))
               END DO
               BLK(ng)%name=TRIM(BLK(ng)%files(1))
             ELSE
-              BLK(ng)%ncid=-1
+              IF (BLK(ng)%IOtype.eq.io_nf90) THEN
+                BLK(ng)%ncid=-1
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (BLK(ng)%IOtype.eq.io_pio) THEN
+                BLK(ng)%pioFile%fh=-1
+#endif
+              END IF
               BLK(ng)%name=TRIM(FCTA(ng)%name)
               BLK(ng)%files(1)=TRIM(FCTA(ng)%name)
             END IF
@@ -226,18 +264,23 @@
 !  process the NLM background trajectory by the ADM and TLM kernels.
 !
           CASE ('FCTB2FWD')
+            FWD(ng)%IOtype=FCTB(ng)%IOtype
             Nfiles=FCTB(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (FCTB(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, FCTB(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, FCTB(ng), FCTB(ng)%name)
               CALL edit_file_struct (ng, Nfiles, FWD)
               DO ifile=1,Nfiles
                 FWD(ng)%files(ifile)=TRIM(FCTB(ng)%files(ifile))
               END DO
               FWD(ng)%name=TRIM(FWD(ng)%files(1))
             ELSE
-              FWD(ng)%ncid=FCTB(ng)%ncid
+              IF (FWD(ng)%IOtype.eq.io_nf90) THEN
+                FWD(ng)%ncid=FCTB(ng)%ncid
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (FWD(ng)%IOtype.eq.io_pio) THEN
+                FWD(ng)%pioFile=FCTB(ng)%pioFile
+#endif
+              END IF
               FWD(ng)%name=TRIM(FCTB(ng)%name)
               FWD(ng)%files(1)=TRIM(FCTB(ng)%name)
             END IF
@@ -247,18 +290,23 @@
 !  by the ADM and TLM kernels.
 !
           CASE ('FCTB2BLK')
+            BLK(ng)%IOtype=FCTB(ng)%IOtype
             Nfiles=FCTB(ng)%Nfiles
             IF (Nfiles.gt.1) THEN
-              IF (FCTB(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iNLM, FCTB(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, FCTB(ng), FCTB(ng)%name)
               CALL edit_file_struct (ng, Nfiles, BLK)
               DO ifile=1,Nfiles
                 BLK(ng)%files(ifile)=TRIM(FCTB(ng)%files(ifile))
               END DO
               BLK(ng)%name=TRIM(BLK(ng)%files(1))
             ELSE
-              BLK(ng)%ncid=-1
+              IF (BLK(ng)%IOtype.eq.io_nf90) THEN
+                BLK(ng)%ncid=-1
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (BLK(ng)%IOtype.eq.io_pio) THEN
+                BLK(ng)%pioFile%fh=-1
+#endif
+              END IF
               BLK(ng)%name=TRIM(FCTB(ng)%name)
               BLK(ng)%files(1)=TRIM(FCTB(ng)%name)
             END IF
@@ -269,10 +317,9 @@
 !  kernels.  Used in R4D-Var.
 !
           CASE ('TLM2FWD')
+            FWD(ng)%IOtype=TLM(ng)%IOtype
             IF (ndefTLM(ng).gt.0) THEN
-              IF (TLM(ng)%ncid.ne.-1) THEN
-                CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
-              END IF
+              CALL close_file (ng, iNLM, TLM(ng), TLM(ng)%name)
               Nfiles=ntimes(ng)/ndefTLM(ng)
               IF (nTLM(ng).eq.ndefTLM(ng)) Nfiles=Nfiles+1
               CALL edit_file_struct (ng, Nfiles, FWD)
@@ -281,7 +328,13 @@
               END DO
               FWD(ng)%name=TRIM(FWD(ng)%files(1))
             ELSE
-              FWD(ng)%ncid=TLM(ng)%ncid
+              IF (FWD(ng)%IOtype.eq.io_nf90) THEN
+                FWD(ng)%ncid=TLM(ng)%ncid
+#if defined PIO_LIB && defined DISTRIBUTE
+              ELSE IF (FWD(ng)%IOtype.eq.io_pio) THEN
+                FWD(ng)%pioFile=TLM(ng)%pioFile
+#endif
+              END IF
               FWD(ng)%name=TRIM(TLM(ng)%name)
               FWD(ng)%files(1)=TRIM(TLM(ng)%name)
             END IF
@@ -312,6 +365,8 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_iounits
+      USE mod_ncparam, ONLY : NV
 !
 !  Imported variable declarations.
 !
@@ -366,6 +421,19 @@
       S(ng)%ncid=-1                            ! closed NetCDF state
       S(ng)%Vid=-1                             ! NetCDF variables IDs
       S(ng)%Tid=-1                             ! NetCDF tracers IDs
+#if defined PIO_LIB && defined DISTRIBUTE
+      S(ng)%pioFile%fh=-1                      ! closed file handler
+      DO i=1,NV
+        S(ng)%pioVar(i)%vd%varID=-1            ! variables IDs
+        S(ng)%pioVar(i)%dkind=-1               ! variables data kind
+        S(ng)%pioVar(i)%gtype=0                ! variables C-grid type
+      END DO
+      DO i=1,MT
+        S(ng)%pioTrc(i)%vd%varID=-1            ! tracers IDs
+        S(ng)%pioTrc(i)%dkind=-1               ! tracers data kind
+        S(ng)%pioTrc(i)%gtype=0                ! tracers C-grid type
+      END DO
+#endif
       S(ng)%Nrec=0                             ! record counter
       S(ng)%time_min=0.0_dp                    ! starting time
       S(ng)%time_max=0.0_dp                    ! ending time

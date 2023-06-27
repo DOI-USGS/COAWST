@@ -1,8 +1,10 @@
+!!
       SUBROUTINE ana_psource (ng, tile, model)
 !
-!! svn $Id: ana_psource.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_psource.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -129,7 +131,7 @@
       real(r8), dimension(Msrc(ng)*N(ng)) :: Pwrk
 #endif
 #if defined DISTRIBUTE
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
 !
       character (len=3), dimension(2) :: io_handle
 #endif
@@ -144,16 +146,32 @@
 !
 !  Set-up point Sources/Sink number (Nsrc), direction (Dsrc), I- and
 !  J-grid locations (Isrc,Jsrc). Currently, the direction can be along
-!  XI-direction (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The
+!  XI-direction (Dsrc=0) or along ETA-direction (Dsrc=1).  The
 !  mass sources are located at U- or V-points so the grid locations
 !  should range from 1 =< Isrc =< L  and  1 =< Jsrc =< M.
+!
+!  Vertical mass sources can be added my setting a W-direction (Dsrc=2)
+!  and mass sources are located at Rho-points so the grid locations
+!  should range from 0 =< Isrc =< L  and  0 =< Jsrc =< M.
 !
 #if defined RIVERPLUME1
         IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
           Nsrc(ng)=1
-          SOURCES(ng)%Dsrc(Nsrc(ng))=0.0_r8
-          SOURCES(ng)%Isrc(Nsrc(ng))=1
-          SOURCES(ng)%Jsrc(Nsrc(ng))=50
+          SOURCES(ng)%Dsrc(Nsrc(ng))=0.0_r8   ! horizontal, LuvSrc=T
+          SOURCES(ng)%Isrc(Nsrc(ng))=2        ! i = 2
+          SOURCES(ng)%Jsrc(Nsrc(ng))=50       ! j = 50
+!
+          Nsrc(ng)=Nsrc(ng)+10                ! Add rainfall location
+          DO is=2,6
+            SOURCES(ng)%Dsrc(is)=2.0_r8       ! vertical influx, LwSrc=T
+            SOURCES(ng)%Isrc(is)=6            ! i = 6
+            SOURCES(ng)%Jsrc(is)=is+25        ! j = 27 to 31
+          END DO
+          DO is=7,11
+            SOURCES(ng)%Dsrc(is)=2.0_r8       ! vertical inclux, LwSrc=T
+            SOURCES(ng)%Isrc(is)=7            ! i = 7
+            SOURCES(ng)%Jsrc(is)=is+20        ! j = 27 to 31
+          END DO
         END IF
 #elif defined RIVERPLUME2
         IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
@@ -246,8 +264,18 @@
 #  ifdef DISTRIBUTE
         Pwrk=RESHAPE(SOURCES(ng)%Qshape,(/Npts/))
         CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
-        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc(ng),N(ng)/))
+        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
 #  endif
+
+# elif defined RIVERPLUME1
+
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Qshape(is,k)=1.0_r8/REAL(N(ng),r8)
+            END DO
+          END DO
+        END IF
 
 # elif defined RIVERPLUME2
         DO k=1,N(ng)
@@ -316,12 +344,20 @@
         ELSE
           fac=1.0_r8
         END IF
-        DO is=1,Nsrc(ng)
+        DO is=1,1                              ! horizontal influx only
           SOURCES(ng)%Qbar(is)=fac*1500.0_r8
+        END DO
+!
+!  Rainfall is 10 cm/hour.
+!
+!    Qbar = 3000m * 1500m * 0.10 m/hr * 1hr/3600s = 125 m3/s
+!
+        DO is=2,Nsrc(ng)
+          SOURCES(ng)%Qbar(is)=125.0_r8
         END DO
 
 #elif defined RIVERPLUME2
-        DO is=1,(Nsrc(ng)-1)/2               ! North end
+        DO is=1,(Nsrc(ng)-1)/2                   ! North end
           i=SOURCES(ng)%Isrc(is)
           j=SOURCES(ng)%Jsrc(is)
           IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
@@ -331,7 +367,7 @@
      &                                    zeta(i  ,j,knew)+h(i  ,j)))
           END IF
         END DO
-        DO is=(Nsrc(ng)-1)/2+1,Nsrc(ng)-1    ! South end
+        DO is=(Nsrc(ng)-1)/2+1,Nsrc(ng)-1        ! South end
           i=SOURCES(ng)%Isrc(is)
           j=SOURCES(ng)%Jsrc(is)
           IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
@@ -342,14 +378,14 @@
           END IF
         END DO
         IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
-          SOURCES(ng)%Qbar(Nsrc)=1500.0_r8   ! West wall
+          SOURCES(ng)%Qbar(Nsrc(ng))=1500.0_r8   ! West wall
         END IF
 # ifdef DISTRIBUTE
         CALL mp_collect (ng, iNLM, Msrc(ng), Pspv, SOURCES(ng)%Qbar)
 # endif
 
 #elif defined SED_TEST1
-        my_area_west=0.0_r8                  ! West end
+        my_area_west=0.0_r8                      ! West end
         fac=-36.0_r8*10.0_r8*1.0_r8
         DO is=1,Nsrc(ng)/2
           i=SOURCES(ng)%Isrc(is)
@@ -363,7 +399,7 @@
           END IF
         END DO
 !
-        my_area_east=0.0_r8                  ! East end
+        my_area_east=0.0_r8                      ! East end
         fac=-36.0_r8*10.0_r8*1.0_r8
         DO is=Nsrc(ng)/2+1,Nsrc(ng)
           i=SOURCES(ng)%Isrc(is)
@@ -378,13 +414,13 @@
         END DO
 !
 # ifdef DISTRIBUTE
-        NSUB=1                           ! distributed-memory
+        NSUB=1                                   ! distributed-memory
 # else
         IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                      &
      &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          NSUB=1                         ! non-tiled application
+          NSUB=1                                 ! non-tiled application
         ELSE
-          NSUB=NtileX(ng)*NtileE(ng)     ! tiled application
+          NSUB=NtileX(ng)*NtileE(ng)             ! tiled application
         END IF
 # endif
 !$OMP CRITICAL (PSOURCE)
@@ -398,25 +434,25 @@
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 # ifdef DISTRIBUTE
-          buffer(1)=area_west
-          buffer(2)=area_east
+          rbuffer(1)=area_west
+          rbuffer(2)=area_east
           io_handle(1)='SUM'
           io_handle(2)='SUM'
-          CALL mp_reduce (ng, iNLM, 2, buffer, io_handle)
-          area_west=buffer(1)
-          area_east=buffer(1)
+          CALL mp_reduce (ng, iNLM, 2, rbuffer, io_handle)
+          area_west=rbuffer(1)
+          area_east=rbuffer(1)
 # endif
           DO is=1,Nsrc(ng)/2
-            SOURCES(ng)%Qbar(is)=Sources(ng)%Qbar(is)/area_west
+            SOURCES(ng)%Qbar(is)=Qbar(is)/area_west
           END DO
           DO is=Nsrc(ng)/2+1,Nsrc(ng)
-            SOURCES(ng)%Qbar(is)=Sources(ng)%Qbar(is)/area_east
+            SOURCES(ng)%Qbar(is)=Qbar(is)/area_east
           END DO
         END IF
 !$OMP END CRITICAL (PSOURCE)
 
 # ifdef DISTRIBUTE
-        CALL mp_collect (ng, iNLM, Msrc(ng), Pspv, SOURCES(ng)%Qbar)
+        CALL mp_collect (ng, iNLM, Msrc, Pspv, SOURCES(ng)%Qbar)
 # endif
 #else
         ana_psource.h: No values provided for Qbar.
@@ -451,51 +487,26 @@
 !  Set-up tracer (tracer units) point Sources/Sinks.
 !
 # if defined RIVERPLUME1
-#  ifdef ONE_TRACER_SOURCE
-        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
-          SOURCES(ng)%Tsrc(itemp)=T0(ng)
-#   ifdef SALINITY
-          SOURCES(ng)%Tsrc(isalt)=0.0_r8
-#   endif
-        END IF
-#  elif defined TWO_D_TRACER_SOURCE
-        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
-          SOURCES(ng)%Tsrc(is,itemp)=T0(ng)
-#   ifdef SALINITY
-          SOURCES(ng)%Tsrc(is,isalt)=0.0_r8
-#   endif
-        END IF
-#  else
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)
-              SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+              IF (is.eq.1) THEN
+                SOURCES(ng)%Tsrc(is,k,itemp)=10.0_r8
+              ELSE
+                SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+              END IF
 #  ifdef SALINITY
-              SOURCES(ng)%Tsrc(is,k,isalt)=0.0_r8
+              IF (is.eq.1) THEN
+                SOURCES(ng)%Tsrc(is,k,isalt)=0.0_r8
+              ELSE
+                SOURCES(ng)%Tsrc(is,k,isalt)=S0(ng)
+              END IF
 #  endif
             END DO
           END DO
         END IF
-#  endif
 
 # elif defined RIVERPLUME2
-#  ifdef ONE_TRACER_SOURCE
-        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
-          SOURCES(ng)%Tsrc(itemp)=T0(ng)
-#   ifdef SALINITY
-          SOURCES(ng)%Tsrc(isalt)=S0(ng)
-#   endif
-        END IF
-#  elif defined TWO_D_TRACER_SOURCE
-        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
-          DO is=1,Nsrc(ng)-1
-            SOURCES(ng)%Tsrc(is,itemp)=T0(ng)
-#   ifdef SALINITY
-            SOURCES(ng)%Tsrc(is,isalt)=S0(ng)
-#   endif
-          END DO
-        END IF
-#  else
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)-1

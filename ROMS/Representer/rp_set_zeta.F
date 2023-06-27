@@ -3,9 +3,10 @@
 
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_set_zeta.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_set_zeta.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -101,39 +102,39 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        zeta(i,j,1)=Zt_avg1(i,j)
-!>        zeta(i,j,2)=Zt_avg1(i,j)
-!>
+!^        zeta(i,j,1)=Zt_avg1(i,j)
+!^        zeta(i,j,2)=Zt_avg1(i,j)
+!^
           tl_zeta(i,j,1)=tl_Zt_avg1(i,j)
           tl_zeta(i,j,2)=tl_Zt_avg1(i,j)
         END DO
       END DO
 
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          zeta(:,:,1))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          zeta(:,:,1))
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_zeta(:,:,1))
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          zeta(:,:,2))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          zeta(:,:,2))
+!^
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tl_zeta(:,:,2))
       END IF
 
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    zeta(:,:,1),                                  &
-!>   &                    zeta(:,:,2))
-!>
+!^    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    zeta(:,:,1),                                  &
+!^   &                    zeta(:,:,2))
+!^
       CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

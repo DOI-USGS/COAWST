@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE memory
 !
-!svn $Id: memory.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: memory.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -30,7 +31,8 @@
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_collect
 #endif
-      USE mod_netcdf, ONLY : Matts, Mdims, Mvars, NvarD, NvarA
+      USE mod_netcdf,     ONLY : Matts, Mdims, Mvars, NvarD, NvarA
+      USE mod_scalars,    ONLY : LallocatedMemory
 !
       implicit none
 !
@@ -46,6 +48,10 @@
 !
       real(r8), parameter :: spv = 0.0_r8
 !
+#ifdef DISTRIBUTE
+      real(r8), allocatable ::  Bwrk(:), Dwrk(:)
+!
+#endif
       real(r8), allocatable ::  Asize(:,:)      ! automatic arrays
       real(r8), allocatable ::  Bsize(:,:)      ! automatic mpi-buffers
       real(r8), allocatable ::  Dsize(:,:)      ! dynamic array
@@ -54,6 +60,10 @@
 !-----------------------------------------------------------------------
 !  Report estimate of dynamic memory and automatic memory requirements.
 !-----------------------------------------------------------------------
+!
+!  If ROMS array have not been allocated, skip report.
+
+      IF (.not.LallocatedMemory) RETURN
 !
 !  Allocate and initialize.
 !
@@ -75,6 +85,14 @@
         allocate ( IOsize(0:Ntiles,Ngrids) )
         IOsize=spv
       END IF
+#ifdef DISTRIBUTE
+      IF (.not.allocated(Bwrk)) THEN
+        allocate ( Bwrk(Ntiles+1) )
+      END IF
+      IF (.not.allocated(Dwrk)) THEN
+        allocate ( Dwrk(Ntiles+1) )
+      END IF
+#endif
 !
 !  Determine size floating-point arrays in bytes.  We could use the
 !  Fortran 2008 standard function STORAGE_SIZE.  However since ROMS
@@ -152,13 +170,17 @@
 !  requirements, and convert number of array elements to megabytes.
 !
 #ifdef DISTRIBUTE
-      Bsize(0:numthreads-1,1:Ngrids)=spv
-      Dsize(0:numthreads-1,1:Ngrids)=spv
+      Bwrk=spv
+      Dwrk=spv
       DO ng=1,Ngrids
-        Bsize(MyRank,ng)=BmemMax(ng)*1.0E-6_r8        ! already in bytes
-        Dsize(MyRank,ng)=megabytefac*Dmem(ng)
-        CALL mp_collect (ng, iNLM, numthreads, spv, Bsize(0:,ng))
-        CALL mp_collect (ng, iNLM, numthreads, spv, Dsize(0:,ng))
+        Bwrk(MyRank+1)=BmemMax(ng)*1.0E-6_r8        ! already in bytes
+        Dwrk(MyRank+1)=megabytefac*Dmem(ng)
+        CALL mp_collect (ng, iNLM, numthreads, spv, Bwrk)
+        CALL mp_collect (ng, iNLM, numthreads, spv, Dwrk)
+        Bsize(MyRank,ng)=Bwrk(MyRank+1)
+        Dsize(MyRank,ng)=Dwrk(MyRank+1)
+        Bwrk=spv
+        Dwrk=spv
       END DO
 #else
       Dsize(0:numthreads-1,1:Ngrids)=spv

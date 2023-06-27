@@ -84,8 +84,8 @@
               Npts=cload_i(Nval, Rval, 1, Ivalue)
               Nocn_grids=Ivalue
               IF (Nocn_grids.le.0) THEN
-                IF (MyRank.eq.MyMaster) WRITE (out,290)'Ngrids', Ngrids,&
-     &            'Ngrids must be greater than zero.'
+                IF (MyRank.eq.MyMaster) WRITE (out,290)'Ngrids',        &
+     &            Nocn_grids, 'Ngrids must be greater than zero.'
 !                exit_flag=5
                 RETURN
               END IF

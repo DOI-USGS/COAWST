@@ -1,7 +1,9 @@
+      MODULE mod_biology
 !
-!svn $Id: ecosim_mod.h 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ecosim_mod.h 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -491,9 +493,9 @@
       real(r8), dimension(NBands) :: wavedp   ! a and b factor
       real(r8), dimension(Ndom) :: aDOC410    ! CDM absorption at 410
       real(r8), dimension(Ndom) :: aDOC300    ! CDM absorption at 300
-
+!
       CONTAINS
-
+!
       SUBROUTINE initialize_biology
 !
 !=======================================================================
@@ -1169,6 +1171,8 @@
       DO i=1,Nfec
         WRITE (FecName(i),'(a,1x,i1)') 'Fecal Group', i
       END DO
-
+!
       RETURN
       END SUBROUTINE initialize_biology
+
+      END MODULE mod_biology

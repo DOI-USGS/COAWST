@@ -11,6 +11,16 @@ function [S,G] = contact(Gnames, Cname, varargin)
 % file names in the order of nesting layers and time-stepping
 % in ROMS.
 %
+% Users need to be aware of potential problems with spherical grids because
+% we do not know how the grid generation tool computed the ROMS metrics
+% (pm, pn, and angle) for all nested grids. Therefore, any procedure here
+% will not exactly conserve coarse-to-fine area because of inconsistent
+% (lon, lat) distance methodology. One possible solution is to recompute
+% the ROMS metrics for all grids using "roms_metrics.m" based only on its
+% (lon,lat) coordinates. Thus, we have an invariant way in the computation
+% of the ROMS metrics in all the nested grids before running this tool.
+% See "roms_metrics" for methodology details.
+%
 % On Input:
 %
 %    Gnames      Input Grid NetCDF file names (cell array)
@@ -40,6 +50,9 @@ function [S,G] = contact(Gnames, Cname, varargin)
 %    grid_perimeter    Sets Nested Grids Perimeters and Boundary Edges
 %    grid_connections  Sets Nested Grids Connectivity
 %    plot_contact      Plots various Contact Points figures
+%    refined_gridvar   Sets several grid fields from ROMS coarser grid
+%    roms_metrics      Computes ROMS metrics from (lon, lat) coordinates
+%    upv_masks         Computes U-, V-, and PSI-masks from RHO-mask
 %    write_contact     Creates and writes Contact Point data to NetCDF file
 %
 %
@@ -265,9 +278,9 @@ function [S,G] = contact(Gnames, Cname, varargin)
 %          receiver_value(Irg,Jrg) = donor_value(Idg,Jdg)
 %
 
-% svn $Id: contact.m 1004 2020-01-16 04:13:45Z arango $
+% svn $Id: contact.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -470,6 +483,10 @@ end
 % Set method (linear or cubic spline) for interpolation of grid coordinates
 % (x,y) and/or (lon,lat) coordinates. The method is 'linear' for idealized
 % Cartesian coordinates application or 'cubic' for spherical application.
+%
+% The interpolation for other variables: 'h', 'f', 'angle', 'pm', 'pn',
+% 'dmde', and 'dndx' is done with function 'refined_gridvar' using
+% quadratic conservative interpolation.
 
 if (spherical)
   method = 'spline';          % C2 continuity: first and second derivatives
@@ -714,65 +731,102 @@ else
 end
 
 %--------------------------------------------------------------------------
-% Interpolate other grid variables.
+% Important grid variables are interpolated using 'refined_gridvar',
+% which either uses regular interpolaton or quadratic conservative
+% interpolation (Clark and Farley, 1984; equations 30-36).
+%
+% If the coarse grid variables are uniform, 'refined_gridvar' will
+% return exact uniform fields.
+%
+% However, it is advisable to use "roms_metrics" for spherical grids.
 %--------------------------------------------------------------------------
 
+% Set coarse and fine grid structures.
+
+C = G(dg);
+F = R;
+
+F.refine_factor = S.grid(rg).refine_factor;
+F.parent_Imin = Imin;
+F.parent_Imax = Imax;        % These values are needed in 'refined_gridvar'
+F.parent_Jmin = Jmin;        % for the 9-points quadratic conservative
+F.parent_Jmax = Jmax;        % interpolation, if requested
+
+% If spherical grids, compute ROMS metrics using robust Shchepetkin grid
+% GUI approach from (lon, lat) coordinates.
+
 if (spherical)
-  if (~isempty(G(dg).x_rho) && ~isempty(G(dg).y_rho))
-    FCr = griddedInterpolant(XrC, YrC, G(dg).x_rho, method);
-
-    FCr.Values = G(dg).angle;    R.angle = FCr(XrF, YrF); 
-    FCr.Values = G(dg).f;        R.f     = FCr(XrF, YrF); 
-    FCr.Values = G(dg).h;        R.h     = FCr(XrF, YrF); 
-
-  elseif (~isempty(G(dg).lon_rho) && ~isempty(G(dg).lat_rho))
-    FSr = griddedInterpolant(XrC, YrC, G(dg).lon_rho, method);
-
-    FSr.Values = G(dg).angle;    R.angle = FSr(XrF, YrF); 
-    FSr.Values = G(dg).f;        R.f     = FSr(XrF, YrF); 
-    FSr.Values = G(dg).h;        R.h     = FSr(XrF, YrF); 
-  
-  end
-
-else
-  FCr = griddedInterpolant(XrC, YrC, G(dg).x_rho, method);
-
-  FCr.Values = G(dg).angle;      R.angle = FCr(XrF, YrF); 
-  FCr.Values = G(dg).f;          R.f     = FCr(XrF, YrF); 
-  FCr.Values = G(dg).h;          R.h     = FCr(XrF, YrF); 
-
+  FM = roms_metrics(F, false, false);    % optimal algorithm
 end
 
-% Set grid metrics.
+% Set interpolation method for 'refined_grivar' approach.
 
-if (G(dg).uniform)
+  Fmethod = 'linear';        % C0 continuity
+% Fmethod = 'spline';        % C2 continuity: first and second derivatives
+% Fmethod = 'quadratic';     % Clark and Farley (1984)
 
-% Donor has a uniform grid distribution.
+% Bathymetry. If appropriate, clip bathymetry to donor grid minimum value.
+% It is possible that the conservative interpolation may yield smaller
+% values than coarse grid or negative values in land masked areas.
 
-  dx = 1/unique(G(dg).pm(:));
-  dy = 1/unique(G(dg).pn(:));
+hmin = min(C.h(:));
 
-  R.pm = ones(size(R.h)) .* (S.grid(rg).refine_factor/dx);
-  R.pn = ones(size(R.h)) .* (S.grid(rg).refine_factor/dy);
-  
+R.h = refined_gridvar(C, F, 'h', Fmethod);
+
+ind = find(R.h < hmin);
+if (~isempty(ind))
+  R.h(ind) = hmin;
+end
+
+% Coriolis parameter.
+
+R.f = refined_gridvar(C, F, 'f', Fmethod);
+
+% Curvilinear angle.
+
+if (isfield(C,'angle'))
+  if (spherical)                         % use values from "roms_metrics"
+    R.angle = FM.angle;                  % (optimal algorithm)
+  else  
+    R.angle = refined_gridvar(C, F, 'angle', Fmethod);
+  end
+else
+  R.angle = zeros(size(R.h));
+end
+
+% Inverse grid spacing ('pm', 'pn').
+
+if (spherical)                           % use values from "roms_metrics"
+  R.pm = FM.pm;                          % (optimal algorithm)
+  R.pn = FM.pn;
+else 
+  DivideCoarse = true;
+  R.pm = refined_gridvar(C, F, 'pm', Fmethod, DivideCoarse);
+  R.pn = refined_gridvar(C, F, 'pn', Fmethod, DivideCoarse);
+end
+
+% Curvilinear metric terms: d(n)/d(xi) and d(m)/d(eta).
+
+if (R.uniform)
   R.dndx = zeros(size(R.h));
   R.dmde = zeros(size(R.h));
-
 else
-
-% Recompute metrics at refined resolution.  We cannot interpolate.
-% The computation of metrics from discrete point is subject to
-% roundoff.  There is not much that we can do here.  The roundoff
-% is small and of the order 1.0E-16 (eps value).
-
-  if (spherical)
-    GreatCircle = true;
-  else
-    GreatCircle = false;
-  end
-
-  [R.pm, R.pn, R.dndx, R.dmde] = grid_metrics(R, GreatCircle);
-
+  if (spherical)                         % use values from "roms_metrics"
+    R.dndx = FM.dndx;                    % (optimal algorithm)
+    R.dmde = FM.dmde;
+  else    
+    if (isfield(C,'dndx'))
+      R.dndx = refined_gridvar(C, F, 'dndx', Fmethod);
+    else
+      R.dndx = zeros(size(R.h));
+    end
+  
+    if (isfield(C,'dmde'))
+      R.dmde = refined_gridvar(C, F, 'dmde', Fmethod);
+    else
+      R.dmde = zeros(size(R.h));
+    end
+  end  
 end
 
 % Get Land/sea masking. In some applications is better to linearly
@@ -1539,9 +1593,9 @@ if ((S.grid(rg).refine_factor > 0) && (AreaAvg_dg > AreaAvg_rg))
 
 % RHO-contact points.
 
-    [INr,~] = inpolygon(R.lon_rho(:), R.lat_rho(:),                     ...
-                        S.grid(rg).perimeter.X_psi,                   ...
-                        S.grid(rg).perimeter.Y_psi);
+    [INr,ONr] = inpolygon(R.lon_rho(:), R.lat_rho(:),                   ...
+                          S.grid(rg).perimeter.X_psi,                   ...
+                          S.grid(rg).perimeter.Y_psi);
 
     if (any(~INr))
       C.xrg_rho  = R.xi_rho (~INr);
@@ -1658,9 +1712,9 @@ if ((S.grid(rg).refine_factor > 0) && (AreaAvg_dg > AreaAvg_rg))
 
 % RHO-contact points.
 
-    [INr,~] = inpolygon(R.x_rho(:), R.y_rho(:),                         ...
-                        S.grid(rg).perimeter.X_psi,                     ...
-                        S.grid(rg).perimeter.Y_psi);
+    [INr,ONr] = inpolygon(R.x_rho(:), R.y_rho(:),                       ...
+                          S.grid(rg).perimeter.X_psi,                   ...
+                          S.grid(rg).perimeter.Y_psi);
 
     if (any(~INr))
       C.xrg_rho  = R.xi_rho (~INr);
@@ -1864,9 +1918,9 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
 
 % RHO-contact points.
 
-    [INr,~] = inpolygon(G(rg).lon_rho(:), G(rg).lat_rho(:),             ...
-                        S.grid(dg).perimeter.X_psi,                     ...
-                        S.grid(dg).perimeter.Y_psi);
+    [INr,ONr] = inpolygon(G(rg).lon_rho(:), G(rg).lat_rho(:),           ...
+                          S.grid(dg).perimeter.X_psi,                   ...
+                          S.grid(dg).perimeter.Y_psi);
 
     if (any(INr))
       C.xrg_rho  = S.grid(rg).XI_rho(INr);
@@ -2004,9 +2058,9 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
 
 % RHO-contact points.
 
-    [INr,~] = inpolygon(G(rg).x_rho(:), G(rg).y_rho(:),                 ...
-                        S.grid(dg).perimeter.X_psi,                     ...
-                        S.grid(dg).perimeter.Y_psi);
+    [INr,ONr] = inpolygon(G(rg).x_rho(:), G(rg).y_rho(:),               ...
+                          S.grid(dg).perimeter.X_psi,                   ...
+                          S.grid(dg).perimeter.Y_psi);
 
     if (any(INr))
       C.xrg_rho  = S.grid(rg).XI_rho(INr);
@@ -2259,10 +2313,10 @@ for cr=1:S.Ncontact
 % Contact points on RHO-boundary.
 
   if (UsePolygon)
-    [~,ON] = inpolygon(S.contact(cr).point.Xrg_rho,                     ...
-                       S.contact(cr).point.Yrg_rho,                     ...
-                       S.grid(rg).perimeter.X_psi,                      ...
-                       S.grid(rg).perimeter.Y_psi);
+    [IN,ON] = inpolygon(S.contact(cr).point.Xrg_rho,                    ...
+                        S.contact(cr).point.Yrg_rho,                    ...
+                        S.grid(rg).perimeter.X_psi,                     ...
+                        S.grid(rg).perimeter.Y_psi);
   else
     NC = length(S.contact(cr).point.Xrg_rho);
 
@@ -2288,10 +2342,10 @@ for cr=1:S.Ncontact
 % Contact points on U-boundary.  
 
   if (UsePolygon)
-    [~,ON] = inpolygon(S.contact(cr).point.Xrg_u,                       ...
-                       S.contact(cr).point.Yrg_u,                       ...
-                       S.grid(rg).perimeter.X_uv,                       ...
-                       S.grid(rg).perimeter.Y_uv);
+    [IN,ON] = inpolygon(S.contact(cr).point.Xrg_u,                      ...
+                        S.contact(cr).point.Yrg_u,                      ...
+                        S.grid(rg).perimeter.X_uv,                      ...
+                        S.grid(rg).perimeter.Y_uv);
   else
     NC = length(S.contact(cr).point.Xrg_u);
 
@@ -2317,10 +2371,10 @@ for cr=1:S.Ncontact
 % Contact points on V-boundary.
 
   if (UsePolygon)
-    [~,ON] = inpolygon(S.contact(cr).point.Xrg_v,                       ...
-                       S.contact(cr).point.Yrg_v,                       ...
-                       S.grid(rg).perimeter.X_uv,                       ...
-                       S.grid(rg).perimeter.Y_uv);
+    [IN,ON] = inpolygon(S.contact(cr).point.Xrg_v,                      ...
+                        S.contact(cr).point.Yrg_v,                      ...
+                        S.grid(rg).perimeter.X_uv,                      ...
+                        S.grid(rg).perimeter.Y_uv);
   else
     NC = length(S.contact(cr).point.Xrg_v);
 

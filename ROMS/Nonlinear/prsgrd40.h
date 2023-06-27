@@ -1,11 +1,12 @@
-       SUBROUTINE prsgrd (ng, tile)
+      MODULE prsgrd_mod
 !
-!svn $Id: prsgrd40.h 1054 2021-03-06 19:47:12Z arango $
-!***********************************************************************
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: prsgrd40.h 1151 2023-02-09 03:08:53Z arango $
+!=======================================================================
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
-!****************************************** Alexander F. Shchepetkin ***
+!========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine evaluates the  nonlinear baroclinic,  hydrostatic   !
 !  pressure gradient term using the finite-volume pressure  Jacobian   !
@@ -20,7 +21,18 @@
 !      for computing pressure gradient force in general vertical       !
 !      coordinates, Q. J. R. Meteorol. Soc., 123, 1749-1762.           !
 !                                                                      !
-!**********************************************************************=
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: prsgrd
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE prsgrd (ng, tile)
+!***********************************************************************
 !
       USE mod_param
 #ifdef DIAGNOSTICS
@@ -47,34 +59,34 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 23, __LINE__, MyFile)
 #endif
-      CALL prsgrd_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  IminS, ImaxS, JminS, JmaxS,                     &
-     &                  nrhs(ng),                                       &
+      CALL prsgrd40_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    nrhs(ng),                                     &
 #ifdef WET_DRY
-     &                  GRID(ng)%umask_wet,                             &
-     &                  GRID(ng)%vmask_wet,                             &
+     &                    GRID(ng)%umask_wet,                           &
+     &                    GRID(ng)%vmask_wet,                           &
 #endif
-     &                  GRID(ng) % om_v,                                &
-     &                  GRID(ng) % on_u,                                &
-     &                  GRID(ng) % Hz,                                  &
-     &                  GRID(ng) % z_w,                                 &
-     &                  OCEAN(ng) % rho,                                &
+     &                    GRID(ng) % om_v,                              &
+     &                    GRID(ng) % on_u,                              &
+     &                    GRID(ng) % Hz,                                &
+     &                    GRID(ng) % z_w,                               &
+     &                    OCEAN(ng) % rho,                              &
 #ifdef TIDE_GENERATING_FORCES
-     &                  OCEAN(ng) % eq_tide,                            &
+     &                    OCEAN(ng) % eq_tide,                          &
 #endif
 #ifdef WEC_VF
-     &                  OCEAN(ng) % zetat,                              &
+     &                    OCEAN(ng) % zetat,                            &
 #endif
 #ifdef ATM_PRESS
-     &                  FORCES(ng) % Pair,                              &
+     &                    FORCES(ng) % Pair,                            &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                  DIAGS(ng) % DiaRU,                              &
-     &                  DIAGS(ng) % DiaRV,                              &
+     &                    DIAGS(ng) % DiaRU,                            &
+     &                    DIAGS(ng) % DiaRV,                            &
 #endif
-     &                  OCEAN(ng) % ru,                                 &
-     &                  OCEAN(ng) % rv)
+     &                    OCEAN(ng) % ru,                               &
+     &                    OCEAN(ng) % rv)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 23, __LINE__, MyFile)
 #endif
@@ -83,29 +95,29 @@
       END SUBROUTINE prsgrd
 !
 !***********************************************************************
-      SUBROUTINE prsgrd_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        IminS, ImaxS, JminS, JmaxS,               &
-     &                        nrhs,                                     &
+      SUBROUTINE prsgrd40_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nrhs,                                   &
 #ifdef WET_DRY
-     &                        umask_wet, vmask_wet,                     &
+     &                          umask_wet, vmask_wet,                   &
 #endif
-     &                        om_v, on_u,                               &
-     &                        Hz, z_w,                                  &
-     &                        rho,                                      &
+     &                          om_v, on_u,                             &
+     &                          Hz, z_w,                                &
+     &                          rho,                                    &
 #ifdef TIDE_GENERATING_FORCES
-     &                        eq_tide,                                  &
+     &                          eq_tide,                                &
 #endif
 #ifdef WEC_VF
-     &                        zetat,                                    &
+     &                          zetat,                                  &
 #endif
 #ifdef ATM_PRESS
-     &                        Pair,                                     &
+     &                          Pair,                                   &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                        DiaRU, DiaRV,                             &
+     &                          DiaRU, DiaRV,                           &
 #endif
-     &                        ru, rv)
+     &                          ru, rv)
 !***********************************************************************
 !
       USE mod_param
@@ -278,4 +290,6 @@
       END DO J_LOOP
 !
       RETURN
-      END SUBROUTINE prsgrd_tile
+      END SUBROUTINE prsgrd40_tile
+
+      END MODULE prsgrd_mod

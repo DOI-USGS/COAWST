@@ -47,9 +47,9 @@ function V = roms_metadata(Vname,varargin)
 %
 %                 V.ncType
 %
-% svn $Id: roms_metadata.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: roms_metadata.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMVariables.txt                   Hernan G. Arango      %
 %=========================================================================%

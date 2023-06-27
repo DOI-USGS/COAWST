@@ -29,6 +29,9 @@
       USE mod_inwave_vars
       USE mod_ocean
       USE mod_stepping
+# ifdef DIAGNOSTICS_INWAVE
+      USE mod_diags
+# endif
 !
 !  Imported variable declarations.
 !
@@ -63,6 +66,9 @@
      &                      GRID(ng) % om_v,                            &
      &                      GRID(ng) % pmon_u,                          &
      &                      GRID(ng) % pnom_v,                          &
+# ifdef DIAGNOSTICS_INWAVE
+     &                      DIAGS(ng) % DiaInwrk,                       &
+# endif
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v,                              &
      &                      WAVEP(ng) % AC,                             &
@@ -91,6 +97,9 @@
 # endif
      &                            pm, pn, on_u, om_u, om_v,             &
      &                            pmon_u, pnom_v,                       &
+# ifdef DIAGNOSTICS_INWAVE
+     &                            DiaInwrk,                             &
+# endif
      &                            u, v,                                 &
      &                            AC, cx, cy, ct, Tr, kwc, pd)
 !***********************************************************************
@@ -104,6 +113,9 @@
       USE mod_inwave_vars
       USE mod_inwave_swan
       USE exchange_3d_mod, ONLY : exchange_AC3d_tile
+# ifdef DIAGNOSTICS_INWAVE
+      USE mod_diags
+# endif
 
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -139,6 +151,9 @@
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: pmon_u(LBi:,LBj:)
       real(r8), intent(in) :: pnom_v(LBi:,LBj:)
+#  ifdef DIAGNOSTICS_INWAVE
+      real(r8), intent(inout) :: DiaInwrk(LBi:,LBj:,:,:)
+#  endif
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
@@ -166,6 +181,9 @@
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pmon_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pnom_v(LBi:UBi,LBj:UBj)
+#  ifdef DIAGNOSTICS_INWAVE
+      real(r8), intent(inout) :: DiaInwrk(LBi:UBi,LBj:UBj,1:ND,NDInw)
+#  endif
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
@@ -499,9 +517,15 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             cff=dt(ng)*pm(i,j)*pn(i,j)*WAVEG(ng)%dtifac
-            cff1=cff*(FX(i+1,j)-FX(i,j)+                                &
-     &                FE(i,j+1)-FE(i,j))
-            AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff1
+            cff1=cff*(FX(i+1,j)-FX(i,j))
+            cff2=cff*(FE(i,j+1)-FE(i,j))
+            cff3=cff1+cff2
+            AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff3
+# if defined DIAGNOSTICS_INWAVE
+              DiaInwrk(i,j,d,iIrate)=AC(i,j,d,nstp)
+              DiaInwrk(i,j,d,iIxadv)=-cff1
+              DiaInwrk(i,j,d,iIyadv)=-cff2
+# endif
           END DO
         END DO
 # if defined AC_CENTERED2 || defined AC_CENTERED4 || defined AC_AKIMA4
@@ -534,6 +558,10 @@
               cff1=cff*(FX(i+1,j  )-FX(i,j))
               cff2=cff*(FE(i  ,j+1)-FE(i,j))
               cff3=cff1+cff2
+# if defined DIAGNOSTICS_INWAVE
+              DiaInwrk(i,j,d,iIxadv)=DiaInwrk(i,j,d,iIxadv)+cff1
+              DiaInwrk(i,j,d,iIyadv)=DiaInwrk(i,j,d,iIyadv)+cff2
+# endif
               AC(i,j,d,nnew)=AC(i,j,d,nnew)+cff3
             END DO
           END DO
@@ -801,13 +829,21 @@
         DO d=1,ND
           DO i=Istr,Iend
             cff=dt(ng)*pd*WAVEG(ng)%dtifac
-            AC(i,j,d,nnew)=AC(i,j,d,nnew)-                              &
-     &                     cff*(FD(i,d+1)-FD(i,d))
+            cff1=cff*(FD(i,d+1)-FD(i,d))
+            AC(i,j,d,nnew)=AC(i,j,d,nnew)-cff1
             AC(i,j,d,nnew)=MAX(0.0_r8,AC(i,j,d,nnew))
+# if defined DIAGNOSTICS_INWAVE
+              DiaInwrk(i,j,d,iItadv)=-cff1
+#  if !defined WDISS_ROELVINK && !defined WDISS_GAMMA && \
+      !defined WDISS_FRIC
+              DiaInwrk(i,j,d,iIrate)=DiaInwrk(i,j,d,iIrate)-            &
+     &                               AC(i,j,d,nnew)
+#  endif
+# endif
           END DO
         END DO
       END DO J_LOOP
-# if defined WDISS_ROELVINK || defined WDISS_GAMMA
+# if defined WDISS_ROELVINK || defined WDISS_GAMMA || defined WDISS_FRIC
       CALL dissip_inw_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
@@ -817,6 +853,9 @@
 #  endif
 #  ifdef WET_DRY
      &                      rmask_wet, umask_wet, vmask_wet,            &
+#  endif
+#  ifdef DIAGNOSTICS_INWAVE
+     &                      DIAGS(ng) % DiaInwrk,                       &
 #  endif
      &                      FORCES(ng) % Dissip_break,                  &
      &                      FORCES(ng) % Dissip_wcap,                   &

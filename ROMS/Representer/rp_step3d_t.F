@@ -4,9 +4,10 @@
 
 #if !defined TS_FIXED && (defined TL_IOMS && defined SOLVE3D)
 !
-!svn $Id: rp_step3d_t.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_step3d_t.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -353,22 +354,22 @@
         IF ((tl_Hadvection(itrc,ng)%MPDATA).or.                         &
      &      (tl_Hadvection(itrc,ng)%HSIMT)) THEN
           IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>          CALL exchange_r3d_tile (ng, tile,                           &
-!>   &                              LBi, UBi, LBj, UBj, 1, N(ng),       &
-!>   &                              t(:,:,:,nnew,itrc))
-!>
+!^          CALL exchange_r3d_tile (ng, tile,                           &
+!^   &                              LBi, UBi, LBj, UBj, 1, N(ng),       &
+!^   &                              t(:,:,:,nnew,itrc))
+!^
             CALL exchange_r3d_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj, 1, N(ng),       &
      &                              tl_t(:,:,:,nnew,itrc))
           END IF
 
 #  ifdef DISTRIBUTE
-!>        CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        NghostPoints,                             &
-!>   &                        EWperiodic(ng), NSperiodic(ng),           &
-!>   &                        t(:,:,:,nnew,itrc))
-!>
+!^        CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
+!^   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+!^   &                        NghostPoints,                             &
+!^   &                        EWperiodic(ng), NSperiodic(ng),           &
+!^   &                        t(:,:,:,nnew,itrc))
+!^
           CALL mp_exchange3d (ng, tile, iRPM, 1,                        &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        NghostPoints,                             &
@@ -682,6 +683,9 @@
 !  Apply tracers point sources to the horizontal advection terms,
 !  if any.
 !
+!    Dsrc(is) = 0,  flow across grid cell u-face (positive or negative)
+!    Dsrc(is) = 1,  flow across grid cell v-face (positive or negative)
+!
           IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
@@ -803,17 +807,17 @@
             DO j=Jstr,Jend
               DO i=Istr,Iend
                 cff=dt(ng)*pm(i,j)*pn(i,j)
-!>              cff1=cff*(FX(i+1,j)-FX(i,j))
-!>
+!^              cff1=cff*(FX(i+1,j)-FX(i,j))
+!^
                 tl_cff1=cff*(tl_FX(i+1,j)-tl_FX(i,j))
-!>              cff2=cff*(FE(i,j+1)-FE(i,j))
-!>
+!^              cff2=cff*(FE(i,j+1)-FE(i,j))
+!^
                 tl_cff2=cff*(tl_FE(i,j+1)-tl_FE(i,j))
-!>              cff3=cff1+cff2
-!>
+!^              cff3=cff1+cff2
+!^
                 tl_cff3=tl_cff1+tl_cff2
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff3
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff3
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff3
 # ifdef DIAGNOSTICS_TS
 !!              DiaTwrk(i,j,k,itrc,iTxadv)=-cff1
@@ -885,13 +889,13 @@
 !
             DO i=Istr,Iend
 # ifdef NEUMANN
-!>            FC(i,0)=1.5_r8*t(i,j,1,3,itrc)
-!>
+!^            FC(i,0)=1.5_r8*t(i,j,1,3,itrc)
+!^
               tl_FC(i,0)=1.5_r8*tl_t(i,j,1,3,itrc)
               CF(i,1)=0.5_r8
 # else
-!>            FC(i,0)=2.0_r8*t(i,j,1,3,itrc)
-!>
+!^            FC(i,0)=2.0_r8*t(i,j,1,3,itrc)
+!^
               tl_FC(i,0)=2.0_r8*tl_t(i,j,1,3,itrc)
               CF(i,1)=1.0_r8
 # endif
@@ -932,16 +936,16 @@
             END DO
             DO i=Istr,Iend
 # ifdef NEUMANN
-!>            FC(i,N(ng))=(3.0_r8*t(i,j,N(ng),3,itrc)-FC(i,N(ng)-1))/   &
-!>   &                    (2.0_r8-CF(i,N(ng)))
-!>
+!^            FC(i,N(ng))=(3.0_r8*t(i,j,N(ng),3,itrc)-FC(i,N(ng)-1))/   &
+!^   &                    (2.0_r8-CF(i,N(ng)))
+!^
               tl_FC(i,N(ng))=(3.0_r8*tl_t(i,j,N(ng),3,itrc)-            &
      &                        tl_FC(i,N(ng)-1))/                        &
      &                       (2.0_r8-CF(i,N(ng)))
 # else
-!>            FC(i,N(ng))=(2.0_r8*t(i,j,N(ng),3,itrc)-FC(i,N(ng)-1))/   &
-!>   &                    (1.0_r8-CF(i,N(ng)))
-!>
+!^            FC(i,N(ng))=(2.0_r8*t(i,j,N(ng),3,itrc)-FC(i,N(ng)-1))/   &
+!^   &                    (1.0_r8-CF(i,N(ng)))
+!^
               tl_FC(i,N(ng))=(2.0_r8*tl_t(i,j,N(ng),3,itrc)-            &
      &                        tl_FC(i,N(ng)-1))/                        &
      &                       (1.0_r8-CF(i,N(ng)))
@@ -949,11 +953,11 @@
             END DO
             DO k=N(ng)-1,0,-1
               DO i=Istr,Iend
-!>              FC(i,k)=FC(i,k)-CF(i,k+1)*FC(i,k+1)
-!>
+!^              FC(i,k)=FC(i,k)-CF(i,k+1)*FC(i,k+1)
+!^
                 tl_FC(i,k)=tl_FC(i,k)-CF(i,k+1)*tl_FC(i,k+1)
-!>              FC(i,k+1)=W(i,j,k+1)*FC(i,k+1)
-!>
+!^              FC(i,k+1)=W(i,j,k+1)*FC(i,k+1)
+!^
                 tl_FC(i,k+1)=tl_W(i,j,k+1)*FC(i,k+1)+                   &
      &                       W(i,j,k+1)*tl_FC(i,k+1)-                   &
 # ifdef TL_IOMS
@@ -962,11 +966,11 @@
               END DO
             END DO
             DO i=Istr,Iend
-!>            FC(i,N(ng))=0.0_r8
-!>
+!^            FC(i,N(ng))=0.0_r8
+!^
               tl_FC(i,N(ng))=0.0_r8
-!>            FC(i,0)=0.0_r8
-!>
+!^            FC(i,0)=0.0_r8
+!^
               tl_FC(i,0)=0.0_r8
             END DO
 !
@@ -1213,12 +1217,12 @@
               DO i=Istr,Iend
                 cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
                 tl_cff1=CF(i,0)*(tl_FC(i,k)-tl_FC(i,k-1))
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff1
 # ifdef SPLINES_VDIFF
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)*            &
      &                                oHz(i,j,k)+                       &
      &                                (t(i,j,k,nnew,itrc)*Hz(i,j,k))*   &
@@ -1249,34 +1253,37 @@
 !  added volume to keep the receiving cell concentration unchanged.
 !  J. Levin (Jupiter Intelligence Inc.) and J. Wilkin
 !
+!    Dsrc(is) = 2,  flow across grid cell v-face (positive or negative)
+!
       IF (LwSrc(ng)) THEN
         DO itrc=1,NT(ng)
           IF (.not.((tl_Hadvection(itrc,ng)%MPDATA).and.                &
      &              (tl_Vadvection(itrc,ng)%MPDATA))) THEN
             DO is=1,Nsrc(ng)
-              Isrc=SOURCES(ng)%Isrc(is)
-              Jsrc=SOURCES(ng)%Jsrc(is)
-              IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
-     &            ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
-                DO k=1,N(ng)
-                  cff=dt(ng)*pm(i,j)*pn(i,j)
+              IF (INT(SOURCES(ng)%Dsrc(is)).eq.2) THEN
+                Isrc=SOURCES(ng)%Isrc(is)
+                Jsrc=SOURCES(ng)%Jsrc(is)
+                IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.          &
+     &              ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
+                  DO k=1,N(ng)
+                    cff=dt(ng)*pm(Isrc,Jsrc)*pn(Isrc,Jsrc)
 # ifdef SPLINES_VDIFF
-                  cff=cff*oHz(Isrc,Jsrc,k)
-                  tl_cff=cff*tl_oHz(Isrc,Jsrc,k)
+                    cff=cff*oHz(Isrc,Jsrc,k)
+                    tl_cff=cff*tl_oHz(Isrc,Jsrc,k)
 # endif
-                  IF (LtracerSrc(itrc,ng)) THEN
-                    cff3=SOURCES(ng)%Tsrc(is,k,itrc)
-                    tl_cff3=SOURCES(ng)%tl_Tsrc(is,k,itrc)
-                  ELSE
-                    cff3=t(Isrc,Jsrc,k,3,itrc)
-                    tl_cff3=tl_t(Isrc,Jsrc,k,3,itrc)
-                  END IF
-!>                t(Isrc,Jsrc,k,nnew,itrc)=t(Isrc,Jsrc,k,nnew,itrc)+    &
-!>   &                                     cff*SOURCES(ng)%Qsrc(is,k)*  &
-!>   &                                     cff3
-!>
+                    IF (LtracerSrc(itrc,ng)) THEN
+                      cff3=SOURCES(ng)%Tsrc(is,k,itrc)
+                      tl_cff3=SOURCES(ng)%tl_Tsrc(is,k,itrc)
+                    ELSE
+                      cff3=t(Isrc,Jsrc,k,3,itrc)
+                      tl_cff3=tl_t(Isrc,Jsrc,k,3,itrc)
+                    END IF
+!^                  t(Isrc,Jsrc,k,nnew,itrc)=t(Isrc,Jsrc,k,nnew,itrc)+  &
+!^   &                                       cff*SOURCES(ng)%Qsrc(is,k)*&
+!^   &                                       cff3
+!^
 # ifdef SPLINES_VDIFF
-                  tl_t(Isrc,Jsrc,k,nnew,itrc)=                          &
+                    tl_t(Isrc,Jsrc,k,nnew,itrc)=                        &
      &                                  tl_t(Isrc,Jsrc,k,nnew,itrc)+    &
      &                                  cff*(SOURCES(ng)%tl_Qsrc(is,k)* &
      &                                       cff3+                      &
@@ -1289,7 +1296,7 @@
      &                                  SOURCES(ng)%Qsrc(is,k)*cff3
 #  endif
 # else
-                  tl_t(Isrc,Jsrc,k,nnew,itrc)=                          &
+                    tl_t(Isrc,Jsrc,k,nnew,itrc)=                        &
      &                                  tl_t(Isrc,Jsrc,k,nnew,itrc)+    &
      &                                  cff*(SOURCES(ng)%tl_Qsrc(is,k)* &
      &                                       cff3+                      &
@@ -1300,7 +1307,8 @@
      &                                  cff3
 #  endif
 # endif
-                END DO
+                  END DO
+                END IF
               END IF
             END DO
           END IF
@@ -1450,15 +1458,15 @@
 !    &                     DC(i,k)*Akt(i,j,k,ltrc)  ! if tl_Akt computed
 #  endif
                 DC(i,k)=DC(i,k)*Akt(i,j,k,ltrc)
-!>              cff1=dt(ng)*oHz(i,j,k)*(DC(i,k)-DC(i,k-1))
-!>
+!^              cff1=dt(ng)*oHz(i,j,k)*(DC(i,k)-DC(i,k-1))
+!^
                 tl_cff1=dt(ng)*(tl_oHz(i,j,k)*(DC(i,k)-DC(i,k-1))+      &
      &                          oHz(i,j,k)*(tl_DC(i,k)-tl_DC(i,k-1)))-  &
 #  ifdef TL_IOMS
      &                  dt(ng)*oHz(i,j,k)*(DC(i,k)-DC(i,k-1))
 #  endif
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff1
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+cff1
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)+tl_cff1
 #  ifdef DIAGNOSTICS_TS
 !!              DiaTwrk(i,j,k,itrc,iTvdif)=DiaTwrk(i,j,k,itrc,iTvdif)+  &
@@ -1626,9 +1634,9 @@
      &            (tl_Vadvection(inert(itrc),ng)%MPDATA)) THEN
                 CONTINUE                                 ! not supported
               ELSE
-!>              t(i,j,k,nnew,iage)=t(i,j,k,nnew,iage)+                  &
-!>   &                             dt(ng)*t(i,j,k,3,inert(itrc))
-!>
+!^              t(i,j,k,nnew,iage)=t(i,j,k,nnew,iage)+                  &
+!^   &                             dt(ng)*t(i,j,k,3,inert(itrc))
+!^
                 tl_t(i,j,k,nnew,iage)=tl_t(i,j,k,nnew,iage)+            &
      &                                dt(ng)*                           &
      &                                tl_t(i,j,k,3,inert(itrc))
@@ -1661,12 +1669,12 @@
 !
 !  Set lateral boundary conditions.
 !
-!>      CALL t3dbc_tile (ng, tile, itrc, ic,                            &
-!>   &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
-!>   &                   IminS, ImaxS, JminS, JmaxS,                    &
-!>   &                   nstp, nnew,                                    &
-!>   &                   t)
-!>
+!^      CALL t3dbc_tile (ng, tile, itrc, ic,                            &
+!^   &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
+!^   &                   IminS, ImaxS, JminS, JmaxS,                    &
+!^   &                   nstp, nnew,                                    &
+!^   &                   t)
+!^
         CALL rp_t3dbc_tile (ng, tile, itrc, ic,                         &
      &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
@@ -1679,12 +1687,12 @@
           DO k=1,N(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
-!>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+                  &
-!>   &                             dt(ng)*                              &
-!>   &                             CLIMA(ng)%Tnudgcof(i,j,k,ic)*        &
-!>   &                             (CLIMA(ng)%tclm(i,j,k,ic)-           &
-!>   &                              t(i,j,k,nnew,itrc))
-!>
+!^              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+                  &
+!^   &                             dt(ng)*                              &
+!^   &                             CLIMA(ng)%Tnudgcof(i,j,k,ic)*        &
+!^   &                             (CLIMA(ng)%tclm(i,j,k,ic)-           &
+!^   &                              t(i,j,k,nnew,itrc))
+!^
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-            &
      &                                dt(ng)*                           &
      &                                CLIMA(ng)%Tnudgcof(i,j,k,ic)*     &
@@ -1706,8 +1714,8 @@
         DO k=1,N(ng)
           DO j=JstrR,JendR
             DO i=IstrR,IendR
-!>            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*rmask(i,j)
-!>
+!^            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*rmask(i,j)
+!^
               tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)*rmask(i,j)
             END DO
           END DO
@@ -1732,10 +1740,10 @@
 !  Apply periodic boundary conditions.
 !
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>        CALL exchange_r3d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-!>   &                            t(:,:,:,nnew,itrc))
-!>
+!^        CALL exchange_r3d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!^   &                            t(:,:,:,nnew,itrc))
+!^
           CALL exchange_r3d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
      &                            tl_t(:,:,:,nnew,itrc))
@@ -1745,12 +1753,12 @@
 !
 !  Exchange boundary data.
 !
-!>    CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    t(:,:,:,nnew,:))
-!>
+!^    CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    t(:,:,:,nnew,:))
+!^
       CALL mp_exchange4d (ng, tile, iRPM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints,                                 &

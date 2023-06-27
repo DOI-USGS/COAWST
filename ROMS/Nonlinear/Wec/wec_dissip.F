@@ -42,6 +42,11 @@
 # endif
 !
       integer, intent(in) :: ng, tile
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 # include "tile.h"
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)

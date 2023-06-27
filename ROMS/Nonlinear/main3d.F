@@ -2,9 +2,10 @@
 #if defined NONLINEAR && defined SOLVE3D
       SUBROUTINE main3d (RunInterval)
 !
-!svn $Id: main3d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: main3d.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -115,9 +116,6 @@
       USE wec_wave_mix_mod,     ONLY : wec_wave_mix
 #  endif
 # endif
-# ifdef SEDIMENT
-      USE sediment_mod,         ONLY : sediment
-# endif
 # if defined VEGETATION && defined MARSH_DYNAMICS
       USE mod_vegetation 
       USE mod_vegarr
@@ -127,12 +125,15 @@
       USE rho_eos_mod,          ONLY : rho_eos
 # endif
       USE rhs3d_mod,            ONLY : rhs3d
+# ifdef SEDIMENT
+      USE sediment_mod,         ONLY : sediment
+# endif
 # ifdef AVERAGES
       USE set_avg_mod,          ONLY : set_avg
 # endif
       USE set_depth_mod,        ONLY : set_depth
       USE set_massflux_mod,     ONLY : set_massflux
-# if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
+# if defined SSH_TIDES || defined UV_TIDES
       USE set_tides_mod,        ONLY : set_tides
 # endif
       USE set_vbc_mod,          ONLY : set_vbc
@@ -217,13 +218,16 @@
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              iic(ng)=iic(ng)+1
+!             iic(ng)=iic(ng)+1
               nstp(ng)=1+MOD(iic(ng)-ntstart(ng),2)
               nnew(ng)=3-nstp(ng)
               nrhs(ng)=nstp(ng)
-              time(ng)=time(ng)+dt(ng)
+!             time(ng)=time(ng)+dt(ng)
+#ifdef JEDI
+              jic(ng)=jic(ng)+1
+              time4jedi(ng)=time4jedi(ng)+dt(ng)
+#endif
               tdays(ng)=time(ng)*sec2day
-              CALL time_string (time(ng), time_code(ng))
               IF (step_counter(ng).eq.Rsteps) Time_Step=.FALSE.
             END DO
 !
@@ -535,11 +539,7 @@
                 CALL set_diags (ng, tile)
 # endif
 # ifdef AVERAGES
-#   if defined FILTERED
-                CALL set_filter (ng, tile)
-#   else
                 CALL set_avg (ng, tile)
-#   endif
 # endif
               END DO
 !$OMP BARRIER
@@ -968,6 +968,18 @@
               END IF
             END DO
 # endif
+!
+!-----------------------------------------------------------------------
+!  Advance time index and time clock.
+!-----------------------------------------------------------------------
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              iic(ng)=iic(ng)+1
+              time(ng)=time(ng)+dt(ng)
+              step_counter(ng)=step_counter(ng)-1
+              CALL time_string (time(ng), time_code(ng))
+            END DO
 
           END DO STEP_LOOP
 

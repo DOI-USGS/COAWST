@@ -2,9 +2,10 @@
       MODULE rp_step3d_uv_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_step3d_uv.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_step3d_uv.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -409,14 +410,14 @@
 !
         DO k=1,N(ng)
           DO i=IstrU,Iend
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)+                                &
-!>   &                    DC(i,0)*ru(i,j,k,nrhs)
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)+                                &
+!^   &                    DC(i,0)*ru(i,j,k,nrhs)
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+                          &
      &                       DC(i,0)*tl_ru(i,j,k,nrhs)
 # ifdef SPLINES_VVISC
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)*oHz(i,k)
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)*oHz(i,k)
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*oHz(i,k)+                 &
      &                       (u(i,j,k,nnew)*Hzk(i,k))*tl_oHz(i,k)-      &
 #  ifdef TL_IOMS
@@ -575,15 +576,15 @@
 !    &                 DC(i,k)*AK(i,k)    ! needed if tl_AK is computed
 #  endif
             DC(i,k)=DC(i,k)*AK(i,k)
-!>          cff=dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
-!>
+!^          cff=dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
+!^
             tl_cff=dt(ng)*(tl_oHz(i,k)*(DC(i,k)-DC(i,k-1))+             &
      &                     oHz(i,k)*(tl_DC(i,k)-tl_DC(i,k-1)))-         &
 #  ifdef TL_IOMS
      &             dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
 #  endif
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)+cff
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)+cff
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+tl_cff
 #  ifdef DIAGNOSTICS_UV
 !!          DiaU3wrk(i,j,k,M3vvis)=DiaU3wrk(i,j,k,M3vvis)+cff
@@ -694,8 +695,8 @@
 #  endif
           DC(i,N(ng))=(DC(i,N(ng))-FC(i,N(ng)-1)*DC(i,N(ng)-1))/        &
      &                (BC(i,N(ng))-FC(i,N(ng)-1)*CF(i,N(ng)-1))
-!>        u(i,j,N(ng),nnew)=DC(i,N(ng))
-!>
+!^        u(i,j,N(ng),nnew)=DC(i,N(ng))
+!^
           tl_u(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
 !!        DiaU3wrk(i,j,N(ng),M3vvis)=DiaU3wrk(i,j,N(ng),M3vvis)+        &
@@ -708,8 +709,8 @@
 !!          wrk(i,k)=u(i,j,k,nnew)*oHz(i,k)
 #  endif
             DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>          u(i,j,k,nnew)=DC(i,k)
-!>
+!^          u(i,j,k,nnew)=DC(i,k)
+!^
             tl_u(i,j,k,nnew)=DC(i,k)
 #  ifdef DIAGNOSTICS_UV
 !!          DiaU3wrk(i,j,k,M3vvis)=DiaU3wrk(i,j,k,M3vvis)+              &
@@ -854,31 +855,31 @@
 !
         DO k=1,N(ng)
           DO i=IstrU,Iend
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)-DC(i,0)
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)-DC(i,0)
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-tl_DC(i,0)
 # ifdef MASKING
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)*umask_wet(i,j)
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)*umask_wet(i,j)
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*umask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>          u_stokes(i,j,k)=u_stokes(i,j,k)-DCs(i,0)
-!>
+!^          u_stokes(i,j,k)=u_stokes(i,j,k)-DCs(i,0)
+!^
             tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)-tl_DCs(i,0)
 #  ifdef MASKING
-!>          u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
-!>
+!^          u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
+!^
             tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*umask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>          u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
-!>
+!^          u_stokes(i,j,k)=u_stokes(i,j,k)*umask_wet(i,j)
+!^
             tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*umask_wet(i,j)
 #  endif
 # endif
@@ -972,13 +973,13 @@
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)+DC(i,0)*rv(i,j,k,nrhs)
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)+DC(i,0)*rv(i,j,k,nrhs)
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+                        &
      &                         DC(i,0)*tl_rv(i,j,k,nrhs)
 # ifdef SPLINES_VVISC
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)*oHz(i,k)
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)*oHz(i,k)
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*oHz(i,k)+               &
      &                         (v(i,j,k,nnew)*Hzk(i,k))*tl_oHz(i,k)-    &
 #  ifdef TL_IOMS
@@ -1138,15 +1139,15 @@
 !    &                   DC(i,k)*AK(i,k)  ! needed if tl_AK is computed
 #  endif
               DC(i,k)=DC(i,k)*AK(i,k)
-!>            cff=dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
-!>
+!^            cff=dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
+!^
               tl_cff=dt(ng)*(tl_oHz(i,k)*(DC(i,k)-DC(i,k-1))+           &
      &                       oHz(i,k)*(tl_DC(i,k)-tl_DC(i,k-1)))-       &
 #  ifdef TL_IOMS
      &               dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
 #  endif
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)+cff
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)+cff
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+tl_cff
 #  ifdef DIAGNOSTICS_UV
 !!            DiaV3wrk(i,j,k,M3vvis)=DiaV3wrk(i,j,k,M3vvis)+cff
@@ -1256,8 +1257,8 @@
 #  endif
             DC(i,N(ng))=(DC(i,N(ng))-FC(i,N(ng)-1)*DC(i,N(ng)-1))/      &
      &                  (BC(i,N(ng))-FC(i,N(ng)-1)*CF(i,N(ng)-1))
-!>          v(i,j,N(ng),nnew)=DC(i,N(ng))
-!>
+!^          v(i,j,N(ng),nnew)=DC(i,N(ng))
+!^
             tl_v(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
 !!          DiaV3wrk(i,j,N(ng),M3vvis)=DiaV3wrk(i,j,N(ng),M3vvis)+      &
@@ -1270,8 +1271,8 @@
 !!            wrk(i,k)=v(i,j,k,nnew)*oHz(i,k)
 #  endif
               DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
-!>            v(i,j,k,nnew)=DC(i,k)
-!>
+!^            v(i,j,k,nnew)=DC(i,k)
+!^
               tl_v(i,j,k,nnew)=DC(i,k)
 #  ifdef DIAGNOSTICS_UV
 !!            DiaV3wrk(i,j,k,M3vvis)=DiaV3wrk(i,j,k,M3vvis)+            &
@@ -1416,31 +1417,31 @@
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)-DC(i,0)
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)-DC(i,0)
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-tl_DC(i,0)
 # ifdef MASKING
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)*vmask(i,j)
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)*vmask(i,j)
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>            v(i,j,k,nnew)=v(i,j,k,nnew)*vmask_wet(i,j)
-!>
+!^            v(i,j,k,nnew)=v(i,j,k,nnew)*vmask_wet(i,j)
+!^
               tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*vmask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>            v_stokes(i,j,k)=v_stokes(i,j,k)-DCs(i,0)
-!>
+!^            v_stokes(i,j,k)=v_stokes(i,j,k)-DCs(i,0)
+!^
               tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)-tl_DCs(i,0)
 #  ifdef MASKING
-!>            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
-!>
+!^            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
+!^
               tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*vmask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
-!>
+!^            v_stokes(i,j,k)=v_stokes(i,j,k)*vmask_wet(i,j)
+!^
               tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*vmask_wet(i,j)
 #  endif
 # endif
@@ -1493,23 +1494,23 @@
 !  Set lateral boundary conditions.
 !-----------------------------------------------------------------------
 !
-!>    CALL u3dbc_tile (ng, tile,                                        &
-!>   &                 LBi, UBi, LBj, UBj, N(ng),                       &
-!>   &                 IminS, ImaxS, JminS, JmaxS,                      &
-!>   &                 nstp, nnew,                                      &
-!>   &                 u)
-!>
+!^    CALL u3dbc_tile (ng, tile,                                        &
+!^   &                 LBi, UBi, LBj, UBj, N(ng),                       &
+!^   &                 IminS, ImaxS, JminS, JmaxS,                      &
+!^   &                 nstp, nnew,                                      &
+!^   &                 u)
+!^
       CALL rp_u3dbc_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, N(ng),                    &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nstp, nnew,                                   &
      &                    tl_u)
-!>    CALL v3dbc_tile (ng, tile,                                        &
-!>   &                 LBi, UBi, LBj, UBj, N(ng),                       &
-!>   &                 IminS, ImaxS, JminS, JmaxS,                      &
-!>   &                 nstp, nnew,                                      &
-!>   &                 v)
-!>
+!^    CALL v3dbc_tile (ng, tile,                                        &
+!^   &                 LBi, UBi, LBj, UBj, N(ng),                       &
+!^   &                 IminS, ImaxS, JminS, JmaxS,                      &
+!^   &                 nstp, nnew,                                      &
+!^   &                 v)
+!^
       CALL rp_v3dbc_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, N(ng),                    &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
@@ -1537,8 +1538,8 @@
 # ifdef TL_IOMS
      &                  2.0_r8*cff1
 # endif
-!>              u(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
-!>
+!^              u(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
+!^
                 tl_u(i,j,k,nnew)=SOURCES(ng)%tl_Qsrc(is,k)*cff1+        &
      &                           SOURCES(ng)%Qsrc(is,k)*tl_cff1-        &
 # ifdef TL_IOMS
@@ -1556,8 +1557,8 @@
 # ifdef TL_IOMS
      &                  2.0_r8*cff1
 # endif
-!>              v(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
-!>
+!^              v(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
+!^
                 tl_v(i,j,k,nnew)=SOURCES(ng)%tl_Qsrc(is,k)*cff1+        &
      &                           SOURCES(ng)%Qsrc(is,k)*tl_cff1-        &
 # ifdef TL_IOMS
@@ -1652,15 +1653,15 @@
      &                CFs(i,0)
 #  endif
 # endif
-!>        ubar(i,j,1)=DC(i,0)*DU_avg1(i,j)
-!>
+!^        ubar(i,j,1)=DC(i,0)*DU_avg1(i,j)
+!^
           tl_ubar(i,j,1)=tl_DC(i,0)*DU_avg1(i,j)+                       &
      &                   DC(i,0)*tl_DU_avg1(i,j)-                       &
 # ifdef TL_IOMS
      &                   DC(i,0)*DU_avg1(i,j)
 # endif
-!>        ubar(i,j,2)=ubar(i,j,1)
-!>
+!^        ubar(i,j,2)=ubar(i,j,1)
+!^
           tl_ubar(i,j,2)=tl_ubar(i,j,1)
 # ifdef DIAGNOSTICS_UV
 !!        DiaU2wrk(i,j,M2rate)=ubar(i,j,1)-DiaU2int(i,j,M2rate)*DC(i,0)
@@ -1697,40 +1698,40 @@
         IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%Western_Edge(tile)) THEN
             DO k=1,N(ng)
-!>            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)-CF(Istr,0)
-!>
+!^            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)-CF(Istr,0)
+!^
               tl_u(Istr,j,k,nnew)=tl_u(Istr,j,k,nnew)-                  &
      &                            tl_CF(Istr,0)
 # ifdef MASKING
-!>            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)*                        &
-!>   &                         umask(Istr,j)
-!>
+!^            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)*                        &
+!^   &                         umask(Istr,j)
+!^
               tl_u(Istr,j,k,nnew)=tl_u(Istr,j,k,nnew)*                  &
      &                            umask(Istr,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)*                        &
-!>   &                         umask_wet(Istr,j)
-!>
+!^            u(Istr,j,k,nnew)=u(Istr,j,k,nnew)*                        &
+!^   &                         umask_wet(Istr,j)
+!^
               tl_u(Istr,j,k,nnew)=tl_u(Istr,j,k,nnew)*                  &
      &                            umask_wet(Istr,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)-CFs(Istr,0)
-!>
+!^            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)-CFs(Istr,0)
+!^
               tl_u_stokes(Istr,j,k)=tl_u_stokes(Istr,j,k)-              &
      &                              tl_CFs(Istr,0)
 #  ifdef MASKING
-!>            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                    &
-!>   &                           umask(Istr,j)
-!>
+!^            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                    &
+!^   &                           umask(Istr,j)
+!^
               tl_u_stokes(Istr,j,k)=tl_u_stokes(Istr,j,k)*              &
      &                              umask(Istr,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                    &
-!>   &                           umask_wet(Istr,j)
-!>
+!^            u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                    &
+!^   &                           umask_wet(Istr,j)
+!^
               tl_u_stokes(Istr,j,k)=tl_u_stokes(Istr,j,k)*              &
      &                              umask_wet(Istr,j)
 #  endif
@@ -1742,40 +1743,40 @@
         IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
             DO k=1,N(ng)
-!>            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)-CF(Iend+1,0)
-!>
+!^            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)-CF(Iend+1,0)
+!^
               tl_u(Iend+1,j,k,nnew)=tl_u(Iend+1,j,k,nnew)-              &
      &                              tl_CF(Iend+1,0)
 # ifdef MASKING
-!>            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)*                    &
-!>   &                           umask(Iend+1,j)
-!>
+!^            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)*                    &
+!^   &                           umask(Iend+1,j)
+!^
               tl_u(Iend+1,j,k,nnew)=tl_u(Iend+1,j,k,nnew)*              &
      &                              umask(Iend+1,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)*                    &
-!>   &                           umask_wet(Iend+1,j)
-!>
+!^            u(Iend+1,j,k,nnew)=u(Iend+1,j,k,nnew)*                    &
+!^   &                           umask_wet(Iend+1,j)
+!^
               tl_u(Iend+1,j,k,nnew)=tl_u(Iend+1,j,k,nnew)*              &
      &                              umask_wet(Iend+1,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)-CFs(Iend+1,0)
-!>
+!^            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)-CFs(Iend+1,0)
+!^
               tl_u_stokes(Iend+1,j,k)=tl_u_stokes(Iend+1,j,k)-          &
      &                                tl_CFs(Iend+1,0)
 #  ifdef MASKING
-!>            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                &
-!>   &                             umask(Iend+1,j)
-!>
+!^            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                &
+!^   &                             umask(Iend+1,j)
+!^
               tl_u_stokes(Iend+1,j,k)=tl_u_stokes(Iend+1,j,k)*          &
      &                                umask(Iend+1,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                &
-!>   &                             umask_wet(Iend+1,j)
-!>
+!^            u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*                &
+!^   &                             umask_wet(Iend+1,j)
+!^
               tl_u_stokes(Iend+1,j,k)=tl_u_stokes(Iend+1,j,k)*          &
      &                                umask_wet(Iend+1,j)
 #  endif
@@ -1788,39 +1789,39 @@
           IF (j.eq.0) THEN                           ! southern boundary
             DO k=1,N(ng)                             ! J-loop pipelined
               DO i=IstrU,Iend
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)-CF(i,0)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)-CF(i,0)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-                      &
      &                           tl_CF(i,0)
 # ifdef MASKING
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*                      &
      &                           umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)*                            &
-!>   &                        umask_wet(i,j)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)*                            &
+!^   &                        umask_wet(i,j)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*                      &
      &                           umask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)-CFs(i,0)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)-CFs(i,0)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)-                  &
      &                             tl_CFs(i,0)
 #  ifdef MASKING
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
-!>   &                          umask(i,j)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
+!^   &                          umask(i,j)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*                  &
      &                             umask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
-!>   &                          umask_wet(i,j)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
+!^   &                          umask_wet(i,j)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*                  &
      &                             umask_wet(i,j)
 #  endif
@@ -1834,38 +1835,38 @@
           IF (j.eq.Mm(ng)+1) THEN                    ! northern boundary
             DO k=1,N(ng)                             ! J-loop pipelined
               DO i=IstrU,Iend
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)-CF(i,0)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)-CF(i,0)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-                      &
      &                           tl_CF(i,0)
 # ifdef MASKING
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)*umask(i,j)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*                      &
      &                           umask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>              u(i,j,k,nnew)=u(i,j,k,nnew)*umask_wet(i,j)
-!>
+!^              u(i,j,k,nnew)=u(i,j,k,nnew)*umask_wet(i,j)
+!^
                 tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)*                      &
      &                           umask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)-CFs(i,0)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)-CFs(i,0)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)-                  &
      &                             tl_CFs(i,0)
 #  ifdef MASKING
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
-!>   &                          umask(i,j)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
+!^   &                          umask(i,j)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*                  &
      &                             umask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
-!>   &                          umask_wet(i,j)
-!>
+!^              u_stokes(i,j,k)=u_stokes(i,j,k)*                        &
+!^   &                          umask_wet(i,j)
+!^
                 tl_u_stokes(i,j,k)=tl_u_stokes(i,j,k)*                  &
      &                             umask_wet(i,j)
 #  endif
@@ -2002,15 +2003,15 @@
      &                  CF(i,0)
 #  endif
 # endif
-!>          vbar(i,j,1)=DC(i,0)*DV_avg1(i,j)
-!>
+!^          vbar(i,j,1)=DC(i,0)*DV_avg1(i,j)
+!^
             tl_vbar(i,j,1)=tl_DC(i,0)*DV_avg1(i,j)+                     &
      &                     DC(i,0)*tl_DV_avg1(i,j)-                     &
 # ifdef TL_IOMS
      &                     DC(i,0)*DV_avg1(i,j)
 # endif
-!>          vbar(i,j,2)=vbar(i,j,1)
-!>
+!^          vbar(i,j,2)=vbar(i,j,1)
+!^
             tl_vbar(i,j,2)=tl_vbar(i,j,1)
 # ifdef DIAGNOSTICS_UV
 !!          DiaV2wrk(i,j,M2rate)=vbar(i,j,1)-                           &
@@ -2050,41 +2051,41 @@
           IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
             IF (DOMAIN(ng)%Western_Edge(tile)) THEN
               DO k=1,N(ng)
-!>              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)-CF(Istr-1,0)
-!>
+!^              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)-CF(Istr-1,0)
+!^
                 tl_v(Istr-1,j,k,nnew)=tl_v(Istr-1,j,k,nnew)-            &
      &                                tl_CF(Istr-1,0)
 # ifdef MASKING
-!>              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)*                  &
-!>   &                             vmask(Istr-1,j)
-!>
+!^              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)*                  &
+!^   &                             vmask(Istr-1,j)
+!^
                 tl_v(Istr-1,j,k,nnew)=tl_v(Istr-1,j,k,nnew)*            &
      &                                vmask(Istr-1,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)*                  &
-!>   &                             vmask_wet(Istr-1,j)
-!>
+!^              v(Istr-1,j,k,nnew)=v(Istr-1,j,k,nnew)*                  &
+!^   &                             vmask_wet(Istr-1,j)
+!^
                 tl_v(Istr-1,j,k,nnew)=tl_v(Istr-1,j,k,nnew)*            &
      &                                vmask_wet(Istr-1,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)-              &
-!>   &                               CFs(Istr-1,0)
-!>
+!^              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)-              &
+!^   &                               CFs(Istr-1,0)
+!^
                 tl_v_stokes(Istr-1,j,k)=tl_v_stokes(Istr-1,j,k)-        &
      &                                  tl_CFs(Istr-1,0)
 #  ifdef MASKING
-!>              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
-!>   &                               vmask(Istr-1,j)
-!>
+!^              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
+!^   &                               vmask(Istr-1,j)
+!^
                 tl_v_stokes(Istr-1,j,k)=tl_v_stokes(Istr-1,j,k)*        &
      &                                  vmask(Istr-1,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
-!>   &                               vmask_wet(Istr-1,j)
-!>
+!^              v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
+!^   &                               vmask_wet(Istr-1,j)
+!^
                 tl_v_stokes(Istr-1,j,k)=tl_v_stokes(Istr-1,j,k)*        &
      &                                  vmask_wet(Istr-1,j)
 #  endif
@@ -2096,41 +2097,41 @@
           IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
             IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
               DO k=1,N(ng)
-!>              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)-CF(Iend+1,0)
-!>
+!^              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)-CF(Iend+1,0)
+!^
                 tl_v(Iend+1,j,k,nnew)=tl_v(Iend+1,j,k,nnew)-            &
      &                                tl_CF(Iend+1,0)
 # ifdef MASKING
-!>              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)*                  &
-!>   &                             vmask(Iend+1,j)
-!>
+!^              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)*                  &
+!^   &                             vmask(Iend+1,j)
+!^
                 tl_v(Iend+1,j,k,nnew)=tl_v(Iend+1,j,k,nnew)*            &
      &                                vmask(Iend+1,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)*                  &
-!>   &                             vmask_wet(Iend+1,j)
-!>
+!^              v(Iend+1,j,k,nnew)=v(Iend+1,j,k,nnew)*                  &
+!^   &                             vmask_wet(Iend+1,j)
+!^
                 tl_v(Iend+1,j,k,nnew)=tl_v(Iend+1,j,k,nnew)*            &
      &                                vmask_wet(Iend+1,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)-              &
-!>   &                               CFs(Iend+1,0)
-!>
+!^              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)-              &
+!^   &                               CFs(Iend+1,0)
+!^
                 tl_v_stokes(Iend+1,j,k)=tl_v_stokes(Iend+1,j,k)-        &
      &                                  tl_CFs(Iend+1,0)
 #  ifdef MASKING
-!>              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
-!>   &                               vmask(Iend+1,j)
-!>
+!^              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
+!^   &                               vmask(Iend+1,j)
+!^
                 tl_v_stokes(Iend+1,j,k)=tl_v_stokes(Iend+1,j,k)*        &
      &                                  vmask(Iend+1,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
-!>   &                               vmask_wet(Iend+1,j)
-!>
+!^              v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
+!^   &                               vmask_wet(Iend+1,j)
+!^
                 tl_v_stokes(Iend+1,j,k)=tl_v_stokes(Iend+1,j,k)*        &
      &                                  vmask_wet(Iend+1,j)
 #  endif
@@ -2143,39 +2144,39 @@
             IF (j.eq.1) THEN                         ! southern boundary
               DO k=1,N(ng)                           ! J-loop pipelined
                 DO i=Istr,Iend
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)-CF(i,0)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)-CF(i,0)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-                    &
      &                             tl_CF(i,0)
 # ifdef MASKING
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)*
-!>   &                          vmask(i,j)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)*
+!^   &                          vmask(i,j)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*                    &
      &                             vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
-!>   &                          vmask_wet(i,j)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
+!^   &                          vmask_wet(i,j)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*
      &                             vmask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)-CFs(i,0)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)-CFs(i,0)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)-                &
      &                               tl_CFs(i,0)
 #  ifdef MASKING
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*                &
      &                               vmask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
-!>   &                            vmask_wet(i,j)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
+!^   &                            vmask_wet(i,j)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*                &
      &                               vmask_wet(i,j)
 #  endif
@@ -2189,40 +2190,40 @@
             IF (j.eq.Mm(ng)+1) THEN                  ! northern boundary
               DO k=1,N(ng)                           ! J-loop pipelined
                 DO i=Istr,Iend
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)-CF(i,0)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)-CF(i,0)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-                    &
      &                             tl_CF(i,0)
 # ifdef MASKING
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
-!>   &                          vmask(i,j)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
+!^   &                          vmask(i,j)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*                    &
      &                             vmask(i,j)
 # endif
 # ifdef WET_DRY_NOT_YET
-!>                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
-!>   &                          vmask_wet(i,j)
-!>
+!^                v(i,j,k,nnew)=v(i,j,k,nnew)*                          &
+!^   &                          vmask_wet(i,j)
+!^
                   tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)*                    &
      &                             vmask_wet(i,j)
 # endif
 # ifdef NEARSHORE_MELLOR
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)-CFs(i,0)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)-CFs(i,0)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)-                &
      &                               tl_CFs(i,0)
 #  ifdef MASKING
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
-!>   &                            vmask(i,j)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
+!^   &                            vmask(i,j)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*                &
      &                               vmask(i,j)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-!>                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
-!>   &                            vmask_wet(i,j)
-!>
+!^                v_stokes(i,j,k)=v_stokes(i,j,k)*                      &
+!^   &                            vmask_wet(i,j)
+!^
                   tl_v_stokes(i,j,k)=tl_v_stokes(i,j,k)*                &
      &                               vmask_wet(i,j)
 #  endif
@@ -2288,17 +2289,17 @@
 !-----------------------------------------------------------------------
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_u3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          u(:,:,:,nnew))
-!>
+!^      CALL exchange_u3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          u(:,:,:,nnew))
+!^
         CALL exchange_u3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
      &                          tl_u(:,:,:,nnew))
-!>      CALL exchange_v3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          v(:,:,:,nnew))
-!>
+!^      CALL exchange_v3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          v(:,:,:,nnew))
+!^
         CALL exchange_v3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
      &                          tl_v(:,:,:,nnew))
@@ -2318,17 +2319,17 @@
      &                          tl_Hvom)
 !
         DO k=1,2
-!>        CALL exchange_u2d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            ubar(:,:,k))
-!>
+!^        CALL exchange_u2d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            ubar(:,:,k))
+!^
           CALL exchange_u2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            tl_ubar(:,:,k))
-!>        CALL exchange_v2d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            vbar(:,:,k))
-!>
+!^        CALL exchange_v2d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            vbar(:,:,k))
+!^
           CALL exchange_v2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            tl_vbar(:,:,k))
@@ -2336,13 +2337,13 @@
       END IF
 
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    u(:,:,:,nnew), v(:,:,:,nnew),                 &
-!>   &                    Huon, Hvom)
-!>
+!^    CALL mp_exchange3d (ng, tile, iNLM, 4,                            &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    u(:,:,:,nnew), v(:,:,:,nnew),                 &
+!^   &                    Huon, Hvom)
+!^
       CALL mp_exchange3d (ng, tile, iRPM, 4,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
@@ -2355,13 +2356,13 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Huon, Hvom)
 !
-!>    CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    ubar(:,:,1), vbar(:,:,1),                     &
-!>   &                    ubar(:,:,2), vbar(:,:,2))
-!>
+!^    CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    ubar(:,:,1), vbar(:,:,1),                     &
+!^   &                    ubar(:,:,2), vbar(:,:,2))
+!^
       CALL mp_exchange2d (ng, tile, iRPM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

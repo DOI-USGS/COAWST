@@ -2,9 +2,10 @@
       MODULE ad_set_vbc_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_set_vbc.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_set_vbc.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -386,29 +387,29 @@
 !  Apply boundary conditions.
 !
 #   ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_bustr, tl_bvstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_bustr, tl_bvstr)
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bustr, ad_bvstr)
 #   endif
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_bustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_bustr)
+!^
       CALL ad_bc_u2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_bvstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_bvstr)
+!^
       CALL ad_bc_v2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bvstr)
@@ -447,13 +448,13 @@
      &                  u(i  ,j-1,1,nrhs)+                              &
      &                  u(i+1,j-1,1,nrhs))
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
-!>        tl_bvstr(i,j)=0.5_r8*                                         &
-!>   &                  ((tl_wrk(i,j-1)+tl_wrk(i,j))*                   &
-!>   &                   v(i,j,1,nrhs)*cff2+                            &
-!>   &                   (wrk(i,j-1)+wrk(i,j))*                         &
-!>   &                   (tl_v(i,j,1,nrhs)*cff2+                        &
-!>   &                    v(i,j,1,nrhs)*tl_cff2))
-!>
+!^        tl_bvstr(i,j)=0.5_r8*                                         &
+!^   &                  ((tl_wrk(i,j-1)+tl_wrk(i,j))*                   &
+!^   &                   v(i,j,1,nrhs)*cff2+                            &
+!^   &                   (wrk(i,j-1)+wrk(i,j))*                         &
+!^   &                   (tl_v(i,j,1,nrhs)*cff2+                        &
+!^   &                    v(i,j,1,nrhs)*tl_cff2))
+!^
           adfac=0.5_r8*ad_bvstr(i,j)
           adfac1=adfac*v(i,j,1,nrhs)*cff2
           adfac2=adfac*(wrk(i,j-1)+wrk(i,j))
@@ -470,15 +471,15 @@
             ad_cff1=ad_cff1+adfac*cff1
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_u(i  ,j  ,1,nrhs)+                        &
-!>   &                     tl_u(i+1,j  ,1,nrhs)+                        &
-!>   &                     tl_u(i  ,j-1,1,nrhs)+                        &
-!>   &                     tl_u(i+1,j-1,1,nrhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_u(i  ,j  ,1,nrhs)+                        &
+!^   &                     tl_u(i+1,j  ,1,nrhs)+                        &
+!^   &                     tl_u(i  ,j-1,1,nrhs)+                        &
+!^   &                     tl_u(i+1,j-1,1,nrhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_u(i  ,j-1,1,nrhs)=ad_u(i  ,j-1,1,nrhs)+adfac
           ad_u(i+1,j-1,1,nrhs)=ad_u(i+1,j-1,1,nrhs)+adfac
@@ -494,13 +495,13 @@
      &                  v(i-1,j  ,1,nrhs)+                              &
      &                  v(i-1,j+1,1,nrhs))
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
-!>        tl_bustr(i,j)=0.5_r8*                                         &
-!>   &                  ((tl_wrk(i-1,j)+tl_wrk(i,j))*                   &
-!>   &                   u(i,j,1,nrhs)*cff2+                            &
-!>   &                   (wrk(i-1,j)+wrk(i,j))*                         &
-!>   &                   (tl_u(i,j,1,nrhs)*cff2+                        &
-!>   &                    u(i,j,1,nrhs)*tl_cff2))
-!>
+!^        tl_bustr(i,j)=0.5_r8*                                         &
+!^   &                  ((tl_wrk(i-1,j)+tl_wrk(i,j))*                   &
+!^   &                   u(i,j,1,nrhs)*cff2+                            &
+!^   &                   (wrk(i-1,j)+wrk(i,j))*                         &
+!^   &                   (tl_u(i,j,1,nrhs)*cff2+                        &
+!^   &                    u(i,j,1,nrhs)*tl_cff2))
+!^
           adfac=0.5_r8*ad_bustr(i,j)
           adfac1=adfac*u(i,j,1,nrhs)*cff2
           adfac2=adfac*(wrk(i-1,j)+wrk(i,j))
@@ -510,22 +511,22 @@
           ad_cff2=ad_cff2+adfac1*u(i,j,1,nrhs)
           ad_bustr(i,j)=0.0_r8
           IF (cff2.ne.0.0_r8) THEN
-!>          tl_cff2=(u(i,j,1,nrhs)*tl_u(i,j,1,nrhs)+cff1*tl_cff1)/cff2
-!>
+!^          tl_cff2=(u(i,j,1,nrhs)*tl_u(i,j,1,nrhs)+cff1*tl_cff1)/cff2
+!^
             adfac=ad_cff2/cff2
             ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+adfac*u(i,j,1,nrhs)
             ad_cff1=ad_cff1+adfac*cff1
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_v(i  ,j  ,1,nrhs)+                        &
-!>   &                     tl_v(i  ,j+1,1,nrhs)+                        &
-!>   &                     tl_v(i-1,j  ,1,nrhs)+                        &
-!>   &                     tl_v(i-1,j+1,1,nrhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_v(i  ,j  ,1,nrhs)+                        &
+!^   &                     tl_v(i  ,j+1,1,nrhs)+                        &
+!^   &                     tl_v(i-1,j  ,1,nrhs)+                        &
+!^   &                     tl_v(i-1,j+1,1,nrhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_v(i-1,j  ,1,nrhs)=ad_v(i-1,j  ,1,nrhs)+adfac
           ad_v(i  ,j  ,1,nrhs)=ad_v(i  ,j  ,1,nrhs)+adfac
@@ -540,23 +541,23 @@
           cff2=vonKar*vonKar*cff1*cff1
           cff3=MAX(Cdb_min,cff2)
           wrk(i,j)=MIN(Cdb_max,cff3)
-!>        tl_wrk(i,j)=(0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*tl_cff3
-!>
+!^        tl_wrk(i,j)=(0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*tl_cff3
+!^
           ad_cff3=ad_cff3+                                              &
      &            (0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*ad_wrk(i,j)
           ad_wrk(i,j)=0.0_r8
-!>        tl_cff3=(0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*tl_cff2
-!>
+!^        tl_cff3=(0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*tl_cff2
+!^
           ad_cff2=ad_cff2+                                              &
      &            (0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*ad_cff3
           ad_cff3=0.0_r8
-!>        tl_cff2=vonKar*vonKar*2.0_r8*cff1*tl_cff1
-!>
+!^        tl_cff2=vonKar*vonKar*2.0_r8*cff1*tl_cff1
+!^
           ad_cff1=ad_cff1+vonKar*vonKar*2.0_r8*cff1*ad_cff2
           ad_cff2=0.0_r8
-!>        tl_cff1=-cff1*cff1*(tl_z_r(i,j,1)-tl_z_w(i,j,0))/             &
-!>   &                       (z_r(i,j,1)-z_w(i,j,0))
-!>
+!^        tl_cff1=-cff1*cff1*(tl_z_r(i,j,1)-tl_z_w(i,j,0))/             &
+!^   &                       (z_r(i,j,1)-z_w(i,j,0))
+!^
           adfac=-cff1*cff1*ad_cff1/(z_r(i,j,1)-z_w(i,j,0))
           ad_z_r(i,j,1)=ad_z_r(i,j,1)+adfac
           ad_z_w(i,j,0)=ad_z_w(i,j,0)-adfac
@@ -574,32 +575,32 @@
      &                  u(i  ,j-1,1,nrhs)+                              &
      &                  u(i+1,j-1,1,nrhs))
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
-!>        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
-!>   &                  (tl_v(i,j,1,nrhs)*cff2+                         &
-!>   &                   v(i,j,1,nrhs)*tl_cff2)
-!>
+!^        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
+!^   &                  (tl_v(i,j,1,nrhs)*cff2+                         &
+!^   &                   v(i,j,1,nrhs)*tl_cff2)
+!^
           adfac=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                     &
      &          ad_bvstr(i,j)
           ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*v(i,j,1,nrhs)
           ad_bvstr(i,j)=0.0_r8
           IF (cff2.ne.0.0_r8) THEN
-!>          tl_cff2=(cff1*tl_cff1+v(i,j,1,nrhs)*tl_v(i,j,1,nrhs))/cff2
-!>
+!^          tl_cff2=(cff1*tl_cff1+v(i,j,1,nrhs)*tl_v(i,j,1,nrhs))/cff2
+!^
             adfac=ad_cff2/cff2
             ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+adfac*v(i,j,1,nrhs)
             ad_cff1=ad_cff1+adfac*cff1
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_u(i  ,j  ,1,nrhs)+                        &
-!>   &                     tl_u(i+1,j  ,1,nrhs)+                        &
-!>   &                     tl_u(i  ,j-1,1,nrhs)+                        &
-!>   &                     tl_u(i+1,j-1,1,nrhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_u(i  ,j  ,1,nrhs)+                        &
+!^   &                     tl_u(i+1,j  ,1,nrhs)+                        &
+!^   &                     tl_u(i  ,j-1,1,nrhs)+                        &
+!^   &                     tl_u(i+1,j-1,1,nrhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_u(i  ,j-1,1,nrhs)=ad_u(i  ,j-1,1,nrhs)+adfac
           ad_u(i+1,j-1,1,nrhs)=ad_u(i+1,j-1,1,nrhs)+adfac
@@ -615,32 +616,32 @@
      &                  v(i-1,j  ,1,nrhs)+                              &
      &                  v(i-1,j+1,1,nrhs))
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
-!>        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
-!>   &                  (tl_u(i,j,1,nrhs)*cff2+                         &
-!>   &                   u(i,j,1,nrhs)*tl_cff2)
-!>
+!^        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
+!^   &                  (tl_u(i,j,1,nrhs)*cff2+                         &
+!^   &                   u(i,j,1,nrhs)*tl_cff2)
+!^
           adfac=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                     &
      &          ad_bustr(i,j)
           ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*u(i,j,1,nrhs)
           ad_bustr(i,j)=0.0_r8
           IF (cff2.ne.0.0_r8) THEN
-!>          tl_cff2=(u(i,j,1,nrhs)*tl_u(i,j,1,nrhs)+cff1*tl_cff1)/cff2
-!>
+!^          tl_cff2=(u(i,j,1,nrhs)*tl_u(i,j,1,nrhs)+cff1*tl_cff1)/cff2
+!^
             adfac=ad_cff2/cff2
             ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+adfac*u(i,j,1,nrhs)
             ad_cff1=ad_cff1+adfac*cff1
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_v(i  ,j  ,1,nrhs)+                        &
-!>   &                     tl_v(i  ,j+1,1,nrhs)+                        &
-!>   &                     tl_v(i-1,j  ,1,nrhs)+                        &
-!>   &                     tl_v(i-1,j+1,1,nrhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_v(i  ,j  ,1,nrhs)+                        &
+!^   &                     tl_v(i  ,j+1,1,nrhs)+                        &
+!^   &                     tl_v(i-1,j  ,1,nrhs)+                        &
+!^   &                     tl_v(i-1,j+1,1,nrhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_v(i-1,j  ,1,nrhs)=ad_v(i-1,j  ,1,nrhs)+adfac
           ad_v(i  ,j  ,1,nrhs)=ad_v(i  ,j  ,1,nrhs)+adfac
@@ -655,9 +656,9 @@
 !
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
-!>   &                  tl_v(i,j,1,nrhs)
-!>
+!^        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!^   &                  tl_v(i,j,1,nrhs)
+!^
           ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+                            &
      &                     0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
      &                     ad_bvstr(i,j)
@@ -666,9 +667,9 @@
       END DO
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
-!>   &                  tl_u(i,j,1,nrhs)
-!>
+!^        tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+!^   &                  tl_u(i,j,1,nrhs)
+!^
           ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+                            &
      &                     0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
      &                     ad_bustr(i,j)
@@ -689,29 +690,29 @@
 !  purposes only.
 !
 #   ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_sustr, tl_svstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_sustr, tl_svstr)
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_sustr, ad_svstr)
 #   endif
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_sustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_sustr)
+!^
       CALL ad_bc_u2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_sustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_svstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_svstr)
+!^
       CALL ad_bc_v2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_svstr)
@@ -736,13 +737,13 @@
      &                    u(i  ,j-1,N(ng),nrhs)+                        &
      &                    u(i+1,j-1,N(ng),nrhs))
      &      cff2=SQRT(cff1*cff1+v(i,j,N(ng),nrhs)*v(i,j,N(ng),nrhs))
-!>          tl_svstr(i,j)=-0.5_r8*                                      &
-!>   &                    ((tl_wrk(i,j-1)+tl_wrk(i,j))*                 &
-!>   &                     v(i,j,N(ng),nrhs)*cff2+                      &
-!>   &                     (wrk(i,j-1)+wrk(i,j))*                       &
-!>   &                     (tl_v(i,j,N(ng),nrhs)*cff2+                  &
-!>   &                      v(i,j,N(ng),nrhs)*tl_cff2))
-!>
+!^          tl_svstr(i,j)=-0.5_r8*                                      &
+!^   &                    ((tl_wrk(i,j-1)+tl_wrk(i,j))*                 &
+!^   &                     v(i,j,N(ng),nrhs)*cff2+                      &
+!^   &                     (wrk(i,j-1)+wrk(i,j))*                       &
+!^   &                     (tl_v(i,j,N(ng),nrhs)*cff2+                  &
+!^   &                      v(i,j,N(ng),nrhs)*tl_cff2))
+!^
             adfac=-0.5_r8*ad_svstr(i,j)
             adfac1=adfac*v(i,j,N(ng),nrhs)*cff2
             adfac2=adfac*(wrk(i,j-1)+wrk(i,j))
@@ -752,24 +753,24 @@
             ad_cff2=ad_cff2+adfac2*v(i,j,N(ng),nrhs)
             ad_svstr(i,j)=0.0_r8
             IF (cff2.ne.0.0_r8) THEN
-!>            tl_cff2=(cff1*tl_cff1+                                    &
-!>   &                 v(i,j,N(ng),nrhs)*tl_v(i,j,N(ng),nrhs))/cff2
-!>
+!^            tl_cff2=(cff1*tl_cff1+                                    &
+!^   &                 v(i,j,N(ng),nrhs)*tl_v(i,j,N(ng),nrhs))/cff2
+!^
               adfac=ad_cff2/cff2
               ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)+                &
      &                             adfac*v(i,j,N(ng),nrhs)
               ad_cff1=ad_cff1+adfac*cff1
               ad_cff2=0.0_r8
             ELSE
-!>            tl_cff2=0.0_r8
-!>
+!^            tl_cff2=0.0_r8
+!^
               ad_cff2=0.0_r8
             END IF
-!>          tl_cff1=0.25_r8*(tl_u(i  ,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_u(i+1,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_u(i  ,j-1,N(ng),nrhs)+                  &
-!>   &                       tl_u(i+1,j-1,N(ng),nrhs))
-!>
+!^          tl_cff1=0.25_r8*(tl_u(i  ,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_u(i+1,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_u(i  ,j-1,N(ng),nrhs)+                  &
+!^   &                       tl_u(i+1,j-1,N(ng),nrhs))
+!^
             adfac=0.25_r8*ad_cff1
             ad_u(i  ,j-1,N(ng),nrhs)=ad_u(i  ,j-1,N(ng),nrhs)+adfac
             ad_u(i+1,j-1,N(ng),nrhs)=ad_u(i+1,j-1,N(ng),nrhs)+adfac
@@ -787,13 +788,13 @@
      &                    v(i-1,j  ,N(ng),nrhs)+                        &
      &                    v(i-1,j+1,N(ng),nrhs))
             cff2=SQRT(u(i,j,N(ng),nrhs)*u(i,j,N(ng),nrhs)+cff1*cff1)
-!>          tl_sustr(i,j)=-0.5_r8*                                      &
-!>   &                    ((tl_wrk(i-1,j)+tl_wrk(i,j))*                 &
-!>   &                     u(i,j,N(ng),nrhs)*cff2+                      &
-!>   &                     (wrk(i-1,j)+wrk(i,j))*                       &
-!>   &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
-!>   &                      u(i,j,N(ng),nrhs)*tl_cff2))
-!>
+!^          tl_sustr(i,j)=-0.5_r8*                                      &
+!^   &                    ((tl_wrk(i-1,j)+tl_wrk(i,j))*                 &
+!^   &                     u(i,j,N(ng),nrhs)*cff2+                      &
+!^   &                     (wrk(i-1,j)+wrk(i,j))*                       &
+!^   &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
+!^   &                      u(i,j,N(ng),nrhs)*tl_cff2))
+!^
             adfac=-0.5_r8*ad_sustr(i,j)
             adfac1=adfac*u(i,j,N(ng),nrhs)*cff2
             adfac2=adfac*(wrk(i-1,j)+wrk(i,j))
@@ -803,24 +804,24 @@
             ad_cff2=ad_cff2+adfac2*u(i,j,N(ng),nrhs)
             ad_sustr(i,j)=0.0_r8
             IF (cff2.ne.0.0_r8) THEN
-!>            tl_cff2=(u(i,j,N(ng),nrhs)*tl_u(i,j,N(ng),nrhs)+          &
-!>   &                 cff1*tl_cff1)/cff2
-!>
+!^            tl_cff2=(u(i,j,N(ng),nrhs)*tl_u(i,j,N(ng),nrhs)+          &
+!^   &                 cff1*tl_cff1)/cff2
+!^
               adfac=ad_cff2/cff2
               ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)+                &
      &                             adfac*u(i,j,N(ng),nrhs)
               ad_cff1=ad_cff1+adfac*cff1
               ad_cff2=0.0_r8
             ELSE
-!>            tl_cff2=0.0_r8
-!>
+!^            tl_cff2=0.0_r8
+!^
               ad_cff2=0.0_r8
             END IF
-!>          tl_cff1=0.25_r8*(tl_v(i  ,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_v(i  ,j+1,N(ng),nrhs)+                  &
-!>   &                       tl_v(i-1,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_v(i-1,j+1,N(ng),nrhs))
-!>
+!^          tl_cff1=0.25_r8*(tl_v(i  ,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_v(i  ,j+1,N(ng),nrhs)+                  &
+!^   &                       tl_v(i-1,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_v(i-1,j+1,N(ng),nrhs))
+!^
             adfac=0.25_r8*ad_cff1
             ad_v(i-1,j  ,N(ng),nrhs)=ad_v(i-1,j  ,N(ng),nrhs)+adfac
             ad_v(i  ,j  ,N(ng),nrhs)=ad_v(i  ,j  ,N(ng),nrhs)+adfac
@@ -836,23 +837,23 @@
           cff2=vonKar*vonKar*cff1*cff1
           cff3=MAX(Cdb_min,cff2)
           wrk(i,j)=MIN(Cdb_max,cff3)
-!>        tl_wrk(i,j)=(0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*tl_cff3
-!>
+!^        tl_wrk(i,j)=(0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*tl_cff3
+!^
           ad_cff3=ad_cff3+                                              &
      &            (0.5_r8-SIGN(0.5_r8,cff3-Cdb_max))*ad_wrk(i,j)
           ad_wrk(i,j)=0.0_r8
-!>        tl_cff3=(0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*tl_cff2
-!>
+!^        tl_cff3=(0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*tl_cff2
+!^
           ad_cff2=ad_cff2+                                              &
      &            (0.5_r8-SIGN(0.5_r8,Cdb_min-cff2))*ad_cff3
           ad_cff3=0.0_r8
-!>        tl_cff2=vonKar*vonKar*2.0_r8*cff1*tl_cff1
-!>
+!^        tl_cff2=vonKar*vonKar*2.0_r8*cff1*tl_cff1
+!^
           ad_cff1=ad_cff1+vonKar*vonKar*2.0_r8*cff1*ad_cff2
           ad_cff2=0.0_r8
-!>        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)))/     &
-!>   &                       (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
-!>
+!^        tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)))/     &
+!^   &                       (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
+!^
           adfac=-cff1*cff1*ad_cff1/(z_w(i,j,N(ng))-z_r(i,j,N(ng)))
           ad_z_r(i,j,N(ng))=ad_z_r(i,j,N(ng))-adfac
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac
@@ -871,33 +872,33 @@
      &                    u(i  ,j-1,N(ng),nrhs)+                        &
      &                    u(i+1,j-1,N(ng),nrhs))
             cff2=SQRT(cff1*cff1+v(i,j,N(ng),nrhs)*v(i,j,N(ng),nrhs))
-!>          tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
-!>   &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
-!>   &                     v(i,j,N(ng),nrhs)*tl_cff2)
-!>
+!^          tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
+!^   &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
+!^   &                     v(i,j,N(ng),nrhs)*tl_cff2)
+!^
             adfac=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*ad_svstr(i,j)
             ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)+adfac*cff2
             ad_cff2=ad_cff2+adfac*v(i,j,N(ng),nrhs)
             ad_svstr(i,j)=0.0_r8
             IF (cff2.ne.0.0_r8) THEN
-!>            tl_cff2=(cff1*tl_cff1+                                    &
-!>   &                 v(i,j,N(ng),nrhs)*tl_v(i,j,N(ng),nrhs))/cff2
-!>
+!^            tl_cff2=(cff1*tl_cff1+                                    &
+!^   &                 v(i,j,N(ng),nrhs)*tl_v(i,j,N(ng),nrhs))/cff2
+!^
               adfac=ad_cff2/cff2
               ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)+                &
      &                             adfac*v(i,j,N(ng),nrhs)
               ad_cff1=ad_cff1+adfac*cff1
               ad_cff2=0.0_r8
             ELSE
-!>            tl_cff2=0.0_r8
-!>
+!^            tl_cff2=0.0_r8
+!^
               ad_cff2=0.0_r8
             END IF
-!>          tl_cff1=0.25_r8*(tl_u(i  ,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_u(i+1,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_u(i  ,j-1,N(ng),nrhs)+                  &
-!>   &                       tl_u(i+1,j-1,N(ng),nrhs))
-!>
+!^          tl_cff1=0.25_r8*(tl_u(i  ,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_u(i+1,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_u(i  ,j-1,N(ng),nrhs)+                  &
+!^   &                       tl_u(i+1,j-1,N(ng),nrhs))
+!^
             adfac=0.25_r8*ad_cff1
             ad_u(i  ,j-1,N(ng),nrhs)=ad_u(i  ,j-1,N(ng),nrhs)+adfac
             ad_u(i+1,j-1,N(ng),nrhs)=ad_u(i+1,j-1,N(ng),nrhs)+adfac
@@ -915,33 +916,33 @@
      &                    v(i-1,j  ,N(ng),nrhs)+                        &
      &                    v(i-1,j+1,N(ng),nrhs))
             cff2=SQRT(u(i,j,N(ng),nrhs)*u(i,j,N(ng),nrhs)+cff1*cff1)
-!>          tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
-!>   &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
-!>   &                      u(i,j,N(ng),nrhs)*tl_cff2)
-!>
+!^          tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
+!^   &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
+!^   &                      u(i,j,N(ng),nrhs)*tl_cff2)
+!^
             adfac=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*ad_sustr(i,j)
             ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)+adfac*cff2
             ad_cff2=ad_cff2+adfac*u(i,j,N(ng),nrhs)
             ad_sustr(i,j)=0.0_r8
             IF (cff2.ne.0.0_r8) THEN
-!>            tl_cff2=(u(i,j,N(ng),nrhs)*tl_u(i,j,N(ng),nrhs)+          &
-!>   &                 cff1*tl_cff1)/cff2
-!>
+!^            tl_cff2=(u(i,j,N(ng),nrhs)*tl_u(i,j,N(ng),nrhs)+          &
+!^   &                 cff1*tl_cff1)/cff2
+!^
               adfac=ad_cff2/cff2
               ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)+                &
      &                             adfac*u(i,j,N(ng),nrhs)
               ad_cff1=ad_cff1+adfac*cff1
               ad_cff2=0.0_r8
             ELSE
-!>            tl_cff2=0.0_r8
-!>
+!^            tl_cff2=0.0_r8
+!^
               ad_cff2=0.0_r8
             END IF
-!>          tl_cff1=0.25_r8*(tl_v(i  ,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_v(i  ,j+1,N(ng),nrhs)+                  &
-!>   &                       tl_v(i-1,j  ,N(ng),nrhs)+                  &
-!>   &                       tl_v(i-1,j+1,N(ng),nrhs))
-!>
+!^          tl_cff1=0.25_r8*(tl_v(i  ,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_v(i  ,j+1,N(ng),nrhs)+                  &
+!^   &                       tl_v(i-1,j  ,N(ng),nrhs)+                  &
+!^   &                       tl_v(i-1,j+1,N(ng),nrhs))
+!^
             adfac=0.25_r8*ad_cff1
             ad_v(i-1,j  ,N(ng),nrhs)=ad_v(i-1,j  ,N(ng),nrhs)+adfac
             ad_v(i  ,j  ,N(ng),nrhs)=ad_v(i  ,j  ,N(ng),nrhs)+adfac
@@ -958,9 +959,9 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          tl_svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
-!>   &                    tl_v(i,j,N(ng),nrhs)
-!>
+!^          tl_svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
+!^   &                    tl_v(i,j,N(ng),nrhs)
+!^
             ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)-                  &
      &                           0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*      &
      &                           ad_svstr(i,j)
@@ -971,9 +972,9 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          tl_sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
-!>   &                    tl_u(i,j,N(ng),nrhs)
-!>
+!^          tl_sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
+!^   &                    tl_u(i,j,N(ng),nrhs)
+!^
             ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)-                  &
      &                           0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*      &
      &                           ad_sustr(i,j)
@@ -985,8 +986,8 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          tl_svstr(i,j)=0.0_r8
-!>
+!^          tl_svstr(i,j)=0.0_r8
+!^
             ad_svstr(i,j)=0.0_r8
           END IF
         END DO
@@ -994,8 +995,8 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          tl_sustr(i,j)=0.0_r8
-!>
+!^          tl_sustr(i,j)=0.0_r8
+!^
             ad_sustr(i,j)=0.0_r8
           END IF
         END DO
@@ -1020,8 +1021,8 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             IF (zice(i,j).ne.0.0_r8) THEN
-!>            tl_stflx(i,j,itrc)=0.0_r8
-!>
+!^            tl_stflx(i,j,itrc)=0.0_r8
+!^
               ad_stflx(i,j,itrc)=0.0_r8
             END IF
           END DO
@@ -1038,11 +1039,11 @@
       DO itrc=NAT+1,NT(ng)
         DO j=JstrR,JendR
           DO i=IstrR,IendR
-!>          tl_btflx(i,j,itrc)=0.0_r8
-!>
+!^          tl_btflx(i,j,itrc)=0.0_r8
+!^
             ad_btflx(i,j,itrc)=0.0_r8
-!>          tl_stflx(i,j,itrc)=0.0_r8
-!>
+!^          tl_stflx(i,j,itrc)=0.0_r8
+!^
             ad_stflx(i,j,itrc)=0.0_r8
           END DO
         END DO
@@ -1058,9 +1059,9 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           EmP=stflux(i,j,isalt)
-!>        tl_btflx(i,j,isalt)=btflx(i,j,isalt)*                         &
-!>   &                        tl_t(i,j,1,nrhs,isalt)
-!>
+!^        tl_btflx(i,j,isalt)=btflx(i,j,isalt)*                         &
+!^   &                        tl_t(i,j,1,nrhs,isalt)
+!^
           ad_t(i,j,1,nrhs,isalt)=ad_t(i,j,1,nrhs,isalt)+                &
      &                           btflx(i,j,isalt)*ad_btflx(i,j,isalt)
 #   if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
@@ -1068,14 +1069,14 @@
           ad_btflx(i,j,isalt)=0.0_r8
 #   endif
 #   if defined SCORRECTION
-!>        tl_stflx(i,j,isalt)=(EmP*tl_t(i,j,N(ng),nrhs,isalt)+          &
-!>   &                         tl_EmP*t(i,j,N(ng),nrhs,isalt))-         &
-!>   &                        Tnudg(isalt,ng)*                          &
-!>   &                        (tl_Hz(i,j,N(ng))*                        &
-!>   &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
-!>   &                         Hz(i,j,N(ng))*                           &
-!>   &                         tl_t(i,j,N(ng),nrhs,isalt))
-!>
+!^        tl_stflx(i,j,isalt)=(EmP*tl_t(i,j,N(ng),nrhs,isalt)+          &
+!^   &                         tl_EmP*t(i,j,N(ng),nrhs,isalt))-         &
+!^   &                        Tnudg(isalt,ng)*                          &
+!^   &                        (tl_Hz(i,j,N(ng))*                        &
+!^   &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
+!^   &                         Hz(i,j,N(ng))*                           &
+!^   &                         tl_t(i,j,N(ng),nrhs,isalt))
+!^
           adfac=Tnudg(isalt,ng)*ad_stflx(i,j,isalt)
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))-                            &
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))*adfac
@@ -1091,12 +1092,12 @@
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
 #   elif defined SRELAXATION
-!>        tl_stflx(i,j,isalt)=-Tnudg(isalt,ng)*                         &
-!>   &                        (tl_Hz(i,j,N(ng))*                        &
-!>   &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
-!>   &                         Hz(i,j,N(ng))*                           &
-!>   &                         tl_t(i,j,N(ng),nrhs,isalt))
-!>
+!^        tl_stflx(i,j,isalt)=-Tnudg(isalt,ng)*                         &
+!^   &                        (tl_Hz(i,j,N(ng))*                        &
+!^   &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
+!^   &                         Hz(i,j,N(ng))*                           &
+!^   &                         tl_t(i,j,N(ng),nrhs,isalt))
+!^
           adfac=-Tnudg(isalt,ng)*ad_stflx(i,j,isalt)
           ad_Hz(i,j,N(ng))=ad_Hz(i,j,N(ng))+                            &
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))*adfac
@@ -1108,9 +1109,9 @@
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
 #   else
-!>        tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
-!>   &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)
-!>
+!^        tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
+!^   &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)
+!^
           ad_t(i,j,N(ng),nrhs,isalt)=ad_t(i,j,N(ng),nrhs,isalt)+        &
      &                               EmP*ad_stflx(i,j,isalt)
           ad_EmP=ad_EmP+                                                &
@@ -1121,8 +1122,8 @@
           ad_stflx(i,j,isalt)=0.0_r8
 #    endif
 #   endif
-!>        tl_EmP=0.0_r8
-!>
+!^        tl_EmP=0.0_r8
+!^
           ad_EmP=0.0_r8
         END DO
       END DO
@@ -1151,19 +1152,19 @@
         DO i=IstrR,IendR
           cff2=stflx(i,j,itemp)
           cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,cff1-t(i,j,N(ng),nrhs,itemp)))
-!>        tl_stflx(i,j,itemp)=(1.0_r8-                                  &
-!>   &                         cff3*0.5_r8*(1.0_r8-SIGN(1.0_r8,cff2)))* &
-!>   &                        tl_cff2
-!>
+!^        tl_stflx(i,j,itemp)=(1.0_r8-                                  &
+!^   &                         cff3*0.5_r8*(1.0_r8-SIGN(1.0_r8,cff2)))* &
+!^   &                        tl_cff2
+!^
           ad_cff2=ad_cff2+                                              &
      &            (1.0_r8-cff3*0.5_r8*(1.0_r8-SIGN(1.0_r8,cff2)))*      &
      &            ad_stflx(i,j,itemp)
           ad_stflx(i,j,itemp)=0.0_r8
-!>        tl_cff3=0.5_r8*SIGN(1.0_r8, cff1-t(i,j,N(ng),nrhs,itemp))*0.0
-!>        tl_cff3=0.0_r8
-!>
-!>        tl_cff2=tl_stflx(i,j,itemp)
-!>
+!^        tl_cff3=0.5_r8*SIGN(1.0_r8, cff1-t(i,j,N(ng),nrhs,itemp))*0.0
+!^        tl_cff3=0.0_r8
+!^
+!^        tl_cff2=tl_stflx(i,j,itemp)
+!^
           ad_stflx(i,j,itemp)=ad_stflx(i,j,itemp)+ad_cff2
           ad_cff2=0.0_r8
         END DO
@@ -1180,9 +1181,9 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)+                      &
-!>   &                        dqdt(i,j)*tl_t(i,j,N(ng),nrhs,itemp)
-!>
+!^        tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)+                      &
+!^   &                        dqdt(i,j)*tl_t(i,j,N(ng),nrhs,itemp)
+!^
           ad_t(i,j,N(ng),nrhs,itemp)=ad_t(i,j,N(ng),nrhs,itemp)+        &
      &                               dqdt(i,j)*ad_stflx(i,j,itemp)
 #   if !(defined ADJUST_STFLUX          || defined AD_SENSITIVITY   || \
@@ -1210,11 +1211,11 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-!>        tl_btflx(i,j,itemp)=0.0_r8                ! not needed in TLM
-!>
+!^        tl_btflx(i,j,itemp)=0.0_r8                ! not needed in TLM
+!^
 !!        ad_btflx(i,j,itemp)=0.0_r8                ! not needed in ADM
-!>        tl_stflx(i,j,itemp)=0.0_r8                ! not needed in TLM
-!>
+!^        tl_stflx(i,j,itemp)=0.0_r8                ! not needed in TLM
+!^
 !!        ad_stflx(i,j,itemp)=0.0_r8                ! not needed in ADM
         END DO
       END DO
@@ -1358,29 +1359,29 @@
 !  Apply boundary conditions.
 !
 #   ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_bustr, tl_bvstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_bustr, tl_bvstr)
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bustr, ad_bvstr)
 #   endif
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_bvstr)
-!>
+!^    CALL bc_v2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_bvstr)
+!^
       CALL ad_bc_v2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bvstr)
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_bustr)
-!>
+!^    CALL bc_u2d_tile (ng, tile,                                       &
+!^   &                  LBi, UBi, LBj, UBj,                             &
+!^   &                  tl_bustr)
+!^
       CALL ad_bc_u2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bustr)
@@ -1404,9 +1405,9 @@
 !
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
-!>   &                  tl_vbar(i,j,krhs)
-!>
+!^        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!^   &                  tl_vbar(i,j,krhs)
+!^
           ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+                          &
      &                      0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*           &
      &                      ad_bvstr(i,j)
@@ -1415,9 +1416,9 @@
       END DO
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        tl_bustr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
-!>   &                  tl_ubar(i,j,krhs)
-!>
+!^        tl_bustr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!^   &                  tl_ubar(i,j,krhs)
+!^
           ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+                          &
      &                      0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*           &
      &                      ad_bustr(i,j)
@@ -1435,32 +1436,32 @@
      &                  ubar(i  ,j-1,krhs)+                             &
      &                  ubar(i+1,j-1,krhs))
           cff2=SQRT(cff1*cff1+vbar(i,j,krhs)*vbar(i,j,krhs))
-!>        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
-!>   &                  (tl_vbar(i,j,krhs)*cff2+                        &
-!>   &                   vbar(i,j,krhs)*tl_cff2)
-!>
+!^        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
+!^   &                  (tl_vbar(i,j,krhs)*cff2+                        &
+!^   &                   vbar(i,j,krhs)*tl_cff2)
+!^
           adfac=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*ad_bvstr(i,j)
           ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+adfac*cff2
           ad_cff2=ad_cff2+vbar(i,j,krhs)*adfac
           ad_bvstr(i,j)=0.0_r8
           IF (cff2.ne.0.0_r8) THEN
-!>          tl_cff2=(cff1*tl_cff1+vbar(i,j,krhs)*tl_vbar(i,j,krhs))/cff2
-!>
+!^          tl_cff2=(cff1*tl_cff1+vbar(i,j,krhs)*tl_vbar(i,j,krhs))/cff2
+!^
             adfac=ad_cff2/cff2
             ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+                        &
      &                        adfac*vbar(i,j,krhs)
             ad_cff1=cff1*adfac
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_ubar(i  ,j  ,krhs)+                       &
-!>   &                     tl_ubar(i+1,j  ,krhs)+                       &
-!>   &                     tl_ubar(i  ,j-1,krhs)+                       &
-!>   &                     tl_ubar(i+1,j-1,krhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_ubar(i  ,j  ,krhs)+                       &
+!^   &                     tl_ubar(i+1,j  ,krhs)+                       &
+!^   &                     tl_ubar(i  ,j-1,krhs)+                       &
+!^   &                     tl_ubar(i+1,j-1,krhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_ubar(i  ,j-1,krhs)=ad_ubar(i  ,j-1,krhs)+adfac
           ad_ubar(i+1,j-1,krhs)=ad_ubar(i+1,j-1,krhs)+adfac
@@ -1476,32 +1477,32 @@
      &                  vbar(i-1,j  ,krhs)+                             &
      &                  vbar(i-1,j+1,krhs))
           cff2=SQRT(ubar(i,j,krhs)*ubar(i,j,krhs)+cff1*cff1)
-!>        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
-!>   &                  (tl_ubar(i,j,krhs)*cff2+                        &
-!>   &                   ubar(i,j,krhs)*tl_cff2)
-!>
+!^        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
+!^   &                  (tl_ubar(i,j,krhs)*cff2+                        &
+!^   &                   ubar(i,j,krhs)*tl_cff2)
+!^
           adfac=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*ad_bustr(i,j)
           ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*ubar(i,j,krhs)
           ad_bustr(i,j)=0.0_r8
           IF (cff2.ne.0.0_r8) THEN
-!>          tl_cff2=(ubar(i,j,krhs)*tl_ubar(i,j,krhs)+cff1*tl_cff1)/cff2
-!>
+!^          tl_cff2=(ubar(i,j,krhs)*tl_ubar(i,j,krhs)+cff1*tl_cff1)/cff2
+!^
             adfac=ad_cff2/cff2
             ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+                        &
      &                        adfac*ubar(i,j,krhs)
             ad_cff1=ad_cff1+adfac*cff1
             ad_cff2=0.0_r8
           ELSE
-!>          tl_cff2=0.0_r8
-!>
+!^          tl_cff2=0.0_r8
+!^
             ad_cff2=0.0_r8
           END IF
-!>        tl_cff1=0.25_r8*(tl_vbar(i  ,j  ,krhs)+                       &
-!>   &                     tl_vbar(i  ,j+1,krhs)+                       &
-!>   &                     tl_vbar(i-1,j  ,krhs)+                       &
-!>   &                     tl_vbar(i-1,j+1,krhs))
-!>
+!^        tl_cff1=0.25_r8*(tl_vbar(i  ,j  ,krhs)+                       &
+!^   &                     tl_vbar(i  ,j+1,krhs)+                       &
+!^   &                     tl_vbar(i-1,j  ,krhs)+                       &
+!^   &                     tl_vbar(i-1,j+1,krhs))
+!^
           adfac=0.25_r8*ad_cff1
           ad_vbar(i-1,j  ,krhs)=ad_vbar(i-1,j  ,krhs)+adfac
           ad_vbar(i  ,j  ,krhs)=ad_vbar(i  ,j  ,krhs)+adfac

@@ -1,35 +1,21 @@
 #include "cppdefs.h"
 
-      MODULE ad_t3dmix_mod
-
 #ifdef ADJOINT
 # if !defined TS_FIXED && defined SOLVE3D &&  \
      (defined TS_DIF2  || defined TS_DIF4)
-
-!
-!svn $Id: ad_t3dmix.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!  This routine computes adjoint horizontal mixing of tracers.         !
-!                                                                      !
-!=======================================================================
-!
-      implicit none
-
-      PRIVATE
-#  ifdef TS_DIF2
-      PUBLIC ad_t3dmix2
-#  endif
-#  ifdef TS_DIF4
-      PUBLIC ad_t3dmix4
-#  endif
-
-      CONTAINS
-
+!!
+!!git $Id$
+!!svn $Id: ad_t3dmix.F 1151 2023-02-09 03:08:53Z arango $
+!!================================================= Hernan G. Arango ===
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
+!!   Licensed under a MIT/X style license                              !
+!!   See License_ROMS.txt                                              !
+!!======================================================================
+!!                                                                     !
+!! This routine computes adjoint horizontal mixing of tracers.         !
+!!                                                                     !
+!!======================================================================
+!!
 #  ifdef TS_DIF4
 #   if defined MIX_S_TS
 #    include "ad_t3dmix4_s.h"
@@ -49,8 +35,11 @@
 #    include "ad_t3dmix2_iso.h"
 #   endif
 #  endif
-
 # endif
-#endif
+#else
+      MODULE ad_t3dmix2_mod
+      END MODULE ad_t3dmix2_mod
 
-      END MODULE ad_t3dmix_mod
+      MODULE ad_t3dmix4_mod
+      END MODULE ad_t3dmix4_mod
+#endif

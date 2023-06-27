@@ -21,8 +21,8 @@
 IPLOT=1;            % 1 to make plots, 0 for no plots
 IWRITE=1;           % 1 to write output to netcdf, 0 for no output
 
-% (1) Specify existing Grid File and new tide Forcing Files 
-      Gname='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
+% (1) Specify existing Grid File and new tide Forcing Files
+      Gname='../../Projects/Sandy/Sandy_roms_grid.nc';
       Fname='tide_forc_Sandy.nc';
 
 % (2) Enter Tide start time.  This will be used to calculate the proper phase
@@ -31,14 +31,14 @@ IWRITE=1;           % 1 to write output to netcdf, 0 for no output
       g = [  2012,  10,  28,   0,     0,    0];   % GMT
       disp(['Tidal Start Time =' datestr(g)])
 
-% (3) Select Adcirc or topex/osu tidal constituent data 
+% (3) Select Adcirc 2001 or Adcirc 2012 or topex/osu tidal constituent data 
       adcirc=1
       adcirc2012=0   % you can get this via thredds coded below, or go here: https://www.myroms.org/wiki/Tidal_Forcing
                      % or go here: https://adcirc.org/products/adcirc-tidal-databases/
       osu=0          % go here: https://www.myroms.org/wiki/Tidal_Forcing
       if (adcirc)
-        load c:\work\models\COAWST\Tools\mfiles\tide\adcirc_ec2001v2e_fix_uv.mat
-        load c:\work\models\COAWST\Tools\mfiles\tide\adcirc_ec2001v2e_fix_z.mat
+        load adcirc_ec2001v2e_fix_uv.mat
+        load adcirc_ec2001v2e_fix_z.mat
         names=names';
       end
       if (adcirc2012)
@@ -426,4 +426,7 @@ if (IWRITE),
   ncwrite(Fname,'tide_Cangle',Tide.Cangle);
   ncwrite(Fname,'tide_Cmin',Tide.Cmin);
   ncwrite(Fname,'tide_Cmax',Tide.Cmax);
+% add the tide date
+  add_tide_date (Fname, datenum(g))
 end 
+

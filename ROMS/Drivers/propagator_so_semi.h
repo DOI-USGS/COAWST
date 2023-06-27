@@ -1,11 +1,12 @@
-      SUBROUTINE propagator (RunInterval, state, ad_state)
+      MODULE propagator_mod
 !
-!svn $Id: propagator_so_semi.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: propagator_so_semi.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Stochastic Optimals, Seminorm Estimation:                           !
 !                                                                      !
@@ -19,6 +20,19 @@
 !       analysis system based on the tangent linear and adjoint of a   !
 !       regional ocean model, Ocean Modelling, 7, 227-258.             !
 !                                                                      !
+!=======================================================================
+!
+      USE mod_kinds
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: propagator_so_semi
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE propagator_so_semi (RunInterval, state, ad_state)
 !***********************************************************************
 !
       USE mod_param
@@ -137,4 +151,6 @@
  20   FORMAT (/,a,i2.2,a,i3.3,a,i3.3,/,42x,a,1p,e15.8)
 !
       RETURN
-      END SUBROUTINE propagator
+      END SUBROUTINE propagator_so_semi
+
+      END MODULE propagator_mod

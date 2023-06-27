@@ -2,9 +2,10 @@
       MODULE ad_set_depth_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_set_depth.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_set_depth.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -179,34 +180,34 @@
 !  Exchange boundary information.
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, model, 2,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_z_r, tl_Hz)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 2,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_z_r, tl_Hz)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_z_r, ad_Hz)
-!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_z_w)
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_z_w)
+!^
       CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_z_w)
-!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_h)
-!>
+!^    CALL mp_exchange2d (ng, tile, model, 1,                           &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_h)
+!^
       CALL ad_mp_exchange2d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
@@ -216,31 +217,31 @@
 # endif
 
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_Hz)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_Hz)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_Hz)
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_z_r)
-!>
+!^      CALL exchange_r3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!^   &                          tl_z_r)
+!^
         CALL ad_exchange_r3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
      &                             ad_z_r)
-!>      CALL exchange_w3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-!>   &                          tl_z_w)
-!>
+!^      CALL exchange_w3d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!^   &                          tl_z_w)
+!^
         CALL ad_exchange_w3d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
      &                             ad_z_w)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_h)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_h)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_h)
@@ -273,66 +274,66 @@
               z_w0=cff_w+cff1_w*hwater
               z_r0=cff_r+cff1_r*hwater
 
-!>            tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
-!>
+!^            tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
+!^
               ad_z_w(i,j,k  )=ad_z_w(i,j,k  )+ad_Hz(i,j,k)
               ad_z_w(i,j,k-1)=ad_z_w(i,j,k-1)-ad_Hz(i,j,k)
               ad_Hz(i,j,k)=0.0_r8
-!>            tl_z_r(i,j,k)=tl_z_r0+                                    &
-!>   &                      tl_Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)+         &
-!>   &                      Zt_avg1(i,j)*(tl_z_r0*hinv+z_r0*tl_hinv)
-!>
+!^            tl_z_r(i,j,k)=tl_z_r0+                                    &
+!^   &                      tl_Zt_avg1(i,j)*(1.0_r8+z_r0*hinv)+         &
+!^   &                      Zt_avg1(i,j)*(tl_z_r0*hinv+z_r0*tl_hinv)
+!^
               adfac=Zt_avg1(i,j)*ad_z_r(i,j,k)
               ad_z_r0=ad_z_r0+hinv*adfac+ad_z_r(i,j,k)
               ad_hinv=ad_hinv+z_r0*adfac
               ad_Zt_avg1(i,j)=ad_Zt_avg1(i,j)+                          &
      &                        (1.0_r8+z_r0*hinv)*ad_z_r(i,j,k)
               ad_z_r(i,j,k)=0.0_r8
-!>            tl_z_r0=cff1_r*tl_hwater
-!>
+!^            tl_z_r0=cff1_r*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_r*ad_z_r0
               ad_z_r0=0.0_r8
-!>            tl_z_w(i,j,k)=tl_z_w0+                                    &
-!>   &                      tl_Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)+         &
-!>   &                      Zt_avg1(i,j)*(tl_z_w0*hinv+z_w0*tl_hinv)
-!>
+!^            tl_z_w(i,j,k)=tl_z_w0+                                    &
+!^   &                      tl_Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)+         &
+!^   &                      Zt_avg1(i,j)*(tl_z_w0*hinv+z_w0*tl_hinv)
+!^
               adfac=Zt_avg1(i,j)*ad_z_w(i,j,k)
               ad_z_w0=ad_z_w0+hinv*adfac+ad_z_w(i,j,k)
               ad_hinv=ad_hinv+z_w0*adfac
               ad_Zt_avg1(i,j)=ad_Zt_avg1(i,j)+                          &
      &                        (1.0_r8+z_w0*hinv)*ad_z_w(i,j,k)
               ad_z_w(i,j,k)=0.0_r8
-!>            tl_z_w0=cff1_w*tl_hwater
-!>
+!^            tl_z_w0=cff1_w*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_w*ad_z_w0
               ad_z_w0=0.0_r8
-!>            tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^            tl_hinv=-hinv*hinv*tl_hwater
+!^
               ad_hwater=ad_hwater-hinv*hinv*ad_hinv
               ad_hinv=0.0_r8
-!>            tl_hwater=tl_h(i,j)
-!>
+!^            tl_hwater=tl_h(i,j)
+!^
               ad_h(i,j)=ad_h(i,j)+ad_hwater
               ad_hwater=0.0_r8
             END DO
           END DO
 
           DO i=IstrT,IendT
-!>          tl_z_w(i,j,0)=-tl_h(i,j)
-!>
+!^          tl_z_w(i,j,0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_z_w(i,j,0)
             ad_z_w(i,j,0)=0.0_r8
 # if defined WET_DRY
             IF (h(i,j).eq.0.0_r8) THEN
-!>            tl_h(i,j)=0.0_r8
-!>
+!^            tl_h(i,j)=0.0_r8
+!^
               ad_h(i,j)=0.0_r8
             END IF
 # endif
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-!>          tl_h(i,j)=tl_h(i,j)-                                        &
-!>   &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
-!>
+!^          tl_h(i,j)=tl_h(i,j)-                                        &
+!^   &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
+!^
             ad_bed_thick(i,j,nnew)=ad_bed_thick(i,j,nnew)+              &
      &                             ad_h(i,j)
 
@@ -368,74 +369,74 @@
               hinv=1.0_r8/(hc(ng)+hwater)
               cff2_r=(cff_r+cff1_r*hwater)*hinv
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-!>            tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
-!>
+!^            tl_Hz(i,j,k)=tl_z_w(i,j,k)-tl_z_w(i,j,k-1)
+!^
               ad_z_w(i,j,k  )=ad_z_w(i,j,k  )+ad_Hz(i,j,k)
               ad_z_w(i,j,k-1)=ad_z_w(i,j,k-1)-ad_Hz(i,j,k)
               ad_Hz(i,j,k)=0.0_r8
-!>            tl_z_r(i,j,k)=tl_Zt_avg1(i,j)+                            &
-!>   &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_r+         &
-!>   &                      (Zt_avg1(i,j)+hwater)*tl_cff2_r
-!>
+!^            tl_z_r(i,j,k)=tl_Zt_avg1(i,j)+                            &
+!^   &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_r+         &
+!^   &                      (Zt_avg1(i,j)+hwater)*tl_cff2_r
+!^
               adfac=cff2_r*ad_z_r(i,j,k)
               ad_cff2_r=ad_cff2_r+                                      &
      &                  (Zt_avg1(i,j)+hwater)*ad_z_r(i,j,k)
               ad_hwater=ad_hwater+adfac
               ad_Zt_avg1(i,j)=ad_Zt_avg1(i,j)+ad_z_r(i,j,k)+adfac
               ad_z_r(i,j,k)=0.0_r8
-!>            tl_cff2_r=cff1_r*tl_hwater*hinv+                          &
-!>   &                  (cff_r+cff1_r*hwater)*tl_hinv
-!>
+!^            tl_cff2_r=cff1_r*tl_hwater*hinv+                          &
+!^   &                  (cff_r+cff1_r*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_r+cff1_r*hwater)*ad_cff2_r
               ad_hwater=ad_hwater+                                      &
      &                  cff1_r*hinv*ad_cff2_r
               ad_cff2_r=0.0_r8
-!>            tl_z_w(i,j,k)=tl_Zt_avg1(i,j)+                            &
-!>   &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_w+         &
-!>   &                      (Zt_avg1(i,j)+hwater)*tl_cff2_w
-!>
+!^            tl_z_w(i,j,k)=tl_Zt_avg1(i,j)+                            &
+!^   &                      (tl_Zt_avg1(i,j)+tl_hwater)*cff2_w+         &
+!^   &                      (Zt_avg1(i,j)+hwater)*tl_cff2_w
+!^
               adfac=cff2_w*ad_z_w(i,j,k)
               ad_cff2_w=ad_cff2_w+                                      &
      &                  (Zt_avg1(i,j)+hwater)*ad_z_w(i,j,k)
               ad_hwater=ad_hwater+adfac
               ad_Zt_avg1(i,j)=ad_Zt_avg1(i,j)+ad_z_w(i,j,k)+adfac
               ad_z_w(i,j,k)=0.0_r8
-!>            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
-!>   &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>
+!^            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+!^   &                  (cff_w+cff1_w*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_w+cff1_w*hwater)*ad_cff2_w
               ad_hwater=ad_hwater+                                      &
      &                  cff1_w*hinv*ad_cff2_w
               ad_cff2_w=0.0_r8
-!>            tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^            tl_hinv=-hinv*hinv*tl_hwater
+!^
               ad_hwater=ad_hwater-hinv*hinv*ad_hinv
               ad_hinv=0.0_r8
-!>            tl_hwater=tl_h(i,j)
-!>
+!^            tl_hwater=tl_h(i,j)
+!^
               ad_h(i,j)=ad_h(i,j)+ad_hwater
               ad_hwater=0.0_r8
             END DO
           END DO
 
           DO i=IstrT,IendT
-!>          tl_z_w(i,j,0)=-tl_h(i,j)
-!>
+!^          tl_z_w(i,j,0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_z_w(i,j,0)
             ad_z_w(i,j,0)=0.0_r8
 # if defined WET_DRY
             IF (h(i,j).eq.0.0_r8) THEN
-!>            tl_h(i,j)=0.0_r8
-!>
+!^            tl_h(i,j)=0.0_r8
+!^
               ad_h(i,j)=0.0_r8
             END IF
 # endif
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-!>          tl_h(i,j)=tl_h(i,j)-                                        &
-!>   &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
-!>
+!^          tl_h(i,j)=tl_h(i,j)-                                        &
+!^   &                tl_bed_thick(i,j,nstp)+tl_bed_thick(i,j,nnew)
+!^
             ad_bed_thick(i,j,nnew)=ad_bed_thick(i,j,nnew)+              &
      &                             ad_h(i,j)
 
@@ -560,12 +561,12 @@
 !-----------------------------------------------------------------------
 !
       DO ibry=1,4
-!>      CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
-!>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(ng), NSperiodic(ng),         &
-!>   &                          tl_Hz_bry(:,:,ibry))
-!>
+!^      CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
+!^   &                          LBij, UBij, 1, N(ng),                   &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(ng), NSperiodic(ng),         &
+!^   &                          tl_Hz_bry(:,:,ibry))
+!^
         CALL ad_mp_exchange3d_bry (ng, tile, model, 1, ibry,            &
      &                             LBij, UBij, 1, N(ng),                &
      &                             NghostPoints,                        &
@@ -600,17 +601,17 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-!>            tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,inorth)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,inorth)
               ad_Hz_bry(i,k,inorth)=0.0_r8
-!>            tl_Zw(k)=tl_z_w0+                                         &
-!>   &                 BOUNDARY(ng)%tl_zeta_north(i)*                   &
-!>   &                 (1.0_r8+z_w0*hinv)+                              &
-!>   &                 BOUNDARY(ng)%zeta_north(i)*                      &
-!>   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
-!>
+!^            tl_Zw(k)=tl_z_w0+                                         &
+!^   &                 BOUNDARY(ng)%tl_zeta_north(i)*                   &
+!^   &                 (1.0_r8+z_w0*hinv)+                              &
+!^   &                 BOUNDARY(ng)%zeta_north(i)*                      &
+!^   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
+!^
               adfac=BOUNDARY(ng)%zeta_north(i)*ad_Zw(k)
               ad_z_w0=ad_z_w0+hinv*adfac+ad_Zw(k)
               ad_hinv=ad_hinv+z_w0*adfac
@@ -618,21 +619,21 @@
      &                                        ad_zeta_north(i)+         &
      &                                      (1.0_r8+z_w0*hinv)*ad_Zw(k)
               ad_Zw(k)=0.0_r8
-!>            tl_z_w0=cff1_w*tl_hwater
-!>
+!^            tl_z_w0=cff1_w*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_w*ad_z_w0
               ad_z_w0=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -651,17 +652,17 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-!>            tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,isouth)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,isouth)
               ad_Hz_bry(i,k,isouth)=0.0_r8
-!>            tl_Zw(k)=tl_z_w0+                                         &
-!>   &                 BOUNDARY(ng)%tl_zeta_south(i)*                   &
-!>   &                 (1.0_r8+z_w0*hinv)+                              &
-!>   &                 BOUNDARY(ng)%zeta_south(i)*                      &
-!>   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
-!>
+!^            tl_Zw(k)=tl_z_w0+                                         &
+!^   &                 BOUNDARY(ng)%tl_zeta_south(i)*                   &
+!^   &                 (1.0_r8+z_w0*hinv)+                              &
+!^   &                 BOUNDARY(ng)%zeta_south(i)*                      &
+!^   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
+!^
               adfac=BOUNDARY(ng)%zeta_south(i)*ad_Zw(k)
               ad_z_w0=ad_z_w0+hinv*adfac+ad_Zw(k)
               ad_hinv=ad_hinv+z_w0*adfac
@@ -669,21 +670,21 @@
      &                                        ad_zeta_south(i)+         &
      &                                      (1.0_r8+z_w0*hinv)*ad_Zw(k)
               ad_Zw(k)=0.0_r8
-!>            tl_z_w0=cff1_w*tl_hwater
-!>
+!^            tl_z_w0=cff1_w*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_w*ad_z_w0
               ad_z_w0=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -702,17 +703,17 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-!>            tl_Hz_bry(i,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,ieast)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,ieast)
               ad_Hz_bry(i,k,ieast)=0.0_r8
-!>            tl_Zw(k)=tl_z_w0+                                         &
-!>   &                 BOUNDARY(ng)%tl_zeta_east(j)*                    &
-!>   &                 (1.0_r8+z_w0*hinv)+                              &
-!>   &                 BOUNDARY(ng)%zeta_east(j)*                       &
-!>   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
-!>
+!^            tl_Zw(k)=tl_z_w0+                                         &
+!^   &                 BOUNDARY(ng)%tl_zeta_east(j)*                    &
+!^   &                 (1.0_r8+z_w0*hinv)+                              &
+!^   &                 BOUNDARY(ng)%zeta_east(j)*                       &
+!^   &                 (tl_z_w0*hinv+z_w0*tl_hinv)
+!^
               adfac=BOUNDARY(ng)%zeta_east(j)*ad_Zw(k)
               ad_z_w0=ad_z_w0+hinv*adfac+ad_Zw(k)
               ad_hinv=ad_hinv+z_w0*adfac
@@ -720,21 +721,21 @@
      &                                       ad_zeta_east(j)+           &
      &                                     (1.0_r8+z_w0*hinv)*ad_Zw(k)
               ad_Zw(k)=0.0_r8
-!>            tl_z_w0=cff1_w*tl_hwater
-!>
+!^            tl_z_w0=cff1_w*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_w*ad_z_w0
               ad_z_w0=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -753,17 +754,17 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-!>            tl_Hz_bry(i,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,iwest)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,iwest)
               ad_Hz_bry(i,k,iwest)=0.0_r8
-!>            tl_Zw(k)=tl_z_w0+                                         &
-!>   &                 BOUNDARY(ng)%tl_zeta_west(j)*                    &
-!>   &                 (1.0_r8+z_w0*hinv)+                              &
-!>   &                 BOUNDARY(ng)%zeta_west(j)*                       &
-!>   ^                 (tl_z_w0*hinv+z_w0*tl_hinv)
-!>
+!^            tl_Zw(k)=tl_z_w0+                                         &
+!^   &                 BOUNDARY(ng)%tl_zeta_west(j)*                    &
+!^   &                 (1.0_r8+z_w0*hinv)+                              &
+!^   &                 BOUNDARY(ng)%zeta_west(j)*                       &
+!^   ^                 (tl_z_w0*hinv+z_w0*tl_hinv)
+!^
               adfac=BOUNDARY(ng)%zeta_west(j)*ad_Zw(k)
               ad_z_w0=ad_z_w0+hinv*adfac+ad_Zw(k)
               ad_hinv=ad_hinv+z_w0*adfac
@@ -771,21 +772,21 @@
      &                                       ad_zeta_west(j)+           &
      &                                     (1.0_r8+z_w0*hinv)*ad_Zw(k)
               ad_Zw(k)=0.0_r8
-!>            tl_z_w0=cff1_w*tl_hwater
-!>
+!^            tl_z_w0=cff1_w*tl_hwater
+!^
               ad_hwater=ad_hwater+cff1_w*ad_z_w0
               ad_z_w0=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -817,17 +818,17 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-!>            tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,inorth)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,inorth)
               ad_Hz_bry(i,k,inorth)=0.0_r8
-!>            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)+                   &
-!>   &                 (BOUNDARY(ng)%tl_zeta_north(i)+                  &
-!>   &                  tl_hwater)*cff2_w+                              &
-!>   &                 (BOUNDARY(ng)%zeta_north(i)+                     &
-!>   &                  hwater)*tl_cff2_w
-!>
+!^            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)+                   &
+!^   &                 (BOUNDARY(ng)%tl_zeta_north(i)+                  &
+!^   &                  tl_hwater)*cff2_w+                              &
+!^   &                 (BOUNDARY(ng)%zeta_north(i)+                     &
+!^   &                  hwater)*tl_cff2_w
+!^
               adfac=cff2_w*ad_Zw(k)
               ad_cff2_w=ad_cff2_w+                                      &
      &                  (BOUNDARY(ng)%zeta_north(i)+hwater)*ad_Zw(k)
@@ -836,25 +837,25 @@
      &                                        ad_zeta_north(i)+         &
      &                                      ad_Zw(k)+adfac
               ad_Zw(k)=0.0_r8
-!>            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
-!>   &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>
+!^            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+!^   &                  (cff_w+cff1_w*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_w+cff1_w*hwater)*ad_cff2_w
               ad_hwater=ad_hwater+                                      &
      &                  cff1_w*hinv*ad_cff2_w
               ad_cff2_w=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -873,17 +874,17 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-!>            tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,isouth)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,isouth)
               ad_Hz_bry(i,k,isouth)=0.0_r8
-!>            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)+                   &
-!>   &                 (BOUNDARY(ng)%tl_zeta_south(i)+                  &
-!>   &                  tl_hwater)*cff2_w+                              &
-!>   &                 (BOUNDARY(ng)%zeta_south(i)+                     &
-!>   &                  hwater)*tl_cff2_w
-!>
+!^            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)+                   &
+!^   &                 (BOUNDARY(ng)%tl_zeta_south(i)+                  &
+!^   &                  tl_hwater)*cff2_w+                              &
+!^   &                 (BOUNDARY(ng)%zeta_south(i)+                     &
+!^   &                  hwater)*tl_cff2_w
+!^
               adfac=cff2_w*ad_Zw(k)
               ad_cff2_w=ad_cff2_w+                                      &
      &                  (BOUNDARY(ng)%zeta_south(i)+hwater)*ad_Zw(k)
@@ -892,25 +893,25 @@
      &                                        ad_zeta_south(i)+         &
      &                                      ad_Zw(k)+adfac
               ad_Zw(k)=0.0_r8
-!>            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
-!>   &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>
+!^            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+!^   &                  (cff_w+cff1_w*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_w+cff1_w*hwater)*ad_cff2_w
               ad_hwater=ad_hwater+                                      &
      &                  cff1_w*hinv*ad_cff2_w
               ad_cff2_w=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -929,17 +930,17 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-!>            tl_Hz_bry(i,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,ieast)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,ieast)
               ad_Hz_bry(i,k,ieast)=0.0_r8
-!>            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)+                    &
-!>   &                 (BOUNDARY(ng)%tl_zeta_east(j)+                   &
-!>   &                  tl_hwater)*cff2_w+                              &
-!>   &                 (BOUNDARY(ng)%zeta_east(j)+                      &
-!>   &                  hwater)*tl_cff2_w
-!>
+!^            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)+                    &
+!^   &                 (BOUNDARY(ng)%tl_zeta_east(j)+                   &
+!^   &                  tl_hwater)*cff2_w+                              &
+!^   &                 (BOUNDARY(ng)%zeta_east(j)+                      &
+!^   &                  hwater)*tl_cff2_w
+!^
               adfac=cff2_w*ad_Zw(k)
               ad_cff2_w=ad_cff2_w+                                      &
      &                  (BOUNDARY(ng)%zeta_east(j)+hwater)*ad_Zw(k)
@@ -948,25 +949,25 @@
      &                                       ad_zeta_east(j)+           &
      &                                     ad_Zw(k)+adfac
               ad_Zw(k)=0.0_r8
-!>            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
-!>   &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>
+!^            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+!^   &                  (cff_w+cff1_w*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_w+cff1_w*hwater)*ad_cff2_w
               ad_hwater=ad_hwater+                                      &
      &                  cff1_w*hinv*ad_cff2_w
               ad_cff2_w=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO
@@ -985,17 +986,17 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-!>            tl_Hz_bry(i,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
-!>
+!^            tl_Hz_bry(i,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
+!^
               ad_Zw(k-1)=ad_Zw(k-1)-ad_Hz_bry(i,k,iwest)
               ad_Zw(k  )=ad_Zw(k  )+ad_Hz_bry(i,k,iwest)
               ad_Hz_bry(i,k,iwest)=0.0_r8
-!>            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)+                    &
-!>   &                 (BOUNDARY(ng)%tl_zeta_west(j)+                   &
-!>   &                  tl_hwater)*cff2_w+                              &
-!>   &                 (BOUNDARY(ng)%zeta_west(j)+                      &
-!>   &                  hwater)*tl_cff2_w
-!>
+!^            tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)+                    &
+!^   &                 (BOUNDARY(ng)%tl_zeta_west(j)+                   &
+!^   &                  tl_hwater)*cff2_w+                              &
+!^   &                 (BOUNDARY(ng)%zeta_west(j)+                      &
+!^   &                  hwater)*tl_cff2_w
+!^
               adfac=cff2_w*ad_Zw(k)
               ad_cff2_w=ad_cff2_w+                                      &
      &                  (BOUNDARY(ng)%zeta_west(j)+hwater)*ad_Zw(k)
@@ -1004,25 +1005,25 @@
      &                                       ad_zeta_west(j)+           &
      &                                     ad_Zw(k)+adfac
               ad_Zw(k)=0.0_r8
-!>            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
-!>   &                  (cff_w+cff1_w*hwater)*tl_hinv
-!>
+!^            tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
+!^   &                  (cff_w+cff1_w*hwater)*tl_hinv
+!^
               ad_hinv=ad_hinv+                                          &
      &                (cff_w+cff1_w*hwater)*ad_cff2_w
               ad_hwater=ad_hwater+                                      &
      &                  cff1_w*hinv*ad_cff2_w
               ad_cff2_w=0.0_r8
             END DO
-!>          tl_Zw(0)=-tl_h(i,j)
-!>
+!^          tl_Zw(0)=-tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)-ad_Zw(0)
             ad_Zw(0)=0.0_r8
-!>          tl_hinv=-hinv*hinv*tl_hwater
-!>
+!^          tl_hinv=-hinv*hinv*tl_hwater
+!^
             ad_hwater=ad_hwater-hinv*hinv*ad_hinv
             ad_hinv=0.0_r8
-!>          tl_hwater=tl_h(i,j)
-!>
+!^          tl_hwater=tl_h(i,j)
+!^
             ad_h(i,j)=ad_h(i,j)+ad_hwater
             ad_hwater=0.0_r8
           END DO

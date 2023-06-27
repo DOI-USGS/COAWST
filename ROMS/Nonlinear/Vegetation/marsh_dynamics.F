@@ -55,7 +55,8 @@
 !
 !***********************************************************************
 !
-      USE mod_stepping 
+      USE mod_param
+      USE mod_stepping
       USE mod_scalars
 # if defined MARSH_WAVE_THRUST
       USE marsh_wave_thrust_mod, ONLY : marsh_wave_thrust
@@ -74,9 +75,13 @@
 !
       integer, intent(in) :: ng, tile
 !
-
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 16)
+      CALL wclock_off (ng, iNLM, 16, __LINE__, MyFile)
 # endif
 !
 !***********************************************************************

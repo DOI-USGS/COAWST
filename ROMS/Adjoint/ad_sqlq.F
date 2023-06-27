@@ -5,9 +5,10 @@
 
       SUBROUTINE ad_sqlq (innLoop, a, ad_a, tau, ad_tau, y, ad_y)
 !
-!svn $Id: ad_sqlq.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_sqlq.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -63,8 +64,8 @@
       END DO
 !
       DO ii=innLoop-1,1,-1
-!>      tl_a(ii,ii)=tl_zaii
-!>
+!^      tl_a(ii,ii)=tl_zaii
+!^
         ad_zaii=ad_zaii+ad_a(ii,ii)
         ad_a(ii,ii)=0.0_r8
 !
@@ -86,14 +87,14 @@
           DO j=1,innLoop-jj
             ztemp=-tau(ii)*a(ii,j+jj)
             DO i=1,innLoop-ii
-!>            tl_a(ii+i,j+jj)=tl_a(ii+i,j+jj)+tl_y(i)*ztemp+            &
-!>   &                                        y(i)*tl_ztemp
-!>
+!^            tl_a(ii+i,j+jj)=tl_a(ii+i,j+jj)+tl_y(i)*ztemp+            &
+!^   &                                        y(i)*tl_ztemp
+!^
               ad_ztemp=ad_ztemp+y(i)*ad_a(ii+i,j+jj)
               ad_y(i)=ad_y(i)+ztemp*ad_a(ii+i,j+jj)
             END DO
-!>          tl_ztemp=-tl_tau(ii)*a(ii,j+jj)-tau(ii)*tl_a(ii,j+jj)
-!>
+!^          tl_ztemp=-tl_tau(ii)*a(ii,j+jj)-tau(ii)*tl_a(ii,j+jj)
+!^
             ad_tau(ii)=ad_tau(ii)-a(ii,j+jj)*ad_ztemp
             ad_a(ii,j+jj)=ad_a(ii,j+jj)-tau(ii)*ad_ztemp
             ad_ztemp=0.0_r8
@@ -102,32 +103,32 @@
           DO j=1,innLoop-jj
             ztemp=a(ii,j+jj)
             DO i=1,innLoop-ii
-!>            tl_y(i)=tl_y(i)+tl_ztemp*a(ii+i,j+jj)+                    &
-!>   &                        ztemp*tl_a(ii+i,j+jj)
-!>
+!^            tl_y(i)=tl_y(i)+tl_ztemp*a(ii+i,j+jj)+                    &
+!^   &                        ztemp*tl_a(ii+i,j+jj)
+!^
               ad_ztemp=ad_ztemp+a(ii+i,j+jj)*ad_y(i)
               ad_a(ii+i,j+jj)=ad_a(ii+i,j+jj)+ztemp*ad_y(i)
             END DO
-!>          tl_ztemp=tl_a(ii,j+jj)
-!>
+!^          tl_ztemp=tl_a(ii,j+jj)
+!^
             ad_a(ii,j+jj)=ad_a(ii,j+jj)+ad_ztemp
             ad_ztemp=0.0_r8
           END DO
 !
           DO i=1,innLoop
-!>          tl_y(i)=0.0_r8
+!^          tl_y(i)=0.0_r8
             ad_y(i)=0.0_r8
           END DO
         END IF
-!>      tl_a(ii,ii)=0.0_r8
-!>
+!^      tl_a(ii,ii)=0.0_r8
+!^
         ad_a(ii,ii)=0.0_r8
-!>      tl_zaii=tl_a(ii,ii)
-!>
+!^      tl_zaii=tl_a(ii,ii)
+!^
         ad_a(ii,ii)=ad_a(ii,ii)+ad_zaii
         ad_zaii=0.0_r8
-!>      tl_a(ii,ii)=tl_zbeta
-!>
+!^      tl_a(ii,ii)=tl_zbeta
+!^
         ad_zbeta=ad_zbeta+ad_a(ii,ii)
         ad_a(ii,ii)=0.0_r8
 !
@@ -157,56 +158,56 @@
         DO j=ii+1,innLoop
           arow(j)=a(ii,j)
           a(ii,j)=a(ii,j)/(a(ii,ii)-zbeta)
-!>        tl_a(ii,j)=tl_a(ii,j)/(a(ii,ii)-zbeta)-                       &
-!>   &               (tl_a(ii,ii)-tl_zbeta)*a(ii,j)/(a(ii,ii)-zbeta)
-!>
+!^        tl_a(ii,j)=tl_a(ii,j)/(a(ii,ii)-zbeta)-                       &
+!^   &               (tl_a(ii,ii)-tl_zbeta)*a(ii,j)/(a(ii,ii)-zbeta)
+!^
           adfac=ad_a(ii,j)/(a(ii,ii)-zbeta)
           ad_zbeta=ad_zbeta+a(ii,j)*adfac
           ad_a(ii,ii)=ad_a(ii,ii)-a(ii,j)*adfac
           ad_a(ii,j )=adfac
         END DO
-!>      tl_tau(ii)=(tl_zbeta-tl_a(ii,ii))/zbeta-tl_zbeta*tau(ii)/zbeta
-!>
+!^      tl_tau(ii)=(tl_zbeta-tl_a(ii,ii))/zbeta-tl_zbeta*tau(ii)/zbeta
+!^
         adfac=ad_tau(ii)/zbeta
         ad_zbeta=ad_zbeta+adfac-tau(ii)*adfac
         ad_a(ii,ii)=ad_a(ii,ii)-adfac
         ad_tau(ii)=0.0_r8
-!>      tl_zbeta=-SIGN(1.0_r8,zbeta)*SIGN(1.0_r8,a(ii,ii))*tl_zbeta
-!>
+!^      tl_zbeta=-SIGN(1.0_r8,zbeta)*SIGN(1.0_r8,a(ii,ii))*tl_zbeta
+!^
         ad_zbeta=-SIGN(1.0_r8,zbetas)*SIGN(1.0_r8,a(ii,ii))*ad_zbeta
         IF (zbetas.NE.0.0_r8) THEN
-!>        tl_zbeta=(tl_znorm*znorm+tl_a(ii,ii)*a(ii,ii))/zbetas
-!>
+!^        tl_zbeta=(tl_znorm*znorm+tl_a(ii,ii)*a(ii,ii))/zbetas
+!^
           adfac=ad_zbeta/zbetas
           ad_znorm=ad_znorm+znorm*adfac
           ad_a(ii,ii)=ad_a(ii,ii)+a(ii,ii)*adfac
           ad_zbeta=0.0_r8
         ELSE
-!>        tl_zbeta=0.0_r8
-!>
+!^        tl_zbeta=0.0_r8
+!^
           ad_zbeta=0.0_r8
         END IF
         IF (znorm.NE.0.0_r8) THEN
-!>        tl_znorm=0.5_r8*tl_znorm/znorm
-!>
+!^        tl_znorm=0.5_r8*tl_znorm/znorm
+!^
           ad_znorm=0.5_r8*ad_znorm/znorm
         ELSE
-!>        tl_znorm=0.0_r8
-!>
+!^        tl_znorm=0.0_r8
+!^
           ad_znorm=0.0_r8
         END IF
         DO j=ii+1,innLoop
-!>        tl_znorm=tl_znorm+2.0_r8*a(ii,j)*tl_a(ii,j)
-!>
+!^        tl_znorm=tl_znorm+2.0_r8*a(ii,j)*tl_a(ii,j)
+!^
           ad_a(ii,j)=ad_a(ii,j)+2.0_r8*arow(j)*ad_znorm
         END DO
-!>      tl_znorm=0.0_r8
-!>
+!^      tl_znorm=0.0_r8
+!^
         ad_znorm=0.0_r8
       END DO
       DO i=1,innLoop
-!>      tl_tau(i)=0.0_r8
-!>
+!^      tl_tau(i)=0.0_r8
+!^
         ad_tau(i)=0.0_r8
       END DO
 !

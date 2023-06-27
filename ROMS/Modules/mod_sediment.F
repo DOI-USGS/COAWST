@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-      MODULE mod_sediment
 
 /*
-** svn $Id: mod_sediment.F 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: mod_sediment.F 1151 2023-02-09 03:08:53Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2021 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -40,7 +40,7 @@
 **        sediment_inp.h                                              **
 **                                                                    **
 **   *  Code to assign indices to model variables during the          **
-**      reading of metadata information from "varinfo.dat":           **
+**      reading of metadata information from "varinfo.yaml":          **
 **                                                                    **
 **        sediment_var.h                                              **
 **                                                                    **
@@ -64,6 +64,7 @@
 
 #if defined SEDIMENT || defined BBL_MODEL
 # include <sediment_mod.h>
-#endif
-
+#else
+      MODULE mod_sediment
       END MODULE mod_sediment
+#endif

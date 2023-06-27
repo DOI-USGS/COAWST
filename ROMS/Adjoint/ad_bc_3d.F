@@ -2,9 +2,10 @@
       MODULE ad_bc_3d_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_bc_3d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_bc_3d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -92,9 +93,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -106,9 +107,9 @@
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
-!>   &                                      tl_A(Istr  ,Jend+1,k))
-!>
+!^            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
+!^   &                                      tl_A(Istr  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jend+1,k)
               ad_A(Istr-1,Jend  ,k)=ad_A(Istr-1,Jend  ,k)+adfac
               ad_A(Istr  ,Jend+1,k)=ad_A(Istr  ,Jend+1,k)+adfac
@@ -120,9 +121,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr  ,k))
-!>
+!^            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr-1,k)
               ad_A(Iend  ,Jstr-1,k)=ad_A(Iend  ,Jstr-1,k)+adfac
               ad_A(Iend+1,Jstr  ,k)=ad_A(Iend+1,Jstr  ,k)+adfac
@@ -134,9 +135,9 @@
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Istr-1,Jstr  ,k))
-!>
+!^            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Istr-1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jstr-1,k)
               ad_A(Istr  ,Jstr-1,k)=ad_A(Istr  ,Jstr-1,k)+adfac
               ad_A(Istr-1,Jstr  ,k)=ad_A(Istr-1,Jstr  ,k)+adfac
@@ -155,8 +156,8 @@
            DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
-!>              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
-!>
+!^              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
+!^
                 ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+ad_A(i,Jstr-1,k)
                 ad_A(i,Jstr-1,k)=0.0_r8
               END IF
@@ -168,8 +169,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
-!>              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                 ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                 ad_A(i,Jend+1,k)=0.0_r8
               END IF
@@ -187,8 +188,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
-!>              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
-!>
+!^              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
+!^
                 ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+ad_A(Istr-1,j,k)
                 ad_A(Istr-1,j,k)=0.0_r8
               END IF
@@ -200,8 +201,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
-!>              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                 ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                 ad_A(Iend+1,j,k)=0.0_r8
               END IF
@@ -267,9 +268,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -281,9 +282,9 @@
           IF (LBC_apply(ng)%north(Istr  ).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr  ,Jend+1,k)=0.5_r8*(tl_A(Istr  ,Jend  ,k)+      &
-!>   &                                      tl_A(Istr+1,Jend+1,k))
-!>
+!^            tl_A(Istr  ,Jend+1,k)=0.5_r8*(tl_A(Istr  ,Jend  ,k)+      &
+!^   &                                      tl_A(Istr+1,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr  ,Jend+1,k)
               ad_A(Istr  ,Jend  ,k)=ad_A(Istr  ,Jend  ,k)+adfac
               ad_A(Istr+1,Jend+1,k)=ad_A(Istr+1,Jend+1,k)+adfac
@@ -295,9 +296,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr  ,k))
-!>
+!^            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr-1,k)
               ad_A(Iend  ,Jstr-1,k)=ad_A(Iend  ,Jstr-1,k)+adfac
               ad_A(Iend+1,Jstr  ,k)=ad_A(Iend+1,Jstr  ,k)+adfac
@@ -309,9 +310,9 @@
           IF (LBC_apply(ng)%south(Istr  ).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr  ,Jstr-1,k)=0.5_r8*(tl_A(Istr+1,Jstr-1,k)+      &
-!>   &                                      tl_A(Istr  ,Jstr  ,k))
-!>
+!^            tl_A(Istr  ,Jstr-1,k)=0.5_r8*(tl_A(Istr+1,Jstr-1,k)+      &
+!^   &                                      tl_A(Istr  ,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Istr  ,Jstr-1,k)
               ad_A(Istr+1,Jstr-1,k)=ad_A(Istr+1,Jstr-1,k)+adfac
               ad_A(Istr  ,Jstr  ,k)=ad_A(Istr  ,Jstr  ,k)+adfac
@@ -340,14 +341,14 @@
               DO i=Imin,Imax
                 IF (LBC_apply(ng)%south(i)) THEN
 # ifdef MASKING
-!>                tl_A(i,Jstr-1,k)=tl_A(i,Jstr-1,k)*                    &
-!>   &                             GRID(ng)%umask(i,Jstr-1)
-!>
+!^                tl_A(i,Jstr-1,k)=tl_A(i,Jstr-1,k)*                    &
+!^   &                             GRID(ng)%umask(i,Jstr-1)
+!^
                   ad_A(i,Jstr-1,k)=ad_A(i,Jstr-1,k)*                    &
      &                             GRID(ng)%umask(i,Jstr-1)
 # endif
-!>                tl_A(i,Jstr-1,k)=gamma2(ng)*tl_A(i,Jstr,k)
-!>
+!^                tl_A(i,Jstr-1,k)=gamma2(ng)*tl_A(i,Jstr,k)
+!^
                   ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+                      &
      &                             gamma2(ng)*ad_A(i,Jstr-1,k)
                   ad_A(i,Jstr-1,k)=0.0_r8
@@ -358,8 +359,8 @@
             DO k=LBk,UBk
               DO i=IstrU,Iend
                 IF (LBC_apply(ng)%south(i)) THEN
-!>                tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
-!>
+!^                tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
+!^
                   ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+ad_A(i,Jstr-1,k)
                   ad_A(i,Jstr-1,k)=0.0_r8
                 END IF
@@ -381,14 +382,14 @@
               DO i=Imin,Imax
                 IF (LBC_apply(ng)%north(i)) THEN
 # ifdef MASKING
-!>                tl_A(i,Jend+1,k)=tl_A(i,Jend+1,k)*                    &
-!>   &                             GRID(ng)%umask(i,Jend+1)
-!>
+!^                tl_A(i,Jend+1,k)=tl_A(i,Jend+1,k)*                    &
+!^   &                             GRID(ng)%umask(i,Jend+1)
+!^
                   ad_A(i,Jend+1,k)=ad_A(i,Jend+1,k)*                    &
      &                             GRID(ng)%umask(i,Jend+1)
 # endif
-!>                tl_A(i,Jend+1,k)=gamma2(ng)*tl_A(i,Jend,k)
-!>
+!^                tl_A(i,Jend+1,k)=gamma2(ng)*tl_A(i,Jend,k)
+!^
                   ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+                      &
      &                             gamma2(ng)*ad_A(i,Jend+1,k)
                   ad_A(i,Jend+1,k)=0.0_r8
@@ -399,8 +400,8 @@
             DO k=LBk,UBk
               DO i=IstrU,Iend
                 IF (LBC_apply(ng)%north(i)) THEN
-!>                tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^                tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                   ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                   ad_A(i,Jend+1,k)=0.0_r8
                 END IF
@@ -420,8 +421,8 @@
             DO k=LBk,UBk
               DO j=Jstr,Jend
                 IF (LBC_apply(ng)%west(j)) THEN
-!>                tl_A(Istr,j,k)=0.0_r8
-!>
+!^                tl_A(Istr,j,k)=0.0_r8
+!^
                   ad_A(Istr,j,k)=0.0_r8
                 END IF
               END DO
@@ -430,8 +431,8 @@
             DO k=LBk,UBk
               DO j=Jstr,Jend
                 IF (LBC_apply(ng)%west(j)) THEN
-!>                tl_A(Istr,j,k)=tl_A(Istr+1,j,k)
-!>
+!^                tl_A(Istr,j,k)=tl_A(Istr+1,j,k)
+!^
                   ad_A(Istr+1,j,k)=ad_A(Istr+1,j,k)+ad_A(Istr,j,k)
                   ad_A(Istr  ,j,k)=0.0_r8
                 END IF
@@ -445,8 +446,8 @@
             DO k=LBk,UBk
               DO j=Jstr,Jend
                 IF (LBC_apply(ng)%east(j)) THEN
-!>                tl_A(Iend+1,j,k)=0.0_r8
-!>
+!^                tl_A(Iend+1,j,k)=0.0_r8
+!^
                   ad_A(Iend+1,j,k)=0.0_r8
                 END IF
               END DO
@@ -455,8 +456,8 @@
             DO k=LBk,UBk
               DO j=Jstr,Jend
                 IF (LBC_apply(ng)%east(j)) THEN
-!>                tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^                tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                   ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                   ad_A(Iend+1,j,k)=0.0_r8
                 END IF
@@ -523,9 +524,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -537,9 +538,9 @@
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
-!>   &                                      tl_A(Istr  ,Jend+1,k))
-!>
+!^            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
+!^   &                                      tl_A(Istr  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jend+1,k)
               ad_A(Istr-1,Jend  ,k)=ad_A(Istr-1,Jend  ,k)+adfac
               ad_A(Istr  ,Jend+1,k)=ad_A(Istr  ,Jend+1,k)+adfac
@@ -551,9 +552,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr  )) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr  ,k)=0.5_r8*(tl_A(Iend  ,Jstr  ,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr+1,k))
-!>
+!^            tl_A(Iend+1,Jstr  ,k)=0.5_r8*(tl_A(Iend  ,Jstr  ,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr  ,k)
               ad_A(Iend  ,Jstr  ,k)=ad_A(Iend  ,Jstr  ,k)+adfac
               ad_A(Iend+1,Jstr+1,k)=ad_A(Iend+1,Jstr+1,k)+adfac
@@ -565,9 +566,9 @@
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr  )) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jstr  ,k)=0.5_r8*(tl_A(Istr  ,Jstr  ,k)+      &
-!>   &                                      tl_A(Istr-1,Jstr+1,k))
-!>
+!^            tl_A(Istr-1,Jstr  ,k)=0.5_r8*(tl_A(Istr  ,Jstr  ,k)+      &
+!^   &                                      tl_A(Istr-1,Jstr+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jstr  ,k)
               ad_A(Istr  ,Jstr  ,k)=ad_A(Istr  ,Jstr  ,k)+adfac
               ad_A(Istr-1,Jstr+1,k)=ad_A(Istr-1,Jstr+1,k)+adfac
@@ -587,8 +588,8 @@
             DO k=LBk,UBk
               DO i=Istr,Iend
                 IF (LBC_apply(ng)%south(i)) THEN
-!>                tl_A(i,Jstr,k)=0.0_r8
-!>
+!^                tl_A(i,Jstr,k)=0.0_r8
+!^
                   ad_A(i,Jstr,k)=0.0_r8
                 END IF
               END DO
@@ -597,8 +598,8 @@
             DO k=LBk,UBk
               DO i=Istr,Iend
                 IF (LBC_apply(ng)%south(i)) THEN
-!>                tl_A(i,Jstr,k)=tl_A(i,Jstr+1,k)
-!>
+!^                tl_A(i,Jstr,k)=tl_A(i,Jstr+1,k)
+!^
                   ad_A(i,Jstr+1,k)=ad_A(i,Jstr+1,k)+ad_A(i,Jstr,k)
                   ad_A(i,Jstr  ,k)=0.0_r8
                 END IF
@@ -612,8 +613,8 @@
             DO k=LBk,UBk
               DO i=Istr,Iend
                 IF (LBC_apply(ng)%north(i)) THEN
-!>                tl_A(i,Jend+1,k)=0.0_r8
-!>
+!^                tl_A(i,Jend+1,k)=0.0_r8
+!^
                   ad_A(i,Jend+1,k)=0.0_r8
                 END IF
               END DO
@@ -622,8 +623,8 @@
             DO k=LBk,UBk
               DO i=Istr,Iend
                 IF (LBC_apply(ng)%north(i)) THEN
-!>                tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^                tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                   ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                   ad_A(i,Jend+1,k)=0.0_r8
                 END IF
@@ -652,14 +653,14 @@
               DO j=Jmin,Jmax
                 IF (LBC_apply(ng)%west(j)) THEN
 # ifdef MASKING
-!>                tl_A(Istr-1,j,k)=tl_A(Istr-1,j,k)*                    &
-!>   &                             GRID(ng)%vmask(Istr-1,j)
-!>
+!^                tl_A(Istr-1,j,k)=tl_A(Istr-1,j,k)*                    &
+!^   &                             GRID(ng)%vmask(Istr-1,j)
+!^
                   ad_A(Istr-1,j,k)=ad_A(Istr-1,j,k)*                    &
      &                             GRID(ng)%vmask(Istr-1,j)
 # endif
-!>                tl_A(Istr-1,j,k)=gamma2(ng)*tl_A(Istr,j,k)
-!>
+!^                tl_A(Istr-1,j,k)=gamma2(ng)*tl_A(Istr,j,k)
+!^
                   ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+                      &
      &                             gamma2(ng)*ad_A(Istr-1,j,k)
                   ad_A(Istr-1,j,k)=0.0_r8
@@ -670,8 +671,8 @@
             DO k=LBk,UBk
               DO j=JstrV,Jend
                 IF (LBC_apply(ng)%west(j)) THEN
-!>                tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
-!>
+!^                tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
+!^
                   ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+ad_A(Istr-1,j,k)
                   ad_A(Istr-1,j,k)=0.0_r8
                 END IF
@@ -693,14 +694,14 @@
               DO j=Jmin,Jmax
                 IF (LBC_apply(ng)%east(j)) THEN
 # ifdef MASKING
-!>                tl_A(Iend+1,j,k)=tl_A(Iend+1,j,k)*                    &
-!>   &                             GRID(ng)%vmask(Iend+1,j)
-!>
+!^                tl_A(Iend+1,j,k)=tl_A(Iend+1,j,k)*                    &
+!^   &                             GRID(ng)%vmask(Iend+1,j)
+!^
                   ad_A(Iend+1,j,k)=ad_A(Iend+1,j,k)*                    &
      &                             GRID(ng)%vmask(Iend+1,j)
 # endif
-!>                tl_A(Iend+1,j,k)=gamma2(ng)*tl_A(Iend,j,k)
-!>
+!^                tl_A(Iend+1,j,k)=gamma2(ng)*tl_A(Iend,j,k)
+!^
                   ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+                      &
      &                             gamma2(ng)*ad_A(Iend+1,j,k)
                   ad_A(Iend+1,j,k)=0.0_r8
@@ -711,8 +712,8 @@
             DO k=LBk,UBk
               DO j=JstrV,Jend
                 IF (LBC_apply(ng)%east(j)) THEN
-!>                tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^                tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                   ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                   ad_A(Iend+1,j,k)=0.0_r8
                 END IF
@@ -777,9 +778,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -791,9 +792,9 @@
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
-!>   &                                      tl_A(Istr  ,Jend+1,k))
-!>
+!^            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
+!^   &                                      tl_A(Istr  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jend+1,k)
               ad_A(Istr-1,Jend  ,k)=ad_A(Istr-1,Jend  ,k)+adfac
               ad_A(Istr  ,Jend+1,k)=ad_A(Istr  ,Jend+1,k)+adfac
@@ -805,9 +806,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend+1,Jstr  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jstr-1,k))
-!>
+!^            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend+1,Jstr  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jstr-1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr-1,k)
               ad_A(Iend+1,Jstr  ,k)=ad_A(Iend+1,Jstr  ,k)+adfac
               ad_A(Iend  ,Jstr-1,k)=ad_A(Iend  ,Jstr-1,k)+adfac
@@ -819,9 +820,9 @@
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Istr-1,Jstr  ,k))
-!>
+!^            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Istr-1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jstr-1,k)
               ad_A(Istr  ,Jstr-1,k)=ad_A(Istr  ,Jstr-1,k)+adfac
               ad_A(Istr-1,Jstr  ,k)=ad_A(Istr-1,Jstr  ,k)+adfac
@@ -840,8 +841,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
-!>              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
-!>
+!^              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
+!^
                 ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+ad_A(i,Jstr-1,k)
                 ad_A(i,Jstr-1,k)=0.0_r8
               END IF
@@ -853,8 +854,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
-!>              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                 ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                 ad_A(i,Jend+1,k)=0.0_r8
               END IF
@@ -872,8 +873,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
-!>              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
-!>
+!^              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
+!^
                 ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+ad_A(Istr-1,j,k)
                 ad_A(Istr-1,j,k)=0.0_r8
               END IF
@@ -885,8 +886,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
-!>              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                 ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                 ad_A(Iend+1,j,k)=0.0_r8
               END IF
@@ -950,9 +951,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -964,9 +965,9 @@
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
-!>   &                                      tl_A(Istr  ,Jend+1,k))
-!>
+!^            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
+!^   &                                      tl_A(Istr  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jend+1,k)
               ad_A(Istr-1,Jend  ,k)=ad_A(Istr-1,Jend  ,k)+adfac
               ad_A(Istr  ,Jend+1,k)=ad_A(Istr  ,Jend+1,k)+adfac
@@ -978,9 +979,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr  ,k))
-!>
+!^            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr-1,k)
               ad_A(Iend  ,Jstr-1,k)=ad_A(Iend  ,Jstr-1,k)+adfac
               ad_A(Iend+1,Jstr  ,k)=ad_A(Iend+1,Jstr  ,k)+adfac
@@ -992,9 +993,9 @@
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Istr-1,Jstr  ,k))
-!>
+!^            tl_A(Istr-1,Jstr-1,k)=0.5_r8*(tl_A(Istr  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Istr-1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jstr-1,k)
               ad_A(Istr  ,Jstr-1,k)=ad_A(Istr  ,Jstr-1,k)+adfac
               ad_A(Istr-1,Jstr  ,k)=ad_A(Istr-1,Jstr  ,k)+adfac
@@ -1013,8 +1014,8 @@
            DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
-!>              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
-!>
+!^              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
+!^
                 ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+ad_A(i,Jstr-1,k)
                 ad_A(i,Jstr-1,k)=0.0_r8
               END IF
@@ -1026,8 +1027,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
-!>              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                 ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                 ad_A(i,Jend+1,k)=0.0_r8
               END IF
@@ -1045,8 +1046,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
-!>              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
-!>
+!^              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
+!^
                 ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+ad_A(Istr-1,j,k)
                 ad_A(Istr-1,j,k)=0.0_r8
               END IF
@@ -1058,8 +1059,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
-!>              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                 ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                 ad_A(Iend+1,j,k)=0.0_r8
               END IF
@@ -1125,9 +1126,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -1139,9 +1140,9 @@
           IF (LBC_apply(ng)%north(Istr  ).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr  ,Jend+1,k)=0.5_r8*(tl_A(Istr  ,Jend  ,k)+      &
-!>   &                                      tl_A(Istr+1,Jend+1,k))
-!>
+!^            tl_A(Istr  ,Jend+1,k)=0.5_r8*(tl_A(Istr  ,Jend  ,k)+      &
+!^   &                                      tl_A(Istr+1,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr  ,Jend+1,k)
               ad_A(Istr  ,Jend  ,k)=ad_A(Istr  ,Jend  ,k)+adfac
               ad_A(Istr+1,Jend+1,k)=ad_A(Istr+1,Jend+1,k)+adfac
@@ -1153,9 +1154,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr  ,k))
-!>
+!^            tl_A(Iend+1,Jstr-1,k)=0.5_r8*(tl_A(Iend  ,Jstr-1,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr-1,k)
               ad_A(Iend  ,Jstr-1,k)=ad_A(Iend  ,Jstr-1,k)+adfac
               ad_A(Iend+1,Jstr  ,k)=ad_A(Iend+1,Jstr  ,k)+adfac
@@ -1167,9 +1168,9 @@
           IF (LBC_apply(ng)%south(Istr  ).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr  ,Jstr-1,k)=0.5_r8*(tl_A(Istr+1,Jstr-1,k)+      &
-!>   &                                      tl_A(Istr  ,Jstr  ,k))
-!>
+!^            tl_A(Istr  ,Jstr-1,k)=0.5_r8*(tl_A(Istr+1,Jstr-1,k)+      &
+!^   &                                      tl_A(Istr  ,Jstr  ,k))
+!^
               adfac=0.5_r8*ad_A(Istr  ,Jstr-1,k)
               ad_A(Istr+1,Jstr-1,k)=ad_A(Istr+1,Jstr-1,k)+adfac
               ad_A(Istr  ,Jstr  ,k)=ad_A(Istr  ,Jstr  ,k)+adfac
@@ -1188,8 +1189,8 @@
           DO k=LBk,UBk
             DO i=IstrU,Iend
               IF (LBC_apply(ng)%south(i)) THEN
-!>              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
-!>
+!^              tl_A(i,Jstr-1,k)=tl_A(i,Jstr,k)
+!^
                 ad_A(i,Jstr  ,k)=ad_A(i,Jstr,k)+ad_A(i,Jstr-1,k)
                 ad_A(i,Jstr-1,k)=0.0_r8
               END IF
@@ -1201,8 +1202,8 @@
           DO k=LBk,UBk
             DO i=IstrU,Iend
               IF (LBC_apply(ng)%north(i)) THEN
-!>              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                 ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                 ad_A(i,Jend+1,k)=0.0_r8
               END IF
@@ -1220,8 +1221,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
-!>              tl_A(Istr,j,k)=tl_A(Istr+1,j,k)
-!>
+!^              tl_A(Istr,j,k)=tl_A(Istr+1,j,k)
+!^
                 ad_A(Istr+1,j,k)=ad_A(Istr+1,j,k)+ad_A(Istr,j,k)
                 ad_A(Istr  ,j,k)=0.0_r8
               END IF
@@ -1233,8 +1234,8 @@
           DO k=LBk,UBk
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
-!>              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                 ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                 ad_A(Iend+1,j,k)=0.0_r8
               END IF
@@ -1300,9 +1301,9 @@
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
-!>   &                                      tl_A(Iend  ,Jend+1,k))
-!>
+!^            tl_A(Iend+1,Jend+1,k)=0.5_r8*(tl_A(Iend+1,Jend  ,k)+      &
+!^   &                                      tl_A(Iend  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jend+1,k)
               ad_A(Iend+1,Jend  ,k)=ad_A(Iend+1,Jend  ,k)+adfac
               ad_A(Iend  ,Jend+1,k)=ad_A(Iend  ,Jend+1,k)+adfac
@@ -1314,9 +1315,9 @@
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
-!>   &                                      tl_A(Istr  ,Jend+1,k))
-!>
+!^            tl_A(Istr-1,Jend+1,k)=0.5_r8*(tl_A(Istr-1,Jend  ,k)+      &
+!^   &                                      tl_A(Istr  ,Jend+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jend+1,k)
               ad_A(Istr-1,Jend  ,k)=ad_A(Istr-1,Jend  ,k)+adfac
               ad_A(Istr  ,Jend+1,k)=ad_A(Istr  ,Jend+1,k)+adfac
@@ -1328,9 +1329,9 @@
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr  )) THEN
             DO k=LBk,UBk
-!>            tl_A(Iend+1,Jstr  ,k)=0.5_r8*(tl_A(Iend  ,Jstr  ,k)+      &
-!>   &                                      tl_A(Iend+1,Jstr+1,k))
-!>
+!^            tl_A(Iend+1,Jstr  ,k)=0.5_r8*(tl_A(Iend  ,Jstr  ,k)+      &
+!^   &                                      tl_A(Iend+1,Jstr+1,k))
+!^
               adfac=0.5_r8*ad_A(Iend+1,Jstr  ,k)
               ad_A(Iend  ,Jstr  ,k)=ad_A(Iend  ,Jstr  ,k)+adfac
               ad_A(Iend+1,Jstr+1,k)=ad_A(Iend+1,Jstr+1,k)+adfac
@@ -1342,9 +1343,9 @@
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr  )) THEN
             DO k=LBk,UBk
-!>            tl_A(Istr-1,Jstr  ,k)=0.5_r8*(tl_A(Istr  ,Jstr  ,k)+      &
-!>   &                                      tl_A(Istr-1,Jstr+1,k))
-!>
+!^            tl_A(Istr-1,Jstr  ,k)=0.5_r8*(tl_A(Istr  ,Jstr  ,k)+      &
+!^   &                                      tl_A(Istr-1,Jstr+1,k))
+!^
               adfac=0.5_r8*ad_A(Istr-1,Jstr  ,k)
               ad_A(Istr  ,Jstr  ,k)=ad_A(Istr  ,Jstr  ,k)+adfac
               ad_A(Istr-1,Jstr+1,k)=ad_A(Istr-1,Jstr+1,k)+adfac
@@ -1363,8 +1364,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
-!>              tl_A(i,Jstr,k)=tl_A(i,Jstr+1,k)
-!>
+!^              tl_A(i,Jstr,k)=tl_A(i,Jstr+1,k)
+!^
                 ad_A(i,Jstr+1,k)=ad_A(i,Jstr+1,k)+ad_A(i,Jstr,k)
                 ad_A(i,Jstr  ,k)=0.0_r8
               END IF
@@ -1376,8 +1377,8 @@
           DO k=LBk,UBk
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
-!>              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
-!>
+!^              tl_A(i,Jend+1,k)=tl_A(i,Jend,k)
+!^
                 ad_A(i,Jend  ,k)=ad_A(i,Jend,k)+ad_A(i,Jend+1,k)
                 ad_A(i,Jend+1,k)=0.0_r8
               END IF
@@ -1395,8 +1396,8 @@
           DO k=LBk,UBk
             DO j=JstrV,Jend
               IF (LBC_apply(ng)%west(j)) THEN
-!>              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
-!>
+!^              tl_A(Istr-1,j,k)=tl_A(Istr,j,k)
+!^
                 ad_A(Istr  ,j,k)=ad_A(Istr,j,k)+ad_A(Istr-1,j,k)
                 ad_A(Istr-1,j,k)=0.0_r8
               END IF
@@ -1408,8 +1409,8 @@
           DO k=LBk,UBk
             DO j=JstrV,Jend
               IF (LBC_apply(ng)%east(j)) THEN
-!>              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
-!>
+!^              tl_A(Iend+1,j,k)=tl_A(Iend,j,k)
+!^
                 ad_A(Iend  ,j,k)=ad_A(Iend,j,k)+ad_A(Iend+1,j,k)
                 ad_A(Iend+1,j,k)=0.0_r8
               END IF

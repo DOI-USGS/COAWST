@@ -12,9 +12,10 @@
 #if defined NONLINEAR && defined SEDIMENT && \
    (defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM) 
 !
-!svn $Id: sed_bedload.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: sed_bedload.F 1151 2023-02-09 03:08:53Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -995,7 +996,7 @@
 !mai
             cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdx/(dzdxdy+eps)
+            cff=ABS(dzdxdy-sedslope_crit_dry(ng))*dzdx/(dzdxdy+eps)
             cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
@@ -1050,7 +1051,7 @@
 !mai
             cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdy/(dzdxdy+eps)
+            cff=ABS(dzdxdy-sedslope_crit_dry(ng))*dzdy/(dzdxdy+eps)
             cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)

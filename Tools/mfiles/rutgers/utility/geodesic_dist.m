@@ -34,9 +34,9 @@ function [gdist,galpha]=geodesic_dist(lon1,lat1,lon2,lat2,flag);
 %                North (decimal degrees)
 %
 
-% svn $Id: geodesic_dist.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: geodesic_dist.m 1156 2023-02-18 01:44:37Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%

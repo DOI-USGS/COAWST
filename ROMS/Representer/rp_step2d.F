@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-      MODULE rp_step2d_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_step2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_step2d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,14 +19,8 @@
 !                                                                      !
 !=======================================================================
 !
-      implicit none
-!
-      PRIVATE
-      PUBLIC  :: rp_step2d
-!
-      CONTAINS
-!
 # include "rp_step2d_LF_AM3.h"
-
-#endif
+#else
+      MODULE rp_step2d_mod
       END MODULE rp_step2d_mod
+#endif

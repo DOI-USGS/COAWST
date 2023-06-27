@@ -1,5 +1,6 @@
 #include "cppdefs.h"
       MODULE ww3_iounits
+# ifdef WW3_MODEL
 !
 !svn $Id: ww3_iounits.F 755 2008-09-14 19:07:08Z jcwarner $
 !================================================== Hernan G. Arango ===
@@ -64,4 +65,5 @@
       RETURN
       END SUBROUTINE allocate_ww3_iounits
 
+# endif
       END MODULE ww3_iounits

@@ -33,6 +33,7 @@
       SUBROUTINE wec_streaming (ng, tile)
 !***********************************************************************
 !
+      USE mod_param
       USE mod_forces
       USE mod_grid
       USE mod_mixing
@@ -45,7 +46,14 @@
       USE vegetation_stream_mod, ONLY : vegetation_stream_cal
 # endif 
 !
+!  Imported variable declarations.
+!
       integer, intent(in) :: ng, tile
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 # include "tile.h"
 
 # if defined VEGETATION && defined VEG_STREAMING 

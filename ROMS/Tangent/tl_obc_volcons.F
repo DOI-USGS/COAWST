@@ -2,9 +2,10 @@
       MODULE tl_obc_volcons_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_obc_volcons.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_obc_volcons.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -132,7 +133,7 @@
       real(r8) :: tl_cff, tl_my_area, tl_my_flux
 
 # ifdef DISTRIBUTE
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
       character (len=3), dimension(2) :: op_handle
 # endif
 
@@ -142,9 +143,9 @@
 !  Compute open segments cross-section area and mass flux.
 !-----------------------------------------------------------------------
 !
-!>    my_area=0.0_r8
-!>    my_flux=0.0_r8
-!>
+!^    my_area=0.0_r8
+!^    my_flux=0.0_r8
+!^
       tl_my_area=0.0_r8
       tl_my_flux=0.0_r8
 !
@@ -161,11 +162,11 @@
             cff=cff*umask(Istr,j)
             tl_cff=tl_cff*umask(Istr,j)
 # endif
-!>          my_area=my_area+cff
-!>
+!^          my_area=my_area+cff
+!^
             tl_my_area=tl_my_area+tl_cff
-!>          my_flux=my_flux+cff*ubar(Istr,j,kinp)
-!>
+!^          my_flux=my_flux+cff*ubar(Istr,j,kinp)
+!^
             tl_my_flux=tl_my_flux+                                      &
      &                 tl_cff*ubar(Istr,j,kinp)+                        &
      &                 cff*tl_ubar(Istr,j,kinp)
@@ -186,11 +187,11 @@
             cff=cff*umask(Iend+1,j)
             tl_cff=tl_cff*umask(Iend+1,j)
 # endif
-!>          my_area=my_area+cff
-!>
+!^          my_area=my_area+cff
+!^
             tl_my_area=tl_my_area+tl_cff
-!>          my_flux=my_flux-cff*ubar(Iend+1,j,kinp)
-!>
+!^          my_flux=my_flux-cff*ubar(Iend+1,j,kinp)
+!^
             tl_my_flux=tl_my_flux-                                      &
      &                 tl_cff*ubar(Iend+1,j,kinp)-                      &
      &                 cff*tl_ubar(Iend+1,j,kinp)
@@ -211,11 +212,11 @@
             cff=cff*vmask(i,Jstr)
             tl_cff=tl_cff*vmask(i,Jstr)
 # endif
-!>          my_area=my_area+cff
-!>
+!^          my_area=my_area+cff
+!^
             tl_my_area=tl_my_area+tl_cff
-!>          my_flux=my_flux+cff*vbar(i,JstrV-1,kinp)
-!>
+!^          my_flux=my_flux+cff*vbar(i,JstrV-1,kinp)
+!^
             tl_my_flux=tl_my_flux+                                      &
      &                 tl_cff*vbar(i,JstrV-1,kinp)+                     &
      &                 cff*tl_vbar(i,JstrV-1,kinp)
@@ -236,11 +237,11 @@
             cff=cff*vmask(i,Jend+1)
             tl_cff=tl_cff*vmask(i,Jend+1)
 # endif
-!>          my_area=my_area+cff
-!>
+!^          my_area=my_area+cff
+!^
             tl_my_area=tl_my_area+tl_cff
-!>          my_flux=my_flux-cff*vbar(i,Jend+1,kinp)
-!>
+!^          my_flux=my_flux-cff*vbar(i,Jend+1,kinp)
+!^
             tl_my_flux=tl_my_flux-                                      &
      &                 tl_cff*vbar(i,Jend+1,kinp)-                      &
      &                 cff*tl_vbar(i,Jend+1,kinp)
@@ -265,37 +266,37 @@
 # endif
 !$OMP CRITICAL (TL_OBC_VOLUME)
         IF (tile_count.eq.0) THEN
-!>        bc_flux=0.0_r8
-!>        bc_area=0.0_r8
-!>
+!^        bc_flux=0.0_r8
+!^        bc_area=0.0_r8
+!^
           tl_bc_flux=0.0_r8
           tl_bc_area=0.0_r8
         END IF
-!>      bc_area=bc_area+my_area
-!>      bc_flux=bc_flux+my_flux
-!>
+!^      bc_area=bc_area+my_area
+!^      bc_flux=bc_flux+my_flux
+!^
         tl_bc_area=tl_bc_area+tl_my_area
         tl_bc_flux=tl_bc_flux+tl_my_flux
         tile_count=tile_count+1
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 # ifdef DISTRIBUTE
-!>        buffer(1)=bc_area
-!>        buffer(2)=bc_flux
-!>
-          buffer(1)=tl_bc_area
-          buffer(2)=tl_bc_flux
+!^        rbuffer(1)=bc_area
+!^        rbuffer(2)=bc_flux
+!^
+          rbuffer(1)=tl_bc_area
+          rbuffer(2)=tl_bc_flux
           op_handle(1)='SUM'
           op_handle(2)='SUM'
-          CALL mp_reduce (ng, iTLM, 2, buffer, op_handle)
-!>        bc_area=buffer(1)
-!>        bc_flux=buffer(2)
-!>
-          tl_bc_area=buffer(1)
-          tl_bc_flux=buffer(2)
+          CALL mp_reduce (ng, iTLM, 2, rbuffer, op_handle)
+!^        bc_area=rbuffer(1)
+!^        bc_flux=rbuffer(2)
+!^
+          tl_bc_area=rbuffer(1)
+          tl_bc_flux=rbuffer(2)
 # endif
-!>        ubar_xs=bc_flux/bc_area
-!>
+!^        ubar_xs=bc_flux/bc_area
+!^
           tl_ubar_xs=tl_bc_flux/bc_area-                                &
      &               tl_bc_area*ubar_xs/bc_area
         END IF
@@ -396,10 +397,10 @@
       IF (tl_VolCons(iwest,ng)) THEN
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=-2+J_RANGE+1
-!>          Duon(Istr,j)=0.5_r8*(Drhs(Istr,j)+Drhs(Istr-1,j))*          &
-!>   &                   (ubar(Istr,j,kinp)-ubar_xs)*                   &
-!>   &                   on_u(Istr,j)
-!>
+!^          Duon(Istr,j)=0.5_r8*(Drhs(Istr,j)+Drhs(Istr-1,j))*          &
+!^   &                   (ubar(Istr,j,kinp)-ubar_xs)*                   &
+!^   &                   on_u(Istr,j)
+!^
             tl_Duon(Istr,j)=0.5_r8*                                     &
      &                      ((tl_Drhs(Istr,j)+tl_Drhs(Istr-1,j))*       &
      &                       (ubar(Istr,j,kinp)-ubar_xs)+               &
@@ -407,8 +408,8 @@
      &                       (tl_ubar(Istr,j,kinp)-tl_ubar_xs))*        &
      &                      on_u(Istr,j)
 # ifdef MASKING
-!>          Duon(Istr,j)=Duon(Istr,j)*umask(Istr,j)
-!>
+!^          Duon(Istr,j)=Duon(Istr,j)*umask(Istr,j)
+!^
             tl_Duon(Istr,j)=tl_Duon(Istr,j)*umask(Istr,j)
 # endif
           END DO
@@ -418,10 +419,10 @@
       IF (tl_VolCons(ieast,ng)) THEN
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=-2+J_RANGE+1
-!>          Duon(Iend+1,j)=0.5_r8*(Drhs(Iend+1,j)+Drhs(Iend,j))*        &
-!>   &                     (ubar(Iend+1,j,kinp)+ubar_xs)*               &
-!>   &                     on_u(Iend+1,j)
-!>
+!^          Duon(Iend+1,j)=0.5_r8*(Drhs(Iend+1,j)+Drhs(Iend,j))*        &
+!^   &                     (ubar(Iend+1,j,kinp)+ubar_xs)*               &
+!^   &                     on_u(Iend+1,j)
+!^
             tl_Duon(Iend+1,j)=0.5_r8*                                   &
      &                        ((tl_Drhs(Iend+1,j)+tl_Drhs(Iend,j))*     &
      &                         (ubar(Iend+1,j,kinp)+ubar_xs)+           &
@@ -429,8 +430,8 @@
      &                         (tl_ubar(Iend+1,j,kinp)+tl_ubar_xs))*    &
      &                        on_u(Iend+1,j)
 # ifdef MASKING
-!>          Duon(Iend+1,j)=Duon(Iend+1,j)*umask(Iend+1,j)
-!>
+!^          Duon(Iend+1,j)=Duon(Iend+1,j)*umask(Iend+1,j)
+!^
             tl_Duon(Iend+1,j)=tl_Duon(Iend+1,j)*umask(Iend+1,j)
 # endif
           END DO
@@ -440,10 +441,10 @@
       IF (tl_VolCons(isouth,ng)) THEN
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=-2+I_RANGE+1
-!>          Dvom(i,Jstr)=0.5_r8*(Drhs(i,Jstr)+Drhs(i,Jstr-1))*          &
-!>   &                   (vbar(i,Jstr,kinp)-ubar_xs)*                   &
-!>   &                   om_v(i,Jstr)
-!>
+!^          Dvom(i,Jstr)=0.5_r8*(Drhs(i,Jstr)+Drhs(i,Jstr-1))*          &
+!^   &                   (vbar(i,Jstr,kinp)-ubar_xs)*                   &
+!^   &                   om_v(i,Jstr)
+!^
             tl_Dvom(i,Jstr)=0.5_r8*                                     &
      &                      ((tl_Drhs(i,Jstr)+tl_Drhs(i,Jstr-1))*       &
      &                       (vbar(i,Jstr,kinp)-ubar_xs)+               &
@@ -451,8 +452,8 @@
      &                       (tl_vbar(i,Jstr,kinp)-tl_ubar_xs))*        &
      &                      om_v(i,Jstr)
 # ifdef MASKING
-!>          Dvom(i,Jstr)=Dvom(i,Jstr)*vmask(i,Jstr)
-!>
+!^          Dvom(i,Jstr)=Dvom(i,Jstr)*vmask(i,Jstr)
+!^
             tl_Dvom(i,Jstr)=tl_Dvom(i,Jstr)*vmask(i,Jstr)
 # endif
           END DO
@@ -462,10 +463,10 @@
       IF (tl_VolCons(inorth,ng)) THEN
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=-2+I_RANGE+1
-!>          Dvom(i,Jend+1)=0.5_r8*(Drhs(i,Jend+1)+Drhs(i,Jend))*        &
-!>   &                     (vbar(i,Jend+1,kinp)+ubar_xs)*               &
-!>   &                     om_v(i,Jend+1)
-!>
+!^          Dvom(i,Jend+1)=0.5_r8*(Drhs(i,Jend+1)+Drhs(i,Jend))*        &
+!^   &                     (vbar(i,Jend+1,kinp)+ubar_xs)*               &
+!^   &                     om_v(i,Jend+1)
+!^
             tl_Dvom(i,Jend+1)=0.5_r8*                                   &
      &                        ((tl_Drhs(i,Jend+1)+tl_Drhs(i,Jend))*     &
      &                         (vbar(i,Jend+1,kinp)+ubar_xs)+           &
@@ -473,8 +474,8 @@
      &                         (tl_vbar(i,Jend+1,kinp)+tl_ubar_xs))*    &
      &                        om_v(i,Jend+1)
 # ifdef MASKING
-!>          Dvom(i,Jend+1)=Dvom(i,Jend+1)*vmask(i,Jend+1)
-!>
+!^          Dvom(i,Jend+1)=Dvom(i,Jend+1)*vmask(i,Jend+1)
+!^
             tl_Dvom(i,Jend+1)=tl_Dvom(i,Jend+1)*vmask(i,Jend+1)
 # endif
           END DO
@@ -487,12 +488,12 @@
 ! order numerical stencil.
 !
       IF (tl_VolCons(iwest,ng).or.tl_VolCons(ieast,ng)) THEN
-!>      CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
-!>   &                      IminS, ImaxS, JminS, JmaxS,                 &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      Duon)
-!>
+!^      CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
+!^   &                      IminS, ImaxS, JminS, JmaxS,                 &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      Duon)
+!^
         CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      NghostPoints,                               &
@@ -501,12 +502,12 @@
       END IF
 
       IF (tl_VolCons(isouth,ng).or.tl_VolCons(inorth,ng)) THEN
-!>      CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
-!>   &                      IminS, ImaxS, JminS, JmaxS,                 &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      Dvom)
-!>
+!^      CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
+!^   &                      IminS, ImaxS, JminS, JmaxS,                 &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      Dvom)
+!^
         CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      NghostPoints,                               &
@@ -572,12 +573,12 @@
       IF (tl_VolCons(iwest,ng)) THEN
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=Jstr,Jend
-!>          ubar(Istr,j,kinp)=ubar(Istr,j,kinp)-ubar_xs
-!>
+!^          ubar(Istr,j,kinp)=ubar(Istr,j,kinp)-ubar_xs
+!^
             tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)-tl_ubar_xs
 # ifdef MASKING
-!>          ubar(Istr,j,kinp)=ubar(Istr,j,kinp)*umask(Istr,j)
-!>
+!^          ubar(Istr,j,kinp)=ubar(Istr,j,kinp)*umask(Istr,j)
+!^
             tl_ubar(Istr,j,kinp)=tl_ubar(Istr,j,kinp)*                  &
      &                           umask(Istr,j)
 # endif
@@ -588,12 +589,12 @@
       IF (tl_VolCons(ieast,ng)) THEN
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=Jstr,Jend
-!>          ubar(Iend+1,j,kinp)=ubar(Iend+1,j,kinp)+ubar_xs
-!>
+!^          ubar(Iend+1,j,kinp)=ubar(Iend+1,j,kinp)+ubar_xs
+!^
             tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)+tl_ubar_xs
 # ifdef MASKING
-!>          ubar(Iend+1,j,kinp)=ubar(Iend+1,j,kinp)*umask(Iend+1,j)
-!>
+!^          ubar(Iend+1,j,kinp)=ubar(Iend+1,j,kinp)*umask(Iend+1,j)
+!^
             tl_ubar(Iend+1,j,kinp)=tl_ubar(Iend+1,j,kinp)*              &
      &                             umask(Iend+1,j)
 # endif
@@ -604,12 +605,12 @@
       IF (tl_VolCons(isouth,ng)) THEN
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=Istr,Iend
-!>          vbar(i,Jstr,kinp)=(vbar(i,Jstr,kinp)-ubar_xs)
-!>
+!^          vbar(i,Jstr,kinp)=(vbar(i,Jstr,kinp)-ubar_xs)
+!^
             tl_vbar(i,Jstr,kinp)=(tl_vbar(i,Jstr,kinp)-tl_ubar_xs)
 # ifdef MASKING
-!>          vbar(i,Jstr,kinp)=vbar(i,Jstr,kinp)*vmask(i,Jstr)
-!>
+!^          vbar(i,Jstr,kinp)=vbar(i,Jstr,kinp)*vmask(i,Jstr)
+!^
             tl_vbar(i,Jstr,kinp)=tl_vbar(i,Jstr,kinp)*                  &
      &                           vmask(i,Jstr)
 # endif
@@ -620,12 +621,12 @@
       IF (tl_VolCons(inorth,ng)) THEN
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=Istr,Iend
-!>          vbar(i,Jend+1,kinp)=(vbar(i,Jend+1,kinp)+ubar_xs)
-!>
+!^          vbar(i,Jend+1,kinp)=(vbar(i,Jend+1,kinp)+ubar_xs)
+!^
             tl_vbar(i,Jend+1,kinp)=(tl_vbar(i,Jend+1,kinp)+tl_ubar_xs)
 # ifdef MASKING
-!>          vbar(i,Jend+1,kinp)=vbar(i,Jend+1,kinp)*vmask(i,Jend+1)
-!>
+!^          vbar(i,Jend+1,kinp)=vbar(i,Jend+1,kinp)*vmask(i,Jend+1)
+!^
             tl_vbar(i,Jend+1,kinp)=tl_vbar(i,Jend+1,kinp)*              &
      &                             vmask(i,Jend+1)
 # endif

@@ -5,18 +5,20 @@ $ Define input to be used with F/T/C flag for use or nor or coupling and
 $ T/F flag for definition as a homogeneous field.
 $
 $ Include ice and mud parameters only if IC1/2/3/4 used :
-$   F F     Ice parameter 1
-$   F F     Ice parameter 2
-$   F F     Ice parameter 3
-$   F F     Ice parameter 4
-$   F F     Ice parameter 5
-$   F F     Mud parameter 1
-$   F F     Mud parameter 2
-$   F F     Mud parameter 3
+   F F     Ice parameter 1
+   F F     Ice parameter 2
+   F F     Ice parameter 3
+   F F     Ice parameter 4
+   F F     Ice parameter 5
+   F F     Mud parameter 1
+   F F     Mud parameter 2
+   F F     Mud parameter 3
    C F     Water levels
    C F     Currents
    F F     Winds
-   F       Ice concentrations
+   F F     Ice concentrations
+   F F     Atmospheric momentum
+   F F     Air density
    F       Assimilation data : Mean parameters
    F       Assimilation data : 1-D spectra
    F       Assimilation data : 2-D spectra
@@ -232,7 +234,7 @@ $
 $ (1) Forcing Fields
   T
 $ DPT CUR WND AST WLV ICE IBG D50 IC1 IC5
-  T   T   T   T   T   F   F   F   F   F
+  T   T   F   T   T   F   F   F   F   F
 $ (2) Standard mean wave Parameters
   T
 $ HS  LM  T02 T0M1 T01 FP DIR SPR DP
@@ -319,7 +321,7 @@ $ Type 6 : Separated wave field data (dummy for now).
 $          First, last step IX and IY, flag for formatted file
 $
    20000101 000000 3600 20000101 120000
-      0 999 1 0 999 1 T
+      0 999 1 0 999 1 F
 $
 $ Type 7 : Coupling. (must be fully commented if not used with switch COU)
 $          Namelist type selection is used here.

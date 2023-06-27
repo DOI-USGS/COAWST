@@ -46,25 +46,25 @@ function [S]=obs_merge(files, dt);
 %       disk using 'c_observations' and 'obs_write'.
 %
 
-% svn $Id: obs_merge.m 996 2020-01-10 04:28:56Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license           Brian Powell            %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: obs_merge.m 1156 2023-02-18 01:44:37Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license           Brian Powell          %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
 %  Initialize internal parameters.
 
 check_time=true;
-if (nargin < 2),
+if (nargin < 2)
   check_time=false;
-end,
+end
 
 Nfiles=length(files);
 
-%----------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Process each observation file and build observation structure.
-%----------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 %  Set observations dynamical fields (cell array) in structure, S.
 
@@ -79,24 +79,24 @@ field_list = {'type', 'time', 'Xgrid', 'Ygrid', 'Zgrid', 'depth', ...
 
 if (isfield(S,'lon') && isfield(S,'lat')),
   field_list = [field_list, 'lon', 'lat'];
-end,
+end
 
-if (isfield(S,'provenance')),
+if (isfield(S,'provenance'))
   field_list = [field_list, 'provenance'];
-end,
+end
 
 %  Proccess remaining files.
 
-for m=2:Nfiles,
+for m=2:Nfiles
 
   [N]=obs_read(char(files(m)));
 
 %  Add new data to S structure.
 
-  for value = field_list,
+  for value = field_list
     field = char(value);
     S.(field) = [S.(field), N.(field)];
-  end,
+  end
  
   S.Nobs        = [S.Nobs,         N.Nobs       ];
   S.survey_time = [S.survey_time,  N.survey_time];
@@ -124,27 +124,27 @@ end,
 
 %  Loop over 'survey_times' until they are well-spaced.
 
-if (check_time),
+if (check_time)
 
-  while (true),
+  while (true)
     ntime = S.survey_time;
     sdt = diff(S.survey_time);
     l = find(sdt ~= 0 & sdt < dt);
-    if (isempty( l )),
+    if (isempty( l ))
       break;
-    end,
+    end
     otime = S.time;
-    for i=1:length(l),
-      lo = find(S.time == S.survey_time(l(i)   ) | ...
+    for i=1:length(l)
+      lo = find(S.time == S.survey_time(l(i)   ) |                      ...
                 S.time == S.survey_time(l(i)+1));
       ntime(l(i):l(i)+1) = nanmedian(S.time(lo));
       otime(lo) = ntime(l(i));
-    end,
+    end
     S.time = otime;
     S.survey_time = ntime;
-  end,
+  end
 
-end,
+end
 
 %  Combine all surveys with similar times.
 
@@ -158,14 +158,14 @@ if (length(l) ~= length(S.survey_time)),
   for i=1:length(l)
     m = find(survey_time == l(i));
     S.Nobs(i,1) = sum(Nobs(m));
-  end,
-end,
+  end
+end
 
 S.Nsurvey = length(S.survey_time);
 
 %  Sort the observations by the 'obs_type' for each survey.
 
-for i=1:S.Nsurvey,
+for i=1:S.Nsurvey
 
   l = find(S.time == S.survey_time(i));
   [m,i]=sort(S.type(l));
@@ -173,27 +173,27 @@ for i=1:S.Nsurvey,
   for value = field_list,
     field = char(value);
     S.(field)(l) = S.(field)(l(i));
-  end,
+  end
 
-end,
+end
 
 % Lastly, remove any NaN's that may have slipped through.
 
-l=find(isnan(S.value) | isnan(S.time)   | ...
-       isnan(S.Xgrid) | isnan(S.Ygrid)  | ...
+l=find(isnan(S.value) | isnan(S.time)   |                               ...
+       isnan(S.Xgrid) | isnan(S.Ygrid)  |                               ...
        isnan(S.Zgrid) | isnan(S.depth));
 
-if (~isempty(l)),
+if (~isempty(l))
   for value = field_list,
     field = char(value);
     S.(field)(l) = [];
-  end,
+  end
 
-  for i=1:S.Nsurvey,
+  for i=1:S.Nsurvey
     ind=find(S.time == S.survey_time(i));
     S.Nobs(i)=length(ind);
-  end,
-end,
+  end
+end
 
 S.Ndatum = length(S.time);
 S.files  = files;

@@ -5,9 +5,10 @@
    (defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR)
 !
-!svn $Id: adsen_force.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: adsen_force.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -209,8 +210,8 @@
           adFac=1.0_r8
           IF (Master) THEN
             WRITE (stdout,10) iic(ng)-1
- 10         FORMAT (2x,' ADSEN_FORCE  - forcing Adjoint model at',      &
-     &                 ' TimeStep: ', i8.8)
+ 10         FORMAT (2x,'ADSEN_FORCE      - forcing Adjoint model at',   &
+     &                 ' TimeStep: ', i0)
           END IF
       END IF
 # else

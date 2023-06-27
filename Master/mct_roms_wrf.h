@@ -399,7 +399,7 @@
       cid=cid+cad
 #endif
 !
-#if defined BULK_FLUXES || defined ECOSIM
+#if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN
       to_add=':U10'
       cad=LEN_TRIM(to_add)
       write(aostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -1241,7 +1241,7 @@
      &                    range(1),range(2)
       END IF
 #endif
-#if defined BULK_FLUXES || defined ECOSIM
+#if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN
 !
 !  U-Wind speed at 10 m          (m/s)
 !
@@ -1449,7 +1449,7 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          FORCES(ng)%Tair)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          FORCES(ng)%Uwind)
@@ -1511,7 +1511,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Hair, FORCES(ng)%Tair)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

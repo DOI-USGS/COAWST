@@ -4,9 +4,10 @@
       SUBROUTINE ad_congrad (ng, model, outLoop, innLoop, NinnLoop,     &
      &                       Lcgini)
 !
-!svn $Id: ad_congrad.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_congrad.F 1151 2023-02-09 03:08:53Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -215,17 +216,17 @@
           IF ((outLoop.eq.1).or.(.not.LhotStart)) THEN
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_QG(1)=tl_cg_QG(1)+                                  &
-!>   &                    tl_zcglwk(iobs,1)*zgrad0(iobs,outLoop)+       &
-!>   &                    zcglwk(iobs,1,outLoop)*tl_zgrad0(iobs)
-!>
+!^            tl_cg_QG(1)=tl_cg_QG(1)+                                  &
+!^   &                    tl_zcglwk(iobs,1)*zgrad0(iobs,outLoop)+       &
+!^   &                    zcglwk(iobs,1,outLoop)*tl_zgrad0(iobs)
+!^
               ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+                      &
      &                          zgrad0(iobs,outLoop)*ad_cg_QG(1)
               ad_zgrad0(iobs)=ad_zgrad0(iobs)+                          &
      &                        zcglwk(iobs,1,outLoop)*ad_cg_QG(1)
             END DO
-!>          tl_cg_QG(1)=0.0_r8
-!>
+!^          tl_cg_QG(1)=0.0_r8
+!^
             ad_cg_QG(1)=0.0_r8
 !
 ! Convert ADmodVal from v-space to x-space.
@@ -234,83 +235,83 @@
               IF (ObsErr(iobs).NE.0.0_r8) THEN
 !<>             tl_ADmodVal(iobs)=tl_ADmodVal(iobs)/SQRT(ObsErr(iobs))
 !<>             ad_ADmodVal(iobs)=ad_ADmodVal(iobs)/SQRT(ObsErr(iobs))
-!>
+!^
                 TLmodVal(iobs)=TLmodVal(iobs)/SQRT(ObsErr(iobs))
               END IF
             END DO
 !
 !  If preconditioning, convert ADmodVal from y-space to v-space.
 !
-!>          IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>            Lscale=2                 ! SQRT spectral LMP
-!>            Ltrans=.FALSE.
-!>            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
-!>   &                       ADmodVal)
-!>          END IF
-!>
+!^          IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^            Lscale=2                 ! SQRT spectral LMP
+!^            Ltrans=.FALSE.
+!^            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
+!^   &                       ADmodVal)
+!^          END IF
+!^
             DO iobs=1,Ndatum(ng)
 !<>           tl_ADmodVal(iobs)=tl_zcglwk(iobs,1)
 !<>           ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+ad_ADmodVal(iobs)
-!>
+!^
               ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+TLmodVal(iobs)
 !<>           ad_ADmodVal(iobs)=0.0_r8
               TLmodVal(iobs)=0.0_r8
 
-!>            tl_zcglwk(iobs,1)=(tl_pgrad(iobs)-                        &
-!>   &                           tl_Gnorm(outLoop)*                     &
-!>   &                           zcglwk(iobs,1,outLoop))/               &
-!>   &                          cg_Gnorm(outLoop)
-!>
+!^            tl_zcglwk(iobs,1)=(tl_pgrad(iobs)-                        &
+!^   &                           tl_Gnorm(outLoop)*                     &
+!^   &                           zcglwk(iobs,1,outLoop))/               &
+!^   &                          cg_Gnorm(outLoop)
+!^
               adfac=ad_zcglwk(iobs,1)/cg_Gnorm(outLoop)
               ad_cg_Gnorm(outLoop)=ad_cg_Gnorm(outLoop)-                &
      &                             zcglwk(iobs,1,outLoop)*adfac
               ad_pgrad(iobs)=adfac
               ad_zcglwk(iobs,1)=0.0_r8
             END DO
-!>          tl_cg_Gnorm(outLoop)=0.5_r8*tl_cg_Gnorm(outLoop)/           &
-!>   &                           cg_Gnorm(outLoop)
-!>
+!^          tl_cg_Gnorm(outLoop)=0.5_r8*tl_cg_Gnorm(outLoop)/           &
+!^   &                           cg_Gnorm(outLoop)
+!^
             ad_cg_Gnorm(outLoop)=0.5_r8*ad_cg_Gnorm(outLoop)/           &
      &                           cg_Gnorm(outLoop)
 
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_Gnorm(outLoop)=tl_cg_Gnorm(outLoop)+                &
-!>   &                             2.0_r8*tl_zgrad0(iobs)*              &
-!>   &                             zgrad0(iobs,outLoop)
-!>
+!^            tl_cg_Gnorm(outLoop)=tl_cg_Gnorm(outLoop)+                &
+!^   &                             2.0_r8*tl_zgrad0(iobs)*              &
+!^   &                             zgrad0(iobs,outLoop)
+!^
               ad_zgrad0(iobs)=ad_zgrad0(iobs)+                          &
      &                        2.0_r8*ad_cg_Gnorm(outLoop)*              &
      &                        zgrad0(iobs,outLoop)
-!>            tl_zgrad0(iobs)=tl_pgrad(iobs)
-!>
+!^            tl_zgrad0(iobs)=tl_pgrad(iobs)
+!^
               ad_pgrad(iobs)=ad_pgrad(iobs)+ad_zgrad0(iobs)
               ad_zgrad0(iobs)=0.0_r8
             END DO
-!>          tl_cg_Gnorm(outLoop)=0.0_r8
-!>
+!^          tl_cg_Gnorm(outLoop)=0.0_r8
+!^
             ad_cg_Gnorm(outLoop)=0.0_r8
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>          IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>            Lscale=2                 ! SQRT spectral LMP
-!>            Ltrans=.TRUE.
-!>            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
-!>   &                       pgrad)
-!>          END IF
+!^          IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^            Lscale=2                 ! SQRT spectral LMP
+!^            Ltrans=.TRUE.
+!^            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
+!^   &                       pgrad)
+!^          END IF
 
             DO iobs=1,Ndatum(ng)
 !
 ! Convert pgrad from x-space to v-space.
 !
               IF (ObsErr(iobs).NE.0.0_r8) THEN
-!>              tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
-!>
+!^              tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
+!^
                 ad_pgrad(iobs)=ad_pgrad(iobs)/SQRT(ObsErr(iobs))
               END IF
 # ifdef RBL4DVAR
-!>            tl_pgrad(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
-!>
+!^            tl_pgrad(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
+!^
               ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*           &
      &                        ad_pgrad(iobs)
               ad_pgrad(iobs)=0.0_r8
@@ -319,7 +320,7 @@
 !<>  &                       (tl_ObsVal(iobs)-tl_TLmodVal(iobs))
 !<>           ad_TLmodVal(iobs)=ad_TLmodVal(iobs)+                      &
 !<>  &                          ObsScale(iobs)*ad_pgrad(iobs)
-!>
+!^
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       ObsScale(iobs)*ad_pgrad(iobs)
               ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*           &
@@ -345,12 +346,12 @@
 !
               DO iobs=1,Ndatum(ng)
                 IF (ObsErr(iobs).NE.0.0_r8) THEN
-!>                tl_cg_innov(iobs)=tl_cg_innov(iobs)/SQRT(ObsErr(iobs))
-!>
+!^                tl_cg_innov(iobs)=tl_cg_innov(iobs)/SQRT(ObsErr(iobs))
+!^
                   ad_cg_innov(iobs)=ad_cg_innov(iobs)/SQRT(ObsErr(iobs))
 !<>               tl_ADmodVal(iobs)=tl_ADmodVal(iobs)/SQRT(ObsErr(iobs))
 !<>               ad_ADmodVal(iobs)=ad_ADmodVal(iobs)/SQRT(ObsErr(iobs))
-!>
+!^
                   TLmodVal(iobs)=TLmodVal(iobs)/SQRT(ObsErr(iobs))
                 END IF
               END DO
@@ -360,8 +361,8 @@
 !
               DO iobs=1,Ndatum(ng)
 # ifdef RBL4DVAR
-!>              tl_cg_innov(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
-!>
+!^              tl_cg_innov(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
+!^
                 ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*         &
      &                          ad_cg_innov(iobs)
                 ad_cg_innov(iobs)=0.0_r8
@@ -370,7 +371,7 @@
 !<>  &                            (tl_ObsVal(iobs)-tl_TLmodVal(iobs))
 !<>             ad_TLmodVal(iobs)=ad_TLmodVal(iobs)+                    &
 !<>  &                            ObsScale(iobs)*ad_cg_innov(iobs)
-!>
+!^
                 ADmodVal(iobs)=ADmodVal(iobs)+                          &
      &                         ObsScale(iobs)*ad_cg_innov(iobs)
                 ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*         &
@@ -379,7 +380,7 @@
 # endif
 !<>             tl_ADmodVal(iobs)=tl_cg_pxsave(iobs)
 !<>             ad_cg_pxsave(iobs)=ad_cg_pxsave(iobs)+ad_ADmodVal(iobs)
-!>
+!^
                 ad_cg_pxsave(iobs)=ad_cg_pxsave(iobs)+TLmodVal(iobs)
 !<>             ad_ADmodVal(iobs)=0.0_r8
                 TLmodVal(iobs)=0.0_r8
@@ -388,95 +389,95 @@
             ELSE
 
               DO iobs=1,Ndatum(ng)
-!>              tl_cg_QG(1)=tl_cg_QG(1)+                                &
-!>   &                      tl_zcglwk(iobs,1)*zgrad0(iobs,outLoop)+     &
-!>   &                      zcglwk(iobs,1,outLoop)*tl_zgrad0(iobs)
-!>
+!^              tl_cg_QG(1)=tl_cg_QG(1)+                                &
+!^   &                      tl_zcglwk(iobs,1)*zgrad0(iobs,outLoop)+     &
+!^   &                      zcglwk(iobs,1,outLoop)*tl_zgrad0(iobs)
+!^
                 ad_zgrad0(iobs)=ad_zgrad0(iobs)+                        &
      &                          zcglwk(iobs,1,outLoop)*ad_cg_QG(1)
                 ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+                    &
      &                            zgrad0(iobs,outLoop)*ad_cg_QG(1)
               END DO
-!>            tl_cg_QG(1)=0.0_r8
-!>
+!^            tl_cg_QG(1)=0.0_r8
+!^
               ad_cg_QG(1)=0.0_r8
 
               DO iobs=1,Ndatum(ng)
                 IF (ObsErr(iobs).NE.0.0_r8) THEN
 !<>               tl_ADmodVal(iobs)=tl_ADmodVal(iobs)/SQRT(ObsErr(iobs))
 !<>               ad_ADmodVal(iobs)=ad_ADmodVal(iobs)/SQRT(ObsErr(iobs))
-!>
+!^
                   TLmodVal(iobs)=TLmodVal(iobs)/SQRT(ObsErr(iobs))
                 END IF
               END DO
 !
 !  If preconditioning, convert ADmodVal from y-space to v-space.
 !
-!>            IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>              Lscale=2                 ! SQRT spectral LMP
-!>              Ltrans=.FALSE.
-!>              CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,   &
-!>   &                         ADmodVal)
-!>            END IF
-!>
+!^            IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^              Lscale=2                 ! SQRT spectral LMP
+!^              Ltrans=.FALSE.
+!^              CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,   &
+!^   &                         ADmodVal)
+!^            END IF
+!^
               DO iobs=1,Ndatum(ng)
 !<>             tl_ADmodVal(iobs)=tl_zcglwk(iobs,1)
 !<>             ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+ad_ADmodVal(iobs)
-!>
+!^
                 ad_zcglwk(iobs,1)=ad_zcglwk(iobs,1)+TLmodVal(iobs)
 !<>             ad_ADmodVal(iobs)=0.0_r8
                 TLmodVal(iobs)=0.0_r8
-!>              tl_zcglwk(iobs,1)=(tl_pgrad(iobs)-                      &
-!>   &                             tl_cg_Gnorm(outLoop)*                &
-!>   &                             zcglwk(iobs,1,outLoop))/             &
-!>   &                            cg_Gnorm(outLoop)
-!>
+!^              tl_zcglwk(iobs,1)=(tl_pgrad(iobs)-                      &
+!^   &                             tl_cg_Gnorm(outLoop)*                &
+!^   &                             zcglwk(iobs,1,outLoop))/             &
+!^   &                            cg_Gnorm(outLoop)
+!^
                 adfac=ad_zcglwk(iobs,1)/cg_Gnorm(outLoop)
                 ad_cg_Gnorm(outLoop)=ad_cg_Gnorm(outLoop)-              &
      &                               zcglwk(iobs,1,outLoop)*adfac
                 ad_pgrad(iobs)=ad_pgrad(iobs)+adfac
                 ad_zcglwk(iobs,1)=0.0_r8
               END DO
-!>            tl_cg_Gnorm(outLoop)=0.5_r8*tl_cg_Gnorm(outLoop)/         &
-!>   &                             cg_Gnorm(outLoop)
-!>
+!^            tl_cg_Gnorm(outLoop)=0.5_r8*tl_cg_Gnorm(outLoop)/         &
+!^   &                             cg_Gnorm(outLoop)
+!^
               ad_cg_Gnorm(outLoop)=0.5_r8*ad_cg_Gnorm(outLoop)/         &
      &                             cg_Gnorm(outLoop)
 
               DO iobs=1,Ndatum(ng)
-!>              tl_cg_Gnorm(outLoop)=tl_cg_Gnorm(outLoop)+              &
-!>   &                               2.0_r8*tl_zgrad0(iobs)*            &
-!>   &                               zgrad0(iobs,outLoop)
-!>
+!^              tl_cg_Gnorm(outLoop)=tl_cg_Gnorm(outLoop)+              &
+!^   &                               2.0_r8*tl_zgrad0(iobs)*            &
+!^   &                               zgrad0(iobs,outLoop)
+!^
                 ad_zgrad0(iobs)=ad_zgrad0(iobs)+                        &
      &                          2.0_r8*zgrad0(iobs,outLoop)*            &
      &                          ad_cg_Gnorm(outLoop)
-!>              tl_zgrad0(iobs)=tl_pgrad(iobs)
-!>
+!^              tl_zgrad0(iobs)=tl_pgrad(iobs)
+!^
                 ad_pgrad(iobs)=ad_pgrad(iobs)+ad_zgrad0(iobs)
                 ad_zgrad0(iobs)=0.0_r8
               END DO
-!>            tl_cg_Gnorm(outLoop)=0.0_r8
-!>
+!^            tl_cg_Gnorm(outLoop)=0.0_r8
+!^
               ad_cg_Gnorm(outLoop)=0.0_r8
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>            IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>              Lscale=2                 ! SQRT spectral LMP
-!>              Ltrans=.TRUE.
-!>              CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,   &
-!>   &                         pgrad)
-!>            END IF
+!^            IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^              Lscale=2                 ! SQRT spectral LMP
+!^              Ltrans=.TRUE.
+!^              CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,   &
+!^   &                         pgrad)
+!^            END IF
 
               DO iobs=1,Ndatum(ng)
 !
 !  Add I*x0=cg_pxsave contribution to the gradient and the term
 !  -b=cg_innov (everything is in v-space at this point).
 !
-!>              tl_pgrad(iobs)=tl_pgrad(iobs)+ObsScale(iobs)*           &
-!>   &                         (tl_cg_pxsave(iobs)+tl_cg_innov(iobs))
-!>
+!^              tl_pgrad(iobs)=tl_pgrad(iobs)+ObsScale(iobs)*           &
+!^   &                         (tl_cg_pxsave(iobs)+tl_cg_innov(iobs))
+!^
                 adfac=ObsScale(iobs)*ad_pgrad(iobs)
                 ad_cg_innov(iobs)=ad_cg_innov(iobs)+adfac
                 ad_cg_pxsave(iobs)=ad_cg_pxsave(iobs)+adfac
@@ -484,14 +485,14 @@
 !  Convert gradient contribution from x-space to v-space.
 !
                 IF (ObsErr(iobs).NE.0.0_r8) THEN
-!>                tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
-!>
+!^                tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
+!^
                   ad_pgrad(iobs)=ad_pgrad(iobs)/SQRT(ObsErr(iobs))
                 END IF
 !<>             tl_pgrad(iobs)=ObsScale(iobs)*tl_TLmodVal(iobs)
 !<>             ad_TLmodVal(iobs)=ad_TLmodVal(iobs)+                    &
 !<>  &                            ObsScale(iobs)*ad_pgrad(iobs)
-!>
+!^
                 ADmodVal(iobs)=ADmodVal(iobs)+                          &
      &                         ObsScale(iobs)*ad_pgrad(iobs)
                 ad_pgrad(iobs)=0.0_r8
@@ -507,7 +508,7 @@
             IF (ObsErr(iobs).NE.0.0_r8) THEN
 !<>           tl_ADmodVal(iobs)=tl_ADmodVal(iobs)/SQRT(ObsErr(iobs))
 !<>           ad_ADmodVal(iobs)=ad_ADmodVal(iobs)/SQRT(ObsErr(iobs))
-!>
+!^
               TLmodVal(iobs)=TLmodVal(iobs)/SQRT(ObsErr(iobs))
             END IF
           END DO
@@ -518,14 +519,14 @@
               DO iobs=1,Ndatum(ng)
 !<>             tl_cg_pxsave(iobs)=tl_ADmodVal(iobs)
 !<>             ad_ADmodVal(iobs)=ad_ADmodVal(iobs)+ad_cg_pxsave(iobs)
-!>
+!^
                 TLmodVal(iobs)=TLmodVal(iobs)+ad_cg_pxsave(iobs)
                 ad_cg_pxsave(iobs)=0.0_r8
               END DO
               DO iobs=1,Ndatum(ng)
 !<>             tl_ADmodVal(iobs)=tl_ADmodVal(iobs)+tl_cg_pxsave(iobs)
 !<>             ad_cg_pxsave(iobs)=ad_ADmodVal(iobs)
-!>
+!^
                 ad_cg_pxsave(iobs)=TLmodVal(iobs)
               END DO
             END IF
@@ -536,7 +537,7 @@
             DO iobs=1,Ndatum(ng)
 !<>           tl_ADmodVal(iobs)=tl_px(iobs)
 !<>           ad_px(iobs)=ad_px(iobs)+ad_ADmodVal(iobs)
-!>
+!^
               ad_px(iobs)=ad_px(iobs)+TLmodVal(iobs)
 !<>           ad_ADmodVal(iobs)=0.0_r8
               TLmodVal(iobs)=0.0_r8
@@ -545,18 +546,18 @@
 !
 !  If preconditioning, convert ADmodVal from y-space to v-space.
 !
-!>          IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>            Lscale=2                 ! SQRT spectral LMP
-!>            Ltrans=.FALSE.
-!>            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
-!>   &                       ADmodVal)
-!>          END IF
-!>
+!^          IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^            Lscale=2                 ! SQRT spectral LMP
+!^            Ltrans=.FALSE.
+!^            CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop,     &
+!^   &                       ADmodVal)
+!^          END IF
+!^
             DO iobs=1,Ndatum(ng)
 !<>           tl_ADmodVal(iobs)=tl_zcglwk(iobs,innLoop+1)
 !<>           ad_zcglwk(iobs,innLoop+1)=ad_zcglwk(iobs,innLoop+1)+      &
 !<>  &                                  ad_ADmodVal(iobs)
-!>
+!^
               ad_zcglwk(iobs,innLoop+1)=ad_zcglwk(iobs,innLoop+1)+      &
      &                                  TLmodVal(iobs)
 !<>           ad_ADmodVal(iobs)=0.0_r8
@@ -682,24 +683,24 @@
 # endif
             DO iobs=1,Ndatum(ng)
               DO ivec=1,innLoop
-!>              tl_px(iobs)=tl_px(iobs)+                                &
-!>   &                      tl_zcglwk(iobs,ivec)*zu(ivec)+              &
-!>   &                      zcglwk(iobs,ivec,outLoop)*tl_zu(ivec)
-!>
+!^              tl_px(iobs)=tl_px(iobs)+                                &
+!^   &                      tl_zcglwk(iobs,ivec)*zu(ivec)+              &
+!^   &                      zcglwk(iobs,ivec,outLoop)*tl_zu(ivec)
+!^
                 ad_zu(ivec)=ad_zu(ivec)+                                &
      &                      zcglwk(iobs,ivec,outLoop)*ad_px(iobs)
                 ad_zcglwk(iobs,ivec)=ad_zcglwk(iobs,ivec)+              &
      &                               zu(ivec)*ad_px(iobs)
               END DO
-!>            tl_px(iobs)=0.0_r8
-!>
+!^            tl_px(iobs)=0.0_r8
+!^
               ad_px(iobs)=0.0_r8
             END DO
 
 # ifdef MINRES
             DO i=1,innLoop
-!>            tl_zu(i)=tl_ze(i)
-!>
+!^            tl_zu(i)=tl_ze(i)
+!^
               ad_ze(i)=ad_ze(i)+ad_zu(i)
               ad_zu(i)=0.0_r8
             END DO
@@ -708,46 +709,46 @@
 !
             DO j=1,innLoop
               DO i=j-1,1,-1
-!>              tl_ze(i)=tl_ze(i)-tl_ze(j)*zLTt(i,j)
-!>
+!^              tl_ze(i)=tl_ze(i)-tl_ze(j)*zLTt(i,j)
+!^
                 ad_ze(j)=ad_ze(j)-ad_ze(i)*zLTt(i,j)
               END DO
-!>            tl_ze(j)=tl_ze(j)/zLTt(j,j)
-!>
+!^            tl_ze(j)=tl_ze(j)/zLTt(j,j)
+!^
               ad_ze(j)=ad_ze(j)/zLTt(j,j)
             END DO
 !
             DO i=1,innLoop
-!>            tl_ze(i)=tl_ze(i)-tl_zrhs(i)
-!>
+!^            tl_ze(i)=tl_ze(i)-tl_zrhs(i)
+!^
               ad_zrhs(i)=ad_zrhs(i)-ad_ze(i)
               DO j=1,innLoop
-!>              tl_zrhs(i)=tl_zrhs(i)+tl_zLTt(i,j)*ze(j)
-!>
+!^              tl_zrhs(i)=tl_zrhs(i)+tl_zLTt(i,j)*ze(j)
+!^
                 ad_zLTt(i,j)=ad_zLTt(i,j)+ze(j)*ad_zrhs(i)
               END DO
-!>            tl_zrhs(i)=0.0_r8
-!>
+!^            tl_zrhs(i)=0.0_r8
+!^
               ad_zrhs(i)=0.0_r8
             END DO
 !
 !    Use saved values zes of ze here.
 !
-!>          tl_ze(innLoop)=tl_zck*ze(innLoop)+zck*tl_ze(innLoop)
-!>
+!^          tl_ze(innLoop)=tl_zck*ze(innLoop)+zck*tl_ze(innLoop)
+!^
             ad_zck=ad_zck+zes(innLoop)*ad_ze(innLoop)
             ad_ze(innLoop)=zck*ad_ze(innLoop)
-!>          tl_zck=tl_zLT(innLoop,innLoop)/zgk-tl_zgk*zck/zgk
-!>
+!^          tl_zck=tl_zLT(innLoop,innLoop)/zgk-tl_zgk*zck/zgk
+!^
             adfac=ad_zck/zgk
             ad_zLT(innLoop,innLoop)=ad_zLT(innLoop,innLoop)+adfac
             ad_zgk=ad_zgk-zck*adfac
             ad_zck=0.0_r8
             IF (zgk.GT.0.0_r8) THEN
-!>            tl_zgk=(tl_zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+     &
-!>   &                tl_cg_beta(innLoop+1)*cg_beta(innLoop+1,outLoop))/&
-!>   &               zgk
-!>
+!^            tl_zgk=(tl_zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+     &
+!^   &                tl_cg_beta(innLoop+1)*cg_beta(innLoop+1,outLoop))/&
+!^   &               zgk
+!^
               adfac=ad_zgk/zgk
               ad_zLT(innLoop,innLoop)=ad_zLT(innLoop,innLoop)+          &
      &                                zLT(innLoop,innLoop)*adfac
@@ -755,8 +756,8 @@
      &                              cg_beta(innLoop+1,outLoop)*adfac
               ad_zgk=0.0_r8
             ELSE
-!>            tl_zgk=0.0_r8
-!>
+!^            tl_zgk=0.0_r8
+!^
               ad_zgk=0.0_r8
             ENDIF
 !
@@ -794,65 +795,65 @@
               END DO
 !
               DO j=1,innLoop
-!>              tl_ze(j)=tl_ze(j)-tl_tau(i)*zsum*zeref(j)-              &
-!>   &                            tau(i)*tl_zsum*zeref(j)-              &
-!>   &                            tau(i)*zsum*tl_zeref(j)
-!>
+!^              tl_ze(j)=tl_ze(j)-tl_tau(i)*zsum*zeref(j)-              &
+!^   &                            tau(i)*tl_zsum*zeref(j)-              &
+!^   &                            tau(i)*zsum*tl_zeref(j)
+!^
                 ad_tau(i)=ad_tau(i)-zsum*zeref(j)*ad_ze(j)
                 ad_zsum=ad_zsum-tau(i)*zeref(j)*ad_ze(j)
                 ad_zeref(j)=ad_zeref(j)-tau(i)*zsum*ad_ze(j)
               END DO
               DO j=1,innLoop
-!>              tl_zsum=tl_zsum+tl_ze(j)*zeref(j)+ze(j)*tl_zeref(j)
-!>
+!^              tl_zsum=tl_zsum+tl_ze(j)*zeref(j)+ze(j)*tl_zeref(j)
+!^
                 ad_ze(j)=ad_ze(j)+zeref(j)*ad_zsum
                 ad_zeref(j)=ad_zeref(j)+zes(j)*ad_zsum
               END DO
-!>            tl_zsum=0.0_r8
-!>
+!^            tl_zsum=0.0_r8
+!^
               ad_zsum=0.0_r8
               DO j=i+1,innLoop
-!>              tl_zeref(j)=tl_ztriT(i,j)
+!^              tl_zeref(j)=tl_ztriT(i,j)
                 ad_ztriT(i,j)=ad_ztriT(i,j)+ad_zeref(j)
                 ad_zeref(j)=0.0_r8
               END DO
-!>            tl_zeref(i)=0.0_r8
-!>
+!^            tl_zeref(i)=0.0_r8
+!^
               ad_zeref(i)=0.0_r8
               DO j=1,innLoop
-!>              tl_zeref(j)=0.0_r8
-!>
+!^              tl_zeref(j)=0.0_r8
+!^
                 ad_zeref(j)=0.0_r8
               END DO
             END DO
             DO i=1,innLoop
-!>            tl_ze(i)=-tl_cg_QG(i,outLoop)
-!>
+!^            tl_ze(i)=-tl_cg_QG(i,outLoop)
+!^
               ad_cg_QG(i)=ad_cg_QG(i)-ad_ze(i)
               ad_ze(i)=0.0_r8
             END DO
 !
             DO j=1,innLoop
               DO i=1,innLoop
-!>              tl_zLTt(i,j)=tl_zLT(j,i)
-!>
+!^              tl_zLTt(i,j)=tl_zLT(j,i)
+!^
                 ad_zLT(j,i)=ad_zLT(j,i)+ad_zLTt(i,j)
                 ad_zLTt(i,j)=0.0_r8
               END DO
             END DO
             DO i=1,innLoop
               DO j=1,i
-!>              tl_zLT(i,j)=tl_ztriT(i,j)
-!>
+!^              tl_zLT(i,j)=tl_ztriT(i,j)
+!^
                 ad_ztriT(i,j)=ad_ztriT(i,j)+ad_zLT(i,j)
                 ad_zLT(i,j)=0.0_r8
               END DO
             END DO
-!>          tl_zLT=0.0_r8
-!>
+!^          tl_zLT=0.0_r8
+!^
             ad_zLT=0.0_r8
-!>          tl_zLTt=0.0_r8
-!>
+!^          tl_zLTt=0.0_r8
+!^
             ad_zLTt=0.0_r8
 !
 !  Grab a clean copy of ztriT.
@@ -867,54 +868,54 @@
      &                    zwork1, ad_zwork1)
 !
             DO i=2,innLoop
-!>            tl_ztriT(i,i-1)=tl_cg_beta(i)
-!>
+!^            tl_ztriT(i,i-1)=tl_cg_beta(i)
+!^
               ad_cg_beta(i)=ad_cg_beta(i)+ad_ztriT(i,i-1)
               ad_ztriT(i,i-1)=0.0_r8
             END DO
             DO i=1,innLoop-1
-!>            tl_ztriT(i,i+1)=tl_cg_beta(i+1)
-!>
+!^            tl_ztriT(i,i+1)=tl_cg_beta(i+1)
+!^
               ad_cg_beta(i+1)=ad_cg_beta(i+1)+ad_ztriT(i,i+1)
               ad_ztriT(i,i+1)=0.0_r8
             END DO
             DO i=1,innLoop
-!>            tl_ztriT(i,i)=tl_cg_delta(i)
-!>
+!^            tl_ztriT(i,i)=tl_cg_delta(i)
+!^
               ad_cg_delta(i)=ad_cg_delta(i)+ad_ztriT(i,i)
               ad_ztriT(i,i)=0.0_r8
             END DO
-!>          tl_ztriT=0.0_r8
-!>
+!^          tl_ztriT=0.0_r8
+!^
             ad_ztriT=0.0_r8
 # else
             IF (NinnLoop.eq.1) THEN
               zu(1)=-cg_QG(1,outLoop)/cg_delta(1,outLoop)
-!>            tl_zu(1)=tl_zrhs(1)/cg_delta(1,outLoop)
-!>
+!^            tl_zu(1)=tl_zrhs(1)/cg_delta(1,outLoop)
+!^
               ad_zrhs(1)=ad_zrhs(1)+ad_zu(1)/cg_delta(1,outLoop)
               ad_zu(1)=0.0_r8
-!>            tl_zrhs(1)=-tl_cg_QG(1)-tl_cg_delta(1)*zu(1)
-!>
+!^            tl_zrhs(1)=-tl_cg_QG(1)-tl_cg_delta(1)*zu(1)
+!^
               ad_cg_QG(1)=ad_cg_QG(1)-ad_zrhs(1)
               ad_cg_delta(1)=ad_cg_delta(1)-zu(1)*ad_zrhs(1)
               ad_zrhs(1)=0.0_r8
             ELSE
-!>            DO ivec=innLoop-1,1,-1
-!>
+!^            DO ivec=innLoop-1,1,-1
+!^
               DO ivec=1,innLoop-1
-!>              tl_zu(ivec)=tl_zu(ivec)-zgam(ivec+1)*tl_zu(ivec+1)
-!>
+!^              tl_zu(ivec)=tl_zu(ivec)-zgam(ivec+1)*tl_zu(ivec+1)
+!^
                 ad_zu(ivec+1)=ad_zu(ivec+1)-zgam(ivec+1)*ad_zu(ivec)
               END DO
-!>            DO ivec=2,innLoop
-!>
+!^            DO ivec=2,innLoop
+!^
               DO ivec=innLoop,2,-1
                 zbet=cg_delta(ivec,outLoop)-                            &
      &               cg_beta(ivec,outLoop)*zgam(ivec)
-!>              tl_zu(ivec)=(tl_zrhs(ivec)-cg_beta(ivec,outLoop)*       &
-!>   &                       tl_zu(ivec-1))/zbet
-!>
+!^              tl_zu(ivec)=(tl_zrhs(ivec)-cg_beta(ivec,outLoop)*       &
+!^   &                       tl_zu(ivec-1))/zbet
+!^
                 adfac=ad_zu(ivec)/zbet
                 ad_zu(ivec-1)=ad_zu(ivec-1)-                            &
      &                        cg_beta(ivec,outLoop)*adfac
@@ -922,14 +923,14 @@
                 ad_zu(ivec)=0.0_r8
               END DO
               zbet=cg_delta(1,outLoop)
-!>            tl_zu(1)=tl_zrhs(1)/zbet
-!>
+!^            tl_zu(1)=tl_zrhs(1)/zbet
+!^
               ad_zrhs(1)=ad_zrhs(1)+ad_zu(1)/zbet
               ad_zu(1)=0.0_r8
-!>            tl_zrhs(innLoop)=-tl_cg_QG(innLoop)-                      &
-!>   &                         tl_cg_beta(innLoop)*zu(innLoop-1)-       &
-!>   &                         tl_cg_delta(innLoop)*zu(innLoop)
-!>
+!^            tl_zrhs(innLoop)=-tl_cg_QG(innLoop)-                      &
+!^   &                         tl_cg_beta(innLoop)*zu(innLoop-1)-       &
+!^   &                         tl_cg_delta(innLoop)*zu(innLoop)
+!^
               ad_cg_QG(innLoop)=ad_cg_QG(innLoop)-ad_zrhs(innLoop)
               ad_cg_beta(innLoop)=ad_cg_beta(innLoop)-                  &
      &                            zu(innLoop-1)*ad_zrhs(innLoop)
@@ -938,11 +939,11 @@
               ad_zrhs(innLoop)=0.0_r8
 
               DO ivec=2,innLoop-1
-!>              tl_zrhs(ivec)=-tl_cg_QG(ivec)-                          &
-!>   &                        tl_cg_beta(ivec)*zu(ivec-1)-              &
-!>   &                        tl_cg_delta(ivec)*zu(ivec)-               &
-!>   &                        tl_cg_beta(ivec+1)*zu(ivec+1)
-!>
+!^              tl_zrhs(ivec)=-tl_cg_QG(ivec)-                          &
+!^   &                        tl_cg_beta(ivec)*zu(ivec-1)-              &
+!^   &                        tl_cg_delta(ivec)*zu(ivec)-               &
+!^   &                        tl_cg_beta(ivec+1)*zu(ivec+1)
+!^
                 ad_cg_QG(ivec)=ad_cg_QG(ivec)-ad_zrhs(ivec)
                 ad_cg_beta(ivec)=ad_cg_beta(ivec)-                      &
      &                           zu(ivec-1)*ad_zrhs(ivec)
@@ -952,10 +953,10 @@
      &                             zu(ivec+1)*ad_zrhs(ivec)
                 ad_zrhs(ivec)=0.0_r8
               END DO
-!>            tl_zrhs(1)=-tl_cg_QG(1)-                                  &
-!>   &                   tl_cg_delta(1)*zu(1)-                          &
-!>   &                   tl_cg_beta(2)*zu(2)
-!>
+!^            tl_zrhs(1)=-tl_cg_QG(1)-                                  &
+!^   &                   tl_cg_delta(1)*zu(1)-                          &
+!^   &                   tl_cg_beta(2)*zu(2)
+!^
               ad_cg_QG(1)=ad_cg_QG(1)-ad_zrhs(1)
               ad_cg_delta(1)=ad_cg_delta(1)-zu(1)*ad_zrhs(1)
               ad_cg_beta(2)=ad_cg_beta(2)-zu(2)*ad_zrhs(1)
@@ -965,12 +966,12 @@
           END IF
 
           DO iobs=1,Ndatum(ng)
-!>          tl_cg_QG(innLoop+1)=tl_cg_QG(innLoop+1)+                    &
-!>   &                          tl_zcglwk(iobs,innLoop+1)*              &
-!>   &                          zgrad0(iobs,outLoop)+                   &
-!>   &                          zcglwk(iobs,innLoop+1,outLoop)*         &
-!>   &                          tl_zgrad0(iobs)
-!>
+!^          tl_cg_QG(innLoop+1)=tl_cg_QG(innLoop+1)+                    &
+!^   &                          tl_zcglwk(iobs,innLoop+1)*              &
+!^   &                          zgrad0(iobs,outLoop)+                   &
+!^   &                          zcglwk(iobs,innLoop+1,outLoop)*         &
+!^   &                          tl_zgrad0(iobs)
+!^
             ad_zgrad0(iobs)=ad_zgrad0(iobs)+                            &
      &                      zcglwk(iobs,innLoop+1,outLoop)*             &
      &                      ad_cg_QG(innLoop+1)
@@ -978,24 +979,24 @@
      &                                zgrad0(iobs,outLoop)*             &
      &                                ad_cg_QG(innLoop+1)
           END DO
-!>        tl_cg_QG(innLoop+1)=0.0_r8
-!>
+!^        tl_cg_QG(innLoop+1)=0.0_r8
+!^
           ad_cg_QG(innLoop+1)=0.0_r8
           DO iobs=1,Ndatum(ng)
-!>          tl_zcglwk(iobs,innLoop+1)=(tl_pgrad(iobs)-                  &
-!>   &                                 tl_cg_beta(innLoop+1)*           &
-!>   &                                 zcglwk(iobs,innLoop+1,outLoop))/ &
-!>   &                                cg_beta(innLoop+1,outLoop)
-!>
+!^          tl_zcglwk(iobs,innLoop+1)=(tl_pgrad(iobs)-                  &
+!^   &                                 tl_cg_beta(innLoop+1)*           &
+!^   &                                 zcglwk(iobs,innLoop+1,outLoop))/ &
+!^   &                                cg_beta(innLoop+1,outLoop)
+!^
             adfac=ad_zcglwk(iobs,innLoop+1)/cg_beta(innLoop+1,outLoop)
             ad_cg_beta(innLoop+1)=ad_cg_beta(innLoop+1)-                &
      &                            zcglwk(iobs,innLoop+1,outLoop)*adfac
             ad_pgrad(iobs)=ad_pgrad(iobs)+adfac
             ad_zcglwk(iobs,innLoop+1)=0.0_r8
           END DO
-!>        tl_cg_beta(innLoop+1)=0.5_r8*tl_cg_beta(innLoop+1)/           &
-!>   &                          cg_beta(innLoop+1,outLoop)
-!>
+!^        tl_cg_beta(innLoop+1)=0.5_r8*tl_cg_beta(innLoop+1)/           &
+!^   &                          cg_beta(innLoop+1,outLoop)
+!^
           ad_cg_beta(innLoop+1)=0.5_r8*ad_cg_beta(innLoop+1)/           &
      &                          cg_beta(innLoop+1,outLoop)
 !
@@ -1016,24 +1017,24 @@
 !
 !  If preconditioning, convert zt from y-space to v-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.FALSE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.FALSE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
             pgrad(iobs)=pgrad(iobs)+ObsScale(iobs)*zt(iobs)
           END DO
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.TRUE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.TRUE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
+!^        END IF
+!^
 !
 !  Compute the new Lanczos vector.
 !
@@ -1061,14 +1062,14 @@
           END DO
 
           DO iobs=1,Ndatum(ng)
-!>          tl_cg_beta(innLoop+1)=tl_cg_beta(innLoop+1)+                &
-!>   &                            2.0_r8*tl_pgrad(iobs)*pgrad(iobs)
-!>
+!^          tl_cg_beta(innLoop+1)=tl_cg_beta(innLoop+1)+                &
+!^   &                            2.0_r8*tl_pgrad(iobs)*pgrad(iobs)
+!^
             ad_pgrad(iobs)=ad_pgrad(iobs)+                              &
      &                     2.0_r8*pgrad(iobs)*ad_cg_beta(innLoop+1)
           END DO
-!>        tl_cg_beta(innLoop+1)=0.0_r8
-!>
+!^        tl_cg_beta(innLoop+1)=0.0_r8
+!^
           ad_cg_beta(innLoop+1)=0.0_r8
 !
 !  Compute appropriate value of pgrad.
@@ -1088,24 +1089,24 @@
 !
 !  If preconditioning, convert zt from y-space to v-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.FALSE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.FALSE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
             pgrad(iobs)=pgrad(iobs)+ObsScale(iobs)*zt(iobs)
           END DO
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.TRUE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.TRUE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
+!^        END IF
+!^
 !
 !  Compute the new Lanczos vector.
 !
@@ -1130,8 +1131,8 @@
 !
 !  Orthonormalize against previous Lanczos vectors.
 !
-!>        DO ivec=innLoop,1,-1
-!>
+!^        DO ivec=innLoop,1,-1
+!^
           DO ivec=1,innLoop
 
             DO iobs=1,Ndatum(ng)
@@ -1147,37 +1148,37 @@
 
             ad_dla=0.0_r8
             DO iobs=1,Ndatum(ng)
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
-!>   &                       cg_dla(ivec,outLoop)*tl_zcglwk(iobs,ivec)- &
-!>   &                       tl_dla*zcglwk(iobs,ivec,outLoop)
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
+!^   &                       cg_dla(ivec,outLoop)*tl_zcglwk(iobs,ivec)- &
+!^   &                       tl_dla*zcglwk(iobs,ivec,outLoop)
+!^
               ad_zcglwk(iobs,ivec)=ad_zcglwk(iobs,ivec)-                &
      &                             cg_dla(ivec,outLoop)*ad_pgrad(iobs)
               ad_dla=ad_dla-zcglwk(iobs,ivec,outLoop)*ad_pgrad(iobs)
             END DO
             DO iobs=1,Ndatum(ng)
-!>            tl_dla=tl_dla+                                            &
-!>   &               tl_pgrad(iobs)*zcglwk(iobs,ivec,outLoop)+          &
-!>   &               pgrad(iobs)*tl_zcglwk(iobs,ivec)
-!>
+!^            tl_dla=tl_dla+                                            &
+!^   &               tl_pgrad(iobs)*zcglwk(iobs,ivec,outLoop)+          &
+!^   &               pgrad(iobs)*tl_zcglwk(iobs,ivec)
+!^
               ad_zcglwk(iobs,ivec)=ad_zcglwk(iobs,ivec)+                &
      &                             pgrad(iobs)*ad_dla
               ad_pgrad(iobs)=ad_pgrad(iobs)+                            &
      &                       zcglwk(iobs,ivec,outLoop)*ad_dla
             END DO
-!>          tl_dla=0.0_r8
-!>
+!^          tl_dla=0.0_r8
+!^
             ad_dla=0.0_r8
           END DO
 
           IF (innLoop.gt.1) THEN
             DO iobs=1,Ndatum(ng)
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
-!>   &                       tl_cg_beta(innLoop)*                       &
-!>   &                       zcglwk(iobs,innLoop-1,outLoop)-            &
-!>   &                       cg_beta(innLoop,outLoop)*                  &
-!>   &                       tl_zcglwk(iobs,innLoop-1)
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
+!^   &                       tl_cg_beta(innLoop)*                       &
+!^   &                       zcglwk(iobs,innLoop-1,outLoop)-            &
+!^   &                       cg_beta(innLoop,outLoop)*                  &
+!^   &                       tl_zcglwk(iobs,innLoop-1)
+!^
               ad_zcglwk(iobs,innLoop-1)=ad_zcglwk(iobs,innLoop-1)-      &
      &                                  cg_beta(innLoop,outLoop)*       &
      &                                  ad_pgrad(iobs)
@@ -1187,12 +1188,12 @@
             END DO
           END IF
           DO iobs=1,Ndatum(ng)
-!>          tl_pgrad(iobs)=tl_pgrad(iobs)-                              &
-!>   &                     tl_cg_delta(innLoop)*                        &
-!>   &                     zcglwk(iobs,innLoop,outLoop)-                &
-!>   &                     cg_delta(innLoop,outLoop)*                   &
-!>   &                     tl_zcglwk(iobs,innLoop)
-!>
+!^          tl_pgrad(iobs)=tl_pgrad(iobs)-                              &
+!^   &                     tl_cg_delta(innLoop)*                        &
+!^   &                     zcglwk(iobs,innLoop,outLoop)-                &
+!^   &                     cg_delta(innLoop,outLoop)*                   &
+!^   &                     tl_zcglwk(iobs,innLoop)
+!^
             ad_zcglwk(iobs,innLoop)=ad_zcglwk(iobs,innLoop)-            &
      &                              cg_delta(innLoop,outLoop)*          &
      &                              ad_pgrad(iobs)
@@ -1218,78 +1219,78 @@
 !
 !  If preconditioning, convert zt from y-space to v-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.FALSE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.FALSE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
             pgrad(iobs)=pgrad(iobs)+ObsScale(iobs)*zt(iobs)
           END DO
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.TRUE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.TRUE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
-!>          tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                  &
-!>   &                           tl_zcglwk(iobs,innLoop)*pgrad(iobs)+   &
-!>   &                           zcglwk(iobs,innLoop,outLoop)*          &
-!>   &                           tl_pgrad(iobs)
-!>
+!^          tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                  &
+!^   &                           tl_zcglwk(iobs,innLoop)*pgrad(iobs)+   &
+!^   &                           zcglwk(iobs,innLoop,outLoop)*          &
+!^   &                           tl_pgrad(iobs)
+!^
             ad_pgrad(iobs)=ad_pgrad(iobs)+                              &
      &                     zcglwk(iobs,innLoop,outLoop)*                &
      &                     ad_cg_delta(innLoop)
             ad_zcglwk(iobs,innLoop)=ad_zcglwk(iobs,innLoop)+            &
      &                              pgrad(iobs)*ad_cg_delta(innLoop)
           END DO
-!>        tl_cg_delta(innLoop)=0.0_r8
-!>
+!^        tl_cg_delta(innLoop)=0.0_r8
+!^
           ad_cg_delta(innLoop)=0.0_r8
 !
 !  If preconditioning, convert pgrad from v-space to y-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.TRUE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.TRUE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, pgrad)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
-!>          tl_pgrad(iobs)=tl_pgrad(iobs)+ObsScale(iobs)*tl_zt(iobs)
-!>
+!^          tl_pgrad(iobs)=tl_pgrad(iobs)+ObsScale(iobs)*tl_zt(iobs)
+!^
             ad_zt(iobs)=ad_zt(iobs)+ObsScale(iobs)*ad_pgrad(iobs)
           END DO
 !
 !  If preconditioning, convert zt from y-space to v-space.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=2                 ! SQRT spectral LMP
-!>          Ltrans=.FALSE.
-!>          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
-!>        END IF
-!>
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=2                 ! SQRT spectral LMP
+!^          Ltrans=.FALSE.
+!^          CALL rprecond (ng, Lscale, Ltrans, outLoop, NinnLoop, zt)
+!^        END IF
+!^
           DO iobs=1,Ndatum(ng)
-!>          tl_zt(iobs)=tl_zcglwk(iobs,innLoop)
-!>
+!^          tl_zt(iobs)=tl_zcglwk(iobs,innLoop)
+!^
             ad_zcglwk(iobs,innLoop)=ad_zcglwk(iobs,innLoop)+ad_zt(iobs)
             ad_zt(iobs)=0.0_r8
           END DO
           DO iobs=1,Ndatum(ng)
             IF (ObsErr(iobs).NE.0.0_r8) THEN
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)/SQRT(ObsErr(iobs))
+!^
               ad_pgrad(iobs)=ad_pgrad(iobs)/SQRT(ObsErr(iobs))
             END IF
-!>          tl_pgrad(iobs)=ObsScale(iobs)*tl_TLmodVal(iobs)
+!^          tl_pgrad(iobs)=ObsScale(iobs)*tl_TLmodVal(iobs)
 !<>         ad_TLmodVal(iobs)=ad_TLmodVal(iobs)+ObsScale(iobs)*         &
 !<>  &                        ad_pgrad(iobs)
-!>
+!^
             ADmodVal(iobs)=ADmodVal(iobs)+ObsScale(iobs)*ad_pgrad(iobs)
             ad_pgrad(iobs)=0.0_r8
           END DO

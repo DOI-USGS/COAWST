@@ -3,9 +3,9 @@
 #if defined SSH_TIDES || defined UV_TIDES
 !
 !git $Id$
-!svn $Id: mod_tides.F 1099 2022-01-06 21:01:01Z arango $
+!svn $Id: mod_tides.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -213,8 +213,8 @@
       IF (LprocessTides(ng)) THEN
         MTC=0
         foundit=.FALSE.
-!        SELECT CASE (TIDE(ng)%IOtype)
-!          CASE (io_nf90)
+        SELECT CASE (TIDE(ng)%IOtype)
+          CASE (io_nf90)
             CALL netcdf_inq_var (ng, iNLM, TIDE(ng)%name,               &
      &                           MyVarName = Vname(1,idTper),           &
      &                           SearchVar = foundit,                   &
@@ -231,7 +231,7 @@
      &                               nVardim = nvdim,                   &
      &                               nVarAtt = nvatt)
 # endif
-!        END SELECT
+        END SELECT
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set maximum number of tidal components.  Allocate and initialize

@@ -1,25 +1,15 @@
 #include "cppdefs.h"
-      MODULE ad_biology_mod
 #if defined ADJOINT && defined BIOLOGY
-!
-!svn $Id: ad_biology.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!  This routine computes the adjoint source and sink terms for the     !
-!  selected biology model.                                             !
-!                                                                      !
-!=======================================================================
-!
-      implicit none
 
-      PRIVATE
-      PUBLIC  :: ad_biology
-
-      CONTAINS
+/*
+** svn $Is$
+************************************************************************
+**                                                                    **
+** This routine computes the adjoint source and sink terms for the    **
+** selected biology model.                                            **
+**                                                                    **
+************************************************************************
+*/
 
 # if defined BIO_FENNEL
 !!#  include <ad_fennel.h>
@@ -32,6 +22,7 @@
 # elif defined NPZD_POWELL
 #  include <ad_npzd_Powell.h>
 # endif
-
-#endif
+#else
+      MODULE ad_biology_mod
       END MODULE ad_biology_mod
+#endif

@@ -37,9 +37,9 @@ function [status]=c_climatology(S)
 %    status      Error flag.
 %
 
-% svn $Id: c_climatology.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: c_climatology.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -53,7 +53,7 @@ if (isfield(S,'ncname')),
 else
   error(['C_CLIMATOLOGY - Cannot find dimension parameter: ncname, ',   ...
          'in structure array S']);
-end,
+end
 
 if (isfield(S,'spherical')),
   spherical=S.spherical;
@@ -80,7 +80,7 @@ if (isfield(S,'Mm')),
 else
   error(['C_CLIMATOLOGY - Cannot find dimension parameter: Mm, ',       ...
          'in structure array S']);
-end,
+end
 
 if (isfield(S,'N')),
   N=S.N;
@@ -114,7 +114,7 @@ if (isfield(S,'def_v2d')),
 else   
   S.def_v2d=0;
   S.v2d_time=0;
-end,
+end
 
 if (isfield(S,'def_v3d')),
   if (S.def_v3d && ~isfield(S,'v3d_time')),
@@ -124,7 +124,7 @@ if (isfield(S,'def_v3d')),
 else   
   S.def_v3d=0;
   S.v3d_time=0;
-end,
+end
 
 if (isfield(S,'def_temp')),
   if (S.def_temp && ~isfield(S,'temp_time')),
@@ -134,7 +134,7 @@ if (isfield(S,'def_temp')),
 else  
   S.def_temp=0;
   S.temp_time=0;
-end,
+end
 
 if (isfield(S,'def_salt')),
   if (S.def_salt && ~isfield(S,'salt_time')),
@@ -240,153 +240,56 @@ Vname.salt        = 'salt';
 %  Create initial conditions NetCDF file.
 %--------------------------------------------------------------------------
 
-[ncid,status]=mexnc('create',ncname,'clobber');
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: CREATE - unable to create file: ', ncname]);
-end
+mode = netcdf.getConstant('CLOBBER');
+mode = bitor(mode, netcdf.getConstant('64BIT_OFFSET'));
+
+ncid = netcdf.create(ncname, mode);
 
 %--------------------------------------------------------------------------
 %  Define dimensions.
 %--------------------------------------------------------------------------
 
-[did.xr,status]=mexnc('def_dim',ncid,Dname.xr,Dsize.xr); 
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.xr]);
+did.xr = netcdf.defDim(ncid, Dname.xr, Dsize.xr); 
+did.xu = netcdf.defDim(ncid, Dname.xu, Dsize.xu);
+did.xv = netcdf.defDim(ncid, Dname.xv, Dsize.xv);
+did.yr = netcdf.defDim(ncid, Dname.yr, Dsize.yr);
+did.yu = netcdf.defDim(ncid, Dname.yu, Dsize.yu);
+did.yv = netcdf.defDim(ncid, Dname.yv, Dsize.yv);
+did.Nr = netcdf.defDim(ncid, Dname.Nr, Dsize.Nr);
+did.Nw = netcdf.defDim(ncid, Dname.Nw, Dsize.Nw);
+did.NT = netcdf.defDim(ncid, Dname.NT, Dsize.NT);
+
+if (S.def_zeta)
+  did.zeta_time = netcdf.defDim(ncid, Dname.zeta_time, Dsize.zeta_time);
 end
 
-[did.xu,status]=mexnc('def_dim',ncid,Dname.xu,Dsize.xu);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.xu]);
+if (S.def_v2d)
+  did.v2d_time = netcdf.defDim(ncid, Dname.v2d_time, Dsize.v2d_time);
 end
 
-[did.xv,status]=mexnc('def_dim',ncid,Dname.xv,Dsize.xv);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.xv]);
-end
-
-[did.yr,status]=mexnc('def_dim',ncid,Dname.yr,Dsize.yr);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.yr]);
-end
-
-[did.yu,status]=mexnc('def_dim',ncid,Dname.yu,Dsize.yu);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.yu]);
-end
-
-[did.yv,status]=mexnc('def_dim',ncid,Dname.yv,Dsize.yv);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.yv]);
-end
-
-[did.Nr,status]=mexnc('def_dim',ncid,Dname.Nr,Dsize.Nr);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.Nr]);
-end
-
-[did.Nw,status]=mexnc('def_dim',ncid,Dname.Nw,Dsize.Nw);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.Nw]);
-end
-
-[did.NT,status]=mexnc('def_dim',ncid,Dname.NT,Dsize.NT);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',Dname.NT]);
-end
-
-if (S.def_zeta),
-  [did.zeta_time,status]=mexnc('def_dim',ncid,Dname.zeta_time,Dsize.zeta_time);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',     ...
-           Dname.zeta_time]);
-  end
-end
-
-if (S.def_v2d),
-  [did.v2d_time,status]=mexnc('def_dim',ncid,Dname.v2d_time,Dsize.v2d_time);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error([ 'C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',    ...
-	    Dname.v2d_time]);
-  end
-end
-
-if (S.def_v3d),
-  [did.v3d_time,status]=mexnc('def_dim',ncid,Dname.v3d_time,Dsize.v3d_time);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',     ...
-           Dname.v3d_time]);
-  end
+if (S.def_v3d)
+  did.v3d_time = netcdf.defDim(ncid, Dname.v3d_time, Dsize.v3d_time);
 end
 
 if (S.def_temp),
-  [did.temp_time,status]=mexnc('def_dim',ncid,Dname.temp_time,Dsize.temp_time);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',     ...
-           Dname.temp_time]);
-  end
+  did.temp_time = netcdf.defDim(ncid, Dname.temp_time, Dsize.temp_time);
 end
 
 if (S.def_salt),
-  [did.salt_time,status]=mexnc('def_dim',ncid,Dname.salt_time,Dsize.salt_time);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['C_CLIMATOLOGY: DEF_DIM - unable to define dimension: ',     ...
-           Dname.salt_time]);
-  end
+  did.salt_time = netcdf.defDim(ncid, Dname.salt_time, Dsize.salt_time);
 end
 
 %--------------------------------------------------------------------------
 %  Create global attributes.
 %--------------------------------------------------------------------------
 
+varid  = netcdf.getConstant('nc_global');
+
 type='CLIMATOLOGY file';
-lstr=max(size(type));
-[status]=mexnc('put_att_text',ncid,nc_constant('nc_global'),            ...
-               'type',nc_constant('nc_char'),lstr,type);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_CLIMATOLOGY: PUT_ATT_TEXT - unable to global attribure: type.');
-end
+netcdf.putAtt(ncid, varid, 'type', type);
 
 history=['Climatology file using Matlab script: c_climatology, ',date_stamp];
-lstr=max(size(history));
-[status]=mexnc('put_att_text',ncid,nc_constant('nc_global'),            ...
-               'history',nc_constant('nc_char'),lstr,history);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_CLIMATOLOGY: PUT_ATT_TEXT - unable to global attribure: history.');
-end
+netcdf.putAtt(ncid, varid, 'history', history);
 
 %--------------------------------------------------------------------------
 %  Define configuration variables.
@@ -402,7 +305,7 @@ Var.flag_values     = [0 1];
 Var.flag_meanings   = ['Cartesian', blanks(1), ...
                        'spherical'];
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 % Define vertical coordinate variables.
@@ -412,7 +315,7 @@ Var.type            = nc_constant('nc_int');
 Var.dimid           = [];
 Var.long_name       = 'vertical terrain-following transformation equation';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Vstretching;
@@ -420,7 +323,7 @@ Var.type            = nc_constant('nc_int');
 Var.dimid           = [];
 Var.long_name       = 'vertical terrain-following stretching function';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.theta_s;
@@ -428,7 +331,7 @@ Var.type            = nc_constant('nc_double');
 Var.dimid           = [];
 Var.long_name       = 'S-coordinate surface control parameter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.theta_b;
@@ -436,7 +339,7 @@ Var.type            = nc_constant('nc_double');
 Var.dimid           = [];
 Var.long_name       = 'S-coordinate bottom control parameter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Tcline;
@@ -445,7 +348,7 @@ Var.dimid           = [];
 Var.long_name       = 'S-coordinate surface/bottom layer width';
 Var.units           = 'meter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.hc;
@@ -454,7 +357,7 @@ Var.dimid           = [];
 Var.long_name       = 'S-coordinate parameter, critical depth';
 Var.units           = 'meter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.s_rho;
@@ -471,7 +374,7 @@ elseif (Vtransform == 2),
 end
 Var.formula_terms   = 's: s_rho C: Cs_r eta: zeta depth: h depth_c: hc';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.s_w;
@@ -488,7 +391,7 @@ elseif (Vtransform == 2),
 end
 Var.formula_terms   = 's: s_w C: Cs_w eta: zeta depth: h depth_c: hc';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Cs_r;
@@ -498,7 +401,7 @@ Var.long_name       = 'S-coordinate stretching function at RHO-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Cs_w;
@@ -508,7 +411,7 @@ Var.long_name       = 'S-coordinate stretching function at W-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 %  Define bathymetry.
@@ -522,9 +425,9 @@ if (spherical),
   Var.coordinates   = 'lon_rho lat_rho';
 else
   Var.coordinates   = 'x_rho y_rho';
-end,
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 %  Define horizontal grid variables.
@@ -537,7 +440,7 @@ if (spherical),
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.rlat;
@@ -547,7 +450,7 @@ if (spherical),
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.ulon;
@@ -557,7 +460,7 @@ if (spherical),
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.ulat;
@@ -567,7 +470,7 @@ if (spherical),
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.vlon;
@@ -577,7 +480,7 @@ if (spherical),
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.vlat;
@@ -587,7 +490,7 @@ if (spherical),
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
 else
@@ -598,7 +501,7 @@ else
   Var.long_name     = 'X-location of RHO-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.ry;
@@ -607,7 +510,7 @@ else
   Var.long_name     = 'Y-location of RHO-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.ux;
@@ -616,7 +519,7 @@ else
   Var.long_name     = 'X-location of U-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.uy;
@@ -625,7 +528,7 @@ else
   Var.long_name     = 'Y-location of U-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.vx;
@@ -634,7 +537,7 @@ else
   Var.long_name     = 'X-location of V-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.vy;
@@ -643,7 +546,7 @@ else
   Var.long_name     = 'Y-location of V-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
   
 end
@@ -661,7 +564,7 @@ if (S.def_zeta),
   Var.long_name     = 'time for sea surface height climatology';
   Var.units         = 'day';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -672,7 +575,7 @@ if (S.def_v2d),
   Var.long_name     = 'time for 2D momentum climatology';
   Var.units         = 'day';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -683,7 +586,7 @@ if (S.def_v3d),
   Var.long_name     = 'time for 3D momentum climatology';
   Var.units         = 'day';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -694,9 +597,9 @@ if (S.def_temp),
   Var.long_name     = 'time for potential temperature climatology';
   Var.units         = 'day';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
-end,
+end
 
 if (S.def_salt),
   Var.name          = Vname.salt_time;
@@ -705,7 +608,7 @@ if (S.def_salt),
   Var.long_name     = 'time for salinity climatology';
   Var.units         = 'day';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -726,7 +629,7 @@ if (S.def_zeta),
                               ' ',Vname.zeta_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -745,7 +648,7 @@ if (S.def_v2d),
                               ' ',Vname.v2d_time]);
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.vbar;
@@ -762,7 +665,7 @@ if (S.def_v2d),
                               ' ',Vname.v2d_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -781,7 +684,7 @@ if (S.def_v3d),
                               Vname.s_rho,' ',Vname.v3d_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
   Var.name          = Vname.v;
@@ -798,7 +701,7 @@ if (S.def_v3d),
                               Vname.s_rho,' ',Vname.v3d_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -817,7 +720,7 @@ if (S.def_temp),
                               Vname.s_rho,' ',Vname.temp_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -835,7 +738,7 @@ if (S.def_salt),
                               Vname.s_rho,' ',Vname.salt_time]); 
   end
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 end
 
@@ -843,19 +746,8 @@ end
 %  Leave definition mode and close NetCDF file.
 %--------------------------------------------------------------------------
 
-[status]=mexnc('enddef',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_CLIMATOLOGY: ENDDEF - unable to leave definition mode.');
-end
-
-[status]=mexnc('close',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_CLIMATOLOGY: CLOSE - unable to close NetCDF file: ', ncname]);
-end
+netcdf.endDef(ncid);
+netcdf.close(ncid);
 
 return
 

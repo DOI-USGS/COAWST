@@ -4,9 +4,10 @@
 
 #ifdef NESTING
 !
-!svn $Id: nesting.F 1070 2021-06-08 21:00:47Z arango $
+!git $Id$
+!svn $Id: nesting.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -4157,12 +4158,14 @@
             IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
 # ifdef MASKING
             my_avg=my_avg*Cmsk(Ic,Jc)
-# endif
+#  ifdef WET_DRY
             IF (gtype.eq.r2dvar) THEN
               IF (my_avg.le.(Dcrit(ng)-hhC(Ic,Jc))) THEN
                 my_avg=Dcrit(ng)-hhC(Ic,Jc)
               END IF
             END IF
+#  endif
+# endif
 !
             C1(Ic,Jc)=my_avg
             IF (PRESENT(C2)) THEN
@@ -4182,7 +4185,8 @@
 !
       IF (gtype.eq.u2dvar) THEN
 !
-!  Get boundary indices of the receiver coarser grid.
+!  Get indices of coarser grid (ng) corresponding to the corners of
+!  the finer grid (dg).
 !
         Ib_west=I_left(dg)
         Ib_east=I_right(dg)
@@ -4236,7 +4240,8 @@
 !
       IF (gtype.eq.v2dvar) THEN
 !
-!  Get boundary indices of the receiver coarser grid.
+!  Get indices of coarser grid (ng) corresponding to the corners of
+!  the finer grid (dg).
 !
         Ib_west=I_left(dg)
         Ib_east=I_right(dg)
@@ -4657,7 +4662,8 @@
 !
       IF (gtype.eq.u3dvar) THEN
 !
-!  Get boundary indices of the receiver coarser grid.
+!  Get indices of coarser grid (ng) corresponding to the corners of
+!  the finer grid (dg).
 !
         Ib_west=I_left(dg)
         Ib_east=I_right(dg)
@@ -4715,7 +4721,8 @@
 !
       IF (gtype.eq.v3dvar) THEN
 !
-!  Get boundary indices of the receiver coarser grid.
+!  Get indices of coarser grid (ng) corresponding to the corners of
+!  the finer grid (dg).
 !
         Ib_west=I_left(dg)
         Ib_east=I_right(dg)

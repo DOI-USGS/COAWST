@@ -2,9 +2,10 @@
       MODULE mod_eclight
 #if defined BIOLOGY && (defined ECOSIM || defined SPECTRAL_LIGHT)
 !
-!svn $Id: mod_eclight.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_eclight.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       W. Paul Bissett   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       W. Paul Bissett   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -206,7 +207,6 @@
      &   0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00/),  &
      & (/ Npig, NBands /) )
 
-# if defined CDOM_VARIABLE || defined ECOSIM
       real(8), dimension(Ndom,NBands) :: aDOC = reshape (               &
      &(/ 5.6832e+00, 6.2086e+00, 5.2989e+00, 5.4791e+00, 4.9407e+00,    &
      &   4.8353e+00, 4.6067e+00, 4.2671e+00, 4.2952e+00, 3.7657e+00,    &
@@ -233,7 +233,6 @@
      &   1.2094e-01, 6.4153e-03, 1.1276e-01, 5.6615e-03, 1.0514e-01,    &
      &   4.9963e-03, 9.8029e-02, 4.4092e-03, 9.1402e-02, 3.8911e-03/),  &
      & (/ Ndom, NBands /) )
-# endif
 
       real(8), dimension(NBands) :: awater =                            &
      &(/ 6.0140e-03, 5.0792e-03, 4.5828e-03, 4.4464e-03, 4.6744e-03,    &

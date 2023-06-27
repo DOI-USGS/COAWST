@@ -12,9 +12,9 @@
 %  http://www.aviso.oceanobs.com/en/data/registration-form
 %
 
-% svn $Id: d_ssh_obs.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: d_ssh_obs.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -64,7 +64,7 @@ provenance.Txbt_MetO = 3;    % XBT temperature from Met Office
 provenance.Tctd_MetO = 4;    % CTD temperature from Met Office
 provenance.Sctd_MetO = 5;    % CTD salinity from Met Office
 provenance.Targo     = 6;    % ARGO floats temperature from Met Office
-provenance.Targo     = 7;    % ARGO floats salinity from Met Office
+provenance.Sargo     = 7;    % ARGO floats salinity from Met Office
 provenance.Tctd_CalC = 8;    % CTD temperature from CalCOFI
 provenance.Sctd_CalC = 9;    % CTD salinity from CalCOFI
 provenance.Tctd_GLOB = 10;   % CTD temperature from GLOBEC

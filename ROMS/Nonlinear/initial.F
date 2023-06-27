@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE initial
 !
-!svn $Id: initial.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: initial.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,15 +32,22 @@
       USE mod_stepping
 !
       USE analytical_mod
+      USE close_io_mod,      ONLY : close_inp
       USE dateclock_mod,     ONLY : time_string
-# ifdef DISTRIBUTE
+#if defined FOUR_DVAR && !defined CORRELATION
+      USE def_ini_mod,       ONLY : def_ini
+#endif
+#ifdef DISTRIBUTE
       USE distribute_mod,    ONLY : mp_bcasti
-# endif
+#endif
+      USE get_state_mod,     ONLY : get_state
+#ifdef WET_DRY
+      USE get_wetdry_mod,    ONLY : get_wetdry
+#endif
 #ifdef TLM_CHECK
       USE ini_adjust_mod,    ONLY : ini_perturb
 #endif
       USE ini_hmixcoef_mod,  ONLY : ini_hmixcoef
-      USE metrics_mod,       ONLY : metrics
 #ifdef NESTING
       USE nesting_mod,       ONLY : nesting
 #endif
@@ -48,6 +56,9 @@
       USE omega_mod,         ONLY : omega
       USE rho_eos_mod,       ONLY : rho_eos
       USE set_massflux_mod,  ONLY : set_massflux
+#endif
+#if defined OBSERVATIONS && !defined RBL4DVAR_FCT_SENSITIVITY
+      USE obs_initial_mod,   ONLY : obs_initial
 #endif
 #ifdef MASKING
       USE set_masks_mod,     ONLY : set_masks
@@ -297,7 +308,6 @@
 !$OMP BARRIER
       END DO
 
-#ifndef OFFLINE_FLOATS
 #ifdef ANA_SPONGE
 !
 !-----------------------------------------------------------------------
@@ -314,7 +324,6 @@
         END IF
       END DO
 #endif
-#endif /* OFFLINE_FLOATS */
 !
 !=======================================================================
 !  Initialize model state variables and forcing.  This part is
@@ -423,15 +432,13 @@
       END DO
 #endif
 
-#ifndef OFFLINE_FLOATS
 #if defined INI_FILE && !defined RBL4DVAR_FCT_SENSITIVITY
 !
 !  Read in initial conditions from initial NetCDF file.
 !
       DO ng=1,Ngrids
 !$OMP MASTER
-        CALL get_state (ng, iNLM, 1, INI(ng)%name,                      &
-     &                  IniRec(ng), Tindex(ng))
+        CALL get_state (ng, iNLM, 1, INI(ng), IniRec(ng), Tindex(ng))
 !$OMP END MASTER
 # ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iNLM, exit_flag)
@@ -447,8 +454,7 @@
       DO ng=1,Ngrids
         IF (nrrec(ng).ne.0) THEN
 !$OMP MASTER
-          CALL get_state (ng, 0, 1, INI(ng)%name,                       &
-     &                    IniRec(ng), Tindex(ng))
+          CALL get_state (ng, 0, 1, INI(ng), IniRec(ng), Tindex(ng))
 !$OMP END MASTER
 # ifdef DISTRIBUTE
           CALL mp_bcasti (ng, iNLM, exit_flag)
@@ -472,7 +478,11 @@
 !
         IF (nrrec(ng).ne.0) THEN
 !$OMP MASTER
-          CALL get_wetdry (ng, iNLM, IniRec(ng))
+# ifdef DISTRIBUTE
+          CALL get_wetdry (ng, MyRank, iNLM, IniRec(ng))
+# else
+          CALL get_wetdry (ng, -1, iNLM, IniRec(ng))
+# endif
 !$OMP END MASTER
 # ifdef DISTRIBUTE
           CALL mp_bcasti (ng, iNLM, exit_flag)
@@ -524,8 +534,7 @@
       IF (Nrun.gt.1) THEN
         DO ng=1,Ngrids
 !$OMP MASTER
-          CALL get_state (ng, 5, 5, INI(ng)%name,                       &
-     &                    IniRec(ng), Tindex(ng))
+          CALL get_state (ng, 5, 5, INI(ng), IniRec(ng), Tindex(ng))
 !$OMP END MASTER
 # ifdef DISTRIBUTE
           CALL mp_bcasti (ng, iNLM, exit_flag)
@@ -547,7 +556,7 @@
       IF (outer.ge.1) THEN
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-            CALL ini_perturb (ng, tile, Lnew(ng), Tindex)
+            CALL ini_perturb (ng, tile, Lnew(ng), Tindex(ng))
           END DO
 !$OMP BARRIER
         END DO
@@ -614,7 +623,6 @@
 !$OMP BARRIER
       END DO
 #endif
-#endif /* !OFFLINE_FLOATS */
 
 #if defined FOUR_DVAR || !defined TANGENT || !defined ADJOINT
 !
@@ -797,7 +805,7 @@
         IF (SporadicImpulse(ng)) THEN
           FrcRec(ng)=1
 !$OMP MASTER
-          CALL get_state (ng, 7, 7, TLF(ng)%name, FrcRec(ng), 1)
+          CALL get_state (ng, 7, 7, TLF(ng), FrcRec(ng), 1)
 !$OMP END MASTER
 !$OMP BARRIER
 # ifdef DISTRIBUTE
@@ -940,25 +948,26 @@
         END DO
       END DO
 #endif
-!
-!-----------------------------------------------------------------------
-!  Initialize time-stepping counter and clock.
-!-----------------------------------------------------------------------
-!
-!  Subtract one time unit to avoid special case due to initialization
-!  in the main time-stepping routine.
-!
-      DO ng=1,Ngrids
-        iic(ng)=ntstart(ng)-1
-        INItime(ng)=time(ng)         ! Save NLM initial conditions time
-        time(ng)=time(ng)-dt(ng)
-      END DO
 
 #ifdef INWAVE_MODEL
         DO ng=1,Ngrids
           CALL inwave_init (ng, MyRank, IniRec(ng))
         END DO
 #endif
+!
+!-----------------------------------------------------------------------
+!  Initialize time-stepping counter and date/time string. Save NLM
+!  initial conditions time.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+!       iic(ng)=ntstart(ng)-1
+!       INItime(ng)=time(ng)         ! Save NLM initial conditions time
+!       time(ng)=time(ng)-dt(ng)
+        INItime(ng)=time(ng)
+        iic(ng)=ntstart(ng)
+        CALL time_string (time(ng), time_code(ng))
+      END DO
 
 #ifdef PROFILE
 !

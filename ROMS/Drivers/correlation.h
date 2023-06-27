@@ -1,8 +1,9 @@
-      MODULE ocean_control_mod
+      MODULE roms_kernel_mod
 !
-!svn $Id: correlation.h 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: correlation.h 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,12 +46,47 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_param
+      USE mod_parallel
+      USE mod_arrays
+      USE mod_fourdvar
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_scalars
+      USE mod_stepping
+!
+#ifdef BALANCE_OPERATOR
+      USE ad_balance_mod,     ONLY : ad_balance
+#endif
+      USE ad_convolution_mod, ONLY : ad_convolution
+      USE ad_def_his_mod,     ONLY : ad_def_his
+      USE ad_variability_mod, ONLY : ad_variability
+      USE ad_wrt_his_mod,     ONLY : ad_wrt_his
+      USE analytical_mod,     ONLY : ana_perturb
+      USE close_io_mod,       ONLY : close_inp, close_out
+      USE def_norm_mod,       ONLY : def_norm
+      USE get_state_mod,      ONLY : get_state
+      USE ini_adjust_mod,     ONLY : load_ADtoTL
+      USE ini_adjust_mod,     ONLY : load_TLtoAD
+      USE inp_par_mod,        ONLY : inp_par
+      USE normalization_mod,  ONLY : normalization
+      USE strings_mod,        ONLY : FoundError
+#ifdef BALANCE_OPERATOR
+      USE tl_balance_mod,     ONLY : tl_balance
+#endif
+      USE tl_convolution_mod, ONLY : tl_convolution
+      USE tl_variability_mod, ONLY : tl_variability
+      USE strings_mod,        ONLY : FoundError
+      USE wrt_rst_mod,        ONLY : wrt_rst
+#if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
+      USE zeta_balance_mod,   ONLY : balance_ref, biconj
+#endif
+!
       implicit none
 !
-      PRIVATE
-      PUBLIC  :: ROMS_initialize
-      PUBLIC  :: ROMS_run
-      PUBLIC  :: ROMS_finalize
+      PUBLIC :: ROMS_initialize
+      PUBLIC :: ROMS_run
+      PUBLIC :: ROMS_finalize
 !
       CONTAINS
 !
@@ -62,17 +98,6 @@
 !  and internal and external parameters.                               !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_fourdvar
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_scalars
-!
-      USE inp_par_mod,       ONLY : inp_par
-      USE normalization_mod, ONLY : normalization
-      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -167,11 +192,9 @@
 !
 !  Allocate and initialize modules variables.
 !
-        CALL mod_arrays (allocate_vars)
-!
-!  Allocate and initialize observation arrays.
-!
-        CALL initialize_fourdvar
+        CALL ROMS_allocate_arrays (allocate_vars)
+        CALL ROMS_initialize_arrays
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       END IF
 !
@@ -203,7 +226,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(1,ng).or.LwrtNRM(1,ng)) THEN
-          CALL get_state (ng, 10, 10, STD(1,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 10, 10, STD(1,ng), STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
@@ -215,7 +238,7 @@
       Tindex=2
       DO ng=1,Ngrids
         IF ((LdefNRM(2,ng).or.LwrtNRM(2,ng)).and.(NSA.eq.2)) THEN
-          CALL get_state (ng, 11, 11, STD(2,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 11, 11, STD(2,ng), STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
@@ -228,7 +251,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(3,ng).or.LwrtNRM(3,ng)) THEN
-          CALL get_state (ng, 12, 12, STD(3,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 12, 12, STD(3,ng), STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
@@ -241,7 +264,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(4,ng).or.LwrtNRM(4,ng)) THEN
-          CALL get_state (ng, 13, 13, STD(4,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 13, 13, STD(4,ng), STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
@@ -298,31 +321,6 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_fourdvar
-      USE mod_iounits
-      USE mod_scalars
-      USE mod_stepping
-!
-#ifdef BALANCE_OPERATOR
-      USE ad_balance_mod,     ONLY : ad_balance
-#endif
-      USE ad_convolution_mod, ONLY : ad_convolution
-      USE ad_variability_mod, ONLY : ad_variability
-      USE analytical_mod,     ONLY : ana_perturb
-      USE ini_adjust_mod,     ONLY : load_ADtoTL
-      USE ini_adjust_mod,     ONLY : load_TLtoAD
-#ifdef BALANCE_OPERATOR
-      USE tl_balance_mod,     ONLY : tl_balance
-#endif
-      USE tl_convolution_mod, ONLY : tl_convolution
-      USE tl_variability_mod, ONLY : tl_variability
-#if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
-      USE zeta_balance_mod,   ONLY : balance_ref, biconj
-#endif
-      USE strings_mod,        ONLY : FoundError
-!
 !  Imported variable declarations.
 !
       real(dp), intent(in) :: RunInterval            ! seconds
@@ -347,7 +345,7 @@
 !  Read background state, use initial conditions.
 !
       DO ng=1,Ngrids
-        CALL get_state (ng, iNLM, 9, INI(ng)%name, Lbck, Lbck)
+        CALL get_state (ng, iNLM, 9, INI(ng), Lbck, Lbck)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 
@@ -420,7 +418,11 @@
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         Ladjusted(ng)=.TRUE.
 #endif
-        CALL ad_wrt_his (ng)
+#ifdef DISTRIBUTE
+        CALL ad_wrt_his (ng, MyRank)
+#else
+        CALL ad_wrt_his (ng, -1)
+#endif
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         Ladjusted(ng)=.FALSE.
@@ -437,12 +439,6 @@
 !  This routine terminates ROMS/TOMS driver execution.                 !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_ncparam
-      USE mod_scalars
 !
 !  Local variable declarations.
 !
@@ -470,7 +466,11 @@
             END IF
             blowup=exit_flag
             exit_flag=NoError
-            CALL wrt_rst (ng)
+#ifdef DISTRIBUTE
+            CALL wrt_rst (ng, MyRank)
+#else
+            CALL wrt_rst (ng, -1)
+#endif
           END IF
         END DO
       END IF
@@ -507,4 +507,4 @@
       RETURN
       END SUBROUTINE ROMS_finalize
 
-      END MODULE ocean_control_mod
+      END MODULE roms_kernel_mod

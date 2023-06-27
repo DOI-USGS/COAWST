@@ -2,9 +2,10 @@
 #if defined ADJOINT && !defined SOLVE3D
       SUBROUTINE ad_main2d (RunInterval)
 !
-!svn $Id: ad_main2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_main2d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,7 +44,7 @@
       USE ad_frc_adjust_mod,       ONLY : ad_frc_adjust
 # endif
       USE ad_ini_fields_mod,       ONLY : ad_ini_fields, ad_ini_zeta
-# if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+# ifdef AD_OUTPUT_STATE
       USE ad_ini_fields_mod,       ONLY : ad_out_fields, ad_out_zeta
 # endif
 # if defined FOUR_DVAR && defined OBSERVATIONS
@@ -71,8 +72,15 @@
 !!    USE ad_step_floats_mod,      ONLY : tl_step_floats
 # endif
       USE dateclock_mod,           ONLY : time_string
+# ifdef TIDE_GENERATING_FORCES
+      USE equilibrium_tide_mod,    ONLY : equilibrium_tide
+# endif
 # ifdef WEAK_CONSTRAINT
       USE frc_weak_mod,            ONLY : frc_ADgather, frc_clear
+# endif
+# if (defined FOUR_DVAR    && !defined I4DVAR_ANA_SENSITIVITY) && \
+      defined OBSERVATIONS
+      USE obs_read_mod,            ONLY : obs_read
 # endif
 # ifdef AIR_OCEAN_NOT_YET
       USE ocean_coupler_mod,       ONLY : atmos_coupling
@@ -146,6 +154,9 @@
             CALL ad_set_data (ng, tile)
 # ifdef AD_AVERAGES
             CALL ad_set_avg (ng, tile)
+# endif
+# ifdef TIDE_GENERATING_FORCES
+            CALL equilibrium_tide (ng, tile, iADM)
 # endif
 # ifdef DIAGNOSTICS
 !!          CALL ad_set_diags (ng, tile)
@@ -381,10 +392,13 @@
           END IF
         END DO
 # endif
-# if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+# ifdef AD_OUTPUT_STATE
 !
 !-----------------------------------------------------------------------
-!  Define adjoint output arrays.
+!  Set full adjoint output arrays. Due to the predictor/corrector and
+!  multiple time level schemes, pieces of the adjoint solution are in
+!  two-time levels and need to be added in the "_sol" arrays for output
+!  purposes.
 !-----------------------------------------------------------------------
 !
         DO ng=1,Ngrids

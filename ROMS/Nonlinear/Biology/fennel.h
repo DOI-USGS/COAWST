@@ -1,11 +1,12 @@
-      SUBROUTINE biology (ng,tile)
+      MODULE biology_mod
 !
-!svn $Id: fennel.h 1054 2021-03-06 19:47:12Z arango $
-!***********************************************************************
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: fennel.h 1151 2023-02-09 03:08:53Z arango $
+!=======================================================================
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                               Katja Fennel   !
-!****************************************** Alexander F. Shchepetkin ***
+!========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This routine computes the  biological sources and sinks for the     !
 !  Fennel et al. (2006) ecosystem model. Then, it adds those terms     !
@@ -118,6 +119,17 @@
 !      Exchange over the Ocean Revisited. Limnol. Oceanogr. Methods    !
 !      12 (6), 351-362, doi:10.4319/lom.2014.12.351.                   !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE biology (ng,tile)
 !***********************************************************************
 !
       USE mod_param
@@ -157,40 +169,40 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 15, __LINE__, MyFile)
 #endif
-      CALL biology_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
-     &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nstp(ng), nnew(ng),                            &
+      CALL fennel_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, N(ng), NT(ng),              &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  nstp(ng), nnew(ng),                             &
 #ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
+     &                  GRID(ng) % rmask,                               &
 # ifdef WET_DRY
-     &                   GRID(ng) % rmask_wet,                          &
+     &                  GRID(ng) % rmask_wet,                           &
 #  ifdef DIAGNOSTICS_BIO
-     &                   GRID(ng) % rmask_full,                         &
+     &                  GRID(ng) % rmask_full,                          &
 #  endif
 # endif
 #endif
-     &                   GRID(ng) % Hz,                                 &
-     &                   GRID(ng) % z_r,                                &
-     &                   GRID(ng) % z_w,                                &
-     &                   FORCES(ng) % srflx,                            &
+     &                  GRID(ng) % Hz,                                  &
+     &                  GRID(ng) % z_r,                                 &
+     &                  GRID(ng) % z_w,                                 &
+     &                  FORCES(ng) % srflx,                             &
 #if defined CARBON || defined OXYGEN
 # ifdef BULK_FLUXES
-     &                   FORCES(ng) % Uwind,                            &
-     &                   FORCES(ng) % Vwind,                            &
+     &                  FORCES(ng) % Uwind,                             &
+     &                  FORCES(ng) % Vwind,                             &
 # else
-     &                   FORCES(ng) % sustr,                            &
-     &                   FORCES(ng) % svstr,                            &
+     &                  FORCES(ng) % sustr,                             &
+     &                  FORCES(ng) % svstr,                             &
 # endif
 #endif
 #ifdef CARBON
-     &                   OCEAN(ng) % pH,                                &
+     &                  OCEAN(ng) % pH,                                 &
 #endif
 #ifdef DIAGNOSTICS_BIO
-     &                   DIAGS(ng) % DiaBio2d,                          &
-     &                   DIAGS(ng) % DiaBio3d,                          &
+     &                  DIAGS(ng) % DiaBio2d,                           &
+     &                  DIAGS(ng) % DiaBio3d,                           &
 #endif
-     &                   OCEAN(ng) % t)
+     &                  OCEAN(ng) % t)
 
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 15, __LINE__, MyFile)
@@ -200,34 +212,34 @@
       END SUBROUTINE biology
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE biology_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj, UBk, UBt,            &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nstp, nnew,                              &
+      SUBROUTINE fennel_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, UBk, UBt,             &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
+     &                        nstp, nnew,                               &
 #ifdef MASKING
-     &                         rmask,                                   &
+     &                        rmask,                                    &
 # if defined WET_DRY
-     &                         rmask_wet,                               &
+     &                        rmask_wet,                                &
 #  ifdef DIAGNOSTICS_BIO
-     &                         rmask_full,                              &
+     &                        rmask_full,                               &
 #  endif
 # endif
 #endif
-     &                         Hz, z_r, z_w, srflx,                     &
+     &                        Hz, z_r, z_w, srflx,                      &
 #if defined CARBON || defined OXYGEN
 # ifdef BULK_FLUXES
-     &                         Uwind, Vwind,                            &
+     &                        Uwind, Vwind,                             &
 # else
-     &                         sustr, svstr,                            &
+     &                        sustr, svstr,                             &
 # endif
 #endif
 #ifdef CARBON
-     &                         pH,                                      &
+     &                        pH,                                       &
 #endif
 #ifdef DIAGNOSTICS_BIO
-     &                         DiaBio2d, DiaBio3d,                      &
+     &                        DiaBio2d, DiaBio3d,                       &
 #endif
-     &                         t)
+     &                        t)
 !-----------------------------------------------------------------------
 !
       USE mod_param
@@ -1563,7 +1575,7 @@
       END DO J_LOOP
 !
       RETURN
-      END SUBROUTINE biology_tile
+      END SUBROUTINE fennel_tile
 
 #ifdef CARBON
 # ifdef pCO2_RZ
@@ -2361,3 +2373,4 @@
       END SUBROUTINE pCO2_water
 # endif
 #endif
+      END MODULE biology_mod

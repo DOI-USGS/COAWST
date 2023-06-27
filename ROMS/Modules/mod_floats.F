@@ -2,9 +2,10 @@
       MODULE mod_floats
 #ifdef FLOATS
 !
-!svn $Id: mod_floats.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_floats.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,8 +36,11 @@
 !
         implicit none
 !
+        PUBLIC :: allocate_floats
+        PUBLIC :: deallocate_floats
+!
 !-----------------------------------------------------------------------
-!  Lagrangian drifters (floats) structure.
+!  Define T_DRIFTER structure.
 !-----------------------------------------------------------------------
 !
         TYPE T_DRIFTER
@@ -60,7 +64,7 @@
           real(r8), pointer :: track(:,:,:)
 
         END TYPE T_DRIFTER
-
+!
         TYPE (T_DRIFTER), allocatable :: DRIFTER(:)
 !
 !-----------------------------------------------------------------------
@@ -88,16 +92,6 @@
 # ifdef FLOAT_VWALK
         integer, parameter :: ifakt = 11         ! diffusivity, Akt
         integer, parameter :: ifdak = 12         ! d(Akt)/d(s)
-# endif
-# ifdef OFFLINE_FLOATS
-        integer, parameter :: ixspc = 11         ! x-space location
-        integer, parameter :: iyspc = 12         ! y-space location
-        integer, parameter :: iwdph = 13         ! water depth
-        integer, parameter :: ifHzz = 14         ! Hz
-#  ifdef FLOAT_VWALK
-        integer, parameter :: ifakt = 15         ! diffusivity, Akt
-        integer, parameter :: ifdak = 16         ! d(Akt)/d(s)
-#  endif
 # endif
 # ifdef FLOAT_OYSTER
 #  ifdef FLOAT_VWALK
@@ -278,27 +272,115 @@
 !
 !  Indices for tracer variables in the floats array track.
 !
-# ifdef FLOAT_OYSTER
-#  ifdef FLOAT_VWALK
+#  ifdef FLOAT_OYSTER
+#   ifdef FLOAT_VWALK
         ic=18
-#  else
+#   else
         ic=16
-#  endif
-# else
-#  ifdef FLOAT_VWALK
-        ic=12
+#   endif
 #  else
+#   ifdef FLOAT_VWALK
+        ic=12
+#   else
         ic=10
+#   endif
 #  endif
-# endif
         DO i=1,MT
           ic=ic+1
           ifTvar(i)=ic
         END DO
-#endif
+# endif
       END IF
-
+!
       RETURN
       END SUBROUTINE allocate_floats
+!
+      SUBROUTINE deallocate_floats (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine dealocates all variables in module for all nested      !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+# ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_floats"
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_DRIFTER structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+      IF (.not.destroy(ng, DRIFTER(ng)%bounded, MyFile,                 &
+     &                 __LINE__, 'DRIFTER(ng)%bounded')) RETURN
+
+#  if defined SOLVE3D && defined FLOAT_STICKY
+      IF (.not.destroy(ng, DRIFTER(ng)%stuck, MyFile,                   &
+     &                 __LINE__, 'DRIFTER(ng)%stuck')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Findex, MyFile,                  &
+     &                 __LINE__, 'DRIFTER(ng)%Findex')) RETURN
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Ftype, MyFile,                   &
+     &                 __LINE__, 'DRIFTER(ng)%Ftype')) RETURN
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Flon, MyFile,                    &
+     &                 __LINE__, 'DRIFTER(ng)%Flon')) RETURN
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Flat, MyFile,                    &
+     &                 __LINE__, 'DRIFTER(ng)%Flat')) RETURN
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Fz0, MyFile,                     &
+     &                 __LINE__, 'DRIFTER(ng)%Fz0')) RETURN
+
+      IF (.not.destroy(ng, DRIFTER(ng)%Tinfo, MyFile,                   &
+     &                 __LINE__, 'DRIFTER(ng)%Tinfo')) RETURN
+
+#  if defined SOLVE3D && defined FLOAT_VWALK
+      IF (.not.destroy(ng, DRIFTER(ng)%rwalk, MyFile,                   &
+     &                 __LINE__, 'DRIFTER(ng)%rwalk')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, DRIFTER(ng)%track, MyFile,                   &
+     &                 __LINE__, 'DRIFTER(ng)%track')) RETURN
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate T_DRIFTER structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(DRIFTER)) deallocate ( DRIFTER )
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Deallocate other variables in module.
+!-----------------------------------------------------------------------
+!
+      IF (allocated(Fprint))  deallocate ( Fprint )
+
+      IF (allocated(frrec))   deallocate ( frrec )
+
+# ifdef SOLVE3D
+      IF (allocated(ifTvar))  deallocate ( ifTvar )
+# endif
+!
+      RETURN
+      END SUBROUTINE deallocate_floats
 #endif
       END MODULE mod_floats

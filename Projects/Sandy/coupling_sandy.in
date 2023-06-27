@@ -78,41 +78,6 @@
    SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
 !  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
 
-! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
-!           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 
-!           the names of the separate files. The file names
-!           must be provided in a specific order. For example: 
-! W2ONAME == wav1 to ocn1
-!            wav1 to ocn2
-!            wav1 to ocn3 ....for all the ocean models.
-!            wav2 to ocn1
-!            wav2 to ocn2
-!            wav2 to ocn3 ....for all the ocean models.
-
-   W2ONAME == Projects/Sandy/wav1_to_ocn1_weights.nc \
-              Projects/Sandy/wav1_to_ocn2_weights.nc \
-              Projects/Sandy/wav2_to_ocn1_weights.nc \
-              Projects/Sandy/wav2_to_ocn2_weights.nc
-   W2ANAME == Projects/Sandy/wav1_to_atm1_weights.nc \
-              Projects/Sandy/wav1_to_atm2_weights.nc \
-              Projects/Sandy/wav2_to_atm1_weights.nc \
-              Projects/Sandy/wav2_to_atm2_weights.nc
-   A2ONAME == Projects/Sandy/atm1_to_ocn1_weights.nc \
-              Projects/Sandy/atm1_to_ocn2_weights.nc \
-              Projects/Sandy/atm2_to_ocn1_weights.nc \
-              Projects/Sandy/atm2_to_ocn2_weights.nc
-   A2WNAME == Projects/Sandy/atm1_to_wav1_weights.nc \
-              Projects/Sandy/atm1_to_wav2_weights.nc \
-              Projects/Sandy/atm2_to_wav1_weights.nc \
-              Projects/Sandy/atm2_to_wav2_weights.nc
-   O2ANAME == Projects/Sandy/ocn1_to_atm1_weights.nc \
-              Projects/Sandy/ocn1_to_atm2_weights.nc \
-              Projects/Sandy/ocn2_to_atm1_weights.nc \
-              Projects/Sandy/ocn2_to_atm2_weights.nc
-   O2WNAME == Projects/Sandy/ocn1_to_wav1_weights.nc \
-              Projects/Sandy/ocn1_to_wav2_weights.nc \
-              Projects/Sandy/ocn2_to_wav1_weights.nc \
-              Projects/Sandy/ocn2_to_wav2_weights.nc
 !
 !  GLOSSARY:
 !  =========

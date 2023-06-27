@@ -1,11 +1,12 @@
-      SUBROUTINE rp_uv3dmix4 (ng, tile)
+      MODULE rp_uv3dmix4_mod
 !
-!svn $Id: rp_uv3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: rp_uv3dmix4_s.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes representers tangent linear biharmonic     !
 !  mixing  of  momentum,   along  constant  S-surfaces,  from  the     !
@@ -32,6 +33,17 @@
 !                                                                      !
 !  Basic state variables required:  visc4, u, v, Hz.                   !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC rp_uv3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE rp_uv3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -58,39 +70,39 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iRPM, 32, __LINE__, MyFile)
 #endif
-      CALL rp_uv3dmix4_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       nrhs(ng), nnew(ng),                        &
+      CALL rp_uv3dmix4_s_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
+     &                         nrhs(ng), nnew(ng),                      &
 #ifdef MASKING
-     &                       GRID(ng) % pmask,                          &
+     &                         GRID(ng) % pmask,                        &
 #endif
-     &                       GRID(ng) % Hz,                             &
-     &                       GRID(ng) % tl_Hz,                          &
-     &                       GRID(ng) % om_p,                           &
-     &                       GRID(ng) % om_r,                           &
-     &                       GRID(ng) % on_p,                           &
-     &                       GRID(ng) % on_r,                           &
-     &                       GRID(ng) % pm,                             &
-     &                       GRID(ng) % pmon_p,                         &
-     &                       GRID(ng) % pmon_r,                         &
-     &                       GRID(ng) % pn,                             &
-     &                       GRID(ng) % pnom_p,                         &
-     &                       GRID(ng) % pnom_r,                         &
-     &                       MIXING(ng) % visc4_p,                      &
-     &                       MIXING(ng) % visc4_r,                      &
+     &                         GRID(ng) % Hz,                           &
+     &                         GRID(ng) % tl_Hz,                        &
+     &                         GRID(ng) % om_p,                         &
+     &                         GRID(ng) % om_r,                         &
+     &                         GRID(ng) % on_p,                         &
+     &                         GRID(ng) % on_r,                         &
+     &                         GRID(ng) % pm,                           &
+     &                         GRID(ng) % pmon_p,                       &
+     &                         GRID(ng) % pmon_r,                       &
+     &                         GRID(ng) % pn,                           &
+     &                         GRID(ng) % pnom_p,                       &
+     &                         GRID(ng) % pnom_r,                       &
+     &                         MIXING(ng) % visc4_p,                    &
+     &                         MIXING(ng) % visc4_r,                    &
 #ifdef DIAGNOSTICS_UV
-!!   &                       DIAGS(ng) % DiaRUfrc,                      &
-!!   &                       DIAGS(ng) % DiaRVfrc,                      &
-!!   &                       DIAGS(ng) % DiaU3wrk,                      &
-!!   &                       DIAGS(ng) % DiaV3wrk,                      &
+!!   &                         DIAGS(ng) % DiaRUfrc,                    &
+!!   &                         DIAGS(ng) % DiaRVfrc,                    &
+!!   &                         DIAGS(ng) % DiaU3wrk,                    &
+!!   &                         DIAGS(ng) % DiaV3wrk,                    &
 #endif
-     &                       OCEAN(ng) % u,                             &
-     &                       OCEAN(ng) % v,                             &
-     &                       COUPLING(ng) % tl_rufrc,                   &
-     &                       COUPLING(ng) % tl_rvfrc,                   &
-     &                       OCEAN(ng) % tl_u,                          &
-     &                       OCEAN(ng) % tl_v)
+     &                         OCEAN(ng) % u,                           &
+     &                         OCEAN(ng) % v,                           &
+     &                         COUPLING(ng) % tl_rufrc,                 &
+     &                         COUPLING(ng) % tl_rvfrc,                 &
+     &                         OCEAN(ng) % tl_u,                        &
+     &                         OCEAN(ng) % tl_v)
 #ifdef PROFILE
       CALL wclock_off (ng, iRPM, 32, __LINE__, MyFile)
 #endif
@@ -100,24 +112,24 @@
 
 !
 !***********************************************************************
-      SUBROUTINE rp_uv3dmix4_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj,                  &
-     &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             nrhs, nnew,                          &
+      SUBROUTINE rp_uv3dmix4_s_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
+     &                               nrhs, nnew,                        &
 #ifdef MASKING
-     &                             pmask,                               &
+     &                               pmask,                             &
 #endif
-     &                             Hz, tl_Hz,                           &
-     &                             om_p, om_r, on_p, on_r,              &
-     &                             pm, pmon_p, pmon_r,                  &
-     &                             pn, pnom_p, pnom_r,                  &
-     &                             visc4_p, visc4_r,                    &
+     &                               Hz, tl_Hz,                         &
+     &                               om_p, om_r, on_p, on_r,            &
+     &                               pm, pmon_p, pmon_r,                &
+     &                               pn, pnom_p, pnom_r,                &
+     &                               visc4_p, visc4_r,                  &
 #ifdef DIAGNOSTICS_UV
-!!   &                             DiaRUfrc, DiaRVfrc,                  &
-!!   &                             DiaU3wrk, DiaV3wrk,                  &
+!!   &                               DiaRUfrc, DiaRVfrc,                &
+!!   &                               DiaU3wrk, DiaV3wrk,                &
 #endif
-     &                             u, v,                                &
-     &                             tl_rufrc, tl_rvfrc, tl_u, tl_v)
+     &                               u, v,                              &
+     &                               tl_rufrc, tl_rvfrc, tl_u, tl_v)
 !***********************************************************************
 !
       USE mod_param
@@ -563,11 +575,11 @@
 #ifdef TL_IOMS
      &             cff
 #endif
-!>          UFx(i,j)=on_r(i,j)*on_r(i,j)*cff
-!>
+!^          UFx(i,j)=on_r(i,j)*on_r(i,j)*cff
+!^
             tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
-!>          VFe(i,j)=om_r(i,j)*om_r(i,j)*cff
-!>
+!^          VFe(i,j)=om_r(i,j)*om_r(i,j)*cff
+!^
             tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
           END DO
         END DO
@@ -602,15 +614,15 @@
      &             cff
 #endif
 #ifdef MASKING
-!>          cff=cff*pmask(i,j)
-!>
+!^          cff=cff*pmask(i,j)
+!^
             tl_cff=tl_cff*pmask(i,j)
 #endif
-!>          UFe(i,j)=om_p(i,j)*om_p(i,j)*cff
-!>
+!^          UFe(i,j)=om_p(i,j)*om_p(i,j)*cff
+!^
             tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
-!>          VFx(i,j)=on_p(i,j)*on_p(i,j)*cff
-!>
+!^          VFx(i,j)=on_p(i,j)*on_p(i,j)*cff
+!^
             tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
           END DO
         END DO
@@ -622,23 +634,23 @@
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             cff=0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
-!>          cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                           &
-!>   &                   (UFx(i,j  )-UFx(i-1,j))+                       &
-!>   &                   (pm(i-1,j)+pm(i,j))*                           &
-!>   &                   (UFe(i,j+1)-UFe(i  ,j)))
-!>
+!^          cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                           &
+!^   &                   (UFx(i,j  )-UFx(i-1,j))+                       &
+!^   &                   (pm(i-1,j)+pm(i,j))*                           &
+!^   &                   (UFe(i,j+1)-UFe(i  ,j)))
+!^
             tl_cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                        &
      &                      (tl_UFx(i,j  )-tl_UFx(i-1,j))+              &
      &                      (pm(i-1,j)+pm(i,j))*                        &
      &                      (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
-!>          cff2=dt(ng)*cff*cff1
-!>
+!^          cff2=dt(ng)*cff*cff1
+!^
             tl_cff2=dt(ng)*cff*tl_cff1
-!>          rufrc(i,j)=rufrc(i,j)-cff1
-!>
+!^          rufrc(i,j)=rufrc(i,j)-cff1
+!^
             tl_rufrc(i,j)=tl_rufrc(i,j)-tl_cff1
-!>          u(i,j,k,nnew)=u(i,j,k,nnew)-cff2
-!>
+!^          u(i,j,k,nnew)=u(i,j,k,nnew)-cff2
+!^
             tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-tl_cff2
 #ifdef DIAGNOSTICS_UV
 !!          DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)-cff1
@@ -649,23 +661,23 @@
         DO j=JstrV,Jend
           DO i=Istr,Iend
             cff=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
-!>          cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                           &
-!>   &                   (VFx(i+1,j)-VFx(i,j  ))-                       &
-!>   &                   (pm(i,j-1)+pm(i,j))*                           &
-!>   &                   (VFe(i  ,j)-VFe(i,j-1)))
-!>
+!^          cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                           &
+!^   &                   (VFx(i+1,j)-VFx(i,j  ))-                       &
+!^   &                   (pm(i,j-1)+pm(i,j))*                           &
+!^   &                   (VFe(i  ,j)-VFe(i,j-1)))
+!^
             tl_cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                        &
      &                      (tl_VFx(i+1,j)-tl_VFx(i,j  ))-              &
      &                      (pm(i,j-1)+pm(i,j))*                        &
      &                      (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
-!>          cff2=dt(ng)*cff*cff1
-!>
+!^          cff2=dt(ng)*cff*cff1
+!^
             tl_cff2=dt(ng)*cff*tl_cff1
-!>          rvfrc(i,j)=rvfrc(i,j)-cff1
-!>
+!^          rvfrc(i,j)=rvfrc(i,j)-cff1
+!^
             tl_rvfrc(i,j)=tl_rvfrc(i,j)-tl_cff1
-!>          v(i,j,k,nnew)=v(i,j,k,nnew)-cff2
-!>
+!^          v(i,j,k,nnew)=v(i,j,k,nnew)-cff2
+!^
             tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-tl_cff2
 #ifdef DIAGNOSTICS_UV
 !!          DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)-cff1
@@ -676,4 +688,6 @@
       END DO K_LOOP
 !
       RETURN
-      END SUBROUTINE rp_uv3dmix4_tile
+      END SUBROUTINE rp_uv3dmix4_s_tile
+
+      END MODULE rp_uv3dmix4_mod

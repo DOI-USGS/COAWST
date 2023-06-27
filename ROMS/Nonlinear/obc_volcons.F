@@ -2,9 +2,10 @@
 #include "cppdefs.h"
       MODULE obc_volcons_mod
 !
-!svn $Id: obc_volcons.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: obc_volcons.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -89,11 +90,7 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
-# ifdef ICESHELF
-      real(r8), intent(in) :: h(IminS:,JminS:)
-# else
       real(r8), intent(in) :: h(LBi:,LBj:)
-# endif
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
@@ -104,11 +101,7 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
-# ifdef ICESHELF
-      real(r8), intent(in) :: h(IminS:ImaxS,JminS:JmaxS)
-# else
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
@@ -123,7 +116,7 @@
       real(r8) :: cff, my_area, my_flux
 
 #ifdef DISTRIBUTE
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
       character (len=3), dimension(2) :: op_handle
 #endif
 
@@ -218,19 +211,19 @@
         IF (tile_count.eq.NSUB) THEN
           tile_count=0
 #ifdef DISTRIBUTE
-          buffer(1)=bc_area
-          buffer(2)=bc_flux
+          rbuffer(1)=bc_area
+          rbuffer(2)=bc_flux
           op_handle(1)='SUM'
           op_handle(2)='SUM'
-          CALL mp_reduce (ng, iNLM, 2, buffer, op_handle)
+          CALL mp_reduce (ng, iNLM, 2, rbuffer, op_handle)
 # ifdef DEBUG_VOLCONS
-          WRITE (150,10) MyRank, iic(ng), iif(ng), bc_area, buffer(1),  &
-                         bc_flux, buffer(2), buffer(2)/buffer(1)
+          WRITE (150,10) MyRank, iic(ng), iif(ng), bc_area, rbuffer(1), &
+                         bc_flux, rbuffer(2), rbuffer(2)/rbuffer(1)
   10      FORMAT (i3,1x,i3.3,1x,i3.3,5(1x,1pe23.15))
           CALL my_flush (150)
 # endif
-          bc_area=buffer(1)
-          bc_flux=buffer(2)
+          bc_area=rbuffer(1)
+          bc_flux=rbuffer(2)
 #endif
           ubar_xs=bc_flux/bc_area
         END IF

@@ -1,8 +1,9 @@
       SUBROUTINE ana_biology (ng, tile, model)
 !
-!! svn $Id: ana_biology.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_biology.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,8 +60,6 @@
       USE mod_iounits
       USE mod_scalars
 !
-      USE stats_mod, ONLY : stats_3dfld
-!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
@@ -86,27 +85,8 @@
       real(r8) :: cff10, cff11, cff12, cff13, cff14, cff15
       real(r8) :: salt, sftm, temp
 #endif
-!
-!   Maximum 80 biological tracers consider for field statistics.
-!
-      TYPE (T_STATS), save :: Stats(80)
 
 #include "set_bounds.h"
-!
-!-----------------------------------------------------------------------
-!  Initialize field statistics structure.
-!-----------------------------------------------------------------------
-!
-      IF (first) THEN
-        first=.FALSE.
-        DO i=1,SIZE(Stats,1)
-          Stats(i) % count=0.0_r8
-          Stats(i) % min=Large
-          Stats(i) % max=-Large
-          Stats(i) % avg=0.0_r8
-          Stats(i) % rms=0.0_r8
-        END DO
-      END IF
 
 #if defined BIO_FENNEL
 !
@@ -390,23 +370,6 @@
         END DO
       END DO
 #endif
-!
-!  Report statistics.
-!
-      DO itrc=1,NBT
-        i=idbio(itrc)
-        CALL stats_3dfld (ng, tile, iNLM, u3dvar, Stats(itrc),          &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng), t(:,:,:,1,i))
-        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          WRITE (stdout,10) TRIM(Vname(2,idTvar(i)))//': '//            &
-     &                      TRIM(Vname(1,idTvar(i))),                   &
-     &                      ng, Stats(itrc)%min, Stats(itrc)%max
-        END IF
-      END DO
-!
-  10  FORMAT (3x,' ANA_BIOLOGY - ',a,/,19x,                             &
-     &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
-     &                         ' Max = ',1p,e15.8,0p,')')
 !
       RETURN
       END SUBROUTINE ana_biology_tile

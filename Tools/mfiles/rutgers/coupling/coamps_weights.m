@@ -1,4 +1,4 @@
-function W = coamps_weights (Cname, Rname, Oname, varargin)
+function W = coamps_weights (ng, Cname, Rname, Oname, varargin)
 
 %
 % COAMPS_WEIGHTS: Sets weight factors for merging DATA and ROMS components
@@ -26,6 +26,8 @@ function W = coamps_weights (Cname, Rname, Oname, varargin)
 %
 % On Input:
 %
+%    ng          COAMPS nested grid to process (scalar)
+%
 %    Cname       COAMPS history HDF5 filename (string)
 %
 %    Rname       ROMS grid NetCDF filename (string)
@@ -47,9 +49,9 @@ function W = coamps_weights (Cname, Rname, Oname, varargin)
 %    W           Melding weights (struct)
 %  
 
-% svn $Id: coamps_weights.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: coamps_weights.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license           Hernan G. Arango      %
 %    See License_ROMS.txt                           John L. Wilkin        %
 %=========================================================================%
@@ -97,9 +99,9 @@ W = struct('lon', [],                                                   ...
 % If COAMPS longitudes is a module of 360 degrees, wrap angle in
 % degrees to [-180 180] as in ROMS.
 
-slon = 'longit_sfc_000000_000000_1';
-slat = 'latitu_sfc_000000_000000_1';
-smsk = 'lndsea_sfc_000000_000000_1';
+slon = strcat('longit_sfc_000000_000000_', num2str(ng));
+slat = strcat('latitu_sfc_000000_000000_', num2str(ng));
+smsk = strcat('lndsea_sfc_000000_000000_', num2str(ng));
 
 V = nc_vnames(Cname);
 
@@ -210,6 +212,7 @@ Text = ['COAMPS coupling import field melding weights ',                ...
 ncwriteatt(Oname, '/', 'title', Text);
 
 ncwriteatt(Oname, '/', 'coamps_grid', Cname);
+ncwriteatt(Oname, '/', 'coamps_grid_number', num2str(ng));
 ncwriteatt(Oname, '/', 'roms_grid', Rname);
 
 if (Lsmooth)

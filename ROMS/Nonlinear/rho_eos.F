@@ -2,9 +2,10 @@
       MODULE rho_eos_mod
 #ifdef SOLVE3D
 !
-!svn $Id: rho_eos.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rho_eos.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -247,8 +248,6 @@
 !  Nonlinear equation of state.  Notice that this equation of state
 !  is only valid for potential temperature range of -2C to 40C and
 !  a salinity range of 0 PSU to 42 PSU.
-!  Because of the pressure effect on freezing and the iceshelf, we've
-!  extended temp limit to -2.5 (msd 4/25/06)
 !=======================================================================
 !
       DO j=JstrT,JendT
@@ -258,11 +257,9 @@
 !  Check temperature and salinity lower values. Assign depth to the
 !  pressure.
 !
-            Tt=MAX(-2.5_r8,t(i,j,k,nrhs,itemp))
-            Tt=MIN(40.0_r8,Tt)
+            Tt=MAX(-2.0_r8,t(i,j,k,nrhs,itemp))
 #  ifdef SALINITY
             Ts=MAX(0.0_r8,t(i,j,k,nrhs,isalt))
-            Ts=MIN(100.0_r8,Ts)
             sqrtTs=SQRT(Ts)
 #  else
             Ts=0.0_r8
@@ -367,7 +364,8 @@
 !
 !-----------------------------------------------------------------------
 !  Compute vertical averaged density (rhoA) and density perturbation
-!  (rhoS) used in barotropic pressure gradient.
+!  (rhoS) used in barotropic pressure gradient. Both values are
+!  nondimensional.
 !-----------------------------------------------------------------------
 !
         DO i=IstrT,IendT

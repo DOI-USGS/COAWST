@@ -2,9 +2,10 @@
 #ifdef STATIONS
       SUBROUTINE read_StaPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_stapar.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: read_stapar.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -100,11 +101,6 @@
             CASE ('Sout(idBath)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Sout(idBath,1:Ngrids)=Lswitch(1:Ngrids)
-# endif
-# ifdef PRIMARY_PROD
-            CASE ('Sout(idNPP)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Sout(idNPP,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
             CASE ('Sout(idTvar)')
               Npts=load_l(Nval, Cval, MT, Ngrids, Ltracer)

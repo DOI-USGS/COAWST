@@ -2,9 +2,10 @@
       MODULE rp_v2dbc_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_v2dbc_im.F 1058 2021-03-25 19:04:23Z arango $
+!git $Id$
+!svn $Id: rp_v2dbc_im.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -147,9 +148,9 @@
         IF (tl_LBC(isouth,isVbar,ng)%radiation) THEN
           IF (iic(ng).ne.0) THEN
             DO i=Istr,Iend+1
-!>            grad(i,Jstr)=vbar(i  ,Jstr,know)-                         &
-!>   &                     vbar(i-1,Jstr,know)
-!>
+!^            grad(i,Jstr)=vbar(i  ,Jstr,know)-                         &
+!^   &                     vbar(i-1,Jstr,know)
+!^
               tl_grad(i,Jstr)=0.0_r8
             END DO
             DO i=Istr,Iend
@@ -180,12 +181,12 @@
                 Ce=BOUNDARY(ng)%vbar_south_Ce(i)
                 cff=BOUNDARY(ng)%vbar_south_C2(i)
 # endif
-!>              vbar(i,Jstr,kout)=(cff*vbar(i,Jstr  ,know)+             &
-!>   &                             Ce *vbar(i,Jstr+1,kout)-             &
-!>   &                             MAX(Cx,0.0_r8)*grad(i  ,Jstr)-       &
-!>   &                             MIN(Cx,0.0_r8)*grad(i+1,Jstr))/      &
-!>   &                            (cff+Ce)
-!>
+!^              vbar(i,Jstr,kout)=(cff*vbar(i,Jstr  ,know)+             &
+!^   &                             Ce *vbar(i,Jstr+1,kout)-             &
+!^   &                             MAX(Cx,0.0_r8)*grad(i  ,Jstr)-       &
+!^   &                             MIN(Cx,0.0_r8)*grad(i+1,Jstr))/      &
+!^   &                            (cff+Ce)
+!^
                 tl_vbar(i,Jstr,kout)=(cff*tl_vbar(i,Jstr  ,know)+       &
      &                                Ce *tl_vbar(i,Jstr+1,kout)-       &
      &                                MAX(Cx,0.0_r8)*                   &
@@ -195,17 +196,17 @@
      &                               (cff+Ce)
 
                 IF (tl_LBC(isouth,isVbar,ng)%nudging) THEN
-!>                vbar(i,Jstr,kout)=vbar(i,Jstr,kout)+                  &
-!>   &                              tau*(BOUNDARY(ng)%vbar_south(i)-    &
-!>   &                                   vbar(i,Jstr,know))
-!>
+!^                vbar(i,Jstr,kout)=vbar(i,Jstr,kout)+                  &
+!^   &                              tau*(BOUNDARY(ng)%vbar_south(i)-    &
+!^   &                                   vbar(i,Jstr,know))
+!^
                   tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)-            &
      &                                 tau*tl_vbar(i,Jstr,know)
                 END IF
 # ifdef MASKING
-!>              vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                    &
-!>   &                            GRID(ng)%vmask(i,Jstr)
-!>
+!^              vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                    &
+!^   &                            GRID(ng)%vmask(i,Jstr)
+!^
                 tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*              &
      &                               GRID(ng)%vmask(i,Jstr)
 # endif
@@ -289,11 +290,11 @@
 #  endif
               cff2=GRID(ng)%on_v(i,Jstr)*Ce
               tl_cff2=GRID(ng)%on_v(i,Jstr)*tl_Ce
-!>            bry_val=vbar(i,Jstr+1,know)+                              &
-!>   &                cff2*(bry_pgr+                                    &
-!>   &                      bry_cor+                                    &
-!>   &                      bry_str)
-!>
+!^            bry_val=vbar(i,Jstr+1,know)+                              &
+!^   &                cff2*(bry_pgr+                                    &
+!^   &                      bry_cor+                                    &
+!^   &                      bry_str)
+!^
               tl_bry_val=tl_vbar(i,Jstr+1,know)+                        &
      &                   tl_cff2*(bry_pgr+                              &
      &                            bry_cor+                              &
@@ -305,8 +306,8 @@
      &                   cff2*(bry_pgr+bry_cor+bry_str)
 #  endif
 # else
-!>            bry_val=BOUNDARY(ng)%vbar_south(i)
-!>
+!^            bry_val=BOUNDARY(ng)%vbar_south(i)
+!^
               tl_bry_val=BOUNDARY(ng)%tl_vbar_south(i)
 # endif
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                 &
@@ -326,15 +327,15 @@
      &              0.5_r8*Ce
 # endif
 # if defined ATM_PRESS && defined PRESS_COMPENSATE
-!>            vbar(i,Jstr,kout)=bry_val-                                &
-!>   &                          Ce*(0.5_r8*                             &
-!>   &                              (zeta(i,Jstr-1,know)+               &
-!>   &                               zeta(i,Jstr  ,know)+               &
-!>   &                               fac*(FORCES(ng)%Pair(i,Jstr-1)+    &
-!>   &                                    FORCES(ng)%Pair(i,Jstr  )-    &
-!>   &                                    2.0_r8*OneAtm))-              &
-!>   &                              BOUNDARY(ng)%zeta_south(i))
-!>
+!^            vbar(i,Jstr,kout)=bry_val-                                &
+!^   &                          Ce*(0.5_r8*                             &
+!^   &                              (zeta(i,Jstr-1,know)+               &
+!^   &                               zeta(i,Jstr  ,know)+               &
+!^   &                               fac*(FORCES(ng)%Pair(i,Jstr-1)+    &
+!^   &                                    FORCES(ng)%Pair(i,Jstr  )-    &
+!^   &                                    2.0_r8*OneAtm))-              &
+!^   &                              BOUNDARY(ng)%zeta_south(i))
+!^
               tl_vbar(i,Jstr,kout)=tl_bry_val-                          &
      &                             tl_Ce*                               &
      &                             (0.5_r8*                             &
@@ -358,11 +359,11 @@
      &                              BOUNDARY(ng)%zeta_south(i))
 #  endif
 # else
-!>            vbar(i,Jstr,kout)=bry_val-                                &
-!>   &                          Ce*(0.5_r8*(zeta(i,Jstr-1,know)+        &
-!>   &                                      zeta(i,Jstr  ,know))-       &
-!>   &                              BOUNDARY(ng)%zeta_south(i))
-!>
+!^            vbar(i,Jstr,kout)=bry_val-                                &
+!^   &                          Ce*(0.5_r8*(zeta(i,Jstr-1,know)+        &
+!^   &                                      zeta(i,Jstr  ,know))-       &
+!^   &                              BOUNDARY(ng)%zeta_south(i))
+!^
               tl_vbar(i,Jstr,kout)=tl_bry_val-                          &
      &                             tl_Ce*                               &
      &                             (0.5_r8*(zeta(i,Jstr-1,know)+        &
@@ -380,9 +381,9 @@
 #  endif
 # endif
 # ifdef MASKING
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
-!>   &                          GRID(ng)%vmask(i,Jstr)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
+!^   &                          GRID(ng)%vmask(i,Jstr)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*                &
      &                             GRID(ng)%vmask(i,Jstr)
 # endif
@@ -465,11 +466,11 @@
 #  endif
               cff2=GRID(ng)%on_v(i,Jstr)*Ce
               tl_cff2=GRID(ng)%on_v(i,Jstr)*tl_Ce
-!>            bry_val=vbar(i,Jstr+1,know)+                              &
-!>   &                cff2*(bry_pgr+                                    &
-!>   &                      bry_cor+                                    &
-!>   &                      bry_str)
-!>
+!^            bry_val=vbar(i,Jstr+1,know)+                              &
+!^   &                cff2*(bry_pgr+                                    &
+!^   &                      bry_cor+                                    &
+!^   &                      bry_str)
+!^
               tl_bry_val=tl_vbar(i,Jstr+1,know)+                        &
      &                   tl_cff2*(bry_pgr+                              &
      &                            bry_cor+                              &
@@ -481,8 +482,8 @@
      &                   cff2*(bry_pgr+bry_cor+bry_str)
 #  endif
 # else
-!>            bry_val=BOUNDARY(ng)%vbar_south(i)
-!>
+!^            bry_val=BOUNDARY(ng)%vbar_south(i)
+!^
               tl_bry_val=BOUNDARY(ng)%tl_vbar_south(i)
 # endif
 # ifdef WET_DRY_NOT_YET
@@ -548,12 +549,12 @@
      &                      cff2*cff3                       ! HGA check
 # endif
               END IF
-!>            vbar(i,Jstr,kout)=0.5_r8*                                 &
-!>   &                          ((1.0_r8-Ce)*vbar(i,Jstr,know)+         &
-!>   &                           Ce*vbar(i,Jstr+1,know)+                &
-!>   &                           bry_val-                               &
-!>   &                           cff1*(Ze-BOUNDARY(ng)%zeta_south(i)))
-!>
+!^            vbar(i,Jstr,kout)=0.5_r8*                                 &
+!^   &                          ((1.0_r8-Ce)*vbar(i,Jstr,know)+         &
+!^   &                           Ce*vbar(i,Jstr+1,know)+                &
+!^   &                           bry_val-                               &
+!^   &                           cff1*(Ze-BOUNDARY(ng)%zeta_south(i)))
+!^
               tl_vbar(i,Jstr,kout)=0.5_r8*                              &
      &                             ((1.0_r8-Ce)*                        &
      &                              tl_vbar(i,Jstr,know)-               &
@@ -580,9 +581,9 @@
               END IF
 # endif
 # ifdef MASKING
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
-!>   &                          GRID(ng)%vmask(i,Jstr)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
+!^   &                          GRID(ng)%vmask(i,Jstr)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*                &
      &                             GRID(ng)%vmask(i,Jstr)
 # endif
@@ -594,13 +595,13 @@
         ELSE IF (tl_LBC(isouth,isVbar,ng)%clamped) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
-!>            vbar(i,Jstr,kout)=BOUNDARY(ng)%vbar_south(i)
-!>
+!^            vbar(i,Jstr,kout)=BOUNDARY(ng)%vbar_south(i)
+!^
               tl_vbar(i,Jstr,kout)=BOUNDARY(ng)%tl_vbar_south(i)
 # ifdef MASKING
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
-!>   &                          GRID(ng)%vmask(i,Jstr)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
+!^   &                          GRID(ng)%vmask(i,Jstr)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*                &
      &                             GRID(ng)%vmask(i,Jstr)
 # endif
@@ -612,13 +613,13 @@
         ELSE IF (tl_LBC(isouth,isVbar,ng)%gradient) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr+1,kout)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr+1,kout)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr+1,kout)
 # ifdef MASKING
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
-!>   &                          GRID(ng)%vmask(i,Jstr)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
+!^   &                          GRID(ng)%vmask(i,Jstr)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*                &
      &                             GRID(ng)%vmask(i,Jstr)
 # endif
@@ -631,32 +632,32 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
               IF (tl_LBC(isouth,isFsur,ng)%acquire) THEN
-!>              bry_pgr=-g*(zeta(i,Jstr,know)-                          &
-!>   &                      BOUNDARY(ng)%zeta_south(i))*                &
-!>   &                  0.5_r8*GRID(ng)%pn(i,Jstr)
-!>
+!^              bry_pgr=-g*(zeta(i,Jstr,know)-                          &
+!^   &                      BOUNDARY(ng)%zeta_south(i))*                &
+!^   &                  0.5_r8*GRID(ng)%pn(i,Jstr)
+!^
                 tl_bry_pgr=-g*(tl_zeta(i,Jstr,know)-                    &
      &                         BOUNDARY(ng)%tl_zeta_south(i))*          &
      &                     0.5_r8*GRID(ng)%pn(i,Jstr)
               ELSE
-!>              bry_pgr=-g*(zeta(i,Jstr,know)-                          &
-!>   &                      zeta(i,Jstr-1,know))*                       &
-!>   &                  0.5_r8*(GRID(ng)%pn(i,Jstr-1)+                  &
-!>   &                          GRID(ng)%pn(i,Jstr  ))
-!>
+!^              bry_pgr=-g*(zeta(i,Jstr,know)-                          &
+!^   &                      zeta(i,Jstr-1,know))*                       &
+!^   &                  0.5_r8*(GRID(ng)%pn(i,Jstr-1)+                  &
+!^   &                          GRID(ng)%pn(i,Jstr  ))
+!^
                 tl_bry_pgr=-g*(tl_zeta(i,Jstr  ,know)-                  &
      &                         tl_zeta(i,Jstr-1,know))*                 &
      &                     0.5_r8*(GRID(ng)%pn(i,Jstr-1)+               &
      &                             GRID(ng)%pn(i,Jstr  ))
               END IF
 # ifdef UV_COR
-!>            bry_cor=-0.125_r8*(ubar(i  ,Jstr-1,know)+                 &
-!>   &                           ubar(i+1,Jstr-1,know)+                 &
-!>   &                           ubar(i  ,Jstr  ,know)+                 &
-!>   &                           ubar(i+1,Jstr  ,know))*                &
-!>   &                          (GRID(ng)%f(i,Jstr-1)+                  &
-!>   &                           GRID(ng)%f(i,Jstr  ))
-!>
+!^            bry_cor=-0.125_r8*(ubar(i  ,Jstr-1,know)+                 &
+!^   &                           ubar(i+1,Jstr-1,know)+                 &
+!^   &                           ubar(i  ,Jstr  ,know)+                 &
+!^   &                           ubar(i+1,Jstr  ,know))*                &
+!^   &                          (GRID(ng)%f(i,Jstr-1)+                  &
+!^   &                           GRID(ng)%f(i,Jstr  ))
+!^
               tl_bry_cor=-0.125_r8*(tl_ubar(i  ,Jstr-1,know)+           &
      &                              tl_ubar(i+1,Jstr-1,know)+           &
      &                              tl_ubar(i  ,Jstr  ,know)+           &
@@ -664,8 +665,8 @@
      &                             (GRID(ng)%f(i,Jstr-1)+               &
      &                              GRID(ng)%f(i,Jstr  ))
 # else
-!>            bry_cor=0.0_r8
-!>
+!^            bry_cor=0.0_r8
+!^
               tl_bry_cor=0.0_r8
 # endif
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                 &
@@ -679,9 +680,9 @@
 # ifdef TL_IOMS
      &               2.0_r8*cff
 # endif
-!>            bry_str=cff*(FORCES(ng)%svstr(i,Jstr)-                    &
-!>   &                     FORCES(ng)%bvstr(i,Jstr))
-!>
+!^            bry_str=cff*(FORCES(ng)%svstr(i,Jstr)-                    &
+!^   &                     FORCES(ng)%bvstr(i,Jstr))
+!^
               tl_bry_str=tl_cff*(FORCES(ng)%svstr(i,Jstr)-              &
      &                           FORCES(ng)%bvstr(i,Jstr))+             &
      &                   cff*(FORCES(ng)%tl_svstr(i,Jstr)-              &
@@ -690,19 +691,19 @@
      &                   cff*(FORCES(ng)%svstr(i,Jstr)-                 &
      &                        FORCES(ng)%bvstr(i,Jstr))
 # endif
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,know)+                      &
-!>   &                          dt2d*(bry_pgr+                          &
-!>   &                                bry_cor+                          &
-!>   &                                bry_str)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,know)+                      &
+!^   &                          dt2d*(bry_pgr+                          &
+!^   &                                bry_cor+                          &
+!^   &                                bry_str)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,know)+                &
      &                             dt2d*(tl_bry_pgr+                    &
      &                                   tl_bry_cor+                    &
      &                                   tl_bry_str)
 # ifdef MASKING
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
-!>   &                          GRID(ng)%vmask(i,Jstr)
-!>
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*                      &
+!^   &                          GRID(ng)%vmask(i,Jstr)
+!^
               tl_vbar(i,Jstr,kout)=tl_vbar(i,Jstr,kout)*                &
      &                             GRID(ng)%vmask(i,Jstr)
 # endif
@@ -714,8 +715,8 @@
         ELSE IF (tl_LBC(isouth,isVbar,ng)%closed) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
-!>            vbar(i,Jstr,kout)=0.0_r8
-!>
+!^            vbar(i,Jstr,kout)=0.0_r8
+!^
               tl_vbar(i,Jstr,kout)=0.0_r8
             END IF
           END DO
@@ -733,9 +734,9 @@
         IF (tl_LBC(inorth,isVbar,ng)%radiation) THEN
           IF (iic(ng).ne.0) THEN
             DO i=Istr,Iend+1
-!>            grad(i,Jend+1)=vbar(i  ,Jend+1,know)-                     &
-!>   &                       vbar(i-1,Jend+1,know)
-!>
+!^            grad(i,Jend+1)=vbar(i  ,Jend+1,know)-                     &
+!^   &                       vbar(i-1,Jend+1,know)
+!^
               tl_grad(i,Jend+1)=0.0_r8
             END DO
             DO i=Istr,Iend
@@ -766,12 +767,12 @@
                 Ce=BOUNDARY(ng)%vbar_north_Ce(i)
                 cff=BOUNDARY(ng)%vbar_north_C2(i)
 # endif
-!>              vbar(i,Jend+1,kout)=(cff*vbar(i,Jend+1,know)+           &
-!>   &                               Ce *vbar(i,Jend  ,kout)-           &
-!>   &                               MAX(Cx,0.0_r8)*grad(i  ,Jend+1)-   &
-!>   &                               MIN(Cx,0.0_r8)*grad(i+1,Jend+1))/  &
-!>   &                              (cff+Ce)
-!>
+!^              vbar(i,Jend+1,kout)=(cff*vbar(i,Jend+1,know)+           &
+!^   &                               Ce *vbar(i,Jend  ,kout)-           &
+!^   &                               MAX(Cx,0.0_r8)*grad(i  ,Jend+1)-   &
+!^   &                               MIN(Cx,0.0_r8)*grad(i+1,Jend+1))/  &
+!^   &                              (cff+Ce)
+!^
                 tl_vbar(i,Jend+1,kout)=(cff*tl_vbar(i,Jend+1,know)+     &
      &                                  Ce *tl_vbar(i,Jend  ,kout)-     &
      &                                  MAX(Cx,0.0_r8)*                 &
@@ -781,17 +782,17 @@
      &                                 (cff+Ce)
 
                 IF (tl_LBC(inorth,isVbar,ng)%nudging) THEN
-!>                vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)+              &
-!>   &                                tau*(BOUNDARY(ng)%vbar_north(i)-  &
-!>   &                                     vbar(i,Jend+1,know))
-!>
+!^                vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)+              &
+!^   &                                tau*(BOUNDARY(ng)%vbar_north(i)-  &
+!^   &                                     vbar(i,Jend+1,know))
+!^
                   tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)-        &
      &                                   tau*tl_vbar(i,Jend+1,know)
                 END IF
 # ifdef MASKING
-!>              vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                &
-!>   &                              GRID(ng)%vmask(i,Jend+1)
-!>
+!^              vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                &
+!^   &                              GRID(ng)%vmask(i,Jend+1)
+!^
                 tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*          &
      &                                 GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -875,11 +876,11 @@
 #  endif
               cff2=GRID(ng)%on_v(i,Jend+1)*Ce
               tl_cff2=GRID(ng)%on_v(i,Jend+1)*tl_Ce
-!>            bry_val=vbar(i,Jend,know)+                                &
-!>   &                cff2*(bry_pgr+                                    &
-!>   &                      bry_cor+                                    &
-!>   &                      bry_str)
-!>
+!^            bry_val=vbar(i,Jend,know)+                                &
+!^   &                cff2*(bry_pgr+                                    &
+!^   &                      bry_cor+                                    &
+!^   &                      bry_str)
+!^
               tl_bry_val=tl_vbar(i,Jend,know)+                          &
      &                   tl_cff2*(bry_pgr+                              &
      &                            bry_cor+                              &
@@ -891,8 +892,8 @@
      &                   cff2*(bry_pgr+bry_cor+bry_str)
 #  endif
 # else
-!>            bry_val=BOUNDARY(ng)%vbar_north(i)
-!>
+!^            bry_val=BOUNDARY(ng)%vbar_north(i)
+!^
               tl_bry_val=BOUNDARY(ng)%tl_vbar_north(i)
 # endif
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                 &
@@ -912,15 +913,15 @@
      &              0.5_r8*Ce
 # endif
 # if defined ATM_PRESS && defined PRESS_COMPENSATE
-!>            vbar(i,Jend+1,kout)=bry_val+                              &
-!>   &                            Ce*(0.5_r8*                           &
-!>   &                                (zeta(i,Jend  ,know)+             &
-!>   &                                 zeta(i,Jend+1,know)+             &
-!>   &                                 fac*(FORCES(ng)%Pair(i,Jend  )+  &
-!>   &                                      FORCES(ng)%Pair(i,Jend+1)-  &
-!>   &                                      2.0_r8*OneAtm))-            &
-!>   &                                BOUNDARY(ng)%zeta_north(i))
-!>
+!^            vbar(i,Jend+1,kout)=bry_val+                              &
+!^   &                            Ce*(0.5_r8*                           &
+!^   &                                (zeta(i,Jend  ,know)+             &
+!^   &                                 zeta(i,Jend+1,know)+             &
+!^   &                                 fac*(FORCES(ng)%Pair(i,Jend  )+  &
+!^   &                                      FORCES(ng)%Pair(i,Jend+1)-  &
+!^   &                                      2.0_r8*OneAtm))-            &
+!^   &                                BOUNDARY(ng)%zeta_north(i))
+!^
               tl_vbar(i,Jend+1,kout)=tl_bry_val+                        &
      &                               tl_Ce*                             &
      &                               (0.5_r8*                           &
@@ -944,11 +945,11 @@
      &                                BOUNDARY(ng)%zeta_north(i))
 #  endif
 # else
-!>            vbar(i,Jend+1,kout)=bry_val+                              &
-!>   &                            Ce*(0.5_r8*(zeta(i,Jend  ,know)+      &
-!>   &                                        zeta(i,Jend+1,know))-     &
-!>   &                                BOUNDARY(ng)%zeta_north(i))
-!>
+!^            vbar(i,Jend+1,kout)=bry_val+                              &
+!^   &                            Ce*(0.5_r8*(zeta(i,Jend  ,know)+      &
+!^   &                                        zeta(i,Jend+1,know))-     &
+!^   &                                BOUNDARY(ng)%zeta_north(i))
+!^
               tl_vbar(i,Jend+1,kout)=tl_bry_val+                        &
      &                               tl_Ce*                             &
      &                               (0.5_r8*(zeta(i,Jend  ,know)+      &
@@ -966,9 +967,9 @@
 #  endif
 # endif
 # ifdef MASKING
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
-!>   &                            GRID(ng)%vmask(i,Jend+1)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
+!^   &                            GRID(ng)%vmask(i,Jend+1)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*            &
      &                               GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -1051,11 +1052,11 @@
 #  endif
               cff2=GRID(ng)%on_v(i,Jend+1)*Ce
               tl_cff2=GRID(ng)%on_v(i,Jend+1)*tl_Ce
-!>            bry_val=vbar(i,Jend,know)+                                &
-!>   &                cff2*(bry_pgr+                                    &
-!>   &                      bry_cor+                                    &
-!>   &                      bry_str)
-!>
+!^            bry_val=vbar(i,Jend,know)+                                &
+!^   &                cff2*(bry_pgr+                                    &
+!^   &                      bry_cor+                                    &
+!^   &                      bry_str)
+!^
               tl_bry_val=tl_vbar(i,Jend,know)+                          &
      &                   tl_cff2*(bry_pgr+                              &
      &                            bry_cor+                              &
@@ -1067,8 +1068,8 @@
      &                   cff2*(bry_pgr+bry_cor+bry_str)
 #  endif
 # else
-!>            bry_val=BOUNDARY(ng)%vbar_north(i)
-!>
+!^            bry_val=BOUNDARY(ng)%vbar_north(i)
+!^
               tl_bry_val=BOUNDARY(ng)%tl_vbar_north(i)
 # endif
 # ifdef WET_DRY_NOT_YET
@@ -1135,12 +1136,12 @@
      &                      cff2*cff3                       ! HGA check
 # endif
               END IF
-!>            vbar(i,Jend+1,kout)=0.5_r8*                               &
-!>   &                            ((1.0_r8-Ce)*vbar(i,Jend+1,know)+     &
-!>   &                             Ce*vbar(i,Jend,know)+                &
-!>   &                             bry_val+                             &
-!>   &                             cff1*(Ze-BOUNDARY(ng)%zeta_north(i)))
-!>
+!^            vbar(i,Jend+1,kout)=0.5_r8*                               &
+!^   &                            ((1.0_r8-Ce)*vbar(i,Jend+1,know)+     &
+!^   &                             Ce*vbar(i,Jend,know)+                &
+!^   &                             bry_val+                             &
+!^   &                             cff1*(Ze-BOUNDARY(ng)%zeta_north(i)))
+!^
               tl_vbar(i,Jend+1,kout)=0.5_r8*                            &
      &                               ((1.0_r8-Ce)*                      &
      &                                tl_vbar(i,Jend+1,know)+           &
@@ -1167,9 +1168,9 @@
               END IF
 # endif
 # ifdef MASKING
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
-!>   &                            GRID(ng)%vmask(i,Jend+1)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
+!^   &                            GRID(ng)%vmask(i,Jend+1)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*            &
      &                               GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -1181,12 +1182,12 @@
         ELSE IF (tl_LBC(inorth,isVbar,ng)%clamped) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
-!>            vbar(i,Jend+1,kout)=BOUNDARY(ng)%vbar_north(i)
+!^            vbar(i,Jend+1,kout)=BOUNDARY(ng)%vbar_north(i)
 # ifdef MASKING
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
-!>   &                            GRID(ng)%vmask(i,Jend+1)
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
+!^   &                            GRID(ng)%vmask(i,Jend+1)
 # endif
-!>
+!^
               tl_vbar(i,Jend+1,kout)=BOUNDARY(ng)%tl_vbar_north(i)
 # ifdef MASKING
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*            &
@@ -1200,13 +1201,13 @@
         ELSE IF (tl_LBC(inorth,isVbar,ng)%gradient) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend,kout)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend,kout)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend,kout)
 # ifdef MASKING
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
-!>   &                            GRID(ng)%vmask(i,Jend+1)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
+!^   &                            GRID(ng)%vmask(i,Jend+1)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*            &
      &                               GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -1219,32 +1220,32 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
               IF (tl_LBC(inorth,isFsur,ng)%acquire) THEN
-!>              bry_pgr=-g*(BOUNDARY(ng)%zeta_north(i)-                 &
-!>   &                      zeta(i,Jend,know))*                         &
-!>   &                  0.5_r8*GRID(ng)%pn(i,Jend)
-!>
+!^              bry_pgr=-g*(BOUNDARY(ng)%zeta_north(i)-                 &
+!^   &                      zeta(i,Jend,know))*                         &
+!^   &                  0.5_r8*GRID(ng)%pn(i,Jend)
+!^
                 tl_bry_pgr=-g*(BOUNDARY(ng)%tl_zeta_north(i)-           &
      &                         tl_zeta(i,Jend,know))*                   &
      &                     0.5_r8*GRID(ng)%pn(i,Jend)
               ELSE
-!>              bry_pgr=-g*(zeta(i,Jend+1,know)-                        &
-!>   &                      zeta(i,Jend  ,know))*                       &
-!>   &                  0.5_r8*(GRID(ng)%pn(i,Jend  )+                  &
-!>   &                          GRID(ng)%pn(i,Jend+1))
-!>
+!^              bry_pgr=-g*(zeta(i,Jend+1,know)-                        &
+!^   &                      zeta(i,Jend  ,know))*                       &
+!^   &                  0.5_r8*(GRID(ng)%pn(i,Jend  )+                  &
+!^   &                          GRID(ng)%pn(i,Jend+1))
+!^
                 tl_bry_pgr=-g*(tl_zeta(i,Jend+1,know)-                  &
      &                         tl_zeta(i,Jend  ,know))*                 &
      &                     0.5_r8*(GRID(ng)%pn(i,Jend  )+               &
      &                             GRID(ng)%pn(i,Jend+1))
               END IF
 # ifdef UV_COR
-!>            bry_cor=-0.125_r8*(ubar(i  ,Jend  ,know)+                 &
-!>   &                           ubar(i+1,Jend  ,know)+                 &
-!>   &                           ubar(i  ,Jend+1,know)+                 &
-!>   &                           ubar(i+1,Jend+1,know))*                &
-!>   &                          (GRID(ng)%f(i,Jend  )+                  &
-!>   &                           GRID(ng)%f(i,Jend+1))
-!>
+!^            bry_cor=-0.125_r8*(ubar(i  ,Jend  ,know)+                 &
+!^   &                           ubar(i+1,Jend  ,know)+                 &
+!^   &                           ubar(i  ,Jend+1,know)+                 &
+!^   &                           ubar(i+1,Jend+1,know))*                &
+!^   &                          (GRID(ng)%f(i,Jend  )+                  &
+!^   &                           GRID(ng)%f(i,Jend+1))
+!^
               tl_bry_cor=-0.125_r8*(tl_ubar(i  ,Jend  ,know)+           &
      &                              tl_ubar(i+1,Jend  ,know)+           &
      &                              tl_ubar(i  ,Jend+1,know)+           &
@@ -1252,8 +1253,8 @@
      &                             (GRID(ng)%f(i,Jend  )+               &
      &                              GRID(ng)%f(i,Jend+1))
 # else
-!>            bry_cor=0.0_r8
-!>
+!^            bry_cor=0.0_r8
+!^
               tl_bry_cor=0.0_r8
 # endif
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                 &
@@ -1267,9 +1268,9 @@
 # ifdef TL_IOMS
      &               2.0_r8*cff
 # endif
-!>            bry_str=cff*(FORCES(ng)%svstr(i,Jend+1)-                  &
-!>   &                     FORCES(ng)%bvstr(i,Jend+1))
-!>
+!^            bry_str=cff*(FORCES(ng)%svstr(i,Jend+1)-                  &
+!^   &                     FORCES(ng)%bvstr(i,Jend+1))
+!^
               tl_bry_str=tl_cff*(FORCES(ng)%svstr(i,Jend+1)-            &
      &                           FORCES(ng)%bvstr(i,Jend+1))+           &
      &                   cff*(FORCES(ng)%tl_svstr(i,Jend+1)-            &
@@ -1278,19 +1279,19 @@
      &                   cff*(FORCES(ng)%svstr(i,Jend+1)-               &
      &                        FORCES(ng)%bvstr(i,Jend+1))
 # endif
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,know)+                  &
-!>   &                            dt2d*(bry_pgr+                        &
-!>   &                                  bry_cor+                        &
-!>   &                                  bry_str)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,know)+                  &
+!^   &                            dt2d*(bry_pgr+                        &
+!^   &                                  bry_cor+                        &
+!^   &                                  bry_str)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,know)+            &
      &                               dt2d*(tl_bry_pgr+                  &
      &                                     tl_bry_cor+                  &
      &                                     tl_bry_str)
 # ifdef MASKING
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
-!>   &                            GRID(ng)%vmask(i,Jend+1)
-!>
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
+!^   &                            GRID(ng)%vmask(i,Jend+1)
+!^
               tl_vbar(i,Jend+1,kout)=tl_vbar(i,Jend+1,kout)*            &
      &                               GRID(ng)%vmask(i,Jend+1)
 # endif
@@ -1302,8 +1303,8 @@
         ELSE IF (tl_LBC(inorth,isVbar,ng)%closed) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
-!>            vbar(i,Jend+1,kout)=0.0_r8
-!>
+!^            vbar(i,Jend+1,kout)=0.0_r8
+!^
               tl_vbar(i,Jend+1,kout)=0.0_r8
             END IF
           END DO
@@ -1321,9 +1322,9 @@
         IF (tl_LBC(iwest,isVbar,ng)%radiation) THEN
           IF (iic(ng).ne.0) THEN
             DO j=JstrV-1,Jend
-!>            grad(Istr-1,j)=vbar(Istr-1,j+1,know)-                     &
-!>   &                       vbar(Istr-1,j  ,know)
-!>
+!^            grad(Istr-1,j)=vbar(Istr-1,j+1,know)-                     &
+!^   &                       vbar(Istr-1,j  ,know)
+!^
               tl_grad(Istr-1,j)=0.0_r8
             END DO
             DO j=JstrV,Jend
@@ -1354,12 +1355,12 @@
 #  endif
                 cff=BOUNDARY(ng)%vbar_west_C2(j)
 # endif
-!>              vbar(Istr-1,j,kout)=(cff*vbar(Istr-1,j,know)+           &
-!>   &                               Cx *vbar(Istr  ,j,kout)-           &
-!>   &                               MAX(Ce,0.0_r8)*grad(Istr-1,j-1)-   &
-!>   &                               MIN(Ce,0.0_r8)*grad(Istr-1,j  ))/  &
-!>   &                              (cff+Cx)
-!>
+!^              vbar(Istr-1,j,kout)=(cff*vbar(Istr-1,j,know)+           &
+!^   &                               Cx *vbar(Istr  ,j,kout)-           &
+!^   &                               MAX(Ce,0.0_r8)*grad(Istr-1,j-1)-   &
+!^   &                               MIN(Ce,0.0_r8)*grad(Istr-1,j  ))/  &
+!^   &                              (cff+Cx)
+!^
                 tl_vbar(Istr-1,j,kout)=(cff*tl_vbar(Istr-1,j,know)+     &
      &                                  Cx *tl_vbar(1,j,kout)-          &
      &                                  MAX(Ce,0.0_r8)*                 &
@@ -1369,17 +1370,17 @@
      &                                 (cff+Cx)
 
                 IF (tl_LBC(iwest,isVbar,ng)%nudging) THEN
-!>                vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)+              &
-!>   &                                tau*(BOUNDARY(ng)%vbar_west(j)-   &
-!>   &                                     vbar(Istr-1,j,know))
-!>
+!^                vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)+              &
+!^   &                                tau*(BOUNDARY(ng)%vbar_west(j)-   &
+!^   &                                     vbar(Istr-1,j,know))
+!^
                   tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)-        &
      &                                   tau*tl_vbar(1,j,know)
                 END IF
 # ifdef MASKING
-!>              vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                &
-!>   &                              GRID(ng)%vmask(Istr-1,j)
-!>
+!^              vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                &
+!^   &                              GRID(ng)%vmask(Istr-1,j)
+!^
                 tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)*          &
      &                                 GRID(ng)%vmask(Istr-1,j)
 # endif
@@ -1414,9 +1415,9 @@
 # ifdef TL_IOMS
      &                cff2*cff2*(1.0_r8+2.0_r8*Cx)
 # endif
-!>            vbar(Istr-1,j,kout)=cff2*(vbar(Istr-1,j,know)+            &
-!>   &                                  Cx*vbar(Istr,j,kout))
-!>
+!^            vbar(Istr-1,j,kout)=cff2*(vbar(Istr-1,j,know)+            &
+!^   &                                  Cx*vbar(Istr,j,kout))
+!^
               tl_vbar(Istr-1,j,kout)=tl_cff2*(vbar(Istr-1,j,know)+      &
      &                                        Cx*vbar(Istr,j,kout))+    &
      &                               cff2*(tl_vbar(Istr-1,j,know)+      &
@@ -1427,9 +1428,9 @@
      &                                     2.0_r8*Cx*vbar(Istr,j,kout))
 # endif
 # ifdef MASKING
-!>            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Istr-1,j)
-!>
+!^            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Istr-1,j)
+!^
               tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)*            &
      &                               GRID(ng)%vmask(Istr-1,j)
 # endif
@@ -1441,13 +1442,13 @@
         ELSE IF (tl_LBC(iwest,isVbar,ng)%clamped) THEN
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%west(j)) THEN
-!>            vbar(Istr-1,j,kout)=BOUNDARY(ng)%vbar_west(j)
-!>
+!^            vbar(Istr-1,j,kout)=BOUNDARY(ng)%vbar_west(j)
+!^
               tl_vbar(Istr-1,j,kout)=BOUNDARY(ng)%tl_vbar_west(j)
 # ifdef MASKING
-!>            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Istr-1,j)
-!>
+!^            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Istr-1,j)
+!^
               tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)*            &
      &                               GRID(ng)%vmask(Istr-1,j)
 # endif
@@ -1459,13 +1460,13 @@
         ELSE IF (tl_LBC(iwest,isVbar,ng)%gradient) THEN
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%west(j)) THEN
-!>            vbar(Istr-1,j,kout)=vbar(Istr,j,kout)
-!>
+!^            vbar(Istr-1,j,kout)=vbar(Istr,j,kout)
+!^
               tl_vbar(Istr-1,j,kout)=tl_vbar(Istr,j,kout)
 # ifdef MASKING
-!>            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Istr-1,j)
-!>
+!^            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Istr-1,j)
+!^
               tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)*            &
      &                               GRID(ng)%vmask(Istr-1,j)
 # endif
@@ -1485,13 +1486,13 @@
           END IF
           DO j=Jmin,Jmax
             IF (LBC_apply(ng)%west(j)) THEN
-!>            vbar(Istr-1,j,kout)=gamma2(ng)*vbar(Istr,j,kout)
-!>
+!^            vbar(Istr-1,j,kout)=gamma2(ng)*vbar(Istr,j,kout)
+!^
               tl_vbar(Istr-1,j,kout)=gamma2(ng)*tl_vbar(Istr,j,kout)
 # ifdef MASKING
-!>            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Istr-1,j)
-!>
+!^            vbar(Istr-1,j,kout)=vbar(Istr-1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Istr-1,j)
+!^
               tl_vbar(Istr-1,j,kout)=tl_vbar(Istr-1,j,kout)*            &
      &                               GRID(ng)%vmask(Istr-1,j)
 # endif
@@ -1511,9 +1512,9 @@
         IF (tl_LBC(ieast,isVbar,ng)%radiation) THEN
           IF (iic(ng).ne.0) THEN
             DO j=JstrV-1,Jend
-!>            grad(Iend+1,j)=vbar(Iend+1,j+1,know)-                     &
-!>   &                       vbar(Iend+1,j  ,know)
-!>
+!^            grad(Iend+1,j)=vbar(Iend+1,j+1,know)-                     &
+!^   &                       vbar(Iend+1,j  ,know)
+!^
               tl_grad(Iend+1,j)=0.0_r8
             END DO
             DO j=JstrV,Jend
@@ -1544,12 +1545,12 @@
 #  endif
                 cff=BOUNDARY(ng)%vbar_east_C2(j)
 # endif
-!>              vbar(Iend+1,j,kout)=(cff*vbar(Iend+1,j,know)+           &
-!>   &                               Cx *vbar(Iend  ,j,kout)-           &
-!>   &                               MAX(Ce,0.0_r8)*grad(Iend+1,j-1)-   &
-!>   &                               MIN(Ce,0.0_r8)*grad(Iend+1,j  ))/  &
-!>   &                              (cff+Cx)
-!>
+!^              vbar(Iend+1,j,kout)=(cff*vbar(Iend+1,j,know)+           &
+!^   &                               Cx *vbar(Iend  ,j,kout)-           &
+!^   &                               MAX(Ce,0.0_r8)*grad(Iend+1,j-1)-   &
+!^   &                               MIN(Ce,0.0_r8)*grad(Iend+1,j  ))/  &
+!^   &                              (cff+Cx)
+!^
                 tl_vbar(Iend+1,j,kout)=(cff*tl_vbar(Iend+1,j,know)+     &
      &                                  Cx *tl_vbar(Iend  ,j,kout)-     &
      &                                  MAX(Ce,0.0_r8)*                 &
@@ -1559,17 +1560,17 @@
      &                                 (cff+Cx)
 
                 IF (tl_LBC(ieast,isVbar,ng)%nudging) THEN
-!>                vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)+              &
-!>   &                                tau*(BOUNDARY(ng)%vbar_east(j)-   &
-!>   &                                     vbar(Iend+1,j,know))
-!>
+!^                vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)+              &
+!^   &                                tau*(BOUNDARY(ng)%vbar_east(j)-   &
+!^   &                                     vbar(Iend+1,j,know))
+!^
                   tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)-        &
      &                                   tau*tl_vbar(Iend+1,j,know)
                 END IF
 # ifdef MASKING
-!>              vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                &
-!>   &                              GRID(ng)%vmask(Iend+1,j)
-!>
+!^              vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                &
+!^   &                              GRID(ng)%vmask(Iend+1,j)
+!^
                 tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)*          &
      &                                 GRID(ng)%vmask(Iend+1,j)
 # endif
@@ -1604,9 +1605,9 @@
 # ifdef TL_IOMS
      &                cff2*cff2*(1.0_r8+2.0_r8*Cx)
 # endif
-!>            vbar(Iend+1,j,kout)=cff2*(vbar(Iend+1,j,know)+            &
-!>   &                                  Cx*vbar(Iend,j,kout))
-!>
+!^            vbar(Iend+1,j,kout)=cff2*(vbar(Iend+1,j,know)+            &
+!^   &                                  Cx*vbar(Iend,j,kout))
+!^
               tl_vbar(Iend+1,j,kout)=tl_cff2*(vbar(Iend+1,j,know)+      &
      &                                        Cx*vbar(Iend,j,kout))+    &
      &                               cff2*(tl_vbar(Iend+1,j,know)+      &
@@ -1617,9 +1618,9 @@
      &                                     2.0_r8*Cx*vbar(Iend,j,kout))
 # endif
 # ifdef MASKING
-!>            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Iend+1,j)
-!>
+!^            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Iend+1,j)
+!^
               tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)*            &
      &                               GRID(ng)%vmask(Iend+1,j)
 # endif
@@ -1631,13 +1632,13 @@
         ELSE IF (tl_LBC(ieast,isVbar,ng)%clamped) THEN
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%east(j)) THEN
-!>            vbar(Iend+1,j,kout)=BOUNDARY(ng)%vbar_east(j)
-!>
+!^            vbar(Iend+1,j,kout)=BOUNDARY(ng)%vbar_east(j)
+!^
               tl_vbar(Iend+1,j,kout)=BOUNDARY(ng)%tl_vbar_east(j)
 # ifdef MASKING
-!>            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Iend+1,j)
-!>
+!^            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Iend+1,j)
+!^
               tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)*            &
      &                               GRID(ng)%vmask(Iend+1,j)
 # endif
@@ -1649,13 +1650,13 @@
         ELSE IF (tl_LBC(ieast,isVbar,ng)%gradient) THEN
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%east(j)) THEN
-!>            vbar(Iend+1,j,kout)=vbar(Iend,j,kout)
-!>
+!^            vbar(Iend+1,j,kout)=vbar(Iend,j,kout)
+!^
               tl_vbar(Iend+1,j,kout)=tl_vbar(Iend,j,kout)
 # ifdef MASKING
-!>            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Iend+1,j)
-!>
+!^            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Iend+1,j)
+!^
               tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)*            &
      &                               GRID(ng)%vmask(Iend+1,j)
 # endif
@@ -1675,13 +1676,13 @@
           END IF
           DO j=Jmin,Jmax
             IF (LBC_apply(ng)%east(j)) THEN
-!>            vbar(Iend+1,j,kout)=gamma2(ng)*vbar(Iend,j,kout)
-!>
+!^            vbar(Iend+1,j,kout)=gamma2(ng)*vbar(Iend,j,kout)
+!^
               tl_vbar(Iend+1,j,kout)=gamma2(ng)*tl_vbar(Iend,j,kout)
 # ifdef MASKING
-!>            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
-!>   &                            GRID(ng)%vmask(Iend+1,j)
-!>
+!^            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*                  &
+!^   &                            GRID(ng)%vmask(Iend+1,j)
+!^
               tl_vbar(Iend+1,j,kout)=tl_vbar(Iend+1,j,kout)*            &
      &                               GRID(ng)%vmask(Iend+1,j)
 # endif
@@ -1698,9 +1699,9 @@
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr  )) THEN
-!>          vbar(Istr-1,Jstr,kout)=0.5_r8*(vbar(Istr  ,Jstr  ,kout)+    &
-!>   &                                     vbar(Istr-1,Jstr+1,kout))
-!>
+!^          vbar(Istr-1,Jstr,kout)=0.5_r8*(vbar(Istr  ,Jstr  ,kout)+    &
+!^   &                                     vbar(Istr-1,Jstr+1,kout))
+!^
             tl_vbar(Istr-1,Jstr,kout)=0.5_r8*                           &
      &                                (tl_vbar(Istr  ,Jstr  ,kout)+     &
      &                                 tl_vbar(Istr-1,Jstr+1,kout))
@@ -1709,9 +1710,9 @@
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr  )) THEN
-!>          vbar(Iend+1,Jstr,kout)=0.5_r8*(vbar(Iend  ,Jstr  ,kout)+    &
-!>   &                                     vbar(Iend+1,Jstr+1,kout))
-!>
+!^          vbar(Iend+1,Jstr,kout)=0.5_r8*(vbar(Iend  ,Jstr  ,kout)+    &
+!^   &                                     vbar(Iend+1,Jstr+1,kout))
+!^
             tl_vbar(Iend+1,Jstr,kout)=0.5_r8*                           &
      &                                (tl_vbar(Iend  ,Jstr  ,kout)+     &
      &                                 tl_vbar(Iend+1,Jstr+1,kout))
@@ -1720,9 +1721,9 @@
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
-!>          vbar(Istr-1,Jend+1,kout)=0.5_r8*(vbar(Istr-1,Jend  ,kout)+  &
-!>   &                                       vbar(Istr  ,Jend+1,kout))
-!>
+!^          vbar(Istr-1,Jend+1,kout)=0.5_r8*(vbar(Istr-1,Jend  ,kout)+  &
+!^   &                                       vbar(Istr  ,Jend+1,kout))
+!^
             tl_vbar(Istr-1,Jend+1,kout)=0.5_r8*                         &
      &                                  (tl_vbar(Istr-1,Jend  ,kout)+   &
      &                                   tl_vbar(Istr  ,Jend+1,kout))
@@ -1731,9 +1732,9 @@
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
-!>          vbar(Iend+1,Jend+1,kout)=0.5_r8*(vbar(Iend+1,Jend  ,kout)+  &
-!>   &                                       vbar(Iend  ,Jend+1,kout))
-!>
+!^          vbar(Iend+1,Jend+1,kout)=0.5_r8*(vbar(Iend+1,Jend  ,kout)+  &
+!^   &                                       vbar(Iend  ,Jend+1,kout))
+!^
             tl_vbar(Iend+1,Jend+1,kout)=0.5_r8*                         &
      &                                  (tl_vbar(Iend+1,Jend  ,kout)+   &
      &                                   tl_vbar(Iend  ,Jend+1,kout))
@@ -1754,12 +1755,12 @@
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%west(j).or.                               &
      &          LBC(iwest,isVbar,ng)%nested) THEN
-!>            cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,j))-1.0_r8)
-!>            cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,j,kout))*            &
-!>   &                    GRID(ng)%vmask_wet(Istr-1,j)
-!>            cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,j)*cff1+             &
-!>   &            cff2*(1.0_r8-cff1)
-!>            vbar(Istr,j,kout)=vbar(Istr,j,kout)*cff
+!^            cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,j))-1.0_r8)
+!^            cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,j,kout))*            &
+!^   &                    GRID(ng)%vmask_wet(Istr-1,j)
+!^            cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,j)*cff1+             &
+!^   &            cff2*(1.0_r8-cff1)
+!^            vbar(Istr,j,kout)=vbar(Istr,j,kout)*cff
             END IF
           END DO
         END IF
@@ -1767,12 +1768,12 @@
           DO j=JstrV,Jend
             IF (LBC_apply(ng)%east(j).or.                               &
      &          LBC(ieast,isVbar,ng)%nested) THEN
-!>            cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,j))-1.0_r8)
-!>            cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,j,kout))*            &
-!>   &                    GRID(ng)%vmask_wet(Iend+1,j)
-!>            cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,j)*cff1+             &
-!>   &            cff2*(1.0_r8-cff1)
-!>            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*cff
+!^            cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,j))-1.0_r8)
+!^            cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,j,kout))*            &
+!^   &                    GRID(ng)%vmask_wet(Iend+1,j)
+!^            cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,j)*cff1+             &
+!^   &            cff2*(1.0_r8-cff1)
+!^            vbar(Iend+1,j,kout)=vbar(Iend+1,j,kout)*cff
             END IF
           END DO
         END IF
@@ -1783,12 +1784,12 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i).or.                              &
      &          LBC(isouth,isVbar,ng)%nested) THEN
-!>            cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jstr))-1.0_r8)
-!>            cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jstr,kout))*              &
-!>   &                    GRID(ng)%vmask_wet(i,Jstr)
-!>            cff=0.5_r8*GRID(ng)%vmask_wet(i,Jstr)*cff1+               &
-!>   &            cff2*(1.0_r8-cff1)
-!>            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*cff
+!^            cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jstr))-1.0_r8)
+!^            cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jstr,kout))*              &
+!^   &                    GRID(ng)%vmask_wet(i,Jstr)
+!^            cff=0.5_r8*GRID(ng)%vmask_wet(i,Jstr)*cff1+               &
+!^   &            cff2*(1.0_r8-cff1)
+!^            vbar(i,Jstr,kout)=vbar(i,Jstr,kout)*cff
             END IF
           END DO
         END IF
@@ -1796,12 +1797,12 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i).or.                              &
      &          LBC(inorth,isVbar,ng)%nested) THEN
-!>            cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jend+1))-1.0_r8)
-!>            cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jend+1,kout))*            &
-!>   &                    GRID(ng)%vmask_wet(i,Jend+1)
-!>            cff=0.5_r8*GRID(ng)%vmask_wet(i,Jend+1)*cff1+             &
-!>   &            cff2*(1.0_r8-cff1)
-!>            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*cff
+!^            cff1=ABS(ABS(GRID(ng)%vmask_wet(i,Jend+1))-1.0_r8)
+!^            cff2=0.5_r8+DSIGN(0.5_r8,vbar(i,Jend+1,kout))*            &
+!^   &                    GRID(ng)%vmask_wet(i,Jend+1)
+!^            cff=0.5_r8*GRID(ng)%vmask_wet(i,Jend+1)*cff1+             &
+!^   &            cff2*(1.0_r8-cff1)
+!^            vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*cff
             END IF
           END DO
         END IF
@@ -1811,53 +1812,53 @@
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF ((LBC_apply(ng)%south(Istr-1).and.                         &
      &         LBC_apply(ng)%west (Jstr  )).or.                         &
-     &        (LBC(iwest,isUbar,ng)%nested.and.                         &
-     &         LBC(isouth,isUbar,ng)%nested)) THEN
-!>          cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jstr))-1.0_r8)
-!>          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jstr,kout))*           &
-!>   &                  GRID(ng)%vmask_wet(Istr-1,Jstr)
-!>          cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jstr)*cff1+            &
-!>   &          cff2*(1.0_r8-cff1)
-!>          vbar(Istr-1,Jstr,kout)=vbar(Istr-1,Jstr,kout)*cff
+     &        (LBC(iwest,isVbar,ng)%nested.and.                         &
+     &         LBC(isouth,isVbar,ng)%nested)) THEN
+!^          cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jstr))-1.0_r8)
+!^          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jstr,kout))*           &
+!^   &                  GRID(ng)%vmask_wet(Istr-1,Jstr)
+!^          cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jstr)*cff1+            &
+!^   &          cff2*(1.0_r8-cff1)
+!^          vbar(Istr-1,Jstr,kout)=vbar(Istr-1,Jstr,kout)*cff
           END IF
         END IF
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           IF ((LBC_apply(ng)%south(Iend+1).and.                         &
      &         LBC_apply(ng)%east (Jstr  )).or.                         &
-     &        (LBC(ieast,isUbar,ng)%nested.and.                         &
-     &         LBC(isouth,isUbar,ng)%nested)) THEN
-!>          cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jstr))-1.0_r8)
-!>          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jstr,kout))*           &
-!>   &                  GRID(ng)%vmask_wet(Iend+1,Jstr)
-!>          cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jstr)*cff1+            &
-!>   &          cff2*(1.0_r8-cff1)
-!>          vbar(Iend+1,Jstr,kout)=vbar(Iend+1,Jstr,kout)*cff
+     &        (LBC(ieast,isVbar,ng)%nested.and.                         &
+     &         LBC(isouth,isVbar,ng)%nested)) THEN
+!^          cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jstr))-1.0_r8)
+!^          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jstr,kout))*           &
+!^   &                  GRID(ng)%vmask_wet(Iend+1,Jstr)
+!^          cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jstr)*cff1+            &
+!^   &          cff2*(1.0_r8-cff1)
+!^          vbar(Iend+1,Jstr,kout)=vbar(Iend+1,Jstr,kout)*cff
           END IF
         END IF
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           IF ((LBC_apply(ng)%north(Istr-1).and.                         &
      &         LBC_apply(ng)%west (Jend+1)).or.                         &
-     &        (LBC(iwest,isUbar,ng)%nested.and.                         &
-     &         LBC(inorth,isUbar,ng)%nested)) THEN
-!>          cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jend+1))-1.0_r8)
-!>          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jend+1,kout))*         &
-!>   &                  GRID(ng)%vmask_wet(Istr-1,Jend+1)
-!>          cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jend+1)*cff1+          &
-!>   &          cff2*(1.0_r8-cff1)
-!>          vbar(Istr-1,Jend+1,kout)=vbar(Istr-1,Jend+1,kout)*cff
+     &        (LBC(iwest,isVbar,ng)%nested.and.                         &
+     &         LBC(inorth,isVbar,ng)%nested)) THEN
+!^          cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jend+1))-1.0_r8)
+!^          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Istr-1,Jend+1,kout))*         &
+!^   &                  GRID(ng)%vmask_wet(Istr-1,Jend+1)
+!^          cff=0.5_r8*GRID(ng)%vmask_wet(Istr-1,Jend+1)*cff1+          &
+!^   &          cff2*(1.0_r8-cff1)
+!^          vbar(Istr-1,Jend+1,kout)=vbar(Istr-1,Jend+1,kout)*cff
           END IF
         END IF
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           IF ((LBC_apply(ng)%north(Iend+1).and.                         &
      &         LBC_apply(ng)%east (Jend+1)).or.                         &
-     &        (LBC(ieast,isUbar,ng)%nested.and.                         &
-     &         LBC(inorth,isUbar,ng)%nested)) THEN
-!>          cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jend+1))-1.0_r8)
-!>          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jend+1,kout))*         &
-!>   &                  GRID(ng)%vmask_wet(Iend+1,Jend+1)
-!>          cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jend+1)*cff1+          &
-!>   &          cff2*(1.0_r8-cff1)
-!>          vbar(Iend+1,Jend+1,kout)=vbar(Iend+1,Jend+1,kout)*cff
+     &        (LBC(ieast,isVbar,ng)%nested.and.                         &
+     &         LBC(inorth,isVbar,ng)%nested)) THEN
+!^          cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jend+1))-1.0_r8)
+!^          cff2=0.5_r8+DSIGN(0.5_r8,vbar(Iend+1,Jend+1,kout))*         &
+!^   &                  GRID(ng)%vmask_wet(Iend+1,Jend+1)
+!^          cff=0.5_r8*GRID(ng)%vmask_wet(Iend+1,Jend+1)*cff1+          &
+!^   &          cff2*(1.0_r8-cff1)
+!^          vbar(Iend+1,Jend+1,kout)=vbar(Iend+1,Jend+1,kout)*cff
           END IF
         END IF
       END IF

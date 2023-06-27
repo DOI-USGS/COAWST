@@ -1,7 +1,8 @@
 /*
-** svn $Id: double_gyre.h 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: double_gyre.h 1151 2023-02-09 03:08:53Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -160,8 +161,8 @@
 **-----------------------------------------------------------------------------
 */
 
-#if defined AFT_EIGENMODES || defined FT_EIGENMODES    ||
-    defined FORCING_SV     || defined OPT_PERTURBATION ||
+#if defined AFT_EIGENMODES || defined FT_EIGENMODES    || \
+    defined FORCING_SV     || defined OPT_PERTURBATION || \
     defined SO_SEMI
 # if defined SOLVE3D                   /* 3D Application */
 #  define UV_ADV
@@ -199,9 +200,9 @@
 **-----------------------------------------------------------------------------
 */
 
-#if defined CORRELATION || defined IS4DVAR   ||
-    defined R_SYMMETRY  || defined TLM_CHECK ||
-    defined W4DPSAS     || defined W4DVAR
+#if defined CORRELATION || defined I4DVAR    || \
+    defined RBL4DVAR    || defined R4DVAR    || \
+    defined R_SYMMETRY  || defined TLM_CHECK
 # if defined SOLVE3D                   /* 3D Application */
 #  undef  UV_C2ADVECTION
 #  undef  UV_C4ADVECTION
@@ -236,7 +237,7 @@
 #  define OUT_DOUBLE
 #  define VCONVOLUTION
 #  define IMPLICIT_VCONV
-#  ifdef W4DVAR
+#  ifdef R4DVAR
 #   define RPM_RELAXATION
 #  endif
 # else                                 /* 2D Application */

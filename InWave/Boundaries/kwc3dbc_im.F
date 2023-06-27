@@ -213,7 +213,7 @@
           IF (LBC(inorth,isAC3d,ng)%acquire) THEN
             DO d=1,ND
               DO i=Istr,Iend
-                L0=g*otwopi*MAX(Tr_min,WAVEP(ng)%Tr(i,Jend+1,d))**2.0_r8
+                L0=g*otwopi*MAX(Tr_min,WAVEP(ng)%Tr(i,Jend+1,d))**2
                 k0=twopi/L0
                 error=100.0_r8
                 wr=twopi/MAX(Tr_min,WAVEP(ng)%Tr(i,Jend+1,d))

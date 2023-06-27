@@ -26,6 +26,10 @@
 # define COARE_TAYLOR_YELLAND
 #endif
 
+#if defined SWAN_MODEL
+# define SWAN_SINGLESPEC
+#endif
+
 #ifdef ROMS_MODEL
 /* Physics + numerics */
 # if defined WW3_MODEL || defined SWAN_MODEL

@@ -2,9 +2,10 @@
 #ifdef FLOATS
       SUBROUTINE read_FltPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_fltpar.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: read_fltpar.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -212,22 +213,13 @@
 
 # ifdef FLOAT_BIOLOGY
       fname=fbionam
-      IF (.not.find_file(1, fname, 'FBIONAM')) GO TO 40
-      GO TO 50
- 40   IF (Master) THEN
-        IF (LEN_TRIM(fname).eq.0) THEN
-          WRITE (out,110) ng, 'Oops unassigned file name. '//           &
-     &                        'Check assimilation input script...'
-        ELSE
-          WRITE (out,110) ng, TRIM(fname)
+      IF (.not.find_file(1, out, fname, 'FBIONAM')) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+      ELSE
+        IF (Master.and.Lwrite) THEN
+          WRITE (out,120) 'biological floats behavior File:  ',         &
+     &                    TRIM(fname)
         END IF
-      END IF
-      exit_flag=4
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
- 50   CONTINUE
-      IF (Master.and.Lwrite) THEN
-        WRITE (out,120) 'biological floats behavior File:  ',           &
-     &                  TRIM(fname)
       END IF
 # endif
 !

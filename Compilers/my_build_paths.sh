@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# svn $Id: my_build_paths.sh 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: my_build_paths.sh 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -179,16 +180,22 @@ case "$FORT" in
       fi
     fi
 
-    if [ -n "${USE_PNETCDF:+1}" ]; then
+    if [ -n "${USE_PIO:+1}" ]; then
+      export              PIO=${MPI_SOFT}/pio
+      export       PIO_LIBDIR=${PIO}/lib
+      export       PIO_INCDIR=${PIO}/include
       export          PNETCDF=${MPI_SOFT}/pnetcdf
       export   PNETCDF_LIBDIR=${PNETCDF}/lib
       export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
-    if [ -n "${USE_PIO:+1}" ]; then
-      export              PIO=${MPI_SOFT}/scorpio
-      export       PIO_LIBDIR=${PIO}/lib
-      export       PIO_INCDIR=${PIO}/include
+    if [ -n "${USE_SCORPIO:+1}" ]; then
+      export          SCORPIO=${MPI_SOFT}/scorpio
+      export       PIO_LIBDIR=${SCORPIO}/lib
+      export       PIO_INCDIR=${SCORPIO}/include
+      export          PNETCDF=${MPI_SOFT}/pnetcdf
+      export   PNETCDF_LIBDIR=${PNETCDF}/lib
+      export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
     if [ -n "${USE_HDF5:+1}" ]; then
@@ -255,16 +262,22 @@ case "$FORT" in
       fi
     fi
 
-    if [ -n "${USE_PNETCDF:+1}" ]; then
+    if [ -n "${USE_PIO:+1}" ]; then
+      export              PIO=${MPI_SOFT}/pio
+      export       PIO_LIBDIR=${PIO}/lib
+      export       PIO_INCDIR=${PIO}/include
       export          PNETCDF=${MPI_SOFT}/pnetcdf
       export   PNETCDF_LIBDIR=${PNETCDF}/lib
       export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
-    if [ -n "${USE_PIO:+1}" ]; then
-      export              PIO=${MPI_SOFT}/scorpio
-      export       PIO_LIBDIR=${PIO}/lib
-      export       PIO_INCDIR=${PIO}/include
+    if [ -n "${USE_SCORPIO:+1}" ]; then
+      export          SCORPIO=${MPI_SOFT}/scorpio
+      export       PIO_LIBDIR=${SCORPIO}/lib
+      export       PIO_INCDIR=${SCORPIO}/include
+      export          PNETCDF=${MPI_SOFT}/pnetcdf
+      export   PNETCDF_LIBDIR=${PNETCDF}/lib
+      export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
     if [ -n "${USE_HDF5:+1}" ]; then
@@ -329,16 +342,22 @@ case "$FORT" in
       fi
     fi
 
-    if [ -n "${USE_PNETCDF:+1}" ]; then
+    if [ -n "${USE_PIO:+1}" ]; then
+      export              PIO=${MPI_SOFT}/pio
+      export       PIO_LIBDIR=${PIO}/lib
+      export       PIO_INCDIR=${PIO}/include
       export          PNETCDF=${MPI_SOFT}/pnetcdf
       export   PNETCDF_LIBDIR=${PNETCDF}/lib
       export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
-    if [ -n "${USE_PIO:+1}" ]; then
-      export              PIO=${MPI_SOFT}/scorpio
-      export       PIO_LIBDIR=${PIO}/lib
-      export       PIO_INCDIR=${PIO}/include
+    if [ -n "${USE_SCORPIO:+1}" ]; then
+      export          SCORPIO=${MPI_SOFT}/scorpio
+      export       PIO_LIBDIR=${SCORPIO}/lib
+      export       PIO_INCDIR=${SCORPIO}/include
+      export          PNETCDF=${MPI_SOFT}/pnetcdf
+      export   PNETCDF_LIBDIR=${PNETCDF}/lib
+      export   PNETCDF_INCDIR=${PNETCDF}/include
     fi
 
     if [ -n "${USE_HDF5:+1}" ]; then

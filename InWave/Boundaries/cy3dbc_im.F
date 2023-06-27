@@ -192,7 +192,7 @@
             END DO
           END DO
 !
-!  Western edge, closed boundary condition.
+!  Eastern edge, closed boundary condition.
 !
         ELSE IF (LBC(ieast,isCY3d,ng)%closed) THEN
           DO d=1,ND

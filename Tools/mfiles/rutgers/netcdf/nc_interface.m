@@ -27,6 +27,7 @@ function [method,url,ftype] = nc_interface(varargin)
 %
 %                 'NetCDF'         Classic NetCDF-3 file
 %                 'NetCDF4'        NetCDF-4/HDF5 file
+%                 'PnetCDF'        PnetCDF
 %                 'OpenDAP'        OpenDAP file
 %
 % Notes:
@@ -44,9 +45,9 @@ function [method,url,ftype] = nc_interface(varargin)
 %     have Java support for OpenDAP files.
 %
 
-% svn $Id: nc_interface.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_interface.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -90,6 +91,8 @@ if (~url),
         ftype = 'NetCDF';                           % NetCDF classic
       elseif (signature(4) == 2)
         ftype = 'NetCDF';                           % NetCDF 64bit offset
+      elseif (signature(4) == 5)
+        ftype = 'PnetCDF';                          % PnetCDF classic
       end         
     elseif (strcmp(char(signature(2:4))', 'HDF'))
       ftype = 'NetCDF4';                            % NetCDF4/HDF5

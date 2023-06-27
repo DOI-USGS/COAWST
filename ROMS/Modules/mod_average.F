@@ -5,9 +5,10 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
 !
-!svn $Id: mod_average.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_average.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -146,9 +147,17 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_average
+        PUBLIC :: deallocate_average
+        PUBLIC :: initialize_average
+!
+!-----------------------------------------------------------------------
+!  Define T_AVERAGE structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_AVERAGE
 !
 !  Time-averaged state variables.
@@ -162,38 +171,6 @@
           real(r8), pointer :: avgv2dN(:,:)
 
 # ifdef SOLVE3D
-
-#  ifdef BEST_NPZ
-#   ifdef STATIONARY
-          real(r8), pointer :: avgst(:,:,:,:)
-#   endif
-#   ifdef STATIONARY2
-          real(r8), pointer :: avgst2(:,:,:)
-#   endif
-#   ifdef PROD3
-          real(r8), pointer :: avgpt3(:,:,:,:)
-#   endif
-#   ifdef PROD2
-          real(r8), pointer :: avgpt2(:,:,:)
-#   endif
-#   ifdef BENTHIC
-          real(r8), pointer :: avgbt(:,:,:,:)
-#   endif
-#   ifdef ICE_BIO
-#     ifdef CLIM_ICE_1D   
-          real(r8), pointer :: avgit(:,:,:)
-#     elif defined BERING_10K
-          real(r8), pointer :: avgIPhL(:,:)
-          real(r8),pointer:: avgINO3(:,:)
-          real(r8), pointer :: avgINH4(:,:)
-          real(r8), pointer :: avgILog(:,:)
-#     endif
-#   endif
-#   if defined BIOFLUX
-          real(r8), pointer :: avgbflx(:,:)
-#   endif
-#  endif
-
           real(r8), pointer :: avgu3d(:,:,:)
           real(r8), pointer :: avgv3d(:,:,:)
 
@@ -206,16 +183,6 @@
           real(r8), pointer :: avgrho(:,:,:)
           real(r8), pointer :: avgt(:,:,:,:)
 
-#  ifdef NEMURO_SED1
-          real(r8), pointer :: avgPONsed(:,:)
-          real(r8), pointer :: avgOPALsed(:,:)
-          real(r8), pointer :: avgDENITsed(:,:)
-          real(r8), pointer :: avgPONbur(:,:)
-          real(r8), pointer :: avgOPALbur(:,:)
-#  endif
-#  ifdef PRIMARY_PROD
-          real(r8), pointer :: avgNPP(:,:)
-#  endif
 #  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
           real(r8), pointer :: avgAKv(:,:,:)
           real(r8), pointer :: avgAKt(:,:,:)
@@ -267,9 +234,6 @@
 # endif
 
 # ifdef SOLVE3D
-#  if defined RUNOFF
-          real(r8), pointer :: avgRunoff(:,:)
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
           real(r8), pointer :: avgPair(:,:)
 #  endif
@@ -299,6 +263,9 @@
 #  endif
 # endif
 # ifdef WEC
+!
+!  Time-averaged radiation stresses.
+!
           real(r8), pointer :: avgu2Sd(:,:)
           real(r8), pointer :: avgv2Sd(:,:)
           real(r8), pointer :: avgu2rs(:,:)
@@ -404,11 +371,11 @@
 # endif
 
         END TYPE T_AVERAGE
-
+!
         TYPE (T_AVERAGE), allocatable :: AVERAGE(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_average (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -421,11 +388,8 @@
       USE mod_param
       USE mod_ncparam
       USE mod_scalars
-# if defined BEST_NPZ
-      USE mod_biology
-# endif
 !
-!  Local variable declarations.
+!  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
@@ -469,62 +433,6 @@
       END IF
 
 # ifdef SOLVE3D
-
-#  ifdef BEST_NPZ
-#   ifdef STATIONARY
-        allocate (AVERAGE(ng) % avgst(LBi:UBi,LBj:UBj,N(ng),NTS(ng)))
-        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTS(ng),r8)*size2d
-#   endif
-#   ifdef STATIONARY2
-        allocate ( AVERAGE(ng) % avgst2(LBi:UBi,LBj:UBj,NTS2(ng)) )
-        Dmem(ng)=Dmem(ng)+REAL(NTS2(ng),r8)*size2d
-#   endif
-#   ifdef PROD3
-        allocate ( AVERAGE(ng) % avgpt3(LBi:UBi,LBj:UBj,N(ng),NPT3(ng)))
-        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NPT3(ng),r8)*size2d
-#   endif
-#   ifdef PROD2
-        allocate ( AVERAGE(ng) % avgpt2(LBi:UBi,LBj:UBj,NPT2(ng)) )
-        Dmem(ng)=Dmem(ng)+REAL(NPT2(ng),r8)*size2d
-#   endif
-#   ifdef BENTHIC
-        allocate (AVERAGE(ng)%avgbt(LBi:UBi,LBj:UBj,NBL(ng),NBeT(ng)))
-        Dmem(ng)=Dmem(ng)+REAL(NBL(ng)*NBet(ng),r8)*size2d
-#   endif
-#   ifdef ICE_BIO
-#    ifdef CLIM_ICE_1D
-        allocate ( AVERAGE(ng) % avgit(LBi:UBi,LBj:UBj,NIceT(ng)) )
-        Dmem(ng)=Dmem(ng)+REAL(NIceT(ng),r8)*size2d
-#    elif defined BERING_10K
-      IF (Aout(idIceNO3,ng)) THEN
-        allocate ( AVERAGE(ng) % avgINO3(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idIcePhL,ng)) THEN
-        allocate ( AVERAGE(ng) % avgIPhL(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idIceNH4,ng)) THEN
-        allocate ( AVERAGE(ng) % avgINH4(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idIceLog,ng)) THEN
-        allocate ( AVERAGE(ng) % avgILog(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-#    endif
-#   endif
-
-#   ifdef BIOFLUX
-        allocate ( AVERAGE(ng) % avgbflx(NAT+NBT,NAT+NBT) )
-        Dmem(ng)=Dmem(ng)+REAL((NAT+NBT)*(NAT+NBT),r8)
-#   endif
-#  endif
-
-#  ifdef BIO_GOANPZ
-        allocate ( AVERAGE(ng) % avgst(LBi:UBi,LBj:UBj,N(ng),NTS(ng)) )
-        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTS(ng),r8)*size2d
-#  endif
       IF (Aout(idUvel,ng)) THEN
         allocate ( AVERAGE(ng) % avgu3d(LBi:UBi,LBj:UBj,N(ng)) )
         Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
@@ -560,35 +468,6 @@
         allocate ( AVERAGE(ng) % avgt(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
         Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
-
-#  ifdef NEMURO_SED1
-      IF (Aout(idPONsed,ng)) THEN
-        allocate ( AVERAGE(ng) % avgPONsed(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idOPALsed,ng)) THEN
-        allocate ( AVERAGE(ng) % avgOPALsed(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idDENITsed,ng)) THEN
-        allocate ( AVERAGE(ng) % avgDENITsed(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idPONbur,ng)) THEN
-        allocate ( AVERAGE(ng) % avgPONbur(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idOPALbur,ng)) THEN
-        allocate ( AVERAGE(ng) % avgOPALbur(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-#  endif
-#  ifdef PRIMARY_PROD
-      IF (Aout(idNPP,ng)) THEN
-        allocate ( AVERAGE(ng) % avgNPP(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-#  endif
 
 #  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
       IF (Aout(idVvis,ng)) THEN
@@ -718,12 +597,6 @@
 # endif
 
 # ifdef SOLVE3D
-#  if defined RUNOFF
-      IF (Aout(idRunoff,ng)) THEN
-        allocate ( AVERAGE(ng) % avgRunoff(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       IF (Aout(idPair,ng)) THEN
         allocate ( AVERAGE(ng) % avgPair(LBi:UBi,LBj:UBj) )
@@ -745,7 +618,6 @@
         allocate ( AVERAGE(ng) % avgVwind(LBi:UBi,LBj:UBj) )
         Dmem(ng)=Dmem(ng)+size2d
       END IF
-
       IF (Aout(idUairE,ng)) THEN
         allocate ( AVERAGE(ng) % avgUwindE(LBi:UBi,LBj:UBj) )
         Dmem(ng)=Dmem(ng)+size2d
@@ -782,10 +654,6 @@
       END IF
       IF (Aout(idShea,ng)) THEN
         allocate ( AVERAGE(ng) % avgshf(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-      IF (Aout(idSSSf,ng)) THEN
-        allocate ( AVERAGE(ng) % avgsssflx(LBi:UBi,LBj:UBj) )
         Dmem(ng)=Dmem(ng)+size2d
       END IF
 #   ifdef EMINUSP
@@ -1076,10 +944,642 @@
         Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 # endif
-
+!
       RETURN
       END SUBROUTINE allocate_average
+!
+      SUBROUTINE deallocate_average (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_ncparam
+      USE mod_scalars
 
+# ifdef SUBOBJECT_DEALLOCATION
+!
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_average"
+
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_AVERAGE structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Time-averaged state variables.
+!
+      IF (Aout(idFsur,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgzeta, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgzeta')) RETURN
+      END IF
+
+      IF (Aout(idUbar,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu2d, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgu2d')) RETURN
+      END IF
+
+      IF (Aout(idVbar,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv2d, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgv2d')) RETURN
+      END IF
+
+      IF (Aout(idu2dE,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu2dE, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu2dE')) RETURN
+      END IF
+
+      IF (Aout(idv2dN,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv2dN, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv2dN')) RETURN
+      END IF
+
+#  ifdef SOLVE3D
+      IF (Aout(idUvel,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu3d, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgu3d')) RETURN
+      END IF
+
+      IF (Aout(idVvel,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv3d, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgv3d')) RETURN
+      END IF
+
+      IF (Aout(idu3dE,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu3dE, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu3dE')) RETURN
+      END IF
+
+      IF (Aout(idv3dN,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv3dN, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv3dN')) RETURN
+      END IF
+
+      IF (Aout(idOvel,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgw3d, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgw3d')) RETURN
+      END IF
+
+      IF (Aout(idWvel,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgwvel, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgwvel')) RETURN
+      END IF
+
+      IF (Aout(idDano,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgrho, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgrho')) RETURN
+      END IF
+
+      IF (ANY(Aout(idTvar(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgt, MyFile,                  &
+     &                   __LINE__, 'AVERAGE(ng)%avgt')) RETURN
+      END IF
+
+#   if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
+      IF (Aout(idVvis,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgAKv, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgAKv')) RETURN
+      END IF
+
+      IF (Aout(idTdif,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgAKt, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgAKt')) RETURN
+      END IF
+
+      IF (Aout(idSdif,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgAKs, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgAKs')) RETURN
+      END IF
+#   endif
+
+#  ifdef TS_VAR
+!     IF (Aout(idVvis,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgAKr, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgAKr')) RETURN
+        END IF
+!    END IF
+#  endif
+
+#   ifdef LMD_SKPP
+      IF (Aout(idHsbl,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avghsbl, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avghsbl')) RETURN
+      END IF
+#   endif
+
+#   ifdef LMD_BKPP
+      IF (Aout(idHbbl,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avghbbl, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avghbbl')) RETURN
+      END IF
+#   endif
+#  endif
+
+#  if defined FORWARD_WRITE && defined SOLVE3D
+!
+!  Time-averaged 2D/3D coupling terms.
+!
+      IF (Aout(idUfx1,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgDU_avg1, MyFile,            &
+     &                   __LINE__, 'AVERAGE(ng)%avgDU_avg1')) RETURN
+      END IF
+
+      IF (Aout(idUfx2,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgDU_avg2, MyFile,            &
+     &                   __LINE__, 'AVERAGE(ng)%avgDU_avg2')) RETURN
+      END IF
+
+      IF (Aout(idVfx1,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgDV_avg1, MyFile,            &
+     &                   __LINE__, 'AVERAGE(ng)%avgDV_avg1')) RETURN
+      END IF
+
+      IF (Aout(idVfx2,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgDV_avg2, MyFile,            &
+     &                   __LINE__, 'AVERAGE(ng)%avgDV_avg2')) RETURN
+      END IF
+#  endif
+!
+!  Time-averaged surface and bottom fluxes.
+!
+      IF (Aout(idUsms,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgsus, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgsus')) RETURN
+      END IF
+
+      IF (Aout(idVsms,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgsvs, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgsvs')) RETURN
+      END IF
+
+      IF (Aout(idUbms,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgbus, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgbus')) RETURN
+      END IF
+
+      IF (Aout(idVbms,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgbvs, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgbvs')) RETURN
+      END IF
+
+# ifdef BBL_MODEL
+      IF (Aout(idUbrs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUbrs, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUbrs')) RETURN
+      END IF
+      IF (Aout(idVbrs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVbrs, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgVbrs')) RETURN
+      END IF
+      IF (Aout(idUbws,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUbws, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUbws')) RETURN
+      END IF
+      IF (Aout(idVbws,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVbws, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgVbws')) RETURN
+      END IF
+      IF (Aout(idUbcs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUbcs, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUbcs')) RETURN
+      END IF
+      IF (Aout(idVbcs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVbcs, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgVbcs')) RETURN
+      END IF
+      IF (Aout(idUVwc,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUVwc, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUVwc')) RETURN
+      END IF
+
+      IF (Aout(idUbot,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUbot, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUbot')) RETURN
+      END IF
+      IF (Aout(idVbot,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVbot, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgVbot')) RETURN
+      END IF
+      IF (Aout(idUbur,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUbur, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgUbur')) RETURN
+      END IF
+      IF (Aout(idVbvr,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVbvr, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgVbvr')) RETURN
+      END IF
+# endif
+
+
+#  ifdef SOLVE3D
+
+#   if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+      IF (Aout(idPair,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgPair, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgPair')) RETURN
+      END IF
+#   endif
+
+#   if defined BULK_FLUXES
+      IF (Aout(idTair,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgTair, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgTair')) RETURN
+      END IF
+#   endif
+
+#   if defined BULK_FLUXES || defined ECOSIM
+      IF (Aout(idUair,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUwind, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgUwind')) RETURN
+      END IF
+
+      IF (Aout(idVair,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVwind, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgVwind')) RETURN
+      END IF
+      IF (Aout(idUairE,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUwindE, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgUwindE')) RETURN
+      END IF
+      IF (Aout(idVairN,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVwindN, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgVwindN')) RETURN
+      END IF
+#   endif
+
+      IF (Aout(idTsur(itemp),ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgstf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgstf')) RETURN
+      END IF
+
+#   ifdef SALINITY
+      IF (Aout(idTsur(isalt),ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgswf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgswf')) RETURN
+      END IF
+#   endif
+
+#   ifdef SHORTWAVE
+      IF (Aout(idSrad,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgsrf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgsrf')) RETURN
+      END IF
+#   endif
+
+#   if defined BULK_FLUXES || defined FRC_COUPLING
+      IF (Aout(idLhea,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avglhf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avglhf')) RETURN
+      END IF
+
+      IF (Aout(idLrad,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avglrf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avglrf')) RETURN
+      END IF
+
+      IF (Aout(idShea,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgshf, MyFile,                &
+     &                   __LINE__, 'AVERAGE(ng)%avgshf')) RETURN
+      END IF
+#   endif
+
+#   if defined BULK_FLUXES && defined EMINUSP
+      IF (Aout(idevap,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgevap, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgevap')) RETURN
+      END IF
+
+      IF (Aout(idrain,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgrain, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgrain')) RETURN
+      END IF
+#   endif
+#  endif
+
+#  ifdef WEC
+!
+!  Time-averaged wave effects on currents.
+!
+      IF (Aout(idU2Sd,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu2Sd, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu2Sd')) RETURN
+      END IF
+
+      IF (Aout(idV2Sd,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv2Sd, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv2Sd')) RETURN
+      END IF
+
+      IF (Aout(idU2rs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu2RS, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu2RS')) RETURN
+      END IF
+
+      IF (Aout(idV2rs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv2RS, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv2RS')) RETURN
+      END IF
+
+      IF (Aout(idWztw,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWztw, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgWztw')) RETURN
+      END IF
+      IF (Aout(idWqsp,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWqsp, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgWqsp')) RETURN
+      END IF
+      IF (Aout(idWbeh,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWbeh, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgWbeh')) RETURN
+      END IF
+
+#   ifdef WEC_MELLOR
+      IF (Aout(idW2xx,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSxx2d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSxx2d')) RETURN
+      END IF
+
+      IF (Aout(idW2xy,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSxy2d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSxy2d')) RETURN
+      END IF
+
+      IF (Aout(idW2yy,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSyy2d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSyy2d')) RETURN
+      END IF
+#   endif
+#   ifdef SOLVE3D
+      IF (Aout(idU3Sd,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu3Sd, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu3Sd')) RETURN
+      END IF
+
+      IF (Aout(idV3Sd,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv3Sd, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv3Sd')) RETURN
+      END IF
+      IF (Aout(idW3Sd,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgW3Sd, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgW3Sd')) RETURN
+      END IF
+      IF (Aout(idW3St,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgW3St, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgW3St')) RETURN
+      END IF
+      IF (Aout(idU3rs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgu3RS, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgu3RS')) RETURN
+      END IF
+
+      IF (Aout(idV3rs,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgv3RS, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgv3RS')) RETURN
+      END IF
+#    ifdef WEC_MELLOR
+      IF (Aout(idW3xx,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSxx3d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSxx3d')) RETURN
+      END IF
+
+      IF (Aout(idW3xy,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSxy3d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSxy3d')) RETURN
+      END IF
+
+      IF (Aout(idW3yy,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSyy3d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSyy3d')) RETURN
+      END IF
+      IF (Aout(idW3zx,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSzx3d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSzx3d')) RETURN
+      END IF
+
+      IF (Aout(idW3zy,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgSzy3d, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgSzy3d')) RETURN
+      END IF
+#    endif
+#   endif
+#  endif
+#  ifdef WAVES_HEIGHT
+      IF (Aout(idWamp,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWamp, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWamp')) RETURN
+      END IF
+      IF (Aout(idWam2,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWam2, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWam2')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_LENGTH
+      IF (Aout(idWlen,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWlen, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWlen')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_LENGTHP
+      IF (Aout(idWlep,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWlep, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWlep')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_DIR
+      IF (Aout(idWdir,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdir, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdir')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_DIRP
+      IF (Aout(idWdip,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdip, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdip')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_TOP_PERIOD
+      IF (Aout(idWptp,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWptp, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWptp')) RETURN
+      END IF
+#  endif
+#  ifdef WAVES_BOT_PERIOD
+      IF (Aout(idWpbt,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWpbt, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWpbt')) RETURN
+      END IF
+#  endif
+#  ifdef BBL_MODEL
+      IF (Aout(idWorb,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWorb, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWorb')) RETURN
+      END IF
+#  endif
+#  if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+      IF (Aout(idWdif,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdif, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdif')) RETURN
+      END IF
+#  endif
+#  if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+      IF (Aout(idWdib,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdib, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdib')) RETURN
+      END IF
+      IF (Aout(idWdiw,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdiw, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdiw')) RETURN
+      END IF
+#  endif
+#  ifdef ROLLER_SVENDSEN
+      IF (Aout(idWbrk,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWbrk, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWbrk')) RETURN
+      END IF
+#  endif
+#  ifdef WEC_ROLLER
+      IF (Aout(idWdis,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWdis, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWdis')) RETURN
+      END IF
+      IF (Aout(idWrol,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgWrol, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgWrol')) RETURN
+      END IF
+#  endif
+#  ifdef UV_KIRBY
+      IF (Aout(idUwav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUwav, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgUwav')) RETURN
+      END IF
+      IF (Aout(idVwav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVwav, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgVwav')) RETURN
+      END IF
+#  endif
+!
+!  Time-averaged quadratic fields.
+!
+      IF (Aout(idZZav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgU2, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgU2')) RETURN
+      END IF
+
+      IF (Aout(idU2av,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgV2, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgV2')) RETURN
+      END IF
+
+      IF (Aout(idV2av,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgZZ, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgZZ')) RETURN
+      END IF
+
+#  ifdef SOLVE3D
+      IF (Aout(idUUav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUU, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgUU')) RETURN
+      END IF
+
+      IF (Aout(idVVav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVV, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgVV')) RETURN
+      END IF
+
+      IF (Aout(idUVav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUV, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgUV')) RETURN
+      END IF
+
+      IF (Aout(idHUav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgHuon, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgHuon')) RETURN
+      END IF
+
+      IF (Aout(idHVav,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgHvom, MyFile,               &
+     &                   __LINE__, 'AVERAGE(ng)%avgHvom')) RETURN
+      END IF
+
+      IF (ANY(Aout(idTTav(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgTT, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgTT')) RETURN
+      END IF
+
+      IF (ANY(Aout(idUTav(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgUT, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgUT')) RETURN
+      END IF
+
+      IF (ANY(Aout(idVTav(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgVT, MyFile,                 &
+     &                   __LINE__, 'AVERAGE(ng)%avgVT')) RETURN
+      END IF
+
+      IF (ANY(Aout(iHUTav(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgHuonT, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgHuonT')) RETURN
+      END IF
+
+      IF (ANY(Aout(iHVTav(:),ng))) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgHvomT, MyFile,              &
+     &                   __LINE__, 'AVERAGE(ng)%avgHvomT')) RETURN
+      END IF
+#  endif
+!
+!  Time-averaged vorticity fields.
+!
+      IF (Aout(id2dPV,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgpvor2d, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgpvor2d')) RETURN
+      END IF
+
+      IF (Aout(id2dRV,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgrvor2d, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgrvor2d')) RETURN
+      END IF
+
+#  ifdef SOLVE3D
+      IF (Aout(id3dPV,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgpvor3d, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgpvor3d')) RETURN
+      END IF
+
+      IF (Aout(id3dRV,ng)) THEN
+        IF (.not.destroy(ng, AVERAGE(ng)%avgrvor3d, MyFile,             &
+     &                   __LINE__, 'AVERAGE(ng)%avgrvor3d')) RETURN
+      END IF
+#  endif
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type AVERAGE structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(AVERAGE)) deallocate ( AVERAGE )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_average
+!
       SUBROUTINE initialize_average (ng, tile)
 !
 !=======================================================================
@@ -1095,9 +1595,6 @@
       USE mod_param
       USE mod_ncparam
       USE mod_scalars
-# if defined BEST_NPZ
-      USE mod_biology
-# endif
 !
 !  Imported variable declarations.
 !
@@ -1108,7 +1605,7 @@
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, j
 # ifdef SOLVE3D
-      integer :: itrc, itrc2, k
+      integer :: itrc, k
 # endif
 
       real(r8), parameter :: IniVal = 0.0_r8
@@ -1267,53 +1764,6 @@
           END DO
         END DO
       END IF
-
-#  ifdef NEMURO_SED1
-      IF (Aout(idPONsed,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgPONsed(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idOPALsed,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgOPALsed(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idDENITsed,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgDENITsed(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idPONbur,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgPONbur(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idOPALbur,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgOPALbur(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-#  endif
-#  ifdef PRIMARY_PROD
-      IF (Aout(idNPP,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgNPP(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-#  endif
 
 #  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
       IF (Aout(idVvis,ng)) THEN
@@ -1529,15 +1979,6 @@
 # endif
 
 # ifdef SOLVE3D
-#  if defined RUNOFF
-      IF (Aout(idRunoff,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgRunoff(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-#  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       IF (Aout(idPair,ng)) THEN
         DO j=Jmin,Jmax
@@ -1571,7 +2012,6 @@
           END DO
         END DO
       END IF
-
       IF (Aout(idUairE,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -1632,13 +2072,6 @@
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             AVERAGE(ng) % avgshf(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idSSSf,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgsssflx(i,j) = IniVal
           END DO
         END DO
       END IF
@@ -2141,66 +2574,6 @@
         END DO
       END IF
 # ifdef SOLVE3D
-
-#ifdef BEST_NPZ
-# ifdef STATIONARY
-        DO itrc=1,NTS(ng)
-          DO k=1,N(ng)
-            DO i=Imin,Imax
-              AVERAGE(ng) % avgst(i,j,k,itrc) = IniVal
-            END DO
-          END DO
-        END DO
-# endif
-# ifdef STATIONARY2
-        DO itrc=1,NTS2(ng)
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgst2(i,j,itrc) = IniVal
-          END DO
-        END DO
-# endif
-# ifdef PROD3
-        DO itrc=1,NPT3(ng)
-          DO k=1,N(ng)
-            DO i=Imin,Imax
-              AVERAGE(ng) % avgpt3(i,j,k,itrc) = IniVal
-            END DO
-          END DO
-        END DO
-# endif
-# ifdef PROD2
-        DO itrc=1,NPT2(ng)
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgpt2(i,j,itrc) = IniVal
-          END DO
-        END DO
-# endif
-# ifdef BENTHIC
-        DO itrc=1,NBeT(ng)
-          DO k=1,NBL(ng)
-            DO i=Imin,Imax
-              AVERAGE(ng) % avgbt(i,j,k,itrc) = IniVal
-              END DO
-          END DO
-        END DO
-# endif
-# ifdef BIOFLUX
-        DO itrc=1,NT(ng)
-          DO itrc2=1,NT(ng)
-            AVERAGE(ng) % avgbflx(itrc,itrc2) = IniVal
-          END DO
-        END DO
-# endif
-#endif
-# ifdef BIO_GOANPZ
-        DO itrc=1,NTS(ng)
-          DO k=1,N(ng)
-            DO i=Imin,Imax
-              AVERAGE(ng) % avgst(i,j,k,itrc) = IniVal
-            END DO
-          END DO
-        END DO
-# endif
       IF (Aout(id3dPV,ng)) THEN
         DO k=1,N(ng)
           DO j=Jmin,Jmax

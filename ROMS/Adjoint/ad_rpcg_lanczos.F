@@ -8,9 +8,10 @@
       SUBROUTINE ad_rpcg_lanczos (ng, model, outLoop, innLoop,          &
      &                            NinnLoop, Lcgini)
 !
-!svn $Id: ad_rpcg_lanczos.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_rpcg_lanczos.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Selime Gurol      !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Selime Gurol      !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -258,8 +259,8 @@
 !  Selime code: ADmodVal=z1.
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_ADmodVal(iobs)=tl_zgrad0(iobs,outLoop)
-!>
+!^            tl_ADmodVal(iobs)=tl_zgrad0(iobs,outLoop)
+!^
               ad_zgrad0(iobs)=ad_zgrad0(iobs)+TLmodVal(iobs)
               TLmodVal(iobs)=0.0_r8
             END DO
@@ -269,8 +270,8 @@
 !  Selime code: vgrad0=r.
 !
             DO iobs=1,Ndatum(ng)+1
-!>            tl_zgrad0(iobs)=tl_pgrad(iobs)
-!>
+!^            tl_zgrad0(iobs)=tl_pgrad(iobs)
+!^
               ad_pgrad(iobs)=ad_pgrad(iobs)+ad_zgrad0(iobs)
               ad_zgrad0(iobs)=0.0_r8
             END DO
@@ -279,28 +280,28 @@
 !
 !  Selime code: z1=G*r.
 !
-!>          IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>            Lscale=1                 ! Spectral LMP
-!>            Laug=.TRUE.
-!>            CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1,     &
-!>   &                       pgrad)
-!>          END IF
+!^          IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^            Lscale=1                 ! Spectral LMP
+!^            Laug=.TRUE.
+!^            CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1,     &
+!^   &                       pgrad)
+!^          END IF
 !
 !  AUGMENTED
 !  Augment the residual vector.
 !
-!>          tl_vgrad0s(Ndatum(ng)+1)=tl_vgrad0(Ndatum(ng)+1)
-!>
+!^          tl_vgrad0s(Ndatum(ng)+1)=tl_vgrad0(Ndatum(ng)+1)
+!^
             ad_vgrad0(Ndatum(ng)+1)=ad_vgrad0 (Ndatum(ng)+1)+           &
      &                              ad_vgrad0s(Ndatum(ng)+1)
             ad_vgrad0s(Ndatum(ng)+1)=0.0_r8
-!>          tl_vgrad0(Ndatum(ng)+1)=tl_pgrad(Ndatum(ng)+1)
-!>
+!^          tl_vgrad0(Ndatum(ng)+1)=tl_pgrad(Ndatum(ng)+1)
+!^
             ad_pgrad(Ndatum(ng)+1)=ad_pgrad (Ndatum(ng)+1)+             &
      &                             ad_vgrad0(Ndatum(ng)+1)
             ad_vgrad0(Ndatum(ng)+1)=0.0_r8
-!>          tl_pgrad(Ndatum(ng)+1)=0.0_r8
-!>
+!^          tl_pgrad(Ndatum(ng)+1)=0.0_r8
+!^
             ad_pgrad(Ndatum(ng)+1)=0.0_r8
 !
 !  If this is the first pass of the inner loop, set up the vectors and
@@ -312,32 +313,32 @@
      defined RBL4DVAR_ANA_SENSITIVITY || \
      defined RBL4DVAR_FCT_SENSITIVITY || \
      defined TL_RBL4DVAR
-!>            pgrad(iobs)=ObsScale(iobs)*                               &
-!>   &                    (ObsVal(iobs)-BCKmodVal(iobs))
+!^            pgrad(iobs)=ObsScale(iobs)*                               &
+!^   &                    (ObsVal(iobs)-BCKmodVal(iobs))
 # else
 !
 !  NOTE: THIS CODE IS NOT CORRECT YET FOR R4D-Var
 !
-!>            pgrad(iobs)=ObsScale(iobs)*                               &
-!>   &                    (ObsVal(iobs)-                                &
-!>                         TLmodVal_S(iobs,innLoop,outLoop))
+!^            pgrad(iobs)=ObsScale(iobs)*                               &
+!^   &                    (ObsVal(iobs)-                                &
+!^                         TLmodVal_S(iobs,innLoop,outLoop))
 # endif
-!>            tl_vgrad0s(iobs)=tl_vgrad0(iobs)
-!>
+!^            tl_vgrad0s(iobs)=tl_vgrad0(iobs)
+!^
               ad_vgrad0(iobs)=ad_vgrad0(iobs)+ad_vgrad0s(iobs)
               ad_vgrad0s(iobs)=0.0_r8
-!>            tl_vgrad0(iobs)=tl_pgrad(iobs)
-!>
+!^            tl_vgrad0(iobs)=tl_pgrad(iobs)
+!^
               ad_pgrad(iobs)=ad_pgrad(iobs)+ad_vgrad0(iobs)
               ad_vgrad0(iobs)=0.0_r8
 !
               IF (ObsErr(iobs).NE.0.0_r8) THEN
-!>               pgrad(iobs)=pgrad(iobs)/ObsErr(iobs)
-!>
+!^               pgrad(iobs)=pgrad(iobs)/ObsErr(iobs)
+!^
                  pgrad(iobs)=vgrad0(iobs)
-!>               tl_pgrad(iobs)=tl_pgrad(iobs)/ObsErr(iobs)-            &
-!>   &                          tl_ObsErr(iobs)*pgrad(iobs)/ObsErr(iobs)
-!>
+!^               tl_pgrad(iobs)=tl_pgrad(iobs)/ObsErr(iobs)-            &
+!^   &                          tl_ObsErr(iobs)*pgrad(iobs)/ObsErr(iobs)
+!^
                  ad_ObsErr(iobs)=ad_ObsErr(iobs)-ad_pgrad(iobs)*        &
      &                           pgrad(iobs)/ObsErr(iobs)
                  ad_pgrad(iobs)=ad_pgrad(iobs)/ObsErr(iobs)
@@ -346,10 +347,10 @@
      defined RBL4DVAR_ANA_SENSITIVITY || \
      defined RBL4DVAR_FCT_SENSITIVITY || \
      defined TL_RBL4DVAR
-!>            tl_pgrad(iobs)=ObsScale(iobs)*                            &
-!>   &                       (tl_ObsVal(iobs)-tl_BCKmodVal(iobs))+      &
-!>   &                       tl_ObsScale(iobs)*                         &
-!>   &                       (ObsVal(iobs)-BCKmodVal(iobs))
+!^            tl_pgrad(iobs)=ObsScale(iobs)*                            &
+!^   &                       (tl_ObsVal(iobs)-tl_BCKmodVal(iobs))+      &
+!^   &                       tl_ObsScale(iobs)*                         &
+!^   &                       (ObsVal(iobs)-BCKmodVal(iobs))
 #  ifdef IMPACT_INNER
               ad_ObsVal(iobs,innLoop)=ad_ObsVal(iobs,innLoop)+          &
      &                                ObsScale(iobs)*ad_pgrad(iobs)
@@ -366,14 +367,14 @@
 # else
 !  NOTE: THIS CODE IS NOT CORRECT YET FOR R4D-Var
 !
-!>            tl_pgrad(iobs)=ObsScale(iobs)*                            &
-!>   &                       (tl_ObsVal(iobs)-tl_TLmodVal(iobs))
-!>            tl_pgrad(iobs)=ObsScale(iobs)*                            &
-!>   &                       (tl_ObsVal(iobs)-TLmodVal(iobs))+          &
-!>   &                       tl_ObsScale(iobs)*                         &
-!>   &                       (ObsVal(iobs)-                             &
-!>   &                        TLmodVal_S(iobs,innLoop,outLoop))
-!>
+!^            tl_pgrad(iobs)=ObsScale(iobs)*                            &
+!^   &                       (tl_ObsVal(iobs)-tl_TLmodVal(iobs))
+!^            tl_pgrad(iobs)=ObsScale(iobs)*                            &
+!^   &                       (tl_ObsVal(iobs)-TLmodVal(iobs))+          &
+!^   &                       tl_ObsScale(iobs)*                         &
+!^   &                       (ObsVal(iobs)-                             &
+!^   &                        TLmodVal_S(iobs,innLoop,outLoop))
+!^
 #  ifdef IMPACT_INNER
               ad_ObsVal(iobs,innLoop)=ad_ObsVal(iobs,innLoop)+          &
      &                                ObsScale(iobs)*ad_pgrad(iobs)
@@ -395,37 +396,37 @@
 !
           IF (outLoop.eq.1) THEN
             DO iobs=1,Ndatum(ng)+1
-!>            tl_px(iobs)=0.0_r8
-!>
+!^            tl_px(iobs)=0.0_r8
+!^
               ad_px(iobs)=0.0_r8
             END DO
             DO iobs=1,Ndatum(ng)
-!>           tl_Hbk(iobs)=0.0_r8
-!>
+!^           tl_Hbk(iobs)=0.0_r8
+!^
              ad_Hbk(iobs)=0.0_r8
             END DO
           ELSE
-!>          IF (Lprecond) THEN
-!>            DO iobs=1,Ndatum(ng)+1
-!>              FOURDVAR(ng)%cg_Dpxsum(iobs)=FOURDVAR(ng)%cg_pxsum(iobs)
-!>            END DO
-!>            Lscale=1                 ! Spectral LMP
-!>            Laug=.FALSE.
-!>            CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1,     &
-!>   &                       FOURDVAR(ng)%cg_Dpxsum)
-!>            DO iobs=1,Ndatum(ng)+1
-!>              FOURDVAR(ng)%cg_Dpxsum(iobs)=                           &
-!>   &                                 -FOURDVAR(ng)%cg_Dpxsum(iobs)+   &
-!>   &                                  FOURDVAR(ng)%cg_pxsum(iobs)
-!>            END DO
-!>          END IF
+!^          IF (Lprecond) THEN
+!^            DO iobs=1,Ndatum(ng)+1
+!^              FOURDVAR(ng)%cg_Dpxsum(iobs)=FOURDVAR(ng)%cg_pxsum(iobs)
+!^            END DO
+!^            Lscale=1                 ! Spectral LMP
+!^            Laug=.FALSE.
+!^            CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1,     &
+!^   &                       FOURDVAR(ng)%cg_Dpxsum)
+!^            DO iobs=1,Ndatum(ng)+1
+!^              FOURDVAR(ng)%cg_Dpxsum(iobs)=                           &
+!^   &                                 -FOURDVAR(ng)%cg_Dpxsum(iobs)+   &
+!^   &                                  FOURDVAR(ng)%cg_pxsum(iobs)
+!^            END DO
+!^          END IF
 !!
 !!  NOTE: CODE WON'T WORK FOR R4D-Var AT THE MOMENT SINCE THIS IS
 !!  THE WRONG TLmodVal HERE!!!
 !!
             DO iobs=1,Ndatum(ng)
-!>            tl_Hbk(iobs)=-tl_TLmodVal(iobs)
-!>
+!^            tl_Hbk(iobs)=-tl_TLmodVal(iobs)
+!^
               ADmodVal(iobs)=ADmodVal(iobs)-ad_Hbk(iobs)
               ad_Hbk(iobs)=0.0_r8
             END DO
@@ -434,8 +435,8 @@
      defined RBL4DVAR_FCT_SENSITIVITY
 !
           DO iobs=1,Ndatum(ng)
-!>          tl_BCKmodVal(iobs)=0.0_r8
-!>
+!^          tl_BCKmodVal(iobs)=0.0_r8
+!^
             ad_BCKmodVal(iobs)=0.0_r8
           END DO
 # endif
@@ -458,15 +459,15 @@
 !        if preconditioning; cg_pxsave is also in v-space.
 !
             DO iobs=1,Ndatum(ng)+1
-!>            FOURDVAR(ng)%tl_cg_pxsave(iobs)=tl_px(iobs)
-!>
+!^            FOURDVAR(ng)%tl_cg_pxsave(iobs)=tl_px(iobs)
+!^
               ad_px(iobs)=ad_px(iobs)+FOURDVAR(ng)%ad_cg_pxsave(iobs)
               FOURDVAR(ng)%ad_cg_pxsave(iobs)=0.0_r8
             END DO
 
             DO iobs=1,Ndatum(ng)
-!>            tl_ADmodVal(iobs)=tl_px(iobs)
-!>
+!^            tl_ADmodVal(iobs)=tl_px(iobs)
+!^
               ad_px(iobs)=ad_px(iobs)+TLmodVal(iobs)
               TLmodVal(iobs)=0.0_r8
             END DO
@@ -475,7 +476,7 @@
 !  Selime code: z1=ADmodVal.
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_ADmodVal(iobs)=tl_vcglwk(iobs,innLoop+1)
+!^            tl_ADmodVal(iobs)=tl_vcglwk(iobs,innLoop+1)
               ad_vcglwk(iobs,innLoop+1)=ad_vcglwk(iobs,innLoop+1)+      &
      &                                  TLmodVal(iobs)
               TLmodVal(iobs)=0.0_r8
@@ -488,8 +489,8 @@
 !  AUGMENTED.
 !
           DO iobs=1,Ndatum(ng)+1
-!>          tl_vcglwk(iobs,innLoop+1)=tl_pgrad(iobs)
-!>
+!^          tl_vcglwk(iobs,innLoop+1)=tl_pgrad(iobs)
+!^
             ad_pgrad(iobs)=ad_pgrad(iobs)+ad_vcglwk(iobs,innLoop+1)
             ad_vcglwk(iobs,innLoop+1)=0.0_r8
           END DO
@@ -500,11 +501,11 @@
 !
 !  Selime code: z1=Gw.
 !
-!>        IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>          Lscale=1                 ! Spectral LMP
-!>          Laug=.TRUE.
-!>          CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1, pgrad)
-!>        END IF
+!^        IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^          Lscale=1                 ! Spectral LMP
+!^          Laug=.TRUE.
+!^          CALL rprecond (ng, Lscale, Laug, outLoop, NinnLoop-1, pgrad)
+!^        END IF
 !
 !  Save the non-normalized Lanczos vector. zcglwk is used as temporary
 !  storage. The calculation will be completed at the start of the next
@@ -515,8 +516,8 @@
 !  AUGMENTED
 !
           DO iobs=1,Ndatum(ng)+1
-!>          tl_zcglwk(iobs,innLoop+1)=tl_pgrad(iobs)
-!>
+!^          tl_zcglwk(iobs,innLoop+1)=tl_pgrad(iobs)
+!^
             ad_pgrad(iobs)=ad_pgrad(iobs)+ad_zcglwk(iobs,innLoop+1)
             ad_zcglwk(iobs,innLoop+1)=0.0_r8
           END DO
@@ -580,8 +581,8 @@
 !
 !  AUGMENTED
 
-!>        DO ivec=innLoop,1,-1
-!>
+!^        DO ivec=innLoop,1,-1
+!^
           DO ivec=1,innLoop
             DO iobs=1,Ndatum(ng)+1
               pgrad(iobs)=pgrad_S(iobs)
@@ -594,24 +595,24 @@
               END DO
             END DO
             DO iobs=1,Ndatum(ng)+1
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)-tl_dla*                     &
-!>   &                       vcglwk(iobs,ivec,outLoop)-                 &
-!>   &                       cg_dla(ivec,outLoop)*                      &
-!>   &                       tl_vcglwk(iobs,ivec)
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)-tl_dla*                     &
+!^   &                       vcglwk(iobs,ivec,outLoop)-                 &
+!^   &                       cg_dla(ivec,outLoop)*                      &
+!^   &                       tl_vcglwk(iobs,ivec)
+!^
               ad_dla=ad_dla-ad_pgrad(iobs)*vcglwk(iobs,ivec,outLoop)
               ad_vcglwk(iobs,ivec)=ad_vcglwk(iobs,ivec)-                &
      &                             cg_dla(ivec,outLoop)*ad_pgrad(iobs)
             END DO
-!>          tl_dla=tl_dla+                                              &
-!>   &             tl_Jb0(outLoop-1)*                                   &
-!>   &             vcglwk(Ndatum(ng)+1,ivec,outLoop)*                   &
-!>   &             pgrad(Ndatum(ng)+1)+                                 &
-!>   &             Jb0(outLoop-1)*tl_vcglwk(Ndatum(ng)+1,ivec)*         &
-!>   &             pgrad(Ndatum(ng)+1)+                                 &
-!>   &             Jb0(outLoop-1)*vcglwk(Ndatum(ng)+1,ivec,outLoop)*    &
-!>   &             tl_pgrad(Ndatum(ng)+1)
-!>
+!^          tl_dla=tl_dla+                                              &
+!^   &             tl_Jb0(outLoop-1)*                                   &
+!^   &             vcglwk(Ndatum(ng)+1,ivec,outLoop)*                   &
+!^   &             pgrad(Ndatum(ng)+1)+                                 &
+!^   &             Jb0(outLoop-1)*tl_vcglwk(Ndatum(ng)+1,ivec)*         &
+!^   &             pgrad(Ndatum(ng)+1)+                                 &
+!^   &             Jb0(outLoop-1)*vcglwk(Ndatum(ng)+1,ivec,outLoop)*    &
+!^   &             tl_pgrad(Ndatum(ng)+1)
+!^
             ad_Jb0(outLoop-1)=ad_Jb0(outLoop-1)+                        &
      &                        vcglwk(Ndatum(ng)+1,ivec,outLoop)*        &
      &                        pgrad(Ndatum(ng)+1)*ad_dla
@@ -623,28 +624,28 @@
      &                             vcglwk(Ndatum(ng)+1,ivec,outLoop)*   &
      &                             ad_dla
             DO iobs=1,Ndatum(ng)
-!>            tl_dla=tl_dla+                                            &
-!>   &               tl_pgrad(iobs)*                                    &
-!>   &               TLmodVal_S(iobs,ivec,outLoop)*                     &
-!>   &               zfact(ivec)+                                       &
-!>   &               pgrad(iobs)*tl_TLmodVal_S(iobs,ivec,outLoop)*      &
-!>   &               zfact(ivec)+                                       &
-!>   &               pgrad(iobs)*TLmodVal_S(iobs,ivec,outLoop)*         &
-!>   &               tl_zfact(ivec)+                                    &
-!>   &               tl_pgrad(iobs)*                                    &
-!>   &               Hbk(iobs,outLoop)*                                 &
-!>   &               vcglwk(Ndatum(ng)+1,ivec,outLoop)+                 &
-!>   &               pgrad(iobs)*tl_Hbk(iobs)*                          &
-!>   &               vcglwk(Ndatum(ng)+1,ivec,outLoop)+                 &
-!>   &               pgrad(iobs)*Hbk(iobs,outLoop)*                     &
-!>   &               tl_vcglwk(Ndatum(ng)+1,ivec)+                      &
-!>   &               tl_Hbk(iobs)*vcglwk(iobs,ivec,outLoop)*            &
-!>   &               pgrad(Ndatum(ng)+1)+                               &
-!>   &               Hbk(iobs,outLoop)*tl_vcglwk(iobs,ivec)*            &
-!>   &               pgrad(Ndatum(ng)+1)+                               &
-!>   &               Hbk(iobs,outLoop)*vcglwk(iobs,ivec,outLoop)*       &
-!>   &               tl_pgrad(Ndatum(ng)+1)
-!>
+!^            tl_dla=tl_dla+                                            &
+!^   &               tl_pgrad(iobs)*                                    &
+!^   &               TLmodVal_S(iobs,ivec,outLoop)*                     &
+!^   &               zfact(ivec)+                                       &
+!^   &               pgrad(iobs)*tl_TLmodVal_S(iobs,ivec,outLoop)*      &
+!^   &               zfact(ivec)+                                       &
+!^   &               pgrad(iobs)*TLmodVal_S(iobs,ivec,outLoop)*         &
+!^   &               tl_zfact(ivec)+                                    &
+!^   &               tl_pgrad(iobs)*                                    &
+!^   &               Hbk(iobs,outLoop)*                                 &
+!^   &               vcglwk(Ndatum(ng)+1,ivec,outLoop)+                 &
+!^   &               pgrad(iobs)*tl_Hbk(iobs)*                          &
+!^   &               vcglwk(Ndatum(ng)+1,ivec,outLoop)+                 &
+!^   &               pgrad(iobs)*Hbk(iobs,outLoop)*                     &
+!^   &               tl_vcglwk(Ndatum(ng)+1,ivec)+                      &
+!^   &               tl_Hbk(iobs)*vcglwk(iobs,ivec,outLoop)*            &
+!^   &               pgrad(Ndatum(ng)+1)+                               &
+!^   &               Hbk(iobs,outLoop)*tl_vcglwk(iobs,ivec)*            &
+!^   &               pgrad(Ndatum(ng)+1)+                               &
+!^   &               Hbk(iobs,outLoop)*vcglwk(iobs,ivec,outLoop)*       &
+!^   &               tl_pgrad(Ndatum(ng)+1)
+!^
               ad_pgrad(iobs)=ad_pgrad(iobs)+                            &
      &                       TLmodVal_S(iobs,ivec,outLoop)*             &
      &                       zfact(ivec)*ad_dla
@@ -673,25 +674,25 @@
      &                               Hbk(iobs,outLoop)*                 &
      &                               vcglwk(iobs,ivec,outLoop)*ad_dla
             END DO
-!>          tl_dla=0.0_r8
-!>
+!^          tl_dla=0.0_r8
+!^
             ad_dla=0.0_r8
           END DO
 !
           DO ivec=1,innLoop
             IF (ivec.eq.1) THEN
               zfact(ivec)=1.0_r8/cg_Gnorm_v(outLoop)
-!>            tl_zfact(ivec)=-tl_Gnorm_v(outLoop)*zfact(ivec)/          &
-!>   &                        cg_Gnorm_v(outLoop)
-!>
+!^            tl_zfact(ivec)=-tl_Gnorm_v(outLoop)*zfact(ivec)/          &
+!^   &                        cg_Gnorm_v(outLoop)
+!^
               ad_cg_Gnorm_v(outLoop)=ad_cg_Gnorm_v(outLoop)-            &
      &                               ad_zfact(ivec)*zfact(ivec)/        &
      &                               cg_Gnorm_v(outLoop)
               ad_zfact(ivec)=0.0_r8
             ELSE
               zfact(ivec)=1.0_r8/cg_beta(ivec,outLoop)
-!>            tl_zfact(ivec)=-tl_cg_beta(ivec)*zfact(ivec)/             &
-!>   &                        cg_beta(ivec,outLoop)
+!^            tl_zfact(ivec)=-tl_cg_beta(ivec)*zfact(ivec)/             &
+!^   &                        cg_beta(ivec,outLoop)
               ad_cg_beta(ivec)=ad_cg_beta(ivec)-                        &
      &                         ad_zfact(ivec)*zfact(ivec)/              &
      &                         cg_beta(ivec,outLoop)
@@ -704,12 +705,12 @@
 !  AUGMENTED.
 !
           DO iobs=1,Ndatum(ng)+1
-!>          tl_pgrad(iobs)=tl_pgrad(iobs)-                              &
-!>   &                     tl_cg_delta(innLoop)*                        &
-!>   &                     zcglwk(iobs,innLoop,outLoop)-                &
-!>   &                     cg_delta(innLoop,outLoop)*                   &
-!>   &                     tl_zcglwk(iobs,innLoop)
-!>
+!^          tl_pgrad(iobs)=tl_pgrad(iobs)-                              &
+!^   &                     tl_cg_delta(innLoop)*                        &
+!^   &                     zcglwk(iobs,innLoop,outLoop)-                &
+!^   &                     cg_delta(innLoop,outLoop)*                   &
+!^   &                     tl_zcglwk(iobs,innLoop)
+!^
             ad_cg_delta(innLoop)=ad_cg_delta(innLoop)-                  &
      &                           zcglwk(iobs,innLoop,outLoop)*          &
      &                           ad_pgrad(iobs)
@@ -753,17 +754,17 @@
             END DO
           END IF
 !
-!>        tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                    &
-!>   &                         tl_Jb0(outLoop-1)*                       &
-!>   &                         vcglwk(Ndatum(ng)+1,innLoop,outLoop)*    &
-!>   &                         pgrad(Ndatum(ng)+1)+                     &
-!>   &                         Jb0(outLoop-1)*                          &
-!>   &                         tl_vcglwk(Ndatum(ng)+1,innLoop)*         &
-!>   &                         pgrad(Ndatum(ng)+1)+                     &
-!>   &                         Jb0(outLoop-1)*                          &
-!>   &                         vcglwk(Ndatum(ng)+1,innLoop,outLoop)*    &
-!>   &                         tl_pgrad(Ndatum(ng)+1)
-!>
+!^        tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                    &
+!^   &                         tl_Jb0(outLoop-1)*                       &
+!^   &                         vcglwk(Ndatum(ng)+1,innLoop,outLoop)*    &
+!^   &                         pgrad(Ndatum(ng)+1)+                     &
+!^   &                         Jb0(outLoop-1)*                          &
+!^   &                         tl_vcglwk(Ndatum(ng)+1,innLoop)*         &
+!^   &                         pgrad(Ndatum(ng)+1)+                     &
+!^   &                         Jb0(outLoop-1)*                          &
+!^   &                         vcglwk(Ndatum(ng)+1,innLoop,outLoop)*    &
+!^   &                         tl_pgrad(Ndatum(ng)+1)
+!^
           ad_Jb0(outLoop-1)=ad_Jb0(outLoop-1)+                          &
      &                      vcglwk(Ndatum(ng)+1,innLoop,outLoop)*       &
      &                      pgrad(Ndatum(ng)+1)*                        &
@@ -785,31 +786,31 @@
           END IF
 !
           DO iobs=1,Ndatum(ng)
-!>          tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                  &
-!>   &                           tl_TLmodVal(iobs)*                     &
-!>   &                           pgrad(iobs)+                           &
-!>   &                           TLmodVal_S(iobs,innLoop,outLoop)*      &
-!>   &                           tl_pgrad(iobs)*                        &
-!>   &                           fact+                                  &
-!>   &                           tl_Hbk(iobs)*                          &
-!>   &                           vcglwk(Ndatum(ng)+1,innLoop,outLoop)*  &
-!>   &                           pgrad(iobs)+                           &
-!>   &                           Hbk(iobs,outLoop)*                     &
-!>   &                           tl_vcglwk(Ndatum(ng)+1,innLoop)*       &
-!>   &                           pgrad(iobs)+                           &
-!>   &                           Hbk(iobs,outLoop)*                     &
-!>   &                           vcglwk(Ndatum(ng)+1,innLoop,outLoop)*  &
-!>   &                           tl_pgrad(iobs)+                        &
-!>   &                           tl_Hbk(iobs)*                          &
-!>   &                           vcglwk(iobs,innLoop,outLoop)*          &
-!>   &                           pgrad(Ndatum(ng)+1)+                   &
-!>   &                           Hbk(iobs,outLoop)*                     &
-!>   &                           tl_vcglwk(iobs,innLoop)*               &
-!>   &                           pgrad(Ndatum(ng)+1)+                   &
-!>   &                           Hbk(iobs,outLoop)*                     &
-!>   &                           vcglwk(iobs,innLoop,outLoop)*          &
-!>   &                           tl_pgrad(Ndatum(ng)+1)
-!>
+!^          tl_cg_delta(innLoop)=tl_cg_delta(innLoop)+                  &
+!^   &                           tl_TLmodVal(iobs)*                     &
+!^   &                           pgrad(iobs)+                           &
+!^   &                           TLmodVal_S(iobs,innLoop,outLoop)*      &
+!^   &                           tl_pgrad(iobs)*                        &
+!^   &                           fact+                                  &
+!^   &                           tl_Hbk(iobs)*                          &
+!^   &                           vcglwk(Ndatum(ng)+1,innLoop,outLoop)*  &
+!^   &                           pgrad(iobs)+                           &
+!^   &                           Hbk(iobs,outLoop)*                     &
+!^   &                           tl_vcglwk(Ndatum(ng)+1,innLoop)*       &
+!^   &                           pgrad(iobs)+                           &
+!^   &                           Hbk(iobs,outLoop)*                     &
+!^   &                           vcglwk(Ndatum(ng)+1,innLoop,outLoop)*  &
+!^   &                           tl_pgrad(iobs)+                        &
+!^   &                           tl_Hbk(iobs)*                          &
+!^   &                           vcglwk(iobs,innLoop,outLoop)*          &
+!^   &                           pgrad(Ndatum(ng)+1)+                   &
+!^   &                           Hbk(iobs,outLoop)*                     &
+!^   &                           tl_vcglwk(iobs,innLoop)*               &
+!^   &                           pgrad(Ndatum(ng)+1)+                   &
+!^   &                           Hbk(iobs,outLoop)*                     &
+!^   &                           vcglwk(iobs,innLoop,outLoop)*          &
+!^   &                           tl_pgrad(Ndatum(ng)+1)
+!^
              ADmodVal(iobs)=ADmodVal(iobs)+                             &
      &                      pgrad(iobs)*ad_cg_delta(innLoop)
              ad_pgrad(iobs)=ad_pgrad(iobs)+                             &
@@ -843,8 +844,8 @@
      &                              ad_cg_delta(innLoop)
           END DO
 !
-!>        tl_cg_delta(innLoop)=0.0_r8
-!>
+!^        tl_cg_delta(innLoop)=0.0_r8
+!^
           ad_cg_delta(innLoop)=0.0_r8
 
           IF (innLoop.gt.1) THEN
@@ -854,12 +855,12 @@
 !  AUGMENTED.
 !
             DO iobs=1,Ndatum(ng)+1
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
-!>   &                       tl_cg_beta(innLoop)*                       &
-!>   &                       zcglwk(iobs,innLoop-1,outLoop)-            &
-!>   &                       cg_beta(innLoop,outLoop)*                  &
-!>   &                       tl_zcglwk(iobs,innLoop-1)
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)-                            &
+!^   &                       tl_cg_beta(innLoop)*                       &
+!^   &                       zcglwk(iobs,innLoop-1,outLoop)-            &
+!^   &                       cg_beta(innLoop,outLoop)*                  &
+!^   &                       tl_zcglwk(iobs,innLoop-1)
+!^
               ad_cg_beta(innLoop)=ad_cg_beta(innLoop)-                  &
      &                            zcglwk(iobs,innLoop-1,outLoop)*       &
      &                            ad_pgrad(iobs)
@@ -871,21 +872,21 @@
 !
 !  Selime code: w=t1/R+z1
 !
-!>        tl_pgrad(Ndatum(ng)+1)=tl_pgrad(Ndatum(ng)+1)+                &
-!>   &                           tl_vcglwk(Ndatum(ng)+1,innLoop)
-!>
+!^        tl_pgrad(Ndatum(ng)+1)=tl_pgrad(Ndatum(ng)+1)+                &
+!^   &                           tl_vcglwk(Ndatum(ng)+1,innLoop)
+!^
           ad_vcglwk(Ndatum(ng)+1,innLoop)=                              &
      &                                ad_vcglwk(Ndatum(ng)+1,innLoop)+  &
      &                                ad_pgrad(Ndatum(ng)+1)
           DO iobs=1,Ndatum(ng)
-!>          tl_pgrad(iobs)=tl_pgrad(iobs)+tl_vcglwk(iobs,innLoop)
-!>
+!^          tl_pgrad(iobs)=tl_pgrad(iobs)+tl_vcglwk(iobs,innLoop)
+!^
             ad_vcglwk(iobs,innLoop)=ad_vcglwk(iobs,innLoop)+            &
      &                              ad_pgrad(iobs)
           END DO
 !
-!>        tl_pgrad(Ndatum(ng)+1)=0.0_r8
-!>
+!^        tl_pgrad(Ndatum(ng)+1)=0.0_r8
+!^
           ad_pgrad(Ndatum(ng)+1)=0.0_r8
 !
 !  Recompute pgrad.
@@ -910,9 +911,9 @@
 !
 !  Selime code: w=t1/R. No augmented term here since Raug^-1=[R^-1 0].
 !
-!>            tl_pgrad(iobs)=tl_pgrad(iobs)/ObsErr(iobs)-               &
-!>   &                       tl_ObsErr(iobs)*pgrad(iobs)/ObsErr(iobs)
-!>
+!^            tl_pgrad(iobs)=tl_pgrad(iobs)/ObsErr(iobs)-               &
+!^   &                       tl_ObsErr(iobs)*pgrad(iobs)/ObsErr(iobs)
+!^
               ad_ObsErr(iobs)=ad_ObsErr(iobs)-                          &
      &                         pgrad(iobs)*ad_pgrad(iobs)/ObsErr(iobs)
               ad_pgrad(iobs)=ad_pgrad(iobs)/ObsErr(iobs)
@@ -929,12 +930,12 @@
 !
 !  Selime code: w=t1.
 !
-!>          tl_pgrad(iobs)=tl_TLmodVal(iobs)+                           &
-!>   &                     tl_Hbk(iobs)*                                &
-!>   &                     vcglwk(Ndatum(ng)+1,innLoop,outLoop)+        &
-!>   &                     Hbk(iobs,outLoop)*                           &
-!>   &                     tl_vcglwk(Ndatum(ng)+1,innLoop)
-!>
+!^          tl_pgrad(iobs)=tl_TLmodVal(iobs)+                           &
+!^   &                     tl_Hbk(iobs)*                                &
+!^   &                     vcglwk(Ndatum(ng)+1,innLoop,outLoop)+        &
+!^   &                     Hbk(iobs,outLoop)*                           &
+!^   &                     tl_vcglwk(Ndatum(ng)+1,innLoop)
+!^
             ADmodVal(iobs)=ADmodVal(iobs)+ad_pgrad(iobs)
             ad_Hbk(iobs)=ad_Hbk(iobs)+                                  &
      &                   vcglwk(Ndatum(ng)+1,innLoop,outLoop)*          &
@@ -958,20 +959,20 @@
 !
 !  Selime code: t1=t1/beta_first=TLmodVal
 !
-!>            tl_TLmodVal(iobs)=tl_TLmodVal(iobs)/cg_Gnorm_v(outLoop)-  &
-!>   &                          tl_cg_Gnorm_v(outLoop)*                 &
-!>   &                          TLmodVal_S(iobs,innLoop,outLoop)/       &
-!>   &                          (cg_Gnorm_v(outLoop)*                   &
-!>   &                           cg_Gnorm_v(outLoop))
-!>
+!^            tl_TLmodVal(iobs)=tl_TLmodVal(iobs)/cg_Gnorm_v(outLoop)-  &
+!^   &                          tl_cg_Gnorm_v(outLoop)*                 &
+!^   &                          TLmodVal_S(iobs,innLoop,outLoop)/       &
+!^   &                          (cg_Gnorm_v(outLoop)*                   &
+!^   &                           cg_Gnorm_v(outLoop))
+!^
               ad_cg_Gnorm_v(outLoop)=ad_cg_Gnorm_v(outLoop)-            &
      &                               ADmodVal(iobs)*                    &
      &                               TLmodVal_S(iobs,innLoop,outLoop)/  &
      &                               (cg_Gnorm_v(outLoop)*              &
      &                                cg_Gnorm_v(outLoop))
               ADmodVal(iobs)=ADmodVal(iobs)/cg_Gnorm_v(outLoop)
-!>            tl_TLmodVal_S(iobs,innLoop,outLoop)=tl_TLmodVal(iobs)
-!>
+!^            tl_TLmodVal_S(iobs,innLoop,outLoop)=tl_TLmodVal(iobs)
+!^
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       ad_TLmodVal_S(iobs,innLoop,outLoop)
               ad_TLmodVal_S(iobs,innLoop,outLoop)=0.0_r8
@@ -985,11 +986,11 @@
 !
 !  Selime code: z1=z1/beta_first=vcglwk(1).
 !
-!>            tl_vcglwk(iobs,1)=tl_zgrad0(iobs)/cg_Gnorm_v(outLoop)-    &
-!>   &                          tl_cg_Gnorm_v(outLoop)*                 &
-!>   &                          vcglwk(iobs,1,outLoop)/                 &
-!>   &                          cg_Gnorm_v(outLoop)
-!>
+!^            tl_vcglwk(iobs,1)=tl_zgrad0(iobs)/cg_Gnorm_v(outLoop)-    &
+!^   &                          tl_cg_Gnorm_v(outLoop)*                 &
+!^   &                          vcglwk(iobs,1,outLoop)/                 &
+!^   &                          cg_Gnorm_v(outLoop)
+!^
               ad_zgrad0(iobs)=ad_zgrad0(iobs)+                          &
      &                        ad_vcglwk(iobs,1)/cg_Gnorm_v(outLoop)
               ad_cg_Gnorm_v(outLoop)=ad_cg_Gnorm_v(outLoop)-            &
@@ -1000,12 +1001,12 @@
 !
 !  Selime code: v1=r/beta_first=zcglwk(1).
 !
-!>            tl_zcglwk(iobs,1)=tl_vgrad0(iobs)/                        &
-!>   &                          cg_Gnorm_v(outLoop)-                    &
-!>   &                          tl_cg_Gnorm_v(outLoop)*                 &
-!>   &                          zcglwk(iobs,1,outLoop)/                 &
-!>   &                          cg_Gnorm_v(outLoop)
-!>
+!^            tl_zcglwk(iobs,1)=tl_vgrad0(iobs)/                        &
+!^   &                          cg_Gnorm_v(outLoop)-                    &
+!^   &                          tl_cg_Gnorm_v(outLoop)*                 &
+!^   &                          zcglwk(iobs,1,outLoop)/                 &
+!^   &                          cg_Gnorm_v(outLoop)
+!^
               ad_vgrad0(iobs)=ad_vgrad0(iobs)+ad_zcglwk(iobs,1)/        &
      &                        cg_Gnorm_v(outLoop)
               ad_cg_Gnorm_v(outLoop)=ad_cg_Gnorm_v(outLoop)-            &
@@ -1018,27 +1019,27 @@
 !  Selime code: beta_first=sqrt(r't1)=cg_Gnorm_v.
 !                  cg_QG(1)=beta_first
 !
-!>          tl_cg_QG(1)=tl_cg_Gnorm_v(outLoop)
-!>
+!^          tl_cg_QG(1)=tl_cg_Gnorm_v(outLoop)
+!^
             ad_cg_Gnorm_v(outLoop)=ad_cg_Gnorm_v(outLoop)+ad_cg_QG(1)
             ad_cg_QG(1)=0.0_r8
-!>          tl_cg_Gnorm_v(outLoop)=0.5_r8*tl_cg_Gnorm_v(outLoop)/       &
-!>   &                             cg_Gnorm_v(outLoop)
-!>
+!^          tl_cg_Gnorm_v(outLoop)=0.5_r8*tl_cg_Gnorm_v(outLoop)/       &
+!^   &                             cg_Gnorm_v(outLoop)
+!^
             ad_cg_Gnorm_v(outLoop)=0.5_r8*ad_cg_Gnorm_v(outLoop)/       &
      &                           cg_Gnorm_v(outLoop)
 !
-!>          tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+              &
-!>   &                             tl_Jb0(outLoop-1)*                   &
-!>   &                             vgrad0(Ndatum(ng)+1)*                &
-!>   &                             zgrad0(Ndatum(ng)+1,outLoop)+        &
-!>   &                             Jb0(outLoop-1)*                      &
-!>   &                             tl_vgrad0(Ndatum(ng)+1)*             &
-!>   &                             zgrad0(Ndatum(ng)+1,outLoop)+        &
-!>   &                             Jb0(outLoop-1)*                      &
-!>   &                             vgrad0(Ndatum(ng)+1)*                &
-!>   &                             tl_zgrad0(Ndatum(ng)+1)
-!>
+!^          tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+              &
+!^   &                             tl_Jb0(outLoop-1)*                   &
+!^   &                             vgrad0(Ndatum(ng)+1)*                &
+!^   &                             zgrad0(Ndatum(ng)+1,outLoop)+        &
+!^   &                             Jb0(outLoop-1)*                      &
+!^   &                             tl_vgrad0(Ndatum(ng)+1)*             &
+!^   &                             zgrad0(Ndatum(ng)+1,outLoop)+        &
+!^   &                             Jb0(outLoop-1)*                      &
+!^   &                             vgrad0(Ndatum(ng)+1)*                &
+!^   &                             tl_zgrad0(Ndatum(ng)+1)
+!^
             ad_Jb0(outLoop-1)=ad_Jb0(outLoop-1)+                        &
      &                        vgrad0(Ndatum(ng)+1)*                     &
      &                        zgrad0(Ndatum(ng)+1,outLoop)*             &
@@ -1052,26 +1053,26 @@
      &                              vgrad0(Ndatum(ng)+1)*               &
      &                              ad_cg_Gnorm_v(outLoop)
             DO iobs=1,Ndatum(ng)
-!>              tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+          &
-!>   &                                 tl_Hbk(iobs)*                    &
-!>   &                                 zgrad0(Ndatum(ng)+1,outLoop)*    &
-!>   &                                 vgrad0(iobs)+                    &
-!>   &                                 Hbk(iobs,outLoop)*               &
-!>   &                                 tl_zgrad0(Ndatum(ng)+1)*         &
-!>   &                                 vgrad0(iobs)+                    &
-!>   &                                 Hbk(iobs,outLoop)*               &
-!>   &                                 zgrad0(Ndatum(ng)+1,outLoop)*    &
-!>   &                                 tl_vgrad0(iobs)+                 &
-!>   &                                 tl_Hbk(iobs)*                    &
-!>   &                                 vgrad0(Ndatum(ng)+1)*            &
-!>   &                                 zgrad0(iobs,outLoop)+            &
-!>   &                                 Hbk(iobs,outLoop)*               &
-!>   &                                 tl_vgrad0(Ndatum(ng)+1)*         &
-!>   &                                 zgrad0(iobs,outLoop)+            &
-!>   &                                 Hbk(iobs,outLoop)*               &
-!>   &                                 vgrad0(Ndatum(ng)+1)*            &
-!>   &                                 tl_zgrad0(iobs)
-!>
+!^              tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+          &
+!^   &                                 tl_Hbk(iobs)*                    &
+!^   &                                 zgrad0(Ndatum(ng)+1,outLoop)*    &
+!^   &                                 vgrad0(iobs)+                    &
+!^   &                                 Hbk(iobs,outLoop)*               &
+!^   &                                 tl_zgrad0(Ndatum(ng)+1)*         &
+!^   &                                 vgrad0(iobs)+                    &
+!^   &                                 Hbk(iobs,outLoop)*               &
+!^   &                                 zgrad0(Ndatum(ng)+1,outLoop)*    &
+!^   &                                 tl_vgrad0(iobs)+                 &
+!^   &                                 tl_Hbk(iobs)*                    &
+!^   &                                 vgrad0(Ndatum(ng)+1)*            &
+!^   &                                 zgrad0(iobs,outLoop)+            &
+!^   &                                 Hbk(iobs,outLoop)*               &
+!^   &                                 tl_vgrad0(Ndatum(ng)+1)*         &
+!^   &                                 zgrad0(iobs,outLoop)+            &
+!^   &                                 Hbk(iobs,outLoop)*               &
+!^   &                                 vgrad0(Ndatum(ng)+1)*            &
+!^   &                                 tl_zgrad0(iobs)
+!^
                 ad_Hbk(iobs)=ad_Hbk(iobs)+                              &
      &                       zgrad0(Ndatum(ng)+1,outLoop)*              &
      &                       vgrad0(iobs)*                              &
@@ -1099,12 +1100,12 @@
             END DO
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+            &
-!>   &                               tl_TLmodVal(iobs)*                 &
-!>   &                               vgrad0(iobs)+                      &
-!>   &                               TLmodVal_S(iobs,innLoop,outLoop)*  &
-!>   &                               tl_vgrad0(iobs)
-!>
+!^            tl_cg_Gnorm_v(outLoop)=tl_cg_Gnorm_v(outLoop)+            &
+!^   &                               tl_TLmodVal(iobs)*                 &
+!^   &                               vgrad0(iobs)+                      &
+!^   &                               TLmodVal_S(iobs,innLoop,outLoop)*  &
+!^   &                               tl_vgrad0(iobs)
+!^
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       vgrad0(iobs)*                              &
      &                       ad_cg_Gnorm_v(outLoop)
@@ -1112,8 +1113,8 @@
      &                        TLmodVal_S(iobs,innLoop,outLoop)*         &
      &                        ad_cg_Gnorm_v(outLoop)
             END DO
-!>          tl_cg_Gnorm_v(outLoop)=0.0_r8
-!>
+!^          tl_cg_Gnorm_v(outLoop)=0.0_r8
+!^
             ad_cg_Gnorm_v(outLoop)=0.0_r8
 
           ELSE
@@ -1123,11 +1124,11 @@
 !  If preconditioning, convert px from y-space to v-space.
 !  We will always keep px in v-space.
 !
-!>            IF (Lprecond.and.(outLoop.gt.1)) THEN
-!>              Lscale=1                 ! Spectral LMP
-!>              Laug=.TRUE.
-!>              CALL rprecond(ng, Lscale, Laug, outLoop, NinnLoop-1, px)
-!>            END IF
+!^            IF (Lprecond.and.(outLoop.gt.1)) THEN
+!^              Lscale=1                 ! Spectral LMP
+!^              Laug=.TRUE.
+!^              CALL rprecond(ng, Lscale, Laug, outLoop, NinnLoop-1, px)
+!^            END IF
 !
 !  Recompute zu and zwork.
 !
@@ -1150,12 +1151,12 @@
 !
             DO iobs=1,Ndatum(ng)+1
               DO ivec=1,innLoop-1
-!>              tl_px(iobs)=tl_px(iobs)+                                &
-!>   &                      tl_zcglwk(iobs,ivec)*                       &
-!>   &                      zwork(ivec,3)+                              &
-!>   &                      zcglwk(iobs,ivec,outLoop)*                  &
-!>   &                      tl_zwork(ivec,3)
-!>
+!^              tl_px(iobs)=tl_px(iobs)+                                &
+!^   &                      tl_zcglwk(iobs,ivec)*                       &
+!^   &                      zwork(ivec,3)+                              &
+!^   &                      zcglwk(iobs,ivec,outLoop)*                  &
+!^   &                      tl_zwork(ivec,3)
+!^
                 ad_zcglwk(iobs,ivec)=ad_zcglwk(iobs,ivec)+              &
      &                               zwork(ivec,3)*                     &
      &                               ad_px(iobs)
@@ -1163,8 +1164,8 @@
      &                           zcglwk(iobs,ivec,outLoop)*             &
      &                           ad_px(iobs)
               END DO
-!>            tl_px(iobs)=0.0_r8
-!>
+!^            tl_px(iobs)=0.0_r8
+!^
               ad_px(iobs)=0.0_r8
             END DO
 !
@@ -1175,45 +1176,45 @@
             END IF
             IF (NinnLoop.eq.2) THEN
               zu(1)=cg_QG(1,outLoop)/cg_delta(1,outLoop)
-!>            tl_zwork(1,3)=tl_zu(1)
-!>
+!^            tl_zwork(1,3)=tl_zu(1)
+!^
               ad_zu(1)=ad_zu(1)+ad_zwork(1,3)
               ad_zwork(1,3)=0.0_r8
-!>            tl_zu(1)=tl_zrhs(1)/cg_delta(1,outLoop)
-!>
+!^            tl_zu(1)=tl_zrhs(1)/cg_delta(1,outLoop)
+!^
               ad_zrhs(1)=ad_zrhs(1)+ad_zu(1)/cg_delta(1,outLoop)
               ad_zu(1)=0.0_r8
-!>            tl_zrhs(1)=tl_cg_QG(1)-tl_cg_delta(1)*zu(1)
-!>
+!^            tl_zrhs(1)=tl_cg_QG(1)-tl_cg_delta(1)*zu(1)
+!^
               ad_cg_QG(1)=ad_cg_QG(1)+ad_zrhs(1)
               ad_cg_delta(1)=ad_cg_delta(1)-zu(1)*ad_zrhs(1)
               ad_zrhs(1)=0.0_r8
             ELSE
-!>            DO ivec=innLoop-2,1,-1
-!>
+!^            DO ivec=innLoop-2,1,-1
+!^
               DO ivec=1,innLoop-2
-!>              tl_zwork(ivec,3)=tl_zu(ivec)
-!>
+!^              tl_zwork(ivec,3)=tl_zu(ivec)
+!^
                 ad_zu(ivec)=ad_zu(ivec)+ad_zwork(ivec,3)
                 ad_zwork(ivec,3)=0.0_r8
 
-!>              tl_zu(ivec)=tl_zu(ivec)-zgam(ivec+1)*tl_zu(ivec+1)
-!>
+!^              tl_zu(ivec)=tl_zu(ivec)-zgam(ivec+1)*tl_zu(ivec+1)
+!^
                 ad_zu(ivec+1)=ad_zu(ivec+1)-zgam(ivec+1)*ad_zu(ivec)
               END DO
-!>            tl_zwork(innLoop-1,3)=tl_zu(innLoop-1)
-!>
+!^            tl_zwork(innLoop-1,3)=tl_zu(innLoop-1)
+!^
               ad_zu(innLoop-1)=ad_zu(innLoop-1)+ad_zwork(innLoop-1,3)
               ad_zwork(innLoop-1,3)=0.0_r8
 
-!>            DO ivec=2,innLoop-1
-!>
+!^            DO ivec=2,innLoop-1
+!^
               DO ivec=innLoop-1,2,-1
                 zbet=cg_delta(ivec,outLoop)-                            &
      &               cg_beta(ivec,outLoop)*zgam(ivec)
-!>              tl_zu(ivec)=(tl_zrhs(ivec)-cg_beta(ivec,outLoop)*       &
-!>   &                       tl_zu(ivec-1))/zbet
-!>
+!^              tl_zu(ivec)=(tl_zrhs(ivec)-cg_beta(ivec,outLoop)*       &
+!^   &                       tl_zu(ivec-1))/zbet
+!^
                 adfac=ad_zu(ivec)/zbet
                 ad_zu(ivec-1)=ad_zu(ivec-1)-                            &
      &                        cg_beta(ivec,outLoop)*adfac
@@ -1221,15 +1222,15 @@
                 ad_zu(ivec)=0.0_r8
               END DO
               zbet=cg_delta(1,outLoop)
-!>            tl_zu(1)=tl_zrhs(1)/zbet
-!>
+!^            tl_zu(1)=tl_zrhs(1)/zbet
+!^
               ad_zrhs(1)=ad_zrhs(1)+ad_zu(1)/zbet
               ad_zu(1)=0.0_r8
 !
-!>            tl_zrhs(innLoop-1)=tl_cg_QG(innLoop-1)-                   &
-!>   &                         tl_cg_beta(innLoop-1)*zu(innLoop-2)-     &
-!>   &                         tl_cg_delta(innLoop-1)*zu(innLoop-1)
-!>
+!^            tl_zrhs(innLoop-1)=tl_cg_QG(innLoop-1)-                   &
+!^   &                         tl_cg_beta(innLoop-1)*zu(innLoop-2)-     &
+!^   &                         tl_cg_delta(innLoop-1)*zu(innLoop-1)
+!^
               ad_cg_QG(innLoop-1)=ad_cg_QG(innLoop-1)+                  &
      &                            ad_zrhs(innLoop-1)
               ad_cg_beta(innLoop-1)=ad_cg_beta(innLoop-1)-              &
@@ -1240,11 +1241,11 @@
      &                               ad_zrhs(innLoop-1)
               ad_zrhs(innLoop-1)=0.0_r8
               DO ivec=2,innLoop-2
-!>              tl_zrhs(ivec)=tl_cg_QG(ivec)-                           &
-!>   &                        tl_cg_beta(ivec)*zu(ivec-1)-              &
-!>   &                        tl_cg_delta(ivec)*zu(ivec)-               &
-!>   &                        tl_cg_beta(ivec+1)*zu(ivec+1)
-!>
+!^              tl_zrhs(ivec)=tl_cg_QG(ivec)-                           &
+!^   &                        tl_cg_beta(ivec)*zu(ivec-1)-              &
+!^   &                        tl_cg_delta(ivec)*zu(ivec)-               &
+!^   &                        tl_cg_beta(ivec+1)*zu(ivec+1)
+!^
                 ad_cg_QG(ivec)=ad_cg_QG(ivec)+                          &
      &                         ad_zrhs(ivec)
                 ad_cg_beta(ivec)=ad_cg_beta(ivec)-                      &
@@ -1255,10 +1256,10 @@
      &                             zu(ivec+1)*ad_zrhs(ivec)
                 ad_zrhs(ivec)=0.0_r8
               END DO
-!>            tl_zrhs(1)=tl_cg_QG(1)-                                   &
-!>   &                   tl_cg_delta(1)*zu(1)-                          &
-!>   &                   tl_cg_beta(2)*zu(2)
-!>
+!^            tl_zrhs(1)=tl_cg_QG(1)-                                   &
+!^   &                   tl_cg_delta(1)*zu(1)-                          &
+!^   &                   tl_cg_beta(2)*zu(2)
+!^
               ad_cg_QG(1)=ad_cg_QG(1)+ad_zrhs(1)
               ad_cg_delta(1)=ad_cg_delta(1)-zu(1)*ad_zrhs(1)
               ad_cg_beta(2)=ad_cg_beta(2)-zu(2)*ad_zrhs(1)
@@ -1267,17 +1268,17 @@
 
            END IF
 
-!>          tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                        &
-!>   &                        tl_Jb0(outLoop-1)*                        &
-!>   &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
-!>   &                        vgrad0(Ndatum(ng)+1)+                     &
-!>   &                        Jb0(outLoop-1)*                           &
-!>   &                        tl_vcglwk(Ndatum(ng)+1,innLoop)*          &
-!>   &                        vgrad0(Ndatum(ng)+1)+                     &
-!>   &                        Jb0(outLoop-1)*                           &
-!>   &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
-!>   &                        tl_vgrad0(Ndatum(ng)+1)
-!>
+!^          tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                        &
+!^   &                        tl_Jb0(outLoop-1)*                        &
+!^   &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
+!^   &                        vgrad0(Ndatum(ng)+1)+                     &
+!^   &                        Jb0(outLoop-1)*                           &
+!^   &                        tl_vcglwk(Ndatum(ng)+1,innLoop)*          &
+!^   &                        vgrad0(Ndatum(ng)+1)+                     &
+!^   &                        Jb0(outLoop-1)*                           &
+!^   &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
+!^   &                        tl_vgrad0(Ndatum(ng)+1)
+!^
             ad_Jb0(outLoop-1)=ad_Jb0(outLoop-1)+                        &
      &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
      &                        vgrad0(Ndatum(ng)+1)*                     &
@@ -1292,26 +1293,26 @@
      &                              ad_cg_QG(innLoop)
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                      &
-!>   &                          tl_Hbk(iobs)*                           &
-!>   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)*   &
-!>   &                          vgrad0(iobs)+                           &
-!>   &                          Hbk(iobs,outLoop)*                      &
-!>   &                          tl_vcglwk(Ndatum(ng)+1,innLoop)*        &
-!>   &                          vgrad0(iobs)+                           &
-!>   &                          Hbk(iobs,outLoop)*                      &
-!>   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)*   &
-!>   &                          tl_vgrad0(iobs)+                        &
-!>   &                          tl_Hbk(iobs)*                           &
-!>   &                          vcglwk(iobs,innLoop,outLoop)*           &
-!>   &                          vgrad0(Ndatum(ng)+1)+                   &
-!>   &                          Hbk(iobs,outLoop)*                      &
-!>   &                          tl_vcglwk(iobs,innLoop)*                &
-!>   &                          vgrad0(Ndatum(ng)+1)+                   &
-!>   &                          Hbk(iobs,outLoop)*                      &
-!>   &                          vcglwk(iobs,innLoop,outLoop)*           &
-!>   &                          tl_vgrad0(Ndatum(ng)+1)
-!>
+!^            tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                      &
+!^   &                          tl_Hbk(iobs)*                           &
+!^   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)*   &
+!^   &                          vgrad0(iobs)+                           &
+!^   &                          Hbk(iobs,outLoop)*                      &
+!^   &                          tl_vcglwk(Ndatum(ng)+1,innLoop)*        &
+!^   &                          vgrad0(iobs)+                           &
+!^   &                          Hbk(iobs,outLoop)*                      &
+!^   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)*   &
+!^   &                          tl_vgrad0(iobs)+                        &
+!^   &                          tl_Hbk(iobs)*                           &
+!^   &                          vcglwk(iobs,innLoop,outLoop)*           &
+!^   &                          vgrad0(Ndatum(ng)+1)+                   &
+!^   &                          Hbk(iobs,outLoop)*                      &
+!^   &                          tl_vcglwk(iobs,innLoop)*                &
+!^   &                          vgrad0(Ndatum(ng)+1)+                   &
+!^   &                          Hbk(iobs,outLoop)*                      &
+!^   &                          vcglwk(iobs,innLoop,outLoop)*           &
+!^   &                          tl_vgrad0(Ndatum(ng)+1)
+!^
               ad_Hbk(iobs)=ad_Hbk(iobs)+                                &
      &                     vcglwk(Ndatum(ng)+1,innLoop,outLoop)*        &
      &                     vgrad0(iobs)*                                &
@@ -1342,12 +1343,12 @@
 !  Selime code:  cg_QG=zgrad0*HBH'*zcglwk
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                      &
-!>   &                          tl_TLmodVal(iobs)*                      &
-!>   &                          vgrad0(iobs)+                           &
-!>   &                          TLmodVal_S(iobs,innLoop,outLoop)*       &
-!>   &                          tl_vgrad0(iobs)/                        &
-!>   &                          cg_beta(innLoop,outLoop)
+!^            tl_cg_QG(innLoop)=tl_cg_QG(innLoop)+                      &
+!^   &                          tl_TLmodVal(iobs)*                      &
+!^   &                          vgrad0(iobs)+                           &
+!^   &                          TLmodVal_S(iobs,innLoop,outLoop)*       &
+!^   &                          tl_vgrad0(iobs)/                        &
+!^   &                          cg_beta(innLoop,outLoop)
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       vgrad0(iobs)*ad_cg_QG(innLoop)
               ad_vgrad0(iobs)=ad_vgrad0(iobs)+                          &
@@ -1355,8 +1356,8 @@
      &                        ad_cg_QG(innLoop)/                        &
      &                        cg_beta(innLoop,outLoop)
             END DO
-!>          tl_cg_QG(innLoop)=0.0_r8
-!>
+!^          tl_cg_QG(innLoop)=0.0_r8
+!^
             ad_cg_QG(innLoop)=0.0_r8
 !
 !  Selime code: t1=t1/beta=TLmodVal
@@ -1364,21 +1365,21 @@
 !  AUGMENTED
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_TLmodVal(iobs)=tl_TLmodVal(iobs)/                      &
-!>   &                          cg_beta(innLoop,outLoop)-               &
-!>   &                          tl_cg_beta(innLoop)*                    &
-!>   &                          TLmodVal_S(iobs,innLoop,outLoop)/       &
-!>   &                          (cg_beta(innLoop,outLoop)*              &
-!>   &                           cg_beta(innLoop,outLoop))
-!>
+!^            tl_TLmodVal(iobs)=tl_TLmodVal(iobs)/                      &
+!^   &                          cg_beta(innLoop,outLoop)-               &
+!^   &                          tl_cg_beta(innLoop)*                    &
+!^   &                          TLmodVal_S(iobs,innLoop,outLoop)/       &
+!^   &                          (cg_beta(innLoop,outLoop)*              &
+!^   &                           cg_beta(innLoop,outLoop))
+!^
               ad_cg_beta(innLoop)=ad_cg_beta(innLoop)-                  &
      &                            TLmodVal_S(iobs,innLoop,outLoop)*     &
      &                            ADmodVal(iobs)/                       &
      &                            (cg_beta(innLoop,outLoop)*            &
      &                             cg_beta(innLoop,outLoop))
               ADmodVal(iobs)=ADmodVal(iobs)/cg_beta(innLoop,outLoop)
-!>            tl_TLmodVal_S(iobs,innLoop,outLoop)=tl_TLmodVal(iobs)
-!>
+!^            tl_TLmodVal_S(iobs,innLoop,outLoop)=tl_TLmodVal(iobs)
+!^
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       ad_TLmodVal_S(iobs,innLoop,outLoop)
               ad_TLmodVal_S(iobs,innLoop,outLoop)=0.0_r8
@@ -1387,22 +1388,22 @@
 !  Selime code: z1=w/beta=vcglwk
 !
             DO iobs=1,Ndatum(ng)+1
-!>            tl_vcglwk(iobs,innLoop)=tl_vcglwk(iobs,innLoop)/          &
-!>   &                                cg_beta(innLoop,outLoop)-         &
-!>   &                                tl_cg_beta(innLoop)*              &
-!>   &                                vcglwk(iobs,innLoop,outLoop)/     &
-!>   &                                cg_beta(innLoop,outLoop)
+!^            tl_vcglwk(iobs,innLoop)=tl_vcglwk(iobs,innLoop)/          &
+!^   &                                cg_beta(innLoop,outLoop)-         &
+!^   &                                tl_cg_beta(innLoop)*              &
+!^   &                                vcglwk(iobs,innLoop,outLoop)/     &
+!^   &                                cg_beta(innLoop,outLoop)
               ad_cg_beta(innLoop)=ad_cg_beta(innLoop)-                  &
      &                            vcglwk(iobs,innLoop,outLoop)*         &
      &                            ad_vcglwk(iobs,innLoop)/              &
      &                            cg_beta(innLoop,outLoop)
               ad_vcglwk(iobs,innLoop)=ad_vcglwk(iobs,innLoop)/          &
      &                                cg_beta(innLoop,outLoop)
-!>            tl_zcglwk(iobs,innLoop)=tl_pgrad(iobs)/                   &
-!>   &                                cg_beta(innLoop,outLoop)-         &
-!>   &                                tl_cg_beta(innLoop)*              &
-!>   &                                zcglwk(iobs,innLoop,outLoop)/     &
-!>   &                                cg_beta(innLoop,outLoop)
+!^            tl_zcglwk(iobs,innLoop)=tl_pgrad(iobs)/                   &
+!^   &                                cg_beta(innLoop,outLoop)-         &
+!^   &                                tl_cg_beta(innLoop)*              &
+!^   &                                zcglwk(iobs,innLoop,outLoop)/     &
+!^   &                                cg_beta(innLoop,outLoop)
               ad_cg_beta(innLoop)=ad_cg_beta(innLoop)-                  &
      &                            zcglwk(iobs,innLoop,outLoop)*         &
      &                            ad_zcglwk(iobs,innLoop)/              &
@@ -1420,22 +1421,22 @@
      &                    cg_beta(innLoop,outLoop)
             END DO
 !
-!>          tl_cg_beta(innLoop)=0.5_r8*tl_cg_beta(innLoop)/             &
-!>   &                          cg_beta(innLoop,outLoop)
-!>
+!^          tl_cg_beta(innLoop)=0.5_r8*tl_cg_beta(innLoop)/             &
+!^   &                          cg_beta(innLoop,outLoop)
+!^
             ad_cg_beta(innLoop)=0.5_r8*ad_cg_beta(innLoop)/             &
      &                         cg_beta(innLoop,outLoop)
-!>          tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                    &
-!>   &                          tl_Jb0(outLoop-1)*                      &
-!>   &                          pgrad(Ndatum(ng)+1)*                    &
-!>   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)+   &
-!>   &                          Jb0(outLoop-1)*                         &
-!>   &                          tl_pgrad(Ndatum(ng)+1)*                 &
-!>   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)+   &
-!>   &                          Jb0(outLoop-1)*                         &
-!>   &                          pgrad(Ndatum(ng)+1)*                    &
-!>   &                          tl_vcglwk(Ndatum(ng)+1,innLoop)
-!>
+!^          tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                    &
+!^   &                          tl_Jb0(outLoop-1)*                      &
+!^   &                          pgrad(Ndatum(ng)+1)*                    &
+!^   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)+   &
+!^   &                          Jb0(outLoop-1)*                         &
+!^   &                          tl_pgrad(Ndatum(ng)+1)*                 &
+!^   &                          vcglwk(Ndatum(ng)+1,innLoop,outLoop)+   &
+!^   &                          Jb0(outLoop-1)*                         &
+!^   &                          pgrad(Ndatum(ng)+1)*                    &
+!^   &                          tl_vcglwk(Ndatum(ng)+1,innLoop)
+!^
             ad_Jb0(outLoop-1)=ad_Jb0(outLoop-1)+                        &
      &                        pgrad(Ndatum(ng)+1)*                      &
      &                        vcglwk(Ndatum(ng)+1,innLoop,outLoop)*     &
@@ -1451,26 +1452,26 @@
      &                            ad_cg_beta(innLoop)
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                  &
-!>   &                            tl_Hbk(iobs)*                         &
-!>   &                            vcglwk(Ndatum(ng)+1,innLoop,outLoop)* &
-!>   &                            pgrad(iobs)+                          &
-!>   &                            Hbk(iobs,outLoop)*                    &
-!>   &                            tl_vcglwk(Ndatum(ng)+1,innLoop)*      &
-!>   &                            pgrad(iobs)+                          &
-!>   &                            Hbk(iobs,outLoop)*                    &
-!>   &                            vcglwk(Ndatum(ng)+1,innLoop,outLoop)* &
-!>   &                            tl_pgrad(iobs)+                       &
-!>   &                            tl_Hbk(iobs)*                         &
-!>   &                            pgrad(Ndatum(ng)+1)*                  &
-!>   &                            vcglwk(iobs,innLoop,outLoop)+         &
-!>   &                            Hbk(iobs,outLoop)*                    &
-!>   &                            tl_pgrad(Ndatum(ng)+1)*               &
-!>   &                            vcglwk(iobs,innLoop,outLoop)+         &
-!>   &                            Hbk(iobs,outLoop)*                    &
-!>   &                            pgrad(Ndatum(ng)+1)*                  &
-!>   &                            tl_vcglwk(iobs,innLoop)
-!>
+!^            tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                  &
+!^   &                            tl_Hbk(iobs)*                         &
+!^   &                            vcglwk(Ndatum(ng)+1,innLoop,outLoop)* &
+!^   &                            pgrad(iobs)+                          &
+!^   &                            Hbk(iobs,outLoop)*                    &
+!^   &                            tl_vcglwk(Ndatum(ng)+1,innLoop)*      &
+!^   &                            pgrad(iobs)+                          &
+!^   &                            Hbk(iobs,outLoop)*                    &
+!^   &                            vcglwk(Ndatum(ng)+1,innLoop,outLoop)* &
+!^   &                            tl_pgrad(iobs)+                       &
+!^   &                            tl_Hbk(iobs)*                         &
+!^   &                            pgrad(Ndatum(ng)+1)*                  &
+!^   &                            vcglwk(iobs,innLoop,outLoop)+         &
+!^   &                            Hbk(iobs,outLoop)*                    &
+!^   &                            tl_pgrad(Ndatum(ng)+1)*               &
+!^   &                            vcglwk(iobs,innLoop,outLoop)+         &
+!^   &                            Hbk(iobs,outLoop)*                    &
+!^   &                            pgrad(Ndatum(ng)+1)*                  &
+!^   &                            tl_vcglwk(iobs,innLoop)
+!^
               ad_Hbk(iobs)=ad_Hbk(iobs)+                                &
      &                     vcglwk(Ndatum(ng)+1,innLoop,outLoop)*        &
      &                     pgrad(iobs)*                                 &
@@ -1501,27 +1502,27 @@
 !  Selime code:  beta=pgrad*HBH'*pgrad=cg_beta
 !
             DO iobs=1,Ndatum(ng)
-!>            tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                  &
-!>   &                            tl_pgrad(iobs)*                       &
-!>   &                            TLmodVal_S(iobs,innLoop,outLoop)+     &
-!>   &                            pgrad(iobs)*                          &
-!>   &                            tl_TLmodVal(iobs)
+!^            tl_cg_beta(innLoop)=tl_cg_beta(innLoop)+                  &
+!^   &                            tl_pgrad(iobs)*                       &
+!^   &                            TLmodVal_S(iobs,innLoop,outLoop)+     &
+!^   &                            pgrad(iobs)*                          &
+!^   &                            tl_TLmodVal(iobs)
               ad_pgrad(iobs)=ad_pgrad(iobs)+                            &
      &                       TLmodVal_S(iobs,innLoop,outLoop)*          &
      &                       ad_cg_beta(innLoop)
               ADmodVal(iobs)=ADmodVal(iobs)+                            &
      &                       pgrad(iobs)*ad_cg_beta(innLoop)
             END DO
-!>          tl_cg_beta(innLoop)=0.0_r8
-!>
+!^          tl_cg_beta(innLoop)=0.0_r8
+!^
             ad_cg_beta(innLoop)=0.0_r8
 !
             DO iobs=1,Ndatum(ng)+1
 !
 !  Selime code: w=pgrad, t1=TLmodVal.
 !
-!>            tl_pgrad(iobs)=tl_zcglwk(iobs,innLoop)
-!>
+!^            tl_pgrad(iobs)=tl_zcglwk(iobs,innLoop)
+!^
               ad_zcglwk(iobs,innLoop)=ad_zcglwk(iobs,innLoop)+          &
      &                                ad_pgrad(iobs)
               ad_pgrad(iobs)=0.0_r8
@@ -1533,11 +1534,11 @@
 !
         IF (innLoop.gt.0) THEN
           DO iobs=1,Ndatum(ng)
-!>          TLmodVal(iobs)=ObsScale(iobs)*                              &
-!>   &                     TLmodVal(iobs)+                              &
-!>   &                     tl_ObsScale(iobs)*                           &
-!>   &                     TLmodVal_S(iobs,innLoop,outLoop)
-!>
+!^          TLmodVal(iobs)=ObsScale(iobs)*                              &
+!^   &                     TLmodVal(iobs)+                              &
+!^   &                     tl_ObsScale(iobs)*                           &
+!^   &                     TLmodVal_S(iobs,innLoop,outLoop)
+!^
             ad_ObsScale(iobs)=ad_ObsScale(iobs)+                        &
      &                        TLmodVal_S(iobs,innLoop,outLoop)*         &
      &                        ADmodVal(iobs)

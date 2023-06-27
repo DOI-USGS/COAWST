@@ -1,7 +1,9 @@
+      MODULE mod_biology
 !
-!svn $Id: npzd_Powell_mod.h 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: npzd_Powell_mod.h 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +33,9 @@
 !  wDet      Detrital sinking rate, [m/day].                           !
 !  wPhy      Phytoplankton sinking rate, [m/day].                      !
 !  ZooEED    Zooplankton excretion efficiency to Detritus pool,        !
-!              [nondimensional].                                       !
+!              {nondimensional].                                       !
 !  ZooEEN    Zooplankton excretion efficiency to Nitrogen pool,        !
-!              [nondimensional].                                       !
+!              {nondimensional].                                       !
 !  ZooGR     Zooplankton grazing rate, [1/day].                        !
 !  ZooMRD    Zooplankton mortality rate to Detritus pool, [1/day].     !
 !  ZooMRN    Zooplankton mortality rate to Nitrogen pool, [1/day].     !
@@ -94,9 +96,9 @@
       real(r8), allocatable :: ZooGR(:)        ! 1/day
       real(r8), allocatable :: ZooMRD(:)       ! 1/day
       real(r8), allocatable :: ZooMRN(:)       ! 1/day
-
+!
       CONTAINS
-
+!
       SUBROUTINE initialize_biology
 !
 !=======================================================================
@@ -271,6 +273,8 @@
       iPhyt=ic+2
       iZoop=ic+3
       iSDet=ic+4
-
+!
       RETURN
       END SUBROUTINE initialize_biology
+
+      END MODULE mod_biology

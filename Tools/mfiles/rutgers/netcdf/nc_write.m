@@ -34,9 +34,9 @@ function status = nc_write(ncfile, Vname, f, varargin)
 %    status      Error flag
 %
 
-% svn $Id: nc_write.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_write.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -210,6 +210,11 @@ end
 fmin = min(f(:));
 fmax = max(f(:));
 
+% Compute bitsum/checksum value.
+
+ind = ~isnan(f(:));
+CheckSum = bitcount(f(ind));
+
 % Replace NaNs if any with fill value.
 
 if (got.FillValue)
@@ -262,11 +267,13 @@ if (nvdims > 1)
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' into record: ',num2str(Tindex,'%4.4i'),                     ...
           ', Min=',sprintf('%12.5e',fmin),                              ...
-          ' Max=',sprintf('%12.5e',fmax)]);
+          ' Max=',sprintf('%12.5e',fmax),                               ...
+	  ' CheckSum=',num2str(CheckSum)]);
   else
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' Min=',sprintf('%12.5e',fmin),                               ...
-          ' Max=',sprintf('%12.5e',fmax)]);
+          ' Max=',sprintf('%12.5e',fmax),                               ...
+	  ' CheckSum=',num2str(CheckSum)]);
   end
 end
 
@@ -461,6 +468,11 @@ end
 fmin = min(f(:));
 fmax = max(f(:));
 
+% Compute bitsum/checksum value.
+
+ind = ~isnan(f(:));
+CheckSum = bitcount(f(ind));
+
 % Replace NaNs if any with fill value.
 
 if (got.FillValue)
@@ -545,11 +557,13 @@ if (status ~= -1 && nvdims > 1)
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' into record: ',num2str(Tindex,'%4.4i'),                     ...
           ', Min=',sprintf('%12.5e',fmin),                              ...
-          ' Max=',sprintf('%12.5e',fmax)]);
+          ' Max=',sprintf('%12.5e',fmax),                               ...
+	  ' CheckSum=',num2str(CheckSum)]);
   else
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' Min=',sprintf('%12.5e',fmin),                               ...
-          ' Max=',sprintf('%12.5e',fmax)]);
+          ' Max=',sprintf('%12.5e',fmax),                               ...
+	  ' CheckSum=',num2str(CheckSum)]);
   end
 end
 

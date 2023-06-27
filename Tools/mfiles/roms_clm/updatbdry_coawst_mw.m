@@ -42,6 +42,7 @@ netcdf.putVar(nc_bndry,tmptimeid,ocean_time);
 %% zeta
 zetclmid = netcdf.inqVarID(nc_clm,'zeta');%get id
 zeta=netcdf.getVar(nc_clm,zetclmid);%get variable
+
 zeta_south=zeta(:,1,:);
 zetbdyids = netcdf.inqVarID(nc_bndry,'zeta_south');%get id
 netcdf.putVar(nc_bndry,zetbdyids,zeta_south);%set variable
@@ -52,6 +53,15 @@ zetbdyide = netcdf.inqVarID(nc_bndry,'zeta_east');%get id
 netcdf.putVar(nc_bndry,zetbdyide,zeta_east);%set variable
 clear zeta_east
 
+zeta_west=zeta(1,:,:);
+zetbdyidw = netcdf.inqVarID(nc_bndry,'zeta_west');%get id
+netcdf.putVar(nc_bndry,zetbdyidw,zeta_west);%set variable
+clear zeta_west
+
+zeta_north=zeta(:,end,:);
+zetbdyidn = netcdf.inqVarID(nc_bndry,'zeta_north');%get id
+netcdf.putVar(nc_bndry,zetbdyidn,zeta_north);%set variable
+clear zeta_north
 %% ubar
 ubarclmid = netcdf.inqVarID(nc_clm,'ubar');
 ubarclm=netcdf.getVar(nc_clm,ubarclmid);
@@ -65,6 +75,16 @@ ubar_east=ubarclm(end,:,:);
 ubarbdyide = netcdf.inqVarID(nc_bndry,'ubar_east');
 netcdf.putVar(nc_bndry,ubarbdyide,ubar_east);
 clear ubar_east
+
+ubar_west=ubarclm(1,:,:);
+ubarbdyidw = netcdf.inqVarID(nc_bndry,'ubar_west');
+netcdf.putVar(nc_bndry,ubarbdyidw,ubar_west);
+clear ubar_west
+
+ubar_north=ubarclm(:,end,:);
+ubarbdyidn = netcdf.inqVarID(nc_bndry,'ubar_north');
+netcdf.putVar(nc_bndry,ubarbdyidn,ubar_north);
+clear ubar_north
 
 %% vbar
 vbarclmid = netcdf.inqVarID(nc_clm,'vbar');
@@ -80,6 +100,15 @@ vbarbdyide = netcdf.inqVarID(nc_bndry,'vbar_east');
 netcdf.putVar(nc_bndry,vbarbdyide,vbar_east);
 clear vbar_east
 
+vbar_west=vbarclm(1,:,:);
+vbarbdyidw = netcdf.inqVarID(nc_bndry,'vbar_west');
+netcdf.putVar(nc_bndry,vbarbdyidw,vbar_west);
+clear vbar_west
+
+vbar_north=vbarclm(:,end,:);
+vbarbdyidn = netcdf.inqVarID(nc_bndry,'vbar_north');
+netcdf.putVar(nc_bndry,vbarbdyidn,vbar_north);
+clear vbar_north
 
 %% u
 uclmid = netcdf.inqVarID(nc_clm,'u');
@@ -95,6 +124,16 @@ ubdyide = netcdf.inqVarID(nc_bndry,'u_east');
 netcdf.putVar(nc_bndry,ubdyide,u_east);
 clear u_east
 
+u_west=uclm(1,:,:,:);
+ubdyidw = netcdf.inqVarID(nc_bndry,'u_west');
+netcdf.putVar(nc_bndry,ubdyidw,u_west);
+clear u_west
+
+u_north=uclm(:,end,:,:);
+ubdyidn = netcdf.inqVarID(nc_bndry,'u_north');
+netcdf.putVar(nc_bndry,ubdyidn,u_north);
+clear u_north
+
 %% v
 vclmid = netcdf.inqVarID(nc_clm,'v');
 vclm=netcdf.getVar(nc_clm,vclmid);
@@ -108,6 +147,16 @@ v_east=vclm(end,:,:,:);
 vbdyide = netcdf.inqVarID(nc_bndry,'v_east');
 netcdf.putVar(nc_bndry,vbdyide,v_east);
 clear v_east
+
+v_west=vclm(end,:,:,:);
+vbdyidw = netcdf.inqVarID(nc_bndry,'v_west');
+netcdf.putVar(nc_bndry,vbdyidw,v_west);
+clear v_west
+
+v_north=vclm(:,end,:,:);
+vbdyidn = netcdf.inqVarID(nc_bndry,'v_north');
+netcdf.putVar(nc_bndry,vbdyidn,v_north);
+clear v_north
 
 %% temp
 tempclmid = netcdf.inqVarID(nc_clm,'temp');
@@ -123,6 +172,16 @@ tempbdyide = netcdf.inqVarID(nc_bndry,'temp_east');
 netcdf.putVar(nc_bndry,tempbdyide,temp_east);
 clear temp_east
 
+temp_west=tempclm(1,:,:,:);
+tempbdyidw = netcdf.inqVarID(nc_bndry,'temp_west');
+netcdf.putVar(nc_bndry,tempbdyidw,temp_west);
+clear temp_west
+
+temp_north=tempclm(:,end,:,:);
+tempbdyidn = netcdf.inqVarID(nc_bndry,'temp_north');
+netcdf.putVar(nc_bndry,tempbdyidn,temp_north);
+clear temp_north
+
 %% salt
 saltclmid = netcdf.inqVarID(nc_clm,'salt');
 saltclm=netcdf.getVar(nc_clm,saltclmid);
@@ -137,6 +196,15 @@ saltbdyide = netcdf.inqVarID(nc_bndry,'salt_east');
 netcdf.putVar(nc_bndry,saltbdyide,salt_east);
 clear salt_east
 
+salt_west=saltclm(1,:,:,:);
+saltbdyidw = netcdf.inqVarID(nc_bndry,'salt_west');
+netcdf.putVar(nc_bndry,saltbdyidw,salt_west);
+clear salt_west
+
+salt_north=saltclm(:,end,:,:);
+saltbdyidn = netcdf.inqVarID(nc_bndry,'salt_north');
+netcdf.putVar(nc_bndry,saltbdyidn,salt_north);
+clear salt_north
 %%
 netcdf.close(nc_bndry);
 netcdf.close(nc_clm);

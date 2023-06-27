@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE mod_mixing
 !
-!svn $Id: mod_mixing.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_mixing.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -152,9 +153,17 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_mixing
+        PUBLIC :: deallocate_mixing
+        PUBLIC :: initialize_mixing
+!
+!-----------------------------------------------------------------------
+!  Define T_MIXING structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_MIXING
 !
 !  Nonlinear model state.
@@ -266,12 +275,6 @@
 # endif
 # ifdef BV_FREQUENCY
           real(r8), pointer :: bvf(:,:,:)
-# endif
-# ifdef M2TIDE_DIFF
-          real(r8), pointer :: m2_amp(:,:)
-# endif
-# if defined MIX_ISO_TS || defined GENT_McWILLIAMS
-          real(r8), pointer :: neutral(:,:,:)
 # endif
 # if defined GLS_MIXING || defined MY25_MIXING
           real(r8), pointer :: tke(:,:,:,:)
@@ -421,11 +424,11 @@
 #endif
 
         END TYPE T_MIXING
-
+!
         TYPE (T_MIXING), allocatable :: MIXING(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_mixing (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -438,7 +441,7 @@
       USE mod_param
       USE mod_scalars
 !
-!  Local variable declarations.
+!  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
@@ -618,16 +621,6 @@
 
 # ifdef BV_FREQUENCY
       allocate ( MIXING(ng) % bvf(LBi:UBi,LBj:UBj,0:N(ng)) )
-      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
-# endif
-
-# ifdef M2TIDE_DIFF
-      allocate ( MIXING(ng) % m2_amp(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-# endif
-
-# if defined MIX_ISO_TS || defined GENT_McWILLIAMS
-      allocate ( MIXING(ng) % neutral(LBi:UBi,LBj:UBj,0:N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 
@@ -885,10 +878,489 @@
 #  endif
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE allocate_mixing
+!
+      SUBROUTINE deallocate_mixing (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_scalars
 
+#ifdef SUBOBJECT_DEALLOCATION
+!
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_mixing"
+
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_MIXING structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+# ifndef ANA_SPONGE
+      IF (LuvSponge(ng)) THEN
+        IF (.not.destroy(ng, MIXING(ng)%visc_factor, MyFile,            &
+     &                   __LINE__, 'MIXING(ng)%visc_factor')) RETURN
+      END IF
+# endif
+
+# if defined UV_VIS2
+      IF (.not.destroy(ng, MIXING(ng)%visc2_p, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%visc2_p')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%visc2_r, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%visc2_r')) RETURN
+# endif
+
+# ifdef UV_VIS4
+      IF (.not.destroy(ng, MIXING(ng)%visc4_p, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%visc4_p')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%visc4_r, MyFile,                  &
+     &                  __LINE__, 'MIXING(ng)%visc4_r')) RETURN
+# endif
+
+# ifdef VISC_3DCOEF
+      IF (.not.destroy(ng, MIXING(ng)%Hviscosity, MyFile,               &
+     &                 __LINE__, 'MIXING(ng)%Hviscosity')) RETURN
+
+#  ifdef UV_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%Uvis3d_r, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%Uvis3d_r')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Vvis3d_r, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%Vvis3d_r')) RETURN
+#  else
+      IF (.not.destroy(ng, MIXING(ng)%visc3d_r, MyFile,                 &
+     &                  __LINE__, 'MIXING(ng)%visc3d_r')) RETURN
+#  endif
+# endif
+
+# ifdef WEC
+      IF (.not.destroy(ng, MIXING(ng)%rustr2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rustr2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvstr2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvstr2d')) RETURN
+# endif
+# ifdef WEC_MELLOR
+      IF (.not.destroy(ng, MIXING(ng)%Sxx_bar, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%Sxx_bar')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Sxy_bar, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%Sxy_bar')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Syy_bar, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%Syy_bar')) RETURN
+# endif
+# ifdef WEC_VF
+      IF (.not.destroy(ng, MIXING(ng)%rurol2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rurol2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvrol2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvrol2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rubrk2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rubrk2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvbrk2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvbrk2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rukvf2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rukvf2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvkvf2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvkvf2d')) RETURN
+
+#  ifdef BOTTOM_STREAMING
+      IF (.not.destroy(ng, MIXING(ng)%rubst2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rubst2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvbst2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvbst2d')) RETURN
+#  endif
+#  ifdef SURFACE_STREAMING
+      IF (.not.destroy(ng, MIXING(ng)%russt2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%russt2d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvsst2d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvsst2d')) RETURN
+#  endif
+# endif
+
+# ifdef SOLVE3D
+#  ifdef WEC_VF
+      IF (.not.destroy(ng, MIXING(ng)%rustr3d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rustr3d')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%rvstr3d, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%rvstr3d')) RETURN
+#  endif
+#  ifdef WEC_MELLOR
+      IF (.not.destroy(ng, MIXING(ng)%Sxx, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Sxx')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Sxy, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Sxy')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Syy, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Syy')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Szx, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Szx')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Szy, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Szy')) RETURN
+#  endif
+# endif
+
+# ifdef SOLVE3D
+#  ifndef ANA_SPONGE
+      IF (ANY(LtracerSponge(:,ng))) THEN
+        IF (.not.destroy(ng, MIXING(ng)%diff_factor, MyFile,            &
+     &                   __LINE__, 'MIXING(ng)%diff_factor')) RETURN
+      END IF
+#  endif
+
+#  ifdef TS_DIF2
+      IF (.not.destroy(ng, MIXING(ng)%diff2, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%diff2')) RETURN
+#  endif
+
+#  ifdef TS_DIF4
+      IF (.not.destroy(ng, MIXING(ng)%diff4, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%diff4')) RETURN
+#  endif
+
+#  ifdef DIFF_3DCOEF
+      IF (.not.destroy(ng, MIXING(ng)%Hdiffusion, MyFile,               &
+     &                 __LINE__, 'MIXING(ng)%Hdiffusion')) RETURN
+
+#   ifdef TS_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%diff3d_u, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%diff3d_u')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%diff3d_v, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%diff3d_v')) RETURN
+#   else
+      IF (.not.destroy(ng, MIXING(ng)%diff3d_r, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%diff3d_r')) RETURN
+#   endif
+#  endif
+
+      IF (.not.destroy(ng, MIXING(ng)%Akv, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Akv')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Akt, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Akt')) RETURN
+
+#  ifdef FLOAT_VWALK
+      IF (.not.destroy(ng, MIXING(ng)%dAktdz, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%dAktdz')) RETURN
+#  endif
+
+#  if defined LMD_SKPP    || defined LMD_BKPP         || \
+     defined BULK_FLUXES || defined BALANCE_OPERATOR
+      IF (.not.destroy(ng, MIXING(ng)%alpha, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%alpha')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%beta, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%beta')) RETURN
+#  endif
+
+#  ifdef BV_FREQUENCY
+      IF (.not.destroy(ng, MIXING(ng)%bvf, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%bvf')) RETURN
+#  endif
+
+#  if defined GLS_MIXING || defined MY25_MIXING
+      IF (.not.destroy(ng, MIXING(ng)%tke, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%tke')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%gls, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%gls')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Lscale, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%Lscale')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%Akk, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Akk')) RETURN
+
+#   ifdef GLS_MIXING
+      IF (.not.destroy(ng, MIXING(ng)%Akp, MyFile,                      &
+     &                 __LINE__, 'MIXING(ng)%Akp')) RETURN
+#   endif
+#  endif
+
+#  if defined LMD_MIXING && defined LMD_DDMIX
+      IF (.not.destroy(ng, MIXING(ng)%alfaobeta, MyFile,                &
+     &                 __LINE__, 'MIXING(ng)%alfaobeta')) RETURN
+#  endif
+
+#  if defined LMD_SKPP || defined SOLAR_SOURCE
+      IF (.not.destroy(ng, MIXING(ng)%Jwtype, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%Jwtype')) RETURN
+#  endif
+
+#  if defined LMD_SKPP || defined LMD_BKPP
+      IF (.not.destroy(ng, MIXING(ng)%ksbl, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%ksbl')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%hsbl, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%hsbl')) RETURN
+
+#   ifdef LMD_BKPP
+      IF (.not.destroy(ng, MIXING(ng)%kbbl, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%kbbl')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%hbbl, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%hbbl')) RETURN
+#   endif
+
+#   ifdef LMD_NONLOCAL
+      IF (.not.destroy(ng, MIXING(ng)%ghats, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%ghats')) RETURN
+#   endif
+
+#  endif
+# endif
+
+# ifdef FOUR_DVAR
+!
+!  Spatial convolution diffusion coefficients.
+!
+      IF (.not.destroy(ng, MIXING(ng)%Kh, MyFile,                       &
+     &                 __LINE__, 'MIXING(ng)%Kh')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, MIXING(ng)%Kv, MyFile,                       &
+     &                 __LINE__, 'MIXING(ng)%Kv')) RETURN
+#  endif
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+#  ifdef SOLVE3D
+#   ifdef DIFF_3DCOEF
+#    ifdef TS_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%tl_diff3d_u, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_diff3d_u')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_diff3d_v, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_diff3d_v')) RETURN
+#    else
+      IF (.not.destroy(ng, MIXING(ng)%tl_diff3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_diff3d_r')) RETURN
+#    endif
+#   endif
+
+#   ifdef VISC_3DCOEF
+#    ifdef UV_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%tl_Uvis3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_Uvis3d_r')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_Vvis3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_Vvis3d_r')) RETURN
+#    else
+      IF (.not.destroy(ng, MIXING(ng)%tl_visc3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%tl_visc3d_r')) RETURN
+#    endif
+#   endif
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_Akv, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_Akv')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_Akt, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_Akt')) RETURN
+
+#   if defined LMD_SKPP || defined LMD_BKPP || defined BULK_FLUXES
+      IF (.not.destroy(ng, MIXING(ng)%tl_alpha, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%tl_alpha')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_beta, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%tl_beta')) RETURN
+#   endif
+
+#   ifdef BV_FREQUENCY
+      IF (.not.destroy(ng, MIXING(ng)%tl_bvf, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_bvf')) RETURN
+#   endif
+
+#   if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%tl_tke, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_tke')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_gls, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_gls')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_Lscale, MyFile,                &
+     &                 __LINE__, 'MIXING(ng)%tl_Lscale')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%tl_Akk, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_Akk')) RETURN
+#   endif
+
+#   ifdef GLS_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%tl_Akp, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%tl_Akp')) RETURN
+#   endif
+#  endif
+# endif
+
+# ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+#  ifdef SOLVE3D
+#   ifdef DIFF_3DCOEF
+#    ifdef TS_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%ad_diff3d_u, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_diff3d_u')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_diff3d_v, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_diff3d_v')) RETURN
+#    else
+      IF (.not.destroy(ng, MIXING(ng)%ad_diff3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_diff3d_r')) RETURN
+#    endif
+#   endif
+
+#   ifdef VISC_3DCOEF
+#    ifdef UV_U3ADV_SPLIT
+      IF (.not.destroy(ng, MIXING(ng)%ad_Uvis3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_Uvis3d_r')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_Vvis3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_Vvis3d_r')) RETURN
+#    else
+      IF (.not.destroy(ng, MIXING(ng)%ad_visc3d_r, MyFile,              &
+     &                 __LINE__, 'MIXING(ng)%ad_visc3d_r')) RETURN
+#    endif
+#   endif
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_Akv, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_Akv')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_Akt, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_Akt')) RETURN
+
+#   if defined LMD_SKPP || defined LMD_BKPP || defined BULK_FLUXES
+      IF (.not.destroy(ng, MIXING(ng)%ad_alpha, MyFile,                 &
+     &                 __LINE__, 'MIXING(ng)%ad_alpha')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_beta, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%ad_beta')) RETURN
+#   endif
+
+#   ifdef BV_FREQUENCY
+      IF (.not.destroy(ng, MIXING(ng)%ad_bvf, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_bvf')) RETURN
+#   endif
+
+#   if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%ad_tke, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_tke')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_gls, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_gls')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_Lscale, MyFile,                &
+     &                 __LINE__, 'MIXING(ng)%ad_Lscale')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%ad_Akk, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_Akk')) RETURN
+#   endif
+
+#   ifdef GLS_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%ad_Akp, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ad_Akp')) RETURN
+#   endif
+#  endif
+# endif
+
+# if defined FORWARD_READ && \
+   (defined TANGENT || defined TL_IOMS || defined ADJOINT)
+#  ifdef FORWARD_MIXING
+!
+!  Latest two records of the nonlinear trajectory used to interpolate
+!  the background state in the tangent linear and adjoint models.
+!
+      IF (.not.destroy(ng, MIXING(ng)%AkvG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%AkvG')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%AktG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%AktG')) RETURN
+#  endif
+
+#  if defined LMD_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%hsblG, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%hsblG')) RETURN
+#  endif
+
+#  if defined LMD_BKPP_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%hbblG, MyFile,                    &
+     &                 __LINE__, 'MIXING(ng)%hbblG')) RETURN
+#  endif
+
+#  if defined LMD_NONLOCAL_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%ghatsG, MyFile,                   &
+     &                 __LINE__, 'MIXING(ng)%ghatsG')) RETURN
+#  endif
+
+#  if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%tkeG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%tkeG')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%glsG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%glsG')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%LscaleG, MyFile,                  &
+     &                 __LINE__, 'MIXING(ng)%LscaleG')) RETURN
+
+      IF (.not.destroy(ng, MIXING(ng)%AkkG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%AkkG')) RETURN
+
+#   ifdef GLS_MIXING_NOT_YET
+      IF (.not.destroy(ng, MIXING(ng)%AkpG, MyFile,                     &
+     &                 __LINE__, 'MIXING(ng)%AkpG')) RETURN
+#   endif
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type MIXING structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(MIXING)) deallocate ( MIXING )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_mixing
+!
       SUBROUTINE initialize_mixing (ng, tile, model)
 !
 !=======================================================================
@@ -914,9 +1386,7 @@
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
-#  if defined GLS_MIXING || defined MY25_MIXING
       real(r8) :: cff1, cff2, cff3, cff4
-#endif
 
 #include "set_bounds.h"
 !
@@ -1112,18 +1582,6 @@
           DO k=0,N(ng)
             DO i=Imin,Imax
               MIXING(ng) % bvf(i,j,k) = IniVal
-            END DO
-          END DO
-# endif
-# ifdef M2TIDE_DIFF
-          DO i=Imin,Imax
-            MIXING(ng) % m2_amp(i,j) = IniVal
-          END DO
-# endif
-# if defined MIX_ISO_TS || defined GENT_McWILLIAMS
-          DO k=0,N(ng)
-            DO i=Imin,Imax
-              MIXING(ng) % neutral(i,j,k) = IniVal
             END DO
           END DO
 # endif

@@ -2,9 +2,10 @@
       MODULE ini_fields_mod
 #ifdef NONLINEAR
 !
-!svn $Id: ini_fields.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ini_fields.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -158,9 +159,6 @@
 # endif
 # ifdef SOLVE3D
       USE t3dbc_mod, ONLY : t3dbc_tile
-#  ifdef T_PASSIVE
-      USE pt3dbc_mod, ONLY : pt3dbc_tile
-#  endif
       USE u3dbc_mod, ONLY : u3dbc_tile
       USE v3dbc_mod, ONLY : v3dbc_tile
 # endif
@@ -270,7 +268,7 @@
       integer :: ised
 # endif
 
-      real(r8) :: cff1, cff2, cff3, cff4, cff5, cff6, cff7
+      real(r8) :: cff1, cff2
 # ifdef SOLVE3D
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
@@ -633,25 +631,6 @@
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
      &                     t)
-!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!#  ifdef T_PASSIVE
-!         ELSE
-!        IF (itrc .ge. inert(1) .and. itrc .le. inert(NPT)) THEN
-!!         else condition added by Weifeng Zhang for passive tracer
-!!         boundary condition
-!          CALL pt3dbc_tile (ng, tile, itrc,                             &
-!     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
-!     &                      IminS, ImaxS, JminS, JmaxS,                 &
-!     &                      nstp, nstp,                                 &
-!     &                      t)
-!          CALL pt3dbc_tile (ng, tile, itrc,                             &
-!     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
-!     &                      IminS, ImaxS, JminS, JmaxS,                 &
-!     &                      nstp, nnew,                                 &
-!     &                      t)
-!#  endif
-!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!         END IF
         END DO
       END IF
 !
@@ -945,8 +924,6 @@
       real(r8) :: cff1
 
 # include "set_bounds.h"
-
-#ifndef OFFLINE_FLOATS
 !
 !-----------------------------------------------------------------------
 !  Initialize other time levels for free-surface.
@@ -1090,8 +1067,6 @@
      &                    rmask_wet)
 #  endif
 # endif
-
-#endif  /* OFFLINE_FLOATS */
 
 # ifdef SOLVE3D
 !

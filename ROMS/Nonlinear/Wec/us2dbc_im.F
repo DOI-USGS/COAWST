@@ -35,6 +35,8 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 #include "tile.h"
 !
       CALL us2dbc_tile (ng, tile,                                       &

@@ -2,9 +2,10 @@
       MODULE omega_mod
 #ifdef SOLVE3D
 !
-!svn $Id: omega.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: omega.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -126,7 +127,7 @@
 # ifdef ASSUMED_SHAPE
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:,LBj:)
-      real(r8), intent(in):: bed_thick(LBi:,LBj:,:)
+      real(r8), intent(in) :: bed_thick(LBi:,LBj:,:)
 #  endif
       real(r8), intent(in) :: Huon(LBi:,LBj:,:)
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
@@ -147,7 +148,7 @@
 
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
-      real(r8), intent(in):: bed_thick(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in) :: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
@@ -171,10 +172,10 @@
 # if (defined SEDIMENT && defined SED_MORPH)
       real(r8) :: fac
 # endif
+      real(r8) :: cff
       real(r8), dimension(IminS:ImaxS) :: wrk
 # if defined OMEGA_IMPLICIT
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: Cu_adv
-      real(r8) :: cff
       real(r8) :: cw, c2d, dh, cutoff, cw_max, cw_max2
       real(r8) :: cw_min, cmnx_ratio, r4cmx
 
@@ -240,6 +241,8 @@
 !  above but add in point source Qsrc(k) and reaccumulate the vertical
 !  sum to obtain the correct net Qbar given in user input - J. Levin
 !  (Jupiter Intelligence Inc.) and J. Wilkin
+!
+!    Dsrc(is) = 2,  flow across grid cell w-face (positive or negative)
 !
         IF (LwSrc(ng)) THEN
           DO is=1,Nsrc(ng)

@@ -27,7 +27,7 @@ function cmap = cm_ice(varargin)
 %   selection, Oceanography, 29(3), 9-13, http://dx.doi.org/10.5670/oceanog.2016.66 
 % 
 
-% svn $Id: cm_ice.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: cm_ice.m 1156 2023-02-18 01:44:37Z arango $
 
 % Initialize.
 

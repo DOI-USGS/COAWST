@@ -2,16 +2,18 @@
 
 #undef CUBIC_MASKED    /* Bicubic interpolation with mask, needs work */
 
-      MODULE interpolate_mod
+      MODULE roms_interpolate_mod
 !
-!svn $Id: interpolate.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: interpolate.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
 !                                                                      !
-!  This module contains several all purpuse generic routines:          !
+!  This module contains several all-purpose generic interpolations     !
+!  routines:                                                           !
 !                                                                      !
 !  Routines:                                                           !
 !                                                                      !
@@ -21,21 +23,155 @@
 !    try_range     Binary search of model grid cell for any datum.     !
 !    inside        Closed polygon datum search.                        !
 !                                                                      !
+!  Overloading routines using "roms_interp_type" structure, S, that    !
+!  can be used in the ROMS-JEDI interface.                             !
+!                                                                      !
+!    - Interpolate a ROMS 2D state field to observation locations      !
+!      (ObsVetting is an optional output argument)                     !
+!                                                                      !
+!      roms_datum_interp (S, fld2d, datum(:), method)                  !
+!                                                                      !
+!    - Interpolate a ROMS 3D state field to observation locations      !
+!      (ObsVetting is an optional output argument)                     !
+!                                                                      !
+!      roms_datum_interp (S, fld3d, zfld3d, zlocs(:), datum(:), method)!
+!                                                                      !
+!    - Interpolate a ROMS 3D state field to observation locations      !
+!      level-by-level and returns datum(1:nlevs,1:nlocs)               !
+!                                                                      !
+!      roms_datum_interp (S, fld3d, zfld3d, datum(:,:), method)        !
+!                                                                      !
+!    - Interpolate a ROMS 2D source field to a new destination         !
+!      location (2D remapping)                                         !
+!                                                                      !
+!      roms_horiz_interp (S, fld2d_src, fld2d_dst, method)             !
+!                                                                      !
+!    - Interpolate a ROMS 3D source field to a new destination         !
+!      locations level-by-level (3D remapping)                         !
+!                                                                      !
+!      roms_horiz_interp (S, fld2d_src, fld2d_dst, method)             !
+!                                                                      !
+!  Managing routines for "roms_interp_type" structure, S:              !
+!                                                                      !
+!    - Creates a ROMS interpolation object                             !
+!                                                                      !
+!      roms_interp_create (ng, S)                                      !
+!                                                                      !
+!    - Deallocates pointer arrays in the interpolation structure       !
+!                                                                      !
+!      roms_interp_delete (S)                                          !
+!                                                                      !
+!    - Computes the horizontal fractional coordinates S%x_dst and      !
+!      S%y_dst of the source cells containing the destination values   !
+!                                                                      !
+!      roms_interp_fractional (S)                                      !
+!                                                                      !
 !=======================================================================
 !
-      USE mod_kinds
-
+      USE mod_param
+      USE mod_parallel
+      USE mod_grid
+      USE mod_ncparam
+      USE mod_scalars
+!
+#ifdef DISTRIBUTE
+      USE distribute_mod, ONLY : mp_assemble
+#endif
+      USE mod_iounits,    ONLY : stdout
+      USE strings_mod,    ONLY : FoundError
+!
       implicit none
+!
+!-----------------------------------------------------------------------
+!  Set ROMS interpolation structure for Object Oriented Programming.
+!-----------------------------------------------------------------------
+!
+      TYPE :: roms_interp_type
 
+        logical :: rectangular = .FALSE.            ! plaid grid switch
+!
+        integer :: ng                               ! nested grid number
+        integer :: model                            ! model identifier
+!
+        real(r8):: spval                            ! unbounded value
+!
+!  Source grid array declaration bounds, tile partition range,
+!  longitude/latitude, curvilinear angle, and land/sea mask
+!
+        integer :: LBi_src, UBi_src, LBj_src, UBj_src
+        integer :: Istr_src, Iend_src, Jstr_src, Jend_src
+!
+        real(r8) :: min_src, max_src
+!
+        real(r8), allocatable :: lon_src(:,:)
+        real(r8), allocatable :: lat_src(:,:)
+
+        real(r8), allocatable :: angle_src(:,:)
+        real(r8), allocatable :: mask_src(:,:)
+!
+!  Destination grid array declaration bounds, tile partition range,
+!  longitude/latitude, fractional coordinates, and land/sea mask.
+!
+        integer :: LBi_dst, UBi_dst, LBj_dst, UBj_dst
+        integer :: Istr_dst, Iend_dst, Jstr_dst, Jend_dst
+!
+        real(r8) :: min_dst, max_dst
+!
+        real(r8), allocatable :: lon_dst(:,:)
+        real(r8), allocatable :: lat_dst(:,:)
+
+        real(r8), allocatable :: mask_dst(:,:)
+
+        real(r8), allocatable :: x_dst(:,:)
+        real(r8), allocatable :: y_dst(:,:)
+
+      END TYPE roms_interp_type
+!
+!  Interpolation methods available
+!
+      integer, parameter :: BilinearMethod = 0    ! bilinear
+      integer, parameter :: BicubicMethod = 1     ! bicubic
+!
+!-----------------------------------------------------------------------
+!  Interface for same name routine overloading.
+!-----------------------------------------------------------------------
+!
+     INTERFACE roms_datum_interp
+       MODULE PROCEDURE roms_datum_interp_2d
+       MODULE PROCEDURE roms_datum_interp_3d
+       MODULE PROCEDURE roms_datum_column_interp
+     END INTERFACE roms_datum_interp
+!
+     INTERFACE roms_horiz_interp
+       MODULE PROCEDURE roms_horiz_interp_2d
+       MODULE PROCEDURE roms_horiz_interp_3d
+     END INTERFACE roms_horiz_interp
+!
+!-----------------------------------------------------------------------
+!  Interpolation routines.
+!-----------------------------------------------------------------------
+!
+      PUBLIC  :: linterp2d
+      PUBLIC  :: cinterp2d
+      PUBLIC  :: hindices
+!
+      PUBLIC  :: roms_interp_delete
+      PUBLIC  :: roms_interp_fractional
+!
+      PRIVATE :: inside
+      PRIVATE :: try_range
+!
+!-----------------------------------------------------------------------
       CONTAINS
-
+!-----------------------------------------------------------------------
+!
       SUBROUTINE linterp2d (ng, LBx, UBx, LBy, UBy,                     &
      &                      Xinp, Yinp, Finp,                           &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      Istr, Iend, Jstr, Jend,                     &
      &                      Iout, Jout,                                 &
      &                      Xout, Yout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                      Fout, MinVal, MaxVal)
 !
 !=======================================================================
 !                                                                      !
@@ -71,13 +207,10 @@
 !  On Output:                                                          !
 !                                                                      !
 !     Fout       Interpolated 2D field.                                !
-!     Fmin       Interpolated field minimum value.                     !
-!     Fmax       Interpolated field maximum value.                     !
+!     MinVal     Interpolated field minimum value (Optional).          !
+!     MaxVal     Interpolated field maximum value (Optional).          !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_scalars
 !
 !  Imported variable declarations.
 !
@@ -96,13 +229,15 @@
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
 !
-      real(r8), intent(out) :: Fmin, Fmax
+      real(r8), intent(out), optional :: MinVal
+      real(r8), intent(out), optional :: MaxVal
 !
 !  Local variable declarations.
 !
       integer :: i, i1, i2, j, j1, j2
-
+!
       real(r8) :: p1, p2, q1, q2
+      real(r8) :: Fmin, Fmax
 !
 !-----------------------------------------------------------------------
 !  Linearly interpolate requested field
@@ -131,16 +266,26 @@
           END IF
         END DO
       END DO
-
+!
+!  Return minimum and maximum values.
+!
+      IF (PRESENT(MinVal)) THEN
+        MinVal=Fmin
+      END IF
+      IF (PRESENT(MaxVal)) THEN
+        MaxVal=Fmax
+      END IF
+!
+      RETURN
       END SUBROUTINE linterp2d
-
+!
       SUBROUTINE cinterp2d (ng, LBx, UBx, LBy, UBy,                     &
      &                      Xinp, Yinp, Finp,                           &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      Istr, Iend, Jstr, Jend,                     &
      &                      Iout, Jout,                                 &
      &                      Xout, Yout,                                 &
-     &                      Fout, Fmin, Fmax)
+     &                      Fout, MinVal, MaxVal)
 !
 !=======================================================================
 !                                                                      !
@@ -177,13 +322,10 @@
 !  On Output:                                                          !
 !                                                                      !
 !     Fout       Interpolated 2D field.                                !
-!     Fmin       Interpolated field minimum value.                     !
-!     Fmax       Interpolated field maximum value.                     !
+!     MinVal     Interpolated field minimum value (OPTIONAL).          !
+!     MaxVal     Interpolated field maximum value (OPTIONAL).          !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_param
-      USE mod_scalars
 !
 !  Imported variable declarations.
 !
@@ -202,17 +344,18 @@
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
 !
-      real(r8), intent(out) :: Fmin, Fmax
+      real(r8), intent(out), optional :: MinVal
+      real(r8), intent(out), optional :: MaxVal
 !
 !  Local variable declarations.
 !
       integer i, ic, iter, i1, i2, j, jc, j1, j2
-
+!
       real(r8) :: a11, a12, a21, a22
       real(r8) :: e11, e12, e21, e22
       real(r8) :: cff, d1, d2, dfc, dx, dy, eta, xi, xy, yx
       real(r8) :: f0, fx, fxx, fxxx, fxxy, fxy, fxyy, fy, fyy, fyyy
-
+!
       real(r8), parameter :: C01 = 1.0_r8/48.0_r8
       real(r8), parameter :: C02 = 1.0_r8/32.0_r8
       real(r8), parameter :: C03 = 0.0625_r8                  ! 1/16
@@ -227,6 +370,8 @@
       real(r8), parameter :: LIMTR = 3.0_r8
       real(r8), parameter :: spv = 0.0_r8            ! HGA need work
 
+      real(r8) :: Fmin, Fmax
+!
       real(r8), dimension(-1:2,-1:2) :: dfx, dfy, f
 !
 !-----------------------------------------------------------------------
@@ -562,10 +707,19 @@
           END IF
         END DO
       END DO
-
+!
+!  Return minimum and maximum values.
+!
+      IF (PRESENT(MinVal)) THEN
+        MinVal=Fmin
+      END IF
+      IF (PRESENT(MaxVal)) THEN
+        MaxVal=Fmax
+      END IF
+!
       RETURN
       END SUBROUTINE cinterp2d
-
+!
       SUBROUTINE hindices (ng, LBi, UBi, LBj, UBj,                      &
      &                     Is, Ie, Js, Je,                              &
      &                     angler, Xgrd, Ygrd,                          &
@@ -619,15 +773,13 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-      USE mod_scalars
-!
 !  Imported variable declarations.
 !
-      logical, intent(in) :: rectangular
-      integer, intent(in) :: ng
-      integer, intent(in) :: LBi, UBi, LBj, UBj, Is, Ie, Js, Je
-      integer, intent(in) :: LBm, UBm, LBn, UBn, Ms, Me, Ns, Ne
+      logical,  intent(in) :: rectangular
+!
+      integer,  intent(in) :: ng
+      integer,  intent(in) :: LBi, UBi, LBj, UBj, Is, Ie, Js, Je
+      integer,  intent(in) :: LBm, UBm, LBn, UBn, Ms, Me, Ns, Ne
 
       real(r8), intent(in) :: IJspv
 !
@@ -779,10 +931,10 @@
           END IF
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE hindices
-
+!
       LOGICAL FUNCTION try_range (ng, LBi, UBi, LBj, UBj, Xgrd, Ygrd,   &
      &                            Imin, Imax, Jmin, Jmax, Xo, Yo)
 !
@@ -798,12 +950,10 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_param
-!
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, LBi, UBi, LBj, UBj
-      integer, intent(in) :: Imin, Imax, Jmin, Jmax
+      integer,  intent(in) :: ng, LBi, UBi, LBj, UBj
+      integer,  intent(in) :: Imin, Imax, Jmin, Jmax
 
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Xgrd(LBi:,LBj:)
@@ -857,9 +1007,10 @@
 !-----------------------------------------------------------------------
 !
       try_range=inside(Nb, Xb, Yb, Xo, Yo)
+!
       RETURN
       END FUNCTION try_range
-
+!
       LOGICAL FUNCTION inside (Nb, Xb, Yb, Xo, Yo)
 !
 !=======================================================================
@@ -939,9 +1090,9 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: Nb
+      integer,  intent(in   ) :: Nb
 
-      real(r8), intent(in) :: Xo, Yo
+      real(r8), intent(in   ) :: Xo, Yo
 
 #ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: Xb(:), Yb(:)
@@ -951,12 +1102,14 @@
 !
 !  Local variable declarations.
 !
+      logical :: ItIsInside
+!
       integer, parameter :: Nstep =128
 
       integer :: crossings, i, inc, k, kk, nc
 
       integer, dimension(Nstep) :: Sindex
-
+!
       real(r8) :: dx1, dx2, dxy
 !
 !-----------------------------------------------------------------------
@@ -965,6 +1118,7 @@
 !
 !  Set crossings counter and close the contour of the polygon.
 !
+      ItIsInside=.FALSE.
       crossings=0
       Xb(Nb+1)=Xb(1)
       Yb(Nb+1)=Yb(1)
@@ -993,7 +1147,8 @@
             inc=0
             IF ((Xb(k).eq.Xo).and.(Yb(k).eq.Yo)) THEN
               crossings=1
-              goto 10
+              ItIsInside=.TRUE.               ! terminate inner DO-loop
+              EXIT
             ELSE IF (((dx1.eq.0.0_r8).and.(Yo.ge.Yb(k  ))).or.          &
      &              ((dx2.eq.0.0_r8).and.(Yo.ge.Yb(k+1)))) THEN
               inc=1
@@ -1008,16 +1163,714 @@
             END IF
           END IF
         END DO
+        IF (ItIsInside) EXIT                  ! terminate outer DO-loop
       END DO
 !
 !  Determine if point (Xo,Yo) is inside of closed polygon.
 !
-  10  IF (crossings.eq.0) THEN
+      IF (crossings.eq.0) THEN
         inside=.FALSE.
       ELSE
         inside=.TRUE.
       END IF
+!
       RETURN
       END FUNCTION inside
+!
+      SUBROUTINE roms_datum_interp_2d (S, fld_src, datum, method,       &
+     &                                 ObsVetting)
+!
+!=======================================================================
+!                                                                      !
+!  Interpolates a ROMS 2D field to observation locations.              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     S          Interpolation structure, TYPE(roms_interp_type),      !
+!                  initialized elsewhere                               !
+!     fld_src    2D source field data (real)                           !
+!     method     Interpolation method flag (integer)                   !
+!                  BilinearMethod => bilinear interpolation            !
+!                  BicubicMethod  => bicubic  interpolation            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     datum      Interpolated values at datum locations (vector).      !
+!     ObsVetting Observation screenning flag, 0: reject or 1: accept   !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      integer,  intent(in   ) :: method
+!
+      real(r8), intent(in   ) :: fld_src(:,:)
+      real(r8), intent(out  ) :: datum(:)
 
-      END MODULE interpolate_mod
+      real(r8), intent(inout), optional :: ObsVetting(:)
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      integer :: ic, iobs, i1, i2, j1, j2, nlocs
+!
+      real(r8) :: p1, p2, q1, q2, wsum
+
+      real(r8), dimension(4) :: Hmat
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", roms_datum_interp_2d"
+!
+!-----------------------------------------------------------------------
+!  Interpolates a 2D ROMS state field to observation locations.
+!-----------------------------------------------------------------------
+!
+      nlocs=SIZE(datum, DIM=1)
+!
+      DO iobs=1,nlocs
+        i1=INT(S%x_dst(iobs,1))
+        j1=INT(S%y_dst(iobs,1))
+        IF (((S%Istr_src.le.i1).and.(i1.lt.S%Iend_src)).and.            &
+     &      ((S%Jstr_src.le.j1).and.(j1.lt.S%Jend_src))) THEN
+          i2=i1+1
+          j2=j1+1
+          p2=REAL(i2-i1,r8)*(S%x_dst(iobs,1)-REAL(i1,r8))
+          q2=REAL(j2-j1,r8)*(S%y_dst(iobs,1)-REAL(j1,r8))
+          p1=1.0_r8-p2
+          q1=1.0_r8-q2
+          Hmat(1)=p1*q1
+          Hmat(2)=p2*q1
+          Hmat(3)=p2*q2
+          Hmat(4)=p1*q2
+#ifdef MASKING
+          Hmat(1)=Hmat(1)*S%mask_src(i1,j1)
+          Hmat(2)=Hmat(2)*S%mask_src(i2,j1)
+          Hmat(3)=Hmat(3)*S%mask_src(i2,j2)
+          Hmat(4)=Hmat(4)*S%mask_src(i1,j2)
+          wsum=0.0_r8
+          DO ic=1,4
+            wsum=wsum+Hmat(ic)
+          END DO
+          IF (wsum.gt.0.0_r8) THEN
+            wsum=1.0_r8/wsum
+            DO ic=1,4
+              Hmat(ic)=Hmat(ic)*wsum
+            END DO
+          END IF
+#endif
+          datum(iobs)=Hmat(1)*fld_src(i1,j1)+                          &
+     &                Hmat(2)*fld_src(i2,j1)+                          &
+     &                Hmat(3)*fld_src(i2,j2)+                          &
+     &                Hmat(4)*fld_src(i1,j2)
+!
+!  Set observation screening flag, 0: reject or 1: accept.
+!
+          IF (PRESENT(ObsVetting)) THEN
+#ifdef MASKING
+            IF (wsum.gt.0.0_r8) ObsVetting(iobs)=1.0_r8
+#else
+            ObsVetting(iobs)=1.0_r8
+#endif
+          END IF
+        END IF
+      END DO
+!
+      RETURN
+      END SUBROUTINE roms_datum_interp_2d
+!
+      SUBROUTINE roms_datum_interp_3d (S, fld_src, z_src, z_locs,      &
+                                       datum, method, obsVetting)
+!
+!=======================================================================
+!                                                                      !
+!  Interpolates a 3D ROMS field to observation horizontal and vertical !
+!  locations.                                                          !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     S          Interpolation structure, TYPE(roms_interp_type),      !
+!                  initialized elsewhere                               !
+!     fld_src    3D source field data (real)                           !
+!     z_src      3D source field depth (real; meter; negative)         !
+!     z_locs     Datum depth locations (real vector). Negative values  !
+!                  are depths in meters while positive values are in   !
+!                  vertical fractional coordinates of 1 to N.          !
+!     method     Interpolation method flag (integer)                   !
+!                  BilinearMethod => bilinear interpolation            !
+!                  BicubicMethod  => bicubic  interpolation            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     datum      Interpolated values at observation locations (vector) !
+!     ObsVetting Observation screenning flag, 0: reject or 1: accept   !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      integer,  intent( in) :: method
+!
+      real(r8), intent( in) :: fld_src(:,:,:)
+      real(r8), intent( in) :: z_src(:,:,:)
+      real(r8), intent( in) :: z_locs(:)
+      real(r8), intent(out) :: datum(:)
+
+      real(r8), intent(inout), optional :: ObsVetting(:)
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      integer :: ic, iobs, i1, i2, j1, j2, k, k1, k2, nlevs, nlocs
+!
+      real(r8) :: Zbot, Ztop, dz, p1, p2, q1, q2, r1, r2
+      real(r8) :: w11, w12, w21, w22, wsum
+
+      real(r8), dimension(8) :: Hmat
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", roms_datum_interp_3d"
+!
+!-----------------------------------------------------------------------
+!  Interpolate from 3D ROMS state field at observation locations.
+!-----------------------------------------------------------------------
+!
+      nlevs=SIZE(fld_src, DIM=3)
+      nlocs=SIZE(datum, DIM=1)
+!
+      DO iobs=1,nlocs
+        i1=INT(S%x_dst(iobs,1))
+        j1=INT(S%y_dst(iobs,1))
+        IF (((S%Istr_src.le.i1).and.(i1.lt.S%Iend_src)).and.            &
+     &      ((S%Jstr_src.le.j1).and.(j1.lt.S%Jend_src))) THEN
+          i2=i1+1
+          j2=j1+1
+          p2=REAL(i2-i1,r8)*(S%x_dst(iobs,1)-REAL(i1,r8))
+          q2=REAL(j2-j1,r8)*(S%y_dst(iobs,1)-REAL(j1,r8))
+          p1=1.0_r8-p2
+          q1=1.0_r8-q2
+          w11=p1*q1
+          w21=p2*q1
+          w22=p2*q2
+          w12=p1*q2
+          IF (z_locs(iobs).gt.0.0_r8) THEN
+            k1=MAX(1,INT(z_locs(iobs)))        ! Positions in fractional
+            k2=MIN(INT(z_locs(iobs))+1,nlevs)  ! levels
+            r2=REAL(k2-k1,r8)*(z_locs(iobs)-REAL(k1,r8))
+            r1=1.0_r8-r2
+          ELSE
+            Ztop=z_src(i1,j1,nlevs)
+            Zbot=z_src(i1,j1,1    )
+            IF (z_locs(iobs).ge.Ztop) THEN
+              r1=0.0_r8                        ! If shallower, ignore.
+              r2=0.0_r8
+              IF (PRESENT(ObsVetting)) ObsVetting(iobs)=0.0_r8
+            ELSE IF (Zbot.ge.z_locs(iobs)) THEN
+              r1=0.0_r8                        ! If deeper, ignore.
+              r2=0.0_r8
+              IF (PRESENT(ObsVetting)) ObsVetting(iobs)=0.0_r8
+            ELSE
+              DO k=nlevs,2,-1                  ! Otherwise, interpolate
+                Ztop=z_src(i1,j1,k  )          ! to fractional level
+                Zbot=z_src(i1,j1,k-1)
+                IF ((Ztop.gt.z_locs(iobs)).and.                         &
+                    (z_locs(iobs).ge.Zbot)) THEN
+                  k1=k-1
+                  k2=k
+                END IF
+              END DO
+              dz=z_src(i1,j1,k2)-z_src(i1,j1,k1)
+              r2=(z_locs(iobs)-z_src(i1,j1,k1))/dz
+              r1=1.0_r8-r2
+            END IF
+          END IF
+          IF ((r1+r2).gt.0.0_r8) THEN
+            Hmat(1)=w11*r1
+            Hmat(2)=w21*r1
+            Hmat(3)=w22*r1
+            Hmat(4)=w12*r1
+            Hmat(5)=w11*r2
+            Hmat(6)=w21*r2
+            Hmat(7)=w22*r2
+            Hmat(8)=w12*r2
+#ifdef MASKING
+            Hmat(1)=Hmat(1)*S%mask_src(i1,j1)
+            Hmat(2)=Hmat(2)*S%mask_src(i2,j1)
+            Hmat(3)=Hmat(3)*S%mask_src(i2,j2)
+            Hmat(4)=Hmat(4)*S%mask_src(i1,j2)
+            Hmat(5)=Hmat(5)*S%mask_src(i1,j1)
+            Hmat(6)=Hmat(6)*S%mask_src(i2,j1)
+            Hmat(7)=Hmat(7)*S%mask_src(i2,j2)
+            Hmat(8)=Hmat(8)*S%mask_src(i1,j2)
+            wsum=0.0_r8
+            DO ic=1,8
+              wsum=wsum+Hmat(ic)
+            END DO
+            IF (wsum.gt.0.0_r8) THEN
+              wsum=1.0_r8/wsum
+              DO ic=1,8
+                Hmat(ic)=Hmat(ic)*wsum
+              END DO
+            END IF
+#endif
+            datum(iobs)=Hmat(1)*fld_src(i1,j1,k1)+                      &
+     &                  Hmat(2)*fld_src(i2,j1,k1)+                      &
+     &                  Hmat(3)*fld_src(i2,j2,k1)+                      &
+     &                  Hmat(4)*fld_src(i1,j2,k1)+                      &
+     &                  Hmat(5)*fld_src(i1,j1,k2)+                      &
+     &                  Hmat(6)*fld_src(i2,j1,k2)+                      &
+     &                  Hmat(7)*fld_src(i2,j2,k2)+                      &
+     &                  Hmat(8)*fld_src(i1,j2,k2)
+!
+!  Set observation screening flag, 0: reject or 1: accept.
+!
+            IF (PRESENT(ObsVetting)) THEN
+#ifdef MASKING
+              IF (wsum.gt.0.0_r8) ObsVetting(iobs)=1.0_r8
+#else
+              ObsVetting(iobs)=1.0_r8
+#endif
+#ifndef ALLOW_BOTTOM_OBS
+!
+!  Reject observations that lie in the lower bottom grid cell (k=1) to
+!  avoid clustering due shallowing of bathymetry during smoothing and
+!  coarse level half-thickness (-h < z_locs < z_src(:,:,1)) in deep
+!  water.
+!
+              IF ((z_locs(iobs).gt.0.0_r8).and.                         &
+                  (z_locs(iobs).le.1.0_r8)) THEN
+                ObsVetting(iobs)=0.0_r8
+              END IF
+#endif
+            END IF
+          END IF
+        END IF
+      END DO
+!
+      RETURN
+      END SUBROUTINE roms_datum_interp_3d
+!
+      SUBROUTINE roms_datum_column_interp (S, fld_src, datum, method)
+!
+!=======================================================================
+!                                                                      !
+!  Horizontally interpolates a 3D ROMS field to datum locations        !
+!  level-by-level. The vertical interpolation will be carried out      !
+!  elsewhere from the full column of values.  This is what is          !
+!  required by the JEDI-UFO operator.                                  !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     S          Interpolation structure, TYPE(roms_interp_type),      !
+!                  initialized elsewhere.                              !
+!     fld_src    3D field source data (real).                          !
+!     method     Interpolation method flag (integer)                   !
+!                  BilinearMethod => bilinear interpolation            !
+!                  BicubicMethod  => bicubic  interpolation            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     datum      Interpolated values at datum locations (matrix):      !
+!                  datum(nlocs,nlevs)                                  !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+      real(r8), intent( in) :: fld_src(:,:,:)
+      real(r8), intent(out) :: datum(:,:)
+!
+      integer,  intent( in) :: method
+!
+!  Local variable declarations.
+!
+      integer :: ic, iobs, i1, i2, j1, j2, k, nlevs, nlocs
+!
+      real(r8) :: p1, p2, q1, q2, wsum
+
+      real(r8), dimension(4) :: Hmat
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", roms_datum_interp_2d"
+!
+!-----------------------------------------------------------------------
+!  Interpolate from 2D state field to datum locations.
+!-----------------------------------------------------------------------
+!
+      nlevs=SIZE(fld_src, DIM=3)
+      nlocs=SIZE(datum, DIM=1)
+!
+      DO iobs=1,nlocs
+        i1=INT(S%x_dst(iobs,1))
+        j1=INT(S%y_dst(iobs,1))
+        IF (((S%Istr_src.le.i1).and.(i1.lt.S%Iend_src)).and.            &
+     &      ((S%Jstr_src.le.j1).and.(j1.lt.S%Jend_src))) THEN
+          i2=i1+1
+          j2=j1+1
+          p2=REAL(i2-i1,r8)*(S%x_dst(iobs,1)-REAL(i1,r8))
+          q2=REAL(j2-j1,r8)*(S%y_dst(iobs,1)-REAL(j1,r8))
+          p1=1.0_r8-p2
+          q1=1.0_r8-q2
+          Hmat(1)=p1*q1
+          Hmat(2)=p2*q1
+          Hmat(3)=p2*q2
+          Hmat(4)=p1*q2
+#ifdef MASKING
+          Hmat(1)=Hmat(1)*S%mask_src(i1,j1)
+          Hmat(2)=Hmat(2)*S%mask_src(i2,j1)
+          Hmat(3)=Hmat(3)*S%mask_src(i2,j2)
+          Hmat(4)=Hmat(4)*S%mask_src(i1,j2)
+          wsum=0.0_r8
+          DO ic=1,4
+            wsum=wsum+Hmat(ic)
+          END DO
+          IF (wsum.gt.0.0_r8) THEN
+            wsum=1.0_r8/wsum
+            DO ic=1,4
+              Hmat(ic)=Hmat(ic)*wsum
+            END DO
+          END IF
+#endif
+          DO k=1,nlevs
+            datum(iobs,k)=Hmat(1)*fld_src(i1,j1,k)+                    &
+     &                    Hmat(2)*fld_src(i2,j1,k)+                    &
+     &                    Hmat(3)*fld_src(i2,j2,k)+                    &
+     &                    Hmat(4)*fld_src(i1,j2,k)
+          END DO
+        END IF
+      END DO
+!
+      RETURN
+      END SUBROUTINE roms_datum_column_interp
+!
+      SUBROUTINE roms_horiz_interp_2d (S, fld_src, fld_dst, method)
+!
+!=======================================================================
+!                                                                      !
+!  Interpolate a ROMS 2D source field to a new destination locations.  !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     S          Interpolation structure, TYPE(roms_interp_type),      !
+!                  initialized elsewhere.                              !
+!     fld_src    2D field source data (real).                          !
+!     method     Interpolation method flag (integer)                   !
+!                  BilinearMethod => bilinear interpolation            !
+!                  BicubicMethod  => bicubic  interpolation            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     fld_dst    2D interpolated field data (real).                    !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+      real(r8), intent(in ) :: fld_src(:,:)
+      real(r8), intent(out) :: fld_dst(:,:)
+!
+      integer,  intent(in ) :: method
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", roms_horiz_interp_2d"
+!
+!-----------------------------------------------------------------------
+!  Interpolate 2D field.
+!-----------------------------------------------------------------------
+!
+      SELECT CASE (method)
+        CASE (BilinearMethod)
+          CALL linterp2d (S%ng,                                         &
+     &                    S%LBi_src, S%UBi_src, S%LBj_src, S%UBj_src,   &
+     &                    S%lon_src, S%lat_src, fld_src,                &
+     &                    S%LBi_dst, S%UBi_dst, S%LBj_dst, S%UBj_dst,   &
+     &                    S%Istr_dst, S%Iend_dst,                       &
+     &                    S%Jstr_dst, S%Jend_dst,                       &
+     &                    S%x_dst, S%y_dst, S%lon_dst, S%lat_dst,       &
+     &                    fld_dst,                                      &
+     &                    MinVal = S%min_dst,                           &
+     &                    MaxVal = S%max_dst)
+        CASE (BicubicMethod)
+          CALL cinterp2d (S%ng,                                         &
+     &                    S%LBi_src, S%UBi_src, S%LBj_src, S%UBj_src,   &
+     &                    S%lon_src, S%lat_src, fld_src,                &
+     &                    S%LBi_dst, S%UBi_dst, S%LBj_dst, S%UBj_dst,   &
+     &                    S%Istr_dst, S%Iend_dst,                       &
+     &                    S%Jstr_dst, S%Jend_dst,                       &
+     &                    S%x_dst, S%y_dst, S%lon_dst, S%lat_dst,       &
+     &                    fld_dst,                                      &
+     &                    MinVal = S%min_dst,                           &
+     &                    MaxVal = S%max_dst)
+        CASE DEFAULT
+          IF (Master) WRITE(stdout,10) method
+          exit_flag=5
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (' ROMS_HORIZ_INTERP_2D - Illegal interpolation method =', &
+     &        i0)
+!
+      RETURN
+      END SUBROUTINE roms_horiz_interp_2d
+!
+      SUBROUTINE roms_horiz_interp_3d (S, fld_src, fld_dst, method)
+!
+!=======================================================================
+!                                                                      !
+!  Interpolate a ROMS 3D source field to a new destination locations   !
+!  level-by-level. There is no vertical interpolation.                 !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     S          Interpolation structure, TYPE(roms_interp_type),      !
+!                  initialized elsewhere.                              !
+!     fld_src    3D field source data (real).                          !
+!     method     Interpolation method flag (integer)                   !
+!                  BilinearMethod => bilinear interpolation            !
+!                  BicubicMethod  => bicubic  interpolation            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     fld_dst    3D interpolated field data (real).                    !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+      real(r8), intent( in) :: fld_src(:,:,:)
+      real(r8), intent(out) :: fld_dst(:,:,:)
+!
+      integer,  intent( in) :: method
+!
+!  Local variable declarations.
+!
+      integer :: k, nk
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", roms_horiz_interp_3d"
+!
+!-----------------------------------------------------------------------
+!  Interpolate 3D field level-by-level.
+!-----------------------------------------------------------------------
+!
+      nk=SIZE(fld_src, DIM=3)!
+!
+      SELECT CASE (method)
+        CASE (BilinearMethod)
+          DO k=1,nk
+            CALL linterp2d (S%ng,                                       &
+     &                      S%LBi_src, S%UBi_src, S%LBj_src, S%UBj_src, &
+     &                      S%lon_src, S%lat_src, fld_src(:,:,k),       &
+     &                      S%LBi_dst, S%UBi_dst, S%LBj_dst, S%UBj_dst, &
+     &                      S%Istr_dst, S%Iend_dst,                     &
+     &                      S%Jstr_dst, S%Jend_dst,                     &
+     &                      S%x_dst, S%y_dst, S%lon_dst, S%lat_dst,     &
+     &                      fld_dst(:,:,k),                             &
+     &                      MinVal = S%min_dst,                         &
+     &                      MaxVal = S%max_dst)
+          END DO
+        CASE (BicubicMethod)
+          DO k=1,nk
+            CALL cinterp2d (S%ng,                                       &
+     &                      S%LBi_src, S%UBi_src, S%LBj_src, S%UBj_src, &
+     &                      S%lon_src, S%lat_src, fld_src(:,:,k),       &
+     &                      S%LBi_dst, S%UBi_dst, S%LBj_dst, S%UBj_dst, &
+     &                      S%Istr_dst, S%Iend_dst,                     &
+     &                      S%Jstr_dst, S%Jend_dst,                     &
+     &                      S%x_dst, S%y_dst, S%lon_dst, S%lat_dst,     &
+     &                      fld_dst(:,:,k),                             &
+     &                      MinVal = S%min_dst,                         &
+     &                      MaxVal = S%max_dst)
+          END DO
+        CASE DEFAULT
+          IF (Master) WRITE(stdout,10) method
+          exit_flag=5
+      END SELECT
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+  10  FORMAT (' ROMS_HORIZ_INTERP_3D - Illegal interpolation method =', &
+     &        i0)
+!
+      RETURN
+      END SUBROUTINE roms_horiz_interp_3d
+!
+      SUBROUTINE roms_interp_create (ng, tile, gtype, S)
+!
+!=======================================================================
+!                                                                      !
+!  Creates ROMS intepolation Object.  The interpolation structure has  !
+!  two components: source and destination. Here, the source component  !
+!  is initialized. The destination component is initialized elsewhere  !
+!  for flexibility.                                                    !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, gtype
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      integer :: LBi, UBi, LBj, UBj
+!
+!-----------------------------------------------------------------------
+!  Creates source component of interpolation object.
+!-----------------------------------------------------------------------
+!
+!  If applicable, destroy interpolation object.
+!
+      IF (allocated(S%lon_src)) THEN
+        CALL roms_interp_delete (S)
+      END IF
+!
+!  Allocate source component arrays.
+!
+      LBi=BOUNDS(ng)%LBi(tile)
+      UBi=BOUNDS(ng)%UBi(tile)
+      LBj=BOUNDS(ng)%LBj(tile)
+      UBj=BOUNDS(ng)%UBj(tile)
+!
+      allocate ( S%lon_src(LBi:UBi,LBj:UBj) )
+      allocate ( S%lat_src(LBi:UBi,LBj:UBj) )
+      allocate ( S%angle_src(LBi:UBi,LBj:UBj) )
+#ifdef MASKING
+      allocate ( S%mask_src(LBi:UBi,LBj:UBj) )
+#endif
+!
+!  Associate and assign values to source component.
+!
+      S%ng = ng
+      S%model = iNLM
+      S%spval = 0.0_r8
+!
+      SELECT CASE (gtype)
+        CASE (r2dvar, r3dvar)
+          S%lon_src   = GRID(ng)%lonr
+          S%lat_src   = GRID(ng)%latr
+          S%angle_src = GRID(ng)%angler
+#ifdef MASKING
+          S%mask_src  = GRID(ng)%rmask
+#endif
+          S%Istr_src  = BOUNDS(ng)%IstrR(tile)
+          S%Iend_src  = BOUNDS(ng)%IendR(tile)
+          S%Jstr_src  = BOUNDS(ng)%JstrR(tile)
+          S%Jend_src  = BOUNDS(ng)%JendR(tile)
+        CASE (u2dvar, u3dvar)
+          S%lon_src   = GRID(ng)%lonu
+          S%lat_src   = GRID(ng)%latu
+          S%angle_src = GRID(ng)%angler
+#ifdef MASKING
+          S%mask_src  = GRID(ng)%umask
+#endif
+          S%Istr_src  = BOUNDS(ng)%Istr (tile)
+          S%Iend_src  = BOUNDS(ng)%IendR(tile)
+          S%Jstr_src  = BOUNDS(ng)%JstrR(tile)
+          S%Jend_src  = BOUNDS(ng)%JendR(tile)
+        CASE (v2dvar, v3dvar)
+          S%lon_src   = GRID(ng)%lonv
+          S%lat_src   = GRID(ng)%latv
+          S%angle_src = GRID(ng)%angler
+#ifdef MASKING
+          S%mask_src  = GRID(ng)%vmask
+#endif
+          S%Istr_src  = BOUNDS(ng)%IstrR(tile)
+          S%Iend_src  = BOUNDS(ng)%IendR(tile)
+          S%Jstr_src  = BOUNDS(ng)%Jstr (tile)
+          S%Jend_src  = BOUNDS(ng)%JendR(tile)
+      END SELECT
+!
+!
+      S%LBi_src = LBi
+      S%UBi_src = UBi
+      S%LBj_src = LBj
+      S%UBj_src = UBj
+!
+      RETURN
+      END SUBROUTINE roms_interp_create
+!
+      SUBROUTINE roms_interp_delete (S)
+!
+!=======================================================================
+!                                                                      !
+!  Deallocates pointer arrays in the intepolation structure, S.        !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+!-----------------------------------------------------------------------
+!  Deallocate interpolation structure.
+!-----------------------------------------------------------------------
+!
+      IF (allocated(S%angle_src)) deallocate (S%angle_src)
+      IF (allocated(S%lon_src))   deallocate (S%lon_src)
+      IF (allocated(S%lat_src))   deallocate (S%lat_src)
+      IF (allocated(S%mask_src))  deallocate (S%mask_src)
+
+      IF (allocated(S%lon_dst))   deallocate (S%lon_dst)
+      IF (allocated(S%lat_dst))   deallocate (S%lat_dst)
+      IF (allocated(S%mask_dst))  deallocate (S%mask_dst)
+      IF (allocated(S%x_dst))     deallocate (S%x_dst)
+      IF (allocated(S%y_dst))     deallocate (S%y_dst)
+!
+      RETURN
+      END SUBROUTINE roms_interp_delete
+!
+      SUBROUTINE roms_interp_fractional (S)
+!
+!=======================================================================
+!                                                                      !
+!  Computes the horizontal fractional coordinates (S%x_dst, S%y_dst)   !
+!  of the source cells containing the destination values.              !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      TYPE (roms_interp_type), intent(inout) :: S
+!
+!  Local variable declarations.
+!
+      integer :: Npts
+!
+!-----------------------------------------------------------------------
+!  Determine the horizontal fractional coordinates: S%x_dst and S%y_dst.
+!-----------------------------------------------------------------------
+!
+      CALL hindices (S%ng,                                              &
+     &               S%LBi_src,   S%UBi_src,  S%LBj_src,  S%UBj_src,    &
+     &               S%Istr_src , S%Iend_src, S%Jstr_src, S%Jend_src,   &
+     &               S%angle_src, S%lon_src,  S%lat_src,                &
+     &               S%LBi_dst,   S%UBi_dst,  S%LBj_dst,  S%UBj_dst,    &
+     &               S%Istr_dst,  S%Iend_dst, S%Jstr_dst, S%Jend_dst,   &
+     &               S%lon_dst,   S%lat_dst,  S%x_dst,    S%y_dst,      &
+     &               S%spval,     S%rectangular)
+
+#ifdef DISTRIBUTE
+!
+!-----------------------------------------------------------------------
+!  Collect fractional coordinates.
+!-----------------------------------------------------------------------
+!
+      Npts=SIZE(S%x_dst)
+      CALL mp_assemble (S%ng, S%model, Npts, S%spval, S%x_dst)
+      CALL mp_assemble (S%ng, S%model, Npts, S%spval, S%y_dst)
+#endif
+!
+      RETURN
+      END SUBROUTINE roms_interp_fractional
+!
+      END MODULE roms_interpolate_mod

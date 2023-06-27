@@ -2,9 +2,10 @@
 #ifdef DIAGNOSTICS
       SUBROUTINE set_diags (ng, tile)
 !
-!svn $Id: set_diags.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: set_diags.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -67,6 +68,9 @@
       USE mod_grid
       USE mod_ocean
       USE mod_scalars
+# ifdef DIAGNOSTICS_INWAVE
+      USE mod_inwave_params
+# endif
 !
       USE bc_2d_mod
 # ifdef SOLVE3D
@@ -75,13 +79,9 @@
       USE bc_4d_mod
 #  endif
 # endif
-# ifdef WET_DRY
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
-#  if defined WET_DRY || defined DIAGNOSTICS_BIO
       USE mp_exchange_mod, ONLY : mp_exchange2d
-#  endif
       USE mp_exchange_mod, ONLY : mp_exchange3d
 #  ifdef SOLVE3D
       USE mp_exchange_mod, ONLY : mp_exchange4d
@@ -162,10 +162,20 @@
           END DO
         END DO
 # endif
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
 !  Initialize.
 !
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            DIAGS(ng)%avgzeta(i,j)=OCEAN(ng)%zeta(i,j,Kout)
+# ifdef WET_DRY
+            DIAGS(ng)%avgzeta(i,j)=DIAGS(ng)%avgzeta(i,j)*              &
+     &                             GRID(ng)%rmask_full(i,j)
+# endif
+          END DO
+        END DO
+!
+# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 #  ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
           DO it=1,NT(ng)
@@ -230,6 +240,24 @@
 #   endif
 #  endif
 # endif
+# if defined DIAGNOSTICS_INWAVE
+!
+!  Initialize.
+!
+        DO idiag=1,NDInw
+          DO k=1,ND
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaInw(i,j,k,idiag)=                         &
+#   ifdef WET_DRY
+     &                    GRID(ng)%rmask_full(i,j)*                    &
+#   endif
+     &                    DIAGS(ng)%DiaInwrk(i,j,k,idiag)
+              END DO
+            END DO
+          END DO
+        END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Accumulate time-averaged fields.
@@ -276,10 +304,22 @@
           END DO
         END DO
 # endif
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
+!
+!  Accumulate free-surface.
+!
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            DIAGS(ng)%avgzeta(i,j)=DIAGS(ng)%avgzeta(i,j)+              &
+# ifdef WET_DRY
+     &                             GRID(ng)%rmask_full(i,j)*            &
+# endif
+     &                             OCEAN(ng)%zeta(i,j,kout)
+          END DO
+        END DO
 !
 !  Accumulate diagnostic terms.
 !
+# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 #  ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
           DO it=1,NT(ng)
@@ -347,6 +387,25 @@
 #   endif
 #  endif
 # endif
+# if defined DIAGNOSTICS_INWAVE
+!
+!  Accumulate diagnostic terms.
+!
+        DO idiag=1,NDInw
+          DO k=1,N(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaInw(i,j,k,idiag)=                        &
+     &                    DIAGS(ng)%DiaInw(i,j,k,idiag)+              &
+#   ifdef WET_DRY
+     &                    GRID(ng)%rmask_full(i,j)*                   &
+#   endif
+     &                    DIAGS(ng)%DiaInwrk(i,j,k,idiag)
+              END DO
+            END DO
+          END DO
+        END DO
+#  endif
       END IF
 !
 !-----------------------------------------------------------------------
@@ -451,6 +510,12 @@
 !
 !  Convert accumulated sums to time averages.
 !
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            DIAGS(ng)%avgzeta(i,j)=rfac(i,j)*DIAGS(ng)%avgzeta(i,j)
+          END DO
+        END DO
+
 # ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
           DO it=1,NT(ng)
@@ -548,14 +613,41 @@
         END DO
 #  endif
 # endif
+# ifdef DIAGNOSTICS_INWAVE
+        DO idiag=1,NDInw
+          DO k=1,ND
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaInw(i,j,k,idiag)=rfac(i,j)*               &
+     &                    DIAGS(ng)%DiaInw(i,j,k,idiag)
+              END DO
+            END DO
+          END DO
+        END DO
+# endif
 
 # if defined DIAGNOSTICS_TS  || defined DIAGNOSTICS_UV || \
-     defined DIAGNOSTICS_BIO
+     defined DIAGNOSTICS_BIO || defined DIAGNOSTICS_INWAVE
 !
 !-----------------------------------------------------------------------
 !  Apply periodic or gradient boundary conditions for output purposes.
 !-----------------------------------------------------------------------
 !
+!  Time-averaged free surface.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          DIAGS(ng)%avgzeta)
+      END IF
+#  ifdef DISTRIBUTE
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    DIAGS(ng)%avgzeta)
+#  endif
+
 #  ifdef DIAGNOSTICS_TS
 !
 !  3D tracer diagnostics.
@@ -682,6 +774,23 @@
      &                        DIAGS(ng)%DiaBio4d(:,:,:,:,idiag))
 #    endif
         END DO
+#   endif
+#  endif
+#  ifdef DIAGNOSTICS_INWAVE
+!
+!  InWave diagnostics.
+!
+        DO idiag=1,NDInw
+          CALL bc_r3d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj, 1, ND,                  &
+     &                      DIAGS(ng)%DiaInw(:,:,:,idiag))
+        END DO
+#   ifdef DISTRIBUTE
+          CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
+     &                        LBi, UBi, LBj, UBj, 1, ND,                &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
+     &                        DIAGS(ng)%DiaInw(:,:,:,idiag))
 #   endif
 #  endif
 # endif

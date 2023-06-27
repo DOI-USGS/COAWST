@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE nf_fread4d_mod
 !
-!svn $Id: nf_fread4d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: nf_fread4d.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,10 +18,24 @@
 !     model      Calling model identifier (integer)                    !
 !     ncname     NetCDF file name (string)                             !
 !     ncid       NetCDF file ID (integer)                              !
+#if defined PIO_LIB && defined DISTRIBUTE
+!or   pioFile    PIO file descriptor structure, TYPE(file_desc_t)      !
+!                  pioFile%fh         file handler                     !
+!                  pioFile%iosystem   IO system descriptor (struct)    !
+#endif
 !     ncvname    NetCDF variable name (string)                         !
 !     ncvarid    NetCDF variable ID (integer)                          !
+#if defined PIO_LIB && defined DISTRIBUTE
+!or   pioVar     PIO variable descriptor structure, TYPE(My_VarDesc)   !
+!                  pioVar%vd     variable descriptor TYPE(Var_Desc_t)  !
+!                  pioVar%dkind  variable data kind                    !
+!                  pioVar%gtype  variable C-gridtype                   !
+#endif
 !     tindex     NetCDF time record index to read (integer)            !
 !     gtype      C-grid type (integer)                                 !
+#if defined PIO_LIB && defined DISTRIBUTE
+!or   pioDesc    IO data decomposition descriptor, TYPE(IO_desc_t)     !
+#endif
 !     Vsize      Variable dimensions in NetCDF file (integer 1D array) !
 !     LBi        I-dimension Lower bound (integer)                     !
 !     UBi        I-dimension Upper bound (integer)                     !
@@ -37,46 +52,52 @@
 !                                                                      !
 !     Amin       Field minimum value (real)                            !
 !     Amax       Field maximum value (real)                            !
-!     A          Field to read in (real 4D array)                      !
+!     Adat       Field to read in (real 4D array)                      !
 !     checksum   Field checksum value (32-bit integer; OPTIONAL)       !
-!                                                                      !
-!     nf_fread4d Error flag (integer)                                  !
+!     status     Result error flag (integer)                           !
 !                                                                      !
 !=======================================================================
-!
-      implicit none
-
-      CONTAINS
-
-#if defined PARALLEL_IO && defined DISTRIBUTE
-!
-!***********************************************************************
-      FUNCTION nf_fread4d (ng, model, ncname, ncid,                     &
-     &                     ncvname, ncvarid,                            &
-     &                     tindex, gtype, Vsize,                        &
-     &                     LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt,      &
-     &                     Ascl, Amin, Amax,                            &
-# ifdef MASKING
-     &                     Amask,                                       &
-# endif
-     &                     A, checksum)
-!***********************************************************************
 !
       USE mod_param
       USE mod_parallel
       USE mod_iounits
       USE mod_ncparam
-      USE mod_netcdf
       USE mod_scalars
+!
+      USE get_hash_mod,   ONLY : get_hash
+      USE strings_mod,    ONLY : FoundError
+!
+      implicit none
+!
+      INTERFACE nf_fread4d
+        MODULE PROCEDURE nf90_fread4d
+#if defined PIO_LIB && defined DISTRIBUTE
+        MODULE PROCEDURE pio_fread4d
+#endif
+      END INTERFACE nf_fread4d
+!
+      CONTAINS
+
+#if defined PARALLEL_IO && defined DISTRIBUTE
+!
+!***********************************************************************
+      FUNCTION nf90_fread4d (ng, model, ncname, ncid,                   &
+     &                       ncvname, ncvarid,                          &
+     &                       tindex, gtype, Vsize,                      &
+     &                       LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt,    &
+     &                       Ascl, Amin, Amax,                          &
+# ifdef MASKING
+     &                       Amask,                                     &
+# endif
+     &                       Adat, checksum) RESULT (status)
+!***********************************************************************
+!
+      USE mod_netcdf
 !
       USE distribute_mod, ONLY : mp_bcasti, mp_reduce
 # if defined MASKING && defined READ_WATER
       USE distribute_mod, ONLY : mp_collect
 # endif
-      USE get_hash_mod,   ONLY : get_hash
-      USE strings_mod,    ONLY : FoundError
-!
-      implicit none
 !
 !  Imported variable declarations.
 !
@@ -97,12 +118,12 @@
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
 #  endif
-      real(r8), intent(out) :: A(LBi:,LBj:,LBk:,LBt:)
+      real(r8), intent(out) :: Adat(LBi:,LBj:,LBk:,LBt:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(out) :: A(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
+      real(r8), intent(out) :: Adat(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 # endif
 !
 !  Local variable declarations.
@@ -118,14 +139,12 @@
       integer :: Cgrid, MyType, ghost, status, wtype
 
       integer, dimension(5) :: start, total
-
-      integer :: nf_fread4d
 !
       real(r8) :: Afactor, Aoffset, Aspval
 
       real(r8), parameter :: IniVal= 0.0_r8
 
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
       real(r8), dimension(3) :: AttValue
 
 # if defined MASKING && defined READ_WATER
@@ -137,11 +156,13 @@
       character (len=12), dimension(3) :: AttName
 
       character (len=*), parameter :: MyFile =                          &
-     &  __FILE__
+     &  __FILE__//", nf90_fread4d"
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
 !-----------------------------------------------------------------------
+!
+      status=nf90_noerr
 !
 !  Set first and last grid point according to staggered C-grid
 !  classification. Set the offsets for variables with starting
@@ -219,7 +240,7 @@
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
-        nf_fread4d=ioerror
+        status=ioerror
         RETURN
       END IF
 
@@ -313,7 +334,6 @@
         total(5)=1
 
         status=nf90_get_var(ncid, ncvarid, wrk, start, total)
-        nf_fread4d=status
 !
 !  Scale read data and process fill values, if any.  Compute minimum
 !  and maximum values.
@@ -338,13 +358,13 @@
 !
 !  Set minimum and maximum values: global reduction.
 !
-          buffer(1)=Amin
+          rbuffer(1)=Amin
           op_handle(1)='MIN'
-          buffer(2)=Amax
+          rbuffer(2)=Amax
           op_handle(2)='MAX'
-          CALL mp_reduce (ng, model, 2, buffer, op_handle)
-          Amin=buffer(1)
-          Amax=buffer(2)
+          CALL mp_reduce (ng, model, 2, rbuffer, op_handle)
+          Amin=rbuffer(1)
+          Amax=rbuffer(2)
 !
 !  Unpack read data.
 !
@@ -354,7 +374,7 @@
               DO j=Jmin,Jmax
                 DO i=Imin,Imax
                   ic=ic+1
-                  A(i,j,k,l)=wrk(ic)
+                  Adat(i,j,k,l)=wrk(ic)
                 END DO
               END DO
             END DO
@@ -442,7 +462,6 @@
         total(2)=tindex
 
         status=nf90_get_var(ncid, ncvarid, wrk(Istr:), start, total)
-        nf_fread4d=status
 !
 !  Global reduction of work array.  We need this because the packing
 !  of the water point only affects the model tile partition.
@@ -487,7 +506,7 @@
                 jc=(j-Joff)*Isize
                 DO i=Imin,Imax
                   ij=i+Ioff+jc
-                  A(i,j,k,l)=A2d(ij)
+                  Adat(i,j,k,l)=A2d(ij)
                 END DO
               END DO
             END DO
@@ -514,29 +533,24 @@
       END IF
 !
       RETURN
-      END FUNCTION nf_fread4d
+      END FUNCTION nf90_fread4d
 
 #else
 
 !
 !***********************************************************************
-      FUNCTION nf_fread4d (ng, model, ncname, ncid,                     &
-     &                     ncvname, ncvarid,                            &
-     &                     tindex, gtype, Vsize,                        &
-     &                     LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt,      &
-     &                     Ascl, Amin, Amax,                            &
+      FUNCTION nf90_fread4d (ng, model, ncname, ncid,                   &
+     &                       ncvname, ncvarid,                          &
+     &                       tindex, gtype, Vsize,                      &
+     &                       LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt,    &
+     &                       Ascl, Amin, Amax,                          &
 # ifdef MASKING
-     &                     Amask,                                       &
+     &                       Amask,                                     &
 # endif
-     &                     A, checksum)
+     &                       Adat, checksum) RESULT (status)
 !***********************************************************************
 !
-      USE mod_param
-      USE mod_parallel
-      USE mod_iounits
-      USE mod_ncparam
       USE mod_netcdf
-      USE mod_scalars
 !
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
@@ -546,10 +560,6 @@
       USE distribute_mod, ONLY : mp_scatter3d
 #  endif
 # endif
-      USE get_hash_mod,   ONLY : get_hash
-      USE strings_mod,    ONLY : FoundError
-!
-      implicit none
 !
 !  Imported variable declarations.
 !
@@ -570,12 +580,12 @@
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
 #  endif
-      real(r8), intent(out) :: A(LBi:,LBj:,LBk:,LBt:)
+      real(r8), intent(out) :: Adat(LBi:,LBj:,LBk:,LBt:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(out) :: A(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
+      real(r8), intent(out) :: Adat(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 # endif
 !
 !  Local variable declarations.
@@ -584,18 +594,20 @@
       logical, dimension(3) :: foundit
 !
       integer :: i, j, k, ic, fourth, Npts, NWpts, status, wtype
-      integer :: Imin, Imax, Jmin, Jmax, Koff, Loff
-      integer :: Ilen, Jlen, Klen, IJlen, MyType
+      integer :: Is, Ie, Js, Je
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: Ilen, Jlen, Klen, IJlen, Koff, Loff
+      integer :: Cgrid, MyType, ghost
 # ifdef DISTRIBUTE
       integer :: Nghost
 # endif
       integer, dimension(5) :: start, total
-
-      integer :: nf_fread4d
 !
       real(r8) :: Afactor, Aoffset, Aspval
 
       real(r8), dimension(3) :: AttValue
+!
+      real(r8), pointer :: Cwrk(:)               ! used for checksum
 
 # if defined INLINE_2DIO && defined DISTRIBUTE
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)) :: wrk
@@ -606,47 +618,57 @@
       character (len=12), dimension(3) :: AttName
 
       character (len=*), parameter :: MyFile =                          &
-     &  __FILE__
+     &  __FILE__//", nf90_fread4d"
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
 !-----------------------------------------------------------------------
 !
-!  Set first and last grid point according to staggered C-grid
-!  classification. Set loops offsets.
+      status=nf90_noerr
+      Amin=spval
+      Amax=-spval
+!
+!  Set global (interior plus boundary) starting and ending grid cell
+!  indices in the I- and J-directions according to staggered C-grid
+!  classification.
 !
       MyType=gtype
 
       SELECT CASE (ABS(MyType))
         CASE (p2dvar, p3dvar)
-          Imin=IOBOUNDS(ng)%ILB_psi
-          Imax=IOBOUNDS(ng)%IUB_psi
-          Jmin=IOBOUNDS(ng)%JLB_psi
-          Jmax=IOBOUNDS(ng)%JUB_psi
+          Cgrid=1                                         ! PSI-points
+          Is=IOBOUNDS(ng)%ILB_psi
+          Ie=IOBOUNDS(ng)%IUB_psi
+          Js=IOBOUNDS(ng)%JLB_psi
+          Je=IOBOUNDS(ng)%JUB_psi
         CASE (r2dvar, r3dvar, w3dvar)
-          Imin=IOBOUNDS(ng)%ILB_rho
-          Imax=IOBOUNDS(ng)%IUB_rho
-          Jmin=IOBOUNDS(ng)%JLB_rho
-          Jmax=IOBOUNDS(ng)%JUB_rho
+          Cgrid=2                                         ! RHO-points
+          Is=IOBOUNDS(ng)%ILB_rho
+          Ie=IOBOUNDS(ng)%IUB_rho
+          Js=IOBOUNDS(ng)%JLB_rho
+          Je=IOBOUNDS(ng)%JUB_rho
         CASE (u2dvar, u3dvar)
-          Imin=IOBOUNDS(ng)%ILB_u
-          Imax=IOBOUNDS(ng)%IUB_u
-          Jmin=IOBOUNDS(ng)%JLB_u
-          Jmax=IOBOUNDS(ng)%JUB_u
+          Cgrid=3                                         ! U-points
+          Is=IOBOUNDS(ng)%ILB_u
+          Ie=IOBOUNDS(ng)%IUB_u
+          Js=IOBOUNDS(ng)%JLB_u
+          Je=IOBOUNDS(ng)%JUB_u
         CASE (v2dvar, v3dvar)
-          Imin=IOBOUNDS(ng)%ILB_v
-          Imax=IOBOUNDS(ng)%IUB_v
-          Jmin=IOBOUNDS(ng)%JLB_v
-          Jmax=IOBOUNDS(ng)%JUB_v
+          Cgrid=4                                         ! V-points
+          Is=IOBOUNDS(ng)%ILB_v
+          Ie=IOBOUNDS(ng)%IUB_v
+          Js=IOBOUNDS(ng)%JLB_v
+          Je=IOBOUNDS(ng)%JUB_v
         CASE DEFAULT
-          Imin=IOBOUNDS(ng)%ILB_rho
-          Imax=IOBOUNDS(ng)%IUB_rho
-          Jmin=IOBOUNDS(ng)%JLB_rho
-          Jmax=IOBOUNDS(ng)%JUB_rho
+          Cgrid=2                                         ! RHO-points
+          Is=IOBOUNDS(ng)%ILB_rho
+          Ie=IOBOUNDS(ng)%IUB_rho
+          Js=IOBOUNDS(ng)%JLB_rho
+          Je=IOBOUNDS(ng)%JUB_rho
       END SELECT
 
-      Ilen=Imax-Imin+1
-      Jlen=Jmax-Jmin+1
+      Ilen=Ie-Is+1
+      Jlen=Je-Js+1
       Klen=UBk-LBk+1
       IJlen=Ilen*Jlen
 
@@ -663,6 +685,14 @@
       ELSE
         Loff=0
       END IF
+!
+!  Set the tile computational I- and J-bounds (no ghost points).
+!
+      ghost=0
+      Imin=BOUNDS(ng)%Imin(Cgrid,ghost,MyRank)
+      Imax=BOUNDS(ng)%Imax(Cgrid,ghost,MyRank)
+      Jmin=BOUNDS(ng)%Jmin(Cgrid,ghost,MyRank)
+      Jmax=BOUNDS(ng)%Jmax(Cgrid,ghost,MyRank)
 !
 !  Check if the following attributes: "scale_factor", "add_offset", and
 !  "_FillValue" are present in the input NetCDF variable:
@@ -685,7 +715,7 @@
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
-        nf_fread4d=ioerror
+        status=ioerror
         RETURN
       END IF
 
@@ -772,9 +802,6 @@
 !
 !  Proccess data as 3D slides.
 !
-      Amin=spval
-      Amax=-spval
-
       DO fourth=LBt,UBt
         IF (MyType.gt.0) THEN
           start(1)=1
@@ -837,22 +864,24 @@
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           exit_flag=2
           ioerror=status
-          nf_fread4d=status
           RETURN
         END IF
 !
 !-----------------------------------------------------------------------
 !  Serial I/O: Unpack read field.
 !-----------------------------------------------------------------------
-!
+
 # ifdef DISTRIBUTE
+!
+!  Scatter read data over the distributed memory tiles.
+!
 #  ifdef INLINE_2DIO
         CALL mp_scatter2d (ng, model, LBi, UBi, LBj, UBj,               &
      &                     Nghost, MyType, Amin, Amax,                  &
 #   if defined READ_WATER && defined MASKING
      &                     NWpts, SCALARS(ng)%IJwater(:,wtype),         &
 #   endif
-     &                     Npts, wrk, A(:,:,k,fourth))
+     &                     Npts, wrk, Adat(:,:,k,fourth))
       END DO
 #  else
         CALL mp_scatter3d (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,     &
@@ -860,16 +889,20 @@
 #   if defined READ_WATER && defined MASKING
      &                     NWpts, SCALARS(ng)%IJwater(:,wtype),         &
 #   endif
-     &                     Npts, wrk, A(:,:,:,fourth))
+     &                     Npts, wrk, Adat(:,:,:,fourth))
 #  endif
 # else
+!
+!  Unpack data into the global array: serial, serial with partitions,
+!  and shared-memory applications.
+!
         IF (MyType.gt.0) THEN
           ic=0
           DO k=LBk,UBk
-            DO j=Jmin,Jmax
-              DO i=Imin,Imax
+            DO j=Js,Je
+              DO i=Is,Ie
                 ic=ic+1
-                A(i,j,k,fourth)=wrk(ic)
+                Adat(i,j,k,fourth)=wrk(ic)
               END DO
             END DO
           END DO
@@ -877,13 +910,13 @@
         ELSE
           ic=0
           DO k=LBk,UBk
-            DO j=Jmin,Jmax
-              DO i=Imin,Imax
+            DO j=Js,Je
+              DO i=Is,Ie
                 IF (Amask(i,j).gt.0.0_r8) THEN
                   ic=ic+1
-                  A(i,j,k,fourth)=wrk(ic)
+                  Adat(i,j,k,fourth)=wrk(ic)
                 ELSE
-                  A(i,j,k,fourth)=0.0_r8
+                  Adat(i,j,k,fourth)=0.0_r8
                 END IF
               END DO
             END DO
@@ -892,10 +925,329 @@
         END IF
 # endif
       END DO
+!
+!-----------------------------------------------------------------------
+!  If requested, compute data checksum value.
+!-----------------------------------------------------------------------
+!
+      IF (Lchecksum) THEN
+# ifdef DISTRIBUTE
+        Npts=(Imax-Imin+1)*(Jmax-Jmin+1)*(UBk-LBk+1)*(UBt-LBt+1)
+        IF (.not.associated(Cwrk)) allocate ( Cwrk(Npts) )
+        Cwrk=PACK(Adat(Imin:Imax, Jmin:Jmax, LBk:UBk, LBt:UBt), .TRUE.)
+        CALL get_hash (Cwrk, Npts, checksum, .TRUE.)
+# else
+        Npts=(Ie-Is+1)*(Je-Js+1)*(UBk-LBk+1)*(UBt-LBt+1)
+        IF (.not.associated(Cwrk)) allocate ( Cwrk(Npts) )
+        Cwrk=PACK(Adat(Is:Ie, Js:Je, LBk:UBk, LBt:UBt), .TRUE.)
+        CALL get_hash (Cwrk, Npts, checksum)
+# endif
+        IF (associated(Cwrk)) deallocate (Cwrk)
+      END IF
 
-      nf_fread4d=status
 !
       RETURN
-      END FUNCTION nf_fread4d
+      END FUNCTION nf90_fread4d
+#endif
+
+#if defined PIO_LIB && defined DISTRIBUTE
+!
+!***********************************************************************
+      FUNCTION pio_fread4d (ng, model, ncname, pioFile,                 &
+     &                      ncvname, pioVar,                            &
+     &                      tindex, pioDesc, Vsize,                     &
+     &                      LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt,     &
+     &                      Ascl, Amin, Amax,                           &
+# ifdef MASKING
+     &                      Amask,                                      &
+# endif
+     &                      Adat, checksum) RESULT (status)
+!***********************************************************************
+!
+      USE mod_pio_netcdf
+!
+      USE distribute_mod, ONLY : mp_reduce
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, tindex
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt
+      integer, intent(in) :: Vsize(4)
+!
+      integer(i8b), intent(out), optional :: checksum
+!
+      real(dp), intent(in)  :: Ascl
+      real(r8), intent(out) :: Amin
+      real(r8), intent(out) :: Amax
+!
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: ncvname
+!
+# ifdef ASSUMED_SHAPE
+#  ifdef MASKING
+      real(r8), intent(in) :: Amask(LBi:,LBj:)
+#  endif
+      real(r8), intent(out) :: Adat(LBi:,LBj:,LBk:,LBt:)
+# else
+#  ifdef MASKING
+      real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
+#  endif
+      real(r8), intent(out) :: Adat(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
+# endif
+!
+      TYPE (File_desc_t), intent(inout) :: pioFile
+      TYPE (IO_Desc_t),   intent(inout) :: pioDesc
+      TYPE (My_VarDesc),  intent(inout) :: pioVar
+!
+!  Local variable declarations.
+!
+      logical :: Lchecksum
+      logical, dimension(3) :: foundit
+!
+      integer :: i, j, k, l, Npts, status
+      integer :: Is, Ie, Js, Je
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: Cgrid, ghost, dkind, gtype
+
+      integer, dimension(5) :: start, total
+!
+      real(r8) :: Afactor, Aoffset, Aspval, Avalue
+      real(r8) :: my_Amin, my_Amax
+
+      real(r8), dimension(3) :: AttValue
+      real(r8), dimension(2) :: rbuffer
+!
+      real(r4), pointer :: Awrk4(:,:,:,:)        ! single precision
+      real(r8), pointer :: Awrk8(:,:,:,:)        ! double precision
+      real(r8), pointer :: Cwrk(:)               ! used for checksum
+!
+      character (len=12), dimension(3) :: AttName
+      character (len= 3), dimension(2) :: op_handle
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", pio_fread4d"
+!
+!-----------------------------------------------------------------------
+!  Set starting and ending indices to process.
+!-----------------------------------------------------------------------
+!
+      status=PIO_noerr
+      Amin=spval
+      Amax=-spval
+      my_Amin=spval
+      my_Amax=-spval
+!
+!  Set global (interior plus boundary) starting and ending grid cell
+!  indices in the I- and J-directions according to staggered C-grid
+!  classification.
+!
+      dkind=pioVar%dkind
+      gtype=pioVar%gtype
+!
+      SELECT CASE (ABS(gtype))
+        CASE (p2dvar, p3dvar)
+          Cgrid=1                                         ! PSI-points
+          Is=IOBOUNDS(ng)%ILB_psi
+          Ie=IOBOUNDS(ng)%IUB_psi
+          Js=IOBOUNDS(ng)%JLB_psi
+          Je=IOBOUNDS(ng)%JUB_psi
+        CASE (l4dvar, r2dvar, r3dvar, w3dvar)
+          Cgrid=2                                         ! RHO-points
+          Is=IOBOUNDS(ng)%ILB_rho
+          Ie=IOBOUNDS(ng)%IUB_rho
+          Js=IOBOUNDS(ng)%JLB_rho
+          Je=IOBOUNDS(ng)%JUB_rho
+        CASE (u2dvar, u3dvar)
+          Cgrid=3                                         ! U-points
+          Is=IOBOUNDS(ng)%ILB_u
+          Ie=IOBOUNDS(ng)%IUB_u
+          Js=IOBOUNDS(ng)%JLB_u
+          Je=IOBOUNDS(ng)%JUB_u
+        CASE (v2dvar, v3dvar)
+          Cgrid=4                                         ! V-points
+          Is=IOBOUNDS(ng)%ILB_v
+          Ie=IOBOUNDS(ng)%IUB_v
+          Js=IOBOUNDS(ng)%JLB_v
+          Je=IOBOUNDS(ng)%JUB_v
+        CASE DEFAULT
+          Cgrid=2                                         ! RHO-points
+          Is=IOBOUNDS(ng)%ILB_rho
+          Ie=IOBOUNDS(ng)%IUB_rho
+          Js=IOBOUNDS(ng)%JLB_rho
+          Je=IOBOUNDS(ng)%JUB_rho
+      END SELECT
+!
+!  Set the tile computational I- and J-bounds (no ghost points).
+!
+      ghost=0
+      Imin=BOUNDS(ng)%Imin(Cgrid,ghost,MyRank)
+      Imax=BOUNDS(ng)%Imax(Cgrid,ghost,MyRank)
+      Jmin=BOUNDS(ng)%Jmin(Cgrid,ghost,MyRank)
+      Jmax=BOUNDS(ng)%Jmax(Cgrid,ghost,MyRank)
+!
+!  Check if the following attributes: "scale_factor", "add_offset", and
+!  "_FillValue" are present in the input NetCDF variable:
+!
+!  If the "scale_value" attribute is present, the data is multiplied by
+!  this factor after reading.
+!  If the "add_offset" attribute is present, this value is added to the
+!  data after reading.
+!  If both "scale_factor" and "add_offset" attributes are present, the
+!  data are first scaled before the offset is added.
+!  If the "_FillValue" attribute is present, the data having this value
+!  is treated as missing and it is replaced with zero. This feature it
+!  is usually related with the land/sea masking.
+!
+      AttName(1)='scale_factor'
+      AttName(2)='add_offset  '
+      AttName(3)='_FillValue  '
+
+      CALL pio_netcdf_get_fatt (ng, model, ncname, pioVar%vd, AttName,  &
+     &                          AttValue, foundit,                      &
+     &                          pioFile = pioFile)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+        status=ioerror
+        RETURN
+      END IF
+
+      IF (.not.foundit(1)) THEN
+        Afactor=1.0_r8
+      ELSE
+        Afactor=AttValue(1)
+      END IF
+
+      IF (.not.foundit(2)) THEN
+        Aoffset=0.0_r8
+      ELSE
+        Aoffset=AttValue(2)
+      END IF
+
+      IF (.not.foundit(3)) THEN
+        Aspval=spval_check
+      ELSE
+        Aspval=AttValue(3)
+      END IF
+!
+!  Initialize checsum value.
+!
+      IF (PRESENT(checksum)) THEN
+        Lchecksum=.TRUE.
+        checksum=0_i8b
+      ELSE
+        Lchecksum=.FALSE.
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Read in requested field and scale it.
+!-----------------------------------------------------------------------
+!
+!  Allocate and initialize local array used for reading. The local array
+!  needs to be of the same precision as "A" and its IO decomposition
+!  descriptor "pioDesc".
+!
+      IF (dkind.eq.PIO_double) THEN                 ! double precision
+        IF (.not.associated(Awrk8)) THEN
+          allocate ( Awrk8(Imin:Imax, Jmin:Jmax, LBk:UBk, LBt:UBt) )
+        END IF
+        Awrk8=0.0_r8
+      ELSE                                          ! single precision
+        IF (.not.associated(Awrk4)) THEN
+          allocate ( Awrk4(Imin:Imax, Jmin:Jmax, LBk:UBk, LBt:UBt) )
+        END IF
+        Awrk4=0.0_r4
+      END IF
+!
+!  Set unlimited time dimension record to write, if any.
+!
+      IF (tindex.gt.0) THEN
+        CALL PIO_setframe (pioFile,                                     &
+     &                     pioVar%vd,                                   &
+     &                     INT(tindex, kind=PIO_OFFSET_KIND))
+      END IF
+!
+!  Read in double precision data from NetCDF file.
+!
+      IF (dkind.eq.PIO_double) THEN
+        CALL PIO_read_darray (pioFile,                                  &
+     &                        pioVar%vd,                                &
+     &                        pioDesc,                                  &
+     &                        Awrk8(Imin:,Jmin:,LBk:,LBt:),             &
+     &                        status)
+!
+        DO l=LBt,UBt
+          DO k=LBk,UBk
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax
+                IF (ABS(Awrk8(i,j,k,l)).ge.ABS(Aspval)) THEN
+                  Adat(i,j,k,l)=0.0_r8          ! masked with _FillValue
+                ELSE
+                  Avalue=Ascl*(Afactor*Awrk8(i,j,k,l)+Aoffset)
+                  Adat(i,j,k,l)=Avalue
+                  my_Amin=MIN(my_Amin,Avalue)
+                  my_Amax=MAX(my_Amax,Avalue)
+                END IF
+              END DO
+            END DO
+          END DO
+        END DO
+        IF (associated(Awrk8)) deallocate (Awrk8)
+!
+!  Read in and load single precision data from NetCDF file.
+!
+      ELSE
+        CALL PIO_read_darray (pioFile,                                  &
+     &                        pioVar%vd,                                &
+     &                        piodesc,                                  &
+     &                        Awrk4(Imin:,Jmin:,LBk:,LBt:),             &
+     &                        status)
+!
+        DO l=LBt,UBt
+          DO k=LBk,UBk
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax
+                IF (ABS(Awrk4(i,j,k,l)).ge.ABS(Aspval)) THEN
+                  Adat(i,j,k,l)=0.0_r8          ! masked with _FillValue
+                ELSE
+                  Avalue=REAL(Ascl*(Afactor*Awrk4(i,j,k,l)+Aoffset),r8)
+                  Adat(i,j,k,l)=Avalue
+                  my_Amin=REAL(MIN(my_Amin,Avalue),r8)
+                  my_Amax=REAL(MAX(my_Amax,Avalue),r8)
+                END IF
+              END DO
+            END DO
+          END DO
+        END DO
+        IF (associated(Awrk4)) deallocate (Awrk4)
+      END IF
+!
+!  If requested, compute input data checksum value.
+!  (TODO: parallel gathering of checksum)
+!
+      IF (Lchecksum) THEN
+        Npts=(Imax-Imin+1)*(Jmax-Jmin+1)*(UBk-LBk+1)*(UBt-LBt+1)
+        IF (.not.associated(Cwrk)) allocate ( Cwrk(Npts) )
+        Cwrk=PACK(Adat(Imin:Imax, Jmin:Jmax, LBk:UBk, LBt:UBt), .TRUE.)
+        CALL get_hash (Cwrk, Npts, checksum, .TRUE.)
+        IF (associated(Cwrk)) deallocate (Cwrk)
+      END IF
+!
+!  Compute global minimum and maximum values.
+!
+      rbuffer(1)=my_Amin
+      rbuffer(2)=my_Amax
+      op_handle(1)='MIN'
+      op_handle(2)='MAX'
+      CALL mp_reduce (ng, model, 2, rbuffer, op_handle)
+      Amin=rbuffer(1)
+      Amax=rbuffer(2)
+!
+      IF ((ABS(Amin).ge.ABS(spval)).and.                                &
+     &    (ABS(Amax).ge.ABS(spval))) THEN
+        Amin=0.0_r8                           ! the entire data is all
+        Amax=0.0_r8                           ! field value, _FillValue
+      END IF                                  ! and was zeroth out
+!
+      RETURN
+      END FUNCTION pio_fread4d
 #endif
       END MODULE nf_fread4d_mod

@@ -1,6 +1,7 @@
-# svn $Id: compiler_flags_Intel_Fortran.cmake 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: compiler_flags_Intel_Fortran.cmake 1151 2023-02-09 03:08:53Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -12,7 +13,11 @@
 ###########################################################################
 
 if( MPI )
-  set( CMAKE_Fortran_COMPILER mpif90 )
+  if( ${COMM} MATCHES "intel")
+    set( CMAKE_Fortran_COMPILER mpiifort )
+  else()
+    set( CMAKE_Fortran_COMPILER mpif90 )
+  endif()
 else()
   set( CMAKE_Fortran_COMPILER ifort )
 endif()

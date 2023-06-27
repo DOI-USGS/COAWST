@@ -1,8 +1,9 @@
       SUBROUTINE ana_psource (ng, tile, model)
 !
-!! svn $Id: ana_psource.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_psource.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -128,7 +129,7 @@
       real(r8), dimension(Msrc(ng)*N(ng)) :: Pwrk
 #endif
 #if defined DISTRIBUTE
-      real(r8), dimension(2) :: buffer
+      real(r8), dimension(2) :: rbuffer
 !
       character (len=3), dimension(2) :: io_handle
 #endif
@@ -147,9 +148,13 @@
 !
 !  Set-up point Sources/Sink number (Nsrc), direction (Dsrc), I- and
 !  J-grid locations (Isrc,Jsrc). Currently, the direction can be along
-!  XI-direction (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The
+!  XI-direction (Dsrc=0) or along ETA-direction (Dsrc=1).  The
 !  mass sources are located at U- or V-points so the grid locations
 !  should range from 1 =< Isrc =< L  and  1 =< Jsrc =< M.
+!
+!  Vertical mass sources can be added my setting a W-direction (Dsrc=2)
+!  and mass sources are located at Rho-points so the grid locations
+!  should range from 0 =< Isrc =< L  and  0 =< Jsrc =< M.
 !
 #if defined MY_APPLICATION
         IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
@@ -269,15 +274,6 @@
 !
 # if defined MY_APPLICATION
         IF (DOMAIN(ng)%NorthWest_Test(tile)) THEN
-#  ifdef ONE_TRACER_SOURCE
-          SOURCES(ng)%Tsrc(itemp)=???
-          SOURCES(ng)%Tsrc(isalt)=???
-#  elif defined TWO_D_TRACER_SOURCE
-          DO is=1,Nsrc(ng)
-            SOURCES(ng)%Tsrc(is,itemp)=???
-            SOURCES(ng)%Tsrc(is,isalt)=???
-          END DO
-#  else
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)
               SOURCES(ng)%Tsrc(is,k,itemp)=???
@@ -286,14 +282,12 @@
 #  endif
             END DO
           END DO
-#  endif
         END IF
 # else
         ana_psource.h: No values provided for Tsrc.
 # endif
       END IF TRACERS
 #endif
-
 !
       RETURN
       END SUBROUTINE ana_psource_tile

@@ -25,9 +25,9 @@ function [status]=c_initial(S)
 %    status      Error flag.
 %
 
-% svn $Id: c_initial.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: c_initial.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -75,7 +75,7 @@ if (isfield(S,'N')),
 else
   error(['C_INITIAL - Cannot find dimension parameter: N, ',            ...
          'in structure array S']);
-end,
+end
 
 if (isfield(S,'NT')),
   NT=S.NT;
@@ -85,195 +85,100 @@ else
 end
 
 %--------------------------------------------------------------------------
-%  Set dimensions.
+%  Create dimensions.
 %--------------------------------------------------------------------------
 
-Dname.xr   = 'xi_rho';       Dsize.xr   = Lp;
-Dname.xu   = 'xi_u';         Dsize.xu   = Lp-1;
-Dname.xv   = 'xi_v';         Dsize.xv   = Lp;
-Dname.xp   = 'xi_psi';       Dsize.xp   = Lp-1;
-Dname.yr   = 'eta_rho';      Dsize.yr   = Mp;
-Dname.yu   = 'eta_u';        Dsize.yu   = Mp;
-Dname.yv   = 'eta_v';        Dsize.yv   = Mp-1;
-Dname.yp   = 'eta_psi';      Dsize.yp   = Mp-1;
-Dname.Nr   = 's_rho';        Dsize.Nr   = N;
-Dname.Nw   = 's_w';          Dsize.Nw   = N+1;
-Dname.NT   = 'tracer';       Dsize.NT   = NT;
-Dname.time = 'ocean_time';   Dsize.time = nc_constant('nc_unlimited');
+Dname = {'xi_rho',  'xi_u',  'xi_v',  'xi_psi',                       ...
+         'eta_rho', 'eta_u', 'eta_v', 'eta_psi',                      ...
+         's_rho', 's_w', 'tracer', 'ocean_time'};
 
-%--------------------------------------------------------------------------
-%  Set Variables.
-%--------------------------------------------------------------------------
-
-%  Vertical grid variables.
-
-Vname.Vtransform  = 'Vtransform';
-Vname.Vstretching = 'Vstretching';
-Vname.theta_s     = 'theta_s';
-Vname.theta_b     = 'theta_b';
-Vname.Tcline      = 'Tcline';
-Vname.hc          = 'hc';
-Vname.s_rho       = 's_rho';
-Vname.s_w         = 's_w';
-Vname.Cs_r        = 'Cs_r';
-Vname.Cs_w        = 'Cs_w';
-
-%  Horizontal grid variables.
-
-Vname.spherical   = 'spherical';
-Vname.h           = 'h';
-
-if (spherical),
-  Vname.rlon      = 'lon_rho';
-  Vname.rlat      = 'lat_rho';
-  Vname.ulon      = 'lon_u';
-  Vname.ulat      = 'lat_u';
-  Vname.vlon      = 'lon_v';
-  Vname.vlat      = 'lat_v';
-else
-  Vname.rx        = 'x_rho';
-  Vname.ry        = 'y_rho';
-  Vname.ux        = 'x_u';
-  Vname.uy        = 'y_u';
-  Vname.vx        = 'x_v';
-  Vname.vy        = 'y_v';
+for value = Dname
+  dim = char(value);
+  switch (dim)
+    case {'xi_rho', 'xi_v'}
+      Dsize.(dim) = Lp;
+    case {'xi_psi', 'xi_u'}
+      Dsize.(dim) = Lp-1;
+    case {'eta_rho', 'eta_u'}
+      Dsize.(dim) = Mp;
+    case {'eta_psi', 'eta_v'}
+      Dsize.(dim) = Mp-1;
+    case {'s_rho'}
+      Dsize.(dim) = N;
+    case {'s_w'}
+      Dsize.(dim) = N+1;
+    case {'tracer'}
+      Dsize.(dim) = NT;
+    case {'ocean_time'}
+      Dsize.(dim) = netcdf.getConstant('UNLIMITED');
+  end
 end
 
-%  Initial conditions variables.
+%--------------------------------------------------------------------------
+%  Set grid Variables.
+%--------------------------------------------------------------------------
 
-Vname.time        = 'ocean_time';
-Vname.zeta        = 'zeta';
-Vname.ubar        = 'ubar';
-Vname.vbar        = 'vbar';
-Vname.u           = 'u';
-Vname.v           = 'v';
-Vname.temp        = 'temp';
-Vname.salt        = 'salt';
+grd_vars = {'spherical', 'Vtransform', 'Vstretching',                   ...
+            'theta_s', 'theta_b', 'Tcline', 'hc',                       ...
+            's_rho', 's_w', 'Cs_r', 'Cs_w', 'h'};
+	    
+if (spherical)
+  grd_vars = [grd_vars, 'lon_rho', 'lat_rho', 'lon_psi', 'lat_psi',     ...
+                        'lon_u',   'lat_u',   'lon_v',   'lat_v'];
+else
+  grd_vars = [grd_vars, 'x_rho', 'y_rho', 'x_psi', 'y_psi',             ...
+                        'x_u',   'y_u',   'x_v',   'y_v'];
+end
+
+grd_vars = [grd_vars, 'mask_rho', 'mask_psi', 'mask_u', 'mask_v'];
+
+%--------------------------------------------------------------------------
+%  Set initial conditions variables.
+%--------------------------------------------------------------------------
+
+ini_vars = {'ocean_time', 'zeta', 'ubar', 'vbar', 'u', 'v',             ...
+            'temp', 'salt'};
 
 %--------------------------------------------------------------------------
 %  Create initial conditions NetCDF file.
 %--------------------------------------------------------------------------
 
-[ncid,status]=mexnc('create',ncname,'clobber');
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: CREATE - unable to create file: ', ncname]);
-end
+mode = netcdf.getConstant('CLOBBER');
+mode = bitor(mode, netcdf.getConstant('64BIT_OFFSET'));
+
+ncid = netcdf.create(ncname, mode);
 
 %--------------------------------------------------------------------------
 %  Define dimensions.
 %--------------------------------------------------------------------------
 
-[did.xr,status]=mexnc('def_dim',ncid,Dname.xr,Dsize.xr); 
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: ncdimdef - unable to define dimension: ',Dname.xr]);
-end
-
-[did.xu,status]=mexnc('def_dim',ncid,Dname.xu,Dsize.xu);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.xu]);
-end
-
-[did.xv,status]=mexnc('def_dim',ncid,Dname.xv,Dsize.xv);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.xv]);
-end
-
-[did.yr,status]=mexnc('def_dim',ncid,Dname.yr,Dsize.yr);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.yr]);
-end
-
-[did.yu,status]=mexnc('def_dim',ncid,Dname.yu,Dsize.yu);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.yu]);
-end
-
-[did.yv,status]=mexnc('def_dim',ncid,Dname.yv,Dsize.yv);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.yv]);
-end
-
-[did.Nr,status]=mexnc('def_dim',ncid,Dname.Nr,Dsize.Nr);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.Nr]);
-end
-
-[did.Nw,status]=mexnc('def_dim',ncid,Dname.Nw,Dsize.Nw);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.Nw]);
-end
-
-[did.NT,status]=mexnc('def_dim',ncid,Dname.NT,Dsize.NT);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.NT]);
-end
-
-[did.time,status]=mexnc('def_dim',ncid,Dname.time,Dsize.time);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error([ 'C_INITIAL: DEF_DIM - unable to define dimension: ',Dname.time]);
+for value = Dname,
+  field = char(value);
+  did.(field) = netcdf.defDim(ncid, field, Dsize.(field));
 end
 
 %--------------------------------------------------------------------------
-%  Create global attributes.
+%  Define NetCDF variables.
 %--------------------------------------------------------------------------
 
-type='INITIALIZATION file';
-lstr=max(size(type));
-[status]=mexnc('PUT_ATT_TEXT',ncid,nc_constant('nc_global'),            ...
-               'type',nc_constant('nc_char'),lstr,type);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_INITIAL: PUT_ATT_TEXT - unable to global attribure: type.');
+vars = [grd_vars, ini_vars];
+
+for value = vars
+  field = char(value);
+  Vname.(field) = field;
 end
-
-history=['Initial file using Matlab script: c_initial, ',date_stamp];
-lstr=max(size(history));
-[status]=mexnc('put_att_text',ncid,nc_constant('nc_global'),            ...
-               'history',nc_constant('nc_char'),lstr,history);
-if (status ~= 0),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_INITIAL: PUT_ATT_TEXT - unable to global attribure: history.');
-end
-
-%--------------------------------------------------------------------------
-%  Define configuration variables.
-%--------------------------------------------------------------------------
 
 % Define spherical switch.
 
-Var.name            = Vname.spherical;
-Var.type            = nc_constant('nc_int');
-Var.dimid           = [];
-Var.long_name       = 'grid type logical switch';
-Var.flag_values     = [0 1];
-Var.flag_meanings   = ['Cartesian', blanks(1), ...
-                       'spherical'];
-[~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+Var.name          = Vname.spherical;
+Var.type          = netcdf.getConstant('nc_int');
+Var.dimid         = [];
+Var.long_name     = 'grid type logical switch';
+Var.flag_values   = [0 1];
+Var.flag_meanings = ['Cartesian', blanks(1),                            ...
+                     'spherical'];
+[~,status] = nc_vdef(ncid,Var);
+if (status ~= 0), return, end
 clear Var
 
 % Define vertical coordinate variables.
@@ -283,7 +188,7 @@ Var.type            = nc_constant('nc_int');
 Var.dimid           = [];
 Var.long_name       = 'vertical terrain-following transformation equation';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Vstretching;
@@ -291,7 +196,7 @@ Var.type            = nc_constant('nc_int');
 Var.dimid           = [];
 Var.long_name       = 'vertical terrain-following stretching function';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.theta_s;
@@ -299,7 +204,7 @@ Var.type            = nc_constant('nc_double');
 Var.dimid           = [];
 Var.long_name       = 'S-coordinate surface control parameter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.theta_b;
@@ -307,7 +212,7 @@ Var.type            = nc_constant('nc_double');
 Var.dimid           = [];
 Var.long_name       = 'S-coordinate bottom control parameter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Tcline;
@@ -316,7 +221,7 @@ Var.dimid           = [];
 Var.long_name       = 'S-coordinate surface/bottom layer width';
 Var.units           = 'meter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.hc;
@@ -325,12 +230,12 @@ Var.dimid           = [];
 Var.long_name       = 'S-coordinate parameter, critical depth';
 Var.units           = 'meter';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.s_rho;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.Nr];
+Var.dimid           = [did.s_rho];
 Var.long_name       = 'S-coordinate at RHO-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
@@ -339,15 +244,15 @@ if (Vtransform == 1),
   Var.standard_name = 'ocean_s_coordinate_g1';
 elseif (Vtransform == 2),
   Var.standard_name = 'ocean_s_coordinate_g2';
-end,
+end
 Var.formula_terms   = 's: s_rho C: Cs_r eta: zeta depth: h depth_c: hc';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.s_w;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.Nw];
+Var.dimid           = [did.s_w];
 Var.long_name       = 'S-coordinate at W-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
@@ -356,312 +261,318 @@ if (Vtransform == 1),
   Var.standard_name = 'ocean_s_coordinate_g1';
 elseif (Vtransform == 2),
   Var.standard_name = 'ocean_s_coordinate_g2';
-end,
+end
 Var.formula_terms   = 's: s_w C: Cs_w eta: zeta depth: h depth_c: hc';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Cs_r;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.Nr];
+Var.dimid           = [did.s_rho];
 Var.long_name       = 'S-coordinate stretching function at RHO-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.Cs_w;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.Nw];
+Var.dimid           = [did.s_w];
 Var.long_name       = 'S-coordinate stretching function at W-points';
 Var.valid_min       = -1;
 Var.valid_max       = 0;
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
-
 
 %  Define bathymetry.
 
 Var.name            = Vname.h;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.yr did.xr];
+Var.dimid           = [did.eta_rho did.xi_rho];
 Var.long_name       = 'bathymetry at RHO-points';
 Var.units           = 'meter';
-if (spherical),
+if (spherical)
   Var.coordinates   = 'lon_rho lat_rho';
 else
   Var.coordinates   = 'x_rho y_rho';
-end,
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 %  Define horizontal grid variables.
 
-if (spherical),
-  Var.name          = Vname.rlon;
+if (spherical)
+  Var.name          = Vname.lon_rho;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yr did.xr];
+  Var.dimid         = [did.eta_rho did.xi_rho];
   Var.long_name     = 'longitude of RHO-points';
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.rlat;
+  Var.name          = Vname.lat_rho;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yr did.xr];
+  Var.dimid         = [did.eta_rho did.xi_rho];
   Var.long_name     = 'latitute of RHO-points';
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.ulon;
+  Var.name          = Vname.lon_u;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yu did.xu];
+  Var.dimid         = [did.eta_u did.xi_u];
   Var.long_name     = 'longitude of U-points';
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.ulat;
+  Var.name          = Vname.lat_u;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yu did.xu];
+  Var.dimid         = [did.eta_u did.xi_u];
   Var.long_name     = 'latitute of U-points';
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.vlon;
+  Var.name          = Vname.lon_v;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yv did.xv];
+  Var.dimid         = [did.eta_v did.xi_v];
   Var.long_name     = 'longitude of V-points';
   Var.units         = 'degree_east';
   Var.standard_name = 'longitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.vlat;
+  Var.name          = Vname.lat_v;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yv did.xv];
+  Var.dimid         = [did.eta_v did.xi_v];
   Var.long_name     = 'latitute of V-points';
   Var.units         = 'degree_north';
   Var.standard_name = 'latitude';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
 else
 
-  Var.name          = Vname.rx;
+  Var.name          = Vname.x_rho;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yr did.xr];
+  Var.dimid         = [did.eta_rho did.xi_rho];
   Var.long_name     = 'X-location of RHO-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.ry;
+  Var.name          = Vname.y_rho;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yr did.xr];
+  Var.dimid         = [did.eta_rho did.xi_rho];
   Var.long_name     = 'Y-location of RHO-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.ux;
+  Var.name          = Vname.x_u;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yu did.xu];
+  Var.dimid         = [did.eta_u did.xi_u];
   Var.long_name     = 'X-location of U-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.uy;
+  Var.name          = Vname.y_u;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yu did.xu];
+  Var.dimid         = [did.eta_u did.xi_u];
   Var.long_name     = 'Y-location of U-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.vx;
+  Var.name          = Vname.x_v;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yv did.xv];
+  Var.dimid         = [did.eta_v did.xi_v];
   Var.long_name     = 'X-location of V-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
 
-  Var.name          = Vname.vy;
+  Var.name          = Vname.y_v;
   Var.type          = nc_constant('nc_double');
-  Var.dimid         = [did.yv did.xv];
+  Var.dimid         = [did.eta_v did.xi_v];
   Var.long_name     = 'Y-location of V-points';
   Var.units         = 'meter';
   [~,status]=nc_vdef(ncid,Var);
-  if (status ~= 0), return, end,
+  if (status ~= 0), return, end
   clear Var
   
-end,
+end
 
 %--------------------------------------------------------------------------
 %  Define initial conditions variables.
 %--------------------------------------------------------------------------
 
-Var.name            = Vname.time;
+Var.name            = Vname.ocean_time;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time];
+Var.dimid           = [did.ocean_time];
 Var.long_name       = 'time since initialization';
 Var.units           = 'seconds';
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.zeta;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.yr did.xr];
+Var.dimid           = [did.ocean_time did.eta_rho did.xi_rho];
 Var.long_name       = 'free-surface';
 Var.units           = 'meter';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.rlon,' ',Vname.rlat,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_rho,' ',Vname.lat_rho,' ',      ...
+                              Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.rx,' ',Vname.ry,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_rho,' ',Vname.y_rho,' ',          ...
+                              Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.ubar;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.yu did.xu];
+Var.dimid           = [did.ocean_time did.eta_u did.xi_u];
 Var.long_name       = 'vertically integrated u-momentum component';
 Var.units           = 'meter second-1';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.ulon,' ',Vname.ulat,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_u,' ',Vname.lat_u,' ',          ...
+                              Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.ux,' ',Vname.uy,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_u,' ',Vname.y_u,' ',              ...
+                              Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.vbar;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.yv did.xv];
+Var.dimid           = [did.ocean_time did.eta_v did.xi_v];
 Var.long_name       = 'vertically integrated v-momentum component';
 Var.units           = 'meter second-1';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.vlon,' ',Vname.vlat,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_v,' ',Vname.lat_v,' ',          ...
+                              Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.vx,' ',Vname.vy,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_v,' ',Vname.y_v,' ',              ...
+                              Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.u;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.Nr did.yu did.xu];
+Var.dimid           = [did.ocean_time did.s_rho did.eta_u did.xi_u];
 Var.long_name       = 'u-momentum component';
 Var.units           = 'meter second-1';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.ulon,' ',Vname.ulat,' ',            ...
-                              Vname.s_rho,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_u,' ',Vname.lat_u,' ',          ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.ux,' ',Vname.uy,' ',                ...
-                              Vname.s_rho,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_rho,' ',Vname.y_rho,' ',          ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.v;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.Nr did.yv did.xv];
+Var.dimid           = [did.ocean_time did.s_rho did.eta_v did.xi_v];
 Var.long_name       = 'v-momentum component';
 Var.units           = 'meter second-1';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.vlon,' ',Vname.vlat,' ',            ...
-                              Vname.s_rho,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_v,' ',Vname.lat_v,' ',          ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.vx,' ',Vname.vy,' ',                ...
-                              Vname.s_rho,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_v,' ',Vname.y_v,' ',              ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.temp;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.Nr did.yr did.xr];
+Var.dimid           = [did.ocean_time did.s_rho did.eta_rho did.xi_rho];
 Var.long_name       = 'potential temperature';
 Var.units           = 'Celsius';
-Var.time            = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.rlon,' ',Vname.rlat,' ',            ...
-                              Vname.s_rho,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_rho,' ',Vname.lat_rho,' ',      ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.rx,' ',Vname.ry,' ',                ...
-                              Vname.s_rho,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_rho,' ',Vname.y_rho,' ',          ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
 
 Var.name            = Vname.salt;
 Var.type            = nc_constant('nc_double');
-Var.dimid           = [did.time did.Nr did.yr did.xr];
+Var.dimid           = [did.ocean_time did.s_rho did.eta_rho did.xi_rho];
 Var.long_name       = 'salinity';
-Var.time      = Vname.time;
-if (spherical),
-  Var.coordinates   = strcat([Vname.rlon,' ',Vname.rlat,' ',            ...
-                              Vname.s_rho,' ',Vname.time]); 
+Var.time            = Vname.ocean_time;
+if (spherical)
+  Var.coordinates   = strcat([Vname.lon_rho,' ',Vname.lat_rho,' ',      ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
 else
-  Var.coordinates   = strcat([Vname.rx,' ',Vname.ry,' ',                ...
-                              Vname.s_rho,' ',Vname.time]); 
-end,
+  Var.coordinates   = strcat([Vname.x_rho,' ',Vname.y_rho,' ',          ...
+                              Vname.s_rho,' ',Vname.ocean_time]); 
+end
 [~,status]=nc_vdef(ncid,Var);
-if (status ~= 0), return, end,
+if (status ~= 0), return, end
 clear Var
+
+%--------------------------------------------------------------------------
+%  Create global attributes.
+%--------------------------------------------------------------------------
+
+varid  = netcdf.getConstant('nc_global');
+
+type='ROMS INITIAL file';
+netcdf.putAtt(ncid, varid, 'type', type);
+
+history=['Initial file using Matlab script: c_initial, ',date_stamp];
+netcdf.putAtt(ncid, varid, 'history', history);
 
 %--------------------------------------------------------------------------
 %  Leave definition mode and close NetCDF file.
 %--------------------------------------------------------------------------
 
-[status]=mexnc('enddef',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error('C_INITIAL: ENDDEF - unable to leave definition mode.');
-end,
-
-[status]=mexnc('close',ncid);
-if (status == -1),
-  disp('  ');
-  disp(mexnc('strerror',status));
-  error(['C_INITIAL: CLOSE - unable to close NetCDF file: ', ncname]);
-end
+netcdf.endDef(ncid);
+netcdf.close(ncid);
 
 return
 

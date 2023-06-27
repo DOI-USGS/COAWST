@@ -1291,7 +1291,11 @@
 !
 !  Set ramp coefficient.
 !
+#ifdef RAMP_WAVES
+      ramp=tanh(time(ng)/300.0_r8)
+#else
       ramp=1.0_r8
+#endif
 !
 !  Receive fields from wave model.
  40         FORMAT (a36,1x,2(1pe14.6))
@@ -2012,6 +2016,9 @@
 !
 #endif
 #ifdef SPECTRUM_STOKES
+!
+!  Spectrum stokes spec_wn
+!
       range(1)= Large
       range(2)=-Large
       DO IZ=1,MSCs
@@ -2020,16 +2027,21 @@
         ELSE
           WRITE(SCODE,"(A2,I2)") "KS",IZ
         END IF
-
         CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
      &                             A, Asize)
         ij=0
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            FORCES(ng)%spec_wn(i,j,IZ)=A(ij)
-            range(1)=MIN(range(1),A(ij))
-            range(2)=MAX(range(2),A(ij))
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_wn(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_wn(i,j,IZ)=FORCES(ng)%spec_wn(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
           END DO
         END DO
       END DO
@@ -2037,7 +2049,9 @@
         write(stdout,40) 'SWANtoROMS Min/Max WAVENO  (m-1):   ',        &
      &                    range(1),range(2)
       END IF
-
+!
+!  Spectrum stokes spec_us
+!
       range(1)= Large
       range(2)=-Large
       DO IZ=1,MSCs
@@ -2053,9 +2067,15 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            FORCES(ng)%spec_us(i,j,IZ)=A(ij)
-            range(1)=MIN(range(1),A(ij))
-            range(2)=MAX(range(2),A(ij))
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_us(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_us(i,j,IZ)=FORCES(ng)%spec_us(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
           END DO
         END DO
       END DO
@@ -2063,7 +2083,9 @@
         write(stdout,40) 'SWANtoROMS Min/Max USS (ms-1):      ',        &
      &                    range(1),range(2)
       END IF
-
+!
+!  Spectrum stokes spec_vs
+!
       range(1)= Large
       range(2)=-Large
       DO IZ=1,MSCs
@@ -2072,21 +2094,26 @@
         ELSE
           WRITE(SCODE,"(A2,I2)") "VS",IZ
         END IF
-
         CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
      &                           A, Asize)
         ij=0
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            FORCES(ng)%spec_vs(i,j,IZ)=A(ij)
-            range(1)=MIN(range(1),A(ij))
-            range(2)=MAX(range(2),A(ij))
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_vs(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_vs(i,j,IZ)=FORCES(ng)%spec_vs(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
           END DO
         END DO
       END DO
       IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'SWANtoROMS Min/Max VSS     (ms-1):  ',         &
+        write(stdout,40) 'SWANtoROMS Min/Max VSS     (ms-1):  ',        &
      &                    range(1),range(2)
       END IF
 #endif

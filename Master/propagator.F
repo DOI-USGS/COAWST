@@ -1,19 +1,19 @@
 #include "cppdefs.h"
-      MODULE propagator_mod
 #ifdef PROPAGATOR
-!
-!svn $Id: propagator.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!   These drivers are part of the Generalized Stability Theory (GST)   !
-!   package to study the dynamics, sensitivity, and stability of the   !
-!   ocean circulation to naturally ocurring perturbations, errors or   !
-!   uncetainties in the forecasting system, and adaptive sampling.     !
-!                                                                      !
+!!
+!!git $Id$
+!!svn $Id: propagator.F 1151 2023-02-09 03:08:53Z arango $
+!!================================================= Hernan G. Arango ===
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
+!!   Licensed under a MIT/X style license                              !
+!!   See License_ROMS.txt                                              !
+!!======================================================================
+!!                                                                     !
+!!  These drivers are part of the Generalized Stability Theory (GST)   !
+!!  package to study the dynamics, sensitivity, and stability of the   !
+!!  ocean circulation to naturally ocurring perturbations, errors or   !
+!!  uncetainties in the forecasting system, and adaptive sampling.     !
+!!                                                                     !
 !!  Available Drivers:                                                 !
 !!                                                                     !
 !!  propagator_adte      Adjoint Finite time Eigenmodes                !
@@ -28,20 +28,14 @@
 !!  propagator_so_semi   Stochastic optimals, semi-norm estimation     !
 !!  propagator_so_trace  Stochastic optimals, randomized trace         !
 !!                                                                     !
-!   Reference:                                                         !
-!                                                                      !
-!     Moore, A.M. et al., 2004: A comprehensive ocean prediction and   !
-!       analysis system based on the tangent linear and adjoint of a   !
-!       regional ocean model, Ocean Modelling, 7, 227-258.             !
-!                                                                      !
-!=======================================================================
-!
-      USE mod_kinds
-!
-      implicit none
-!
-      CONTAINS
-
+!!  Reference:                                                         !
+!!                                                                     !
+!!    Moore, A.M. et al., 2004: A comprehensive ocean prediction and   !
+!!      analysis system based on the tangent linear and adjoint of a   !
+!!      regional ocean model, Ocean Modelling, 7, 227-258.             !
+!!                                                                     !
+!!======================================================================
+!!
 # if defined AFT_EIGENMODES
 #  include "propagator_afte.h"
 # elif defined FT_EIGENMODES
@@ -49,7 +43,7 @@
 # elif defined FORCING_SV
 #  include "propagator_fsv.h"
 # elif defined HESSIAN_FSV
-#  include "propagator_hfsv.h"
+!!#  include "propagator_hfsv.h"
 # elif defined OPT_PERTURBATION
 #  include "propagator_op.h"
 # elif defined HESSIAN_SV
@@ -65,6 +59,7 @@
 # elif defined SO_TRACE
 !!#  include "propagator_so_trace.h"
 # endif
-#endif
-
+#else
+      MODULE propagator_mod
       END MODULE propagator_mod
+#endif

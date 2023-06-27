@@ -2,9 +2,10 @@
 #ifdef ADJOINT
       SUBROUTINE ad_get_data (ng)
 !
-!svn $Id: ad_get_data.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_get_data.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -50,6 +51,8 @@
 !
 !  Local variable declarations.
 !
+      logical, save :: recordless = .FALSE.
+
       logical, dimension(3) :: update =                                 &
      &         (/ .FALSE., .FALSE., .FALSE. /)
 !
@@ -103,7 +106,10 @@
 !
       IF (LuvSrc(ng).or.LwSrc(ng)) THEN
         CALL get_ngfldr (ng, iADM, idRtra, SSF(ng)%ncid,                &
-     &                   1, SSF(ng), update(1),                         &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                   SSF(ng)%pioFile,                               &
+#  endif
+     &                   1, SSF(ng), recordless, update(1),             &
      &                   1, Nsrc(ng), 1, 2, 1, Nsrc(ng), 1,             &
      &                   SOURCES(ng) % QbarG)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -116,7 +122,10 @@
       DO i=1,NT(ng)
         IF (LtracerSrc(i,ng)) THEN
           CALL get_ngfldr (ng, iADM, idRtrc(i), SSF(ng)%ncid,           &
-     &                     1, SSF(ng), update(1),                       &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     SSF(ng)%pioFile,                             &
+#   endif
+     &                     1, SSF(ng), recordless, update(1),           &
      &                     1, Nsrc(ng), N(ng), 2, 1, Nsrc(ng), N(ng),   &
      &                     SOURCES(ng) % TsrcG(:,:,:,i))
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -133,7 +142,10 @@
 !  Surface wind components.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idUair, ncFRCid(idUair,ng),            &
+      CALL get_2dfldr (ng, iADM, idUair, FRCncid(idUair,ng),            &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idUair,ng),                           &
+#  endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #  ifdef MASKING
@@ -141,8 +153,11 @@
 #  endif
      &                 FORCES(ng) % UwindG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
-      CALL get_2dfldr (ng , iADM, idVair, ncFRCid(idVair,ng),           &
+!
+      CALL get_2dfldr (ng , iADM, idVair, FRCncid(idVair,ng),           &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idVair,ng),                           &
+#  endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #  ifdef MASKING
@@ -160,7 +175,10 @@
 !  Surface wind stress components from input FRC file.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idUsms, ncFRCid(idUsms,ng),            &
+      CALL get_2dfldr (ng, iADM, idUsms, FRCncid(idUsms,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idUsms,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -169,7 +187,10 @@
      &                 FORCES(ng) % sustrG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-      CALL get_2dfldr (ng, iADM, idVsms, ncFRCid(idVsms,ng),            &
+      CALL get_2dfldr (ng, iADM, idVsms, FRCncid(idVsms,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idVsms,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -185,6 +206,9 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idUsms, BLK(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#   endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -194,6 +218,9 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
       CALL get_2dfldr (ng, iADM, idVsms, BLK(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#   endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -204,15 +231,19 @@
 #  endif
 # endif
 
-# if !defined ANA_PAIR      && \
-     (defined ECOSIM        || defined ATM_PRESS)
-#  if !(defined BULK_FLUXES || defined FRC_COUPLING)
+# if !defined ANA_PAIR       && \
+     (defined ATM_PRESS      || defined BULK_FLUXES  || \
+      defined ECOSIM)
+#  if !(defined FRC_COUPLING || defined FORWARD_FLUXES)
 !
 !-----------------------------------------------------------------------
 !  Surface air pressure from input FRC file.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idPair, ncFRCid(idPair,ng),            &
+      CALL get_2dfldr (ng, iADM, idPair, FRCncid(idPair,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idPair,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -221,13 +252,16 @@
      &                 FORCES(ng) % PairG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
-#  elif defined BULK_FLUXES && defined FORWARD_FLUXES
+#  else
 !
 !-----------------------------------------------------------------------
 !  Surface air pressure from NLM forward file.
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idPair, BLK(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#   endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -241,11 +275,14 @@
 # if !defined ANA_WWAVE && defined WAVE_DATA
 !
 !-----------------------------------------------------------------------
-!  Surface wind induced wave amplitude, direction and period.
+!  Surface wind induced wave properties.
 !-----------------------------------------------------------------------
 !
 #  ifdef WAVES_DIR
-      CALL get_2dfldr (ng, iADM, idWdir, ncFRCid(idWdir,ng),            &
+      CALL get_2dfldr (ng, iADM, idWdir, FRCncid(idWdir,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWdir,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -256,7 +293,11 @@
 #  endif
 
 #  ifdef WAVES_HEIGHT
-      CALL get_2dfldr (ng, iADM, idWamp, ncFRCid(idWamp,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWamp, (idWamp,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWamp,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -267,7 +308,11 @@
 #  endif
 
 #  ifdef WAVES_LENGTH
-      CALL get_2dfldr (ng, iADM, idWlen, ncFRCid(idWlen,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWlen, FRCncid(idWlen,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWlen,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -278,7 +323,11 @@
 #  endif
 
 #  ifdef WAVES_TOP_PERIOD
-      CALL get_2dfldr (ng, iADM, idWptp, ncFRCid(idWptp,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWptp, FRCncid(idWptp,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWptp,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -289,7 +338,11 @@
 #  endif
 
 #  ifdef WAVES_BOT_PERIOD
-      CALL get_2dfldr (ng, iADM, idWpbt, ncFRCid(idWpbt,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWpbt, FRCncid(idWpbt,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWpbt,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -300,7 +353,11 @@
 #  endif
 
 #  if defined WAVES_UB
-      CALL get_2dfldr (ng, iADM, idWorb, ncFRCid(idWorb,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWorb, FRCncid(idWorb,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWorb,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -311,7 +368,11 @@
 #  endif
 
 #  if defined TKE_WAVEDISS
-      CALL get_2dfldr (ng, iADM, idWdis, ncFRCid(idWdis,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWdis, FRCncid(idWdis,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWdis,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -322,7 +383,11 @@
 #  endif
 
 #  if defined SVENDSEN_ROLLER
-      CALL get_2dfldr (ng, iADM, idWbrk, ncFRCid(idWbrk,ng),            &
+!
+      CALL get_2dfldr (ng, iADM, idWbrk, FRCncid(idWbrk,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idWbrk,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -341,7 +406,10 @@
 !  Cloud fraction.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idCfra, ncFRCid(idCfra,ng),            &
+      CALL get_2dfldr (ng, iADM, idCfra, FRCncid(idCfra,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idCfra,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -359,6 +427,9 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idSrad, BLK(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#    endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -375,7 +446,10 @@
 !  Surface solar shortwave radiation.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idSrad, ncFRCid(idSrad,ng),            &
+      CALL get_2dfldr (ng, iADM, idSrad, FRCncid(idSrad,ng),            &
+#     if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idSrad,ng),                           &
+#     endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #     ifdef MASKING
@@ -395,7 +469,10 @@
 !  Surface net longwave radiation.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idLrad, ncFRCid(idLrad,ng),            &
+      CALL get_2dfldr (ng, iADM, idLrad, FRCncid(idLrad,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idLrad,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -412,7 +489,10 @@
 !  Surface downwelling longwave radiation.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idLdwn, ncFRCid(idLdwn,ng),            &
+      CALL get_2dfldr (ng, iADM, idLdwn, FRCncid(idLdwn,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idLdwn,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -431,7 +511,10 @@
 !  Surface air temperature.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idTair, ncFRCid(idTair,ng),            &
+      CALL get_2dfldr (ng, iADM, idTair, FRCncid(idTair,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idTair,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -449,7 +532,10 @@
 !  Surface air humidity.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idQair, ncFRCid(idQair,ng),            &
+      CALL get_2dfldr (ng, iADM, idQair, FRCncid(idQair,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idQair,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -466,7 +552,10 @@
 !  Rain fall rate.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idrain, ncFRCid(idrain,ng),            &
+      CALL get_2dfldr (ng, iADM, idrain, FRCncid(idrain,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idrain,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -480,11 +569,14 @@
 #   if !(defined BULK_FLUXES || defined FORWARD_FLUXES)
 !
 !-----------------------------------------------------------------------
-!  Surface net heat flux from FRC file.
+!  Surface net heat flux from input FRC file.
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idTsur(itemp),                         &
-     &                 ncFRCid(idTsur(itemp),ng),                       &
+     &                 FRCncid(idTsur(itemp),ng),                       &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idTsur(itemp),ng),                    &
+#    endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -500,6 +592,9 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idTsur(itemp), BLK(ng)%ncid,           &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#    endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -517,7 +612,10 @@
 !  (SST).
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idSSTc, ncFRCid(idSSTc,ng),            &
+      CALL get_2dfldr (ng, iADM, idSSTc, FRCncid(idSSTc,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idSSTc,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -534,7 +632,10 @@
 !  SST (dQdSST).
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, iddQdT, ncFRCid(iddQdT,ng),            &
+      CALL get_2dfldr (ng, iADM, iddQdT, FRCncid(iddQdT,ng),            &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(iddQdT,ng),                           &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -551,7 +652,10 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idTbot(itemp),                         &
-     &                 ncFRCid(idTbot(itemp),ng),                       &
+     &                 FRCncid(idTbot(itemp),ng),                       &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idTbot(itemp),ng),                    &
+#   endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -569,7 +673,10 @@
 !  Surface net freshwater flux: E-P from FRC file.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idsfwf, ncFRCid(idsfwf,ng),            &
+      CALL get_2dfldr (ng, iADM, idsfwf, FRCncid(idsfwf,ng),            &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idsfwf,ng),                           &
+#    endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -586,6 +693,9 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idEmPf, BLK(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 BLK(ng)%pioFile,                                 &
+#    endif
      &                 1, BLK(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -601,7 +711,10 @@
 !  Surface net freshwater flux correction field: sea surface salinity.
 !-----------------------------------------------------------------------
 !
-      CALL get_2dfldr (ng, iADM, idSSSc, ncFRCid(idSSSc,ng),            &
+      CALL get_2dfldr (ng, iADM, idSSSc, FRCncid(idSSSc,ng),            &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idSSSc,ng),                           &
+#    endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -618,7 +731,10 @@
 !-----------------------------------------------------------------------
 !
       CALL get_2dfldr (ng, iADM, idTbot(isalt),                         &
-     &                 ncFRCid(idTbot(isalt),ng),                       &
+     &                 FRCncid(idTbot(isalt),ng),                       &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FRCpioFile(idTbot(isalt),ng),                    &
+#    endif
      &                 nFfiles(ng), FRC(1,ng), update(1),               &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -637,7 +753,10 @@
 !-----------------------------------------------------------------------
 !
       DO i=NAT+1,NT(ng)
-        CALL get_2dfldr (ng, iADM, idTsur(i), ncFRCid(idTsur(i),ng),    &
+        CALL get_2dfldr (ng, iADM, idTsur(i), FRCncid(idTsur(i),ng),    &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                   FRCpioFile(idTsur(i),ng),                      &
+#    endif
      &                   nFfiles(ng), FRC(1,ng), update(1),             &
      &                   LBi, UBi, LBj, UBj, 2, 1,                      &
 #    ifdef MASKING
@@ -655,7 +774,10 @@
 !-----------------------------------------------------------------------
 !
       DO i=NAT+1,NT(ng)
-        CALL get_2dfldr (ng, iADM, idTbot(i), ncFRCid(idTbot(i),ng),    &
+        CALL get_2dfldr (ng, iADM, idTbot(i), FRCncid(idTbot(i),ng),    &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                   FRCpioFile(idTbot(i),ng),                      &
+#    endif
      &                   nFfiles(ng), FRC(1,ng), update(1),             &
      &                   LBi, UBi, LBj, UBj, 2, 1,                      &
 #    ifdef MASKING
@@ -677,35 +799,51 @@
       IF (LprocessOBC(ng)) THEN
         IF (ad_LBC(iwest,isFsur,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idZbry(iwest),                     &
-     &                     ncBRYid(idZbry(iwest),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idZbry(iwest),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idZbry(iwest),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % zetaG_west)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(ieast,isFsur,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idZbry(ieast),                     &
-     &                     ncBRYid(idZbry(ieast),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idZbry(ieast),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idZbry(ieast),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % zetaG_east)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(isouth,isFsur,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idZbry(isouth),                    &
-     &                     ncBRYid(idZbry(isouth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idZbry(isouth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idZbry(isouth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % zetaG_south)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(inorth,isFsur,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idZbry(inorth),                    &
-     &                     ncBRYid(idZbry(inorth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idZbry(inorth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idZbry(inorth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % zetaG_north)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -718,71 +856,103 @@
       IF (LprocessOBC(ng)) THEN
         IF (ad_LBC(iwest,isUbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU2bc(iwest),                     &
-     &                     ncBRYid(idU2bc(iwest),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU2bc(iwest),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU2bc(iwest),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % ubarG_west)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(iwest,isVbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV2bc(iwest),                     &
-     &                     ncBRYid(idV2bc(iwest),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV2bc(iwest),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV2bc(iwest),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 1, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % vbarG_west)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(ieast,isUbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU2bc(ieast),                     &
-     &                     ncBRYid(idU2bc(ieast),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU2bc(ieast),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU2bc(ieast),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % ubarG_east)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(ieast,isVbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV2bc(ieast),                     &
-     &                     ncBRYid(idV2bc(ieast),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV2bc(ieast),ng),                   &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV2bc(ieast),ng),                &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, 1, 2, 1, Mm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % vbarG_east)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(isouth,isUbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU2bc(isouth),                    &
-     &                     ncBRYid(idU2bc(isouth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU2bc(isouth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU2bc(isouth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 1, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % ubarG_south)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(isouth,isVbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV2bc(isouth),                    &
-     &                     ncBRYid(idV2bc(isouth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV2bc(isouth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV2bc(isouth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % vbarG_south)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(inorth,isUbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU2bc(inorth),                    &
-     &                     ncBRYid(idU2bc(inorth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU2bc(inorth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU2bc(inorth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 1, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % ubarG_north)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(inorth,isVbar,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV2bc(inorth),                    &
-     &                     ncBRYid(idV2bc(inorth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV2bc(inorth),ng),                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV2bc(inorth),ng),               &
+#  endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,              &
      &                     BOUNDARY(ng) % vbarG_north)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -796,71 +966,103 @@
       IF (LprocessOBC(ng)) THEN
         IF (ad_LBC(iwest,isUvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU3bc(iwest),                     &
-     &                     ncBRYid(idU3bc(iwest),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU3bc(iwest),ng),                   &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU3bc(iwest),ng),                &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % uG_west)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(iwest,isVvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV3bc(iwest),                     &
-     &                     ncBRYid(idV3bc(iwest),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV3bc(iwest),ng),                   &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV3bc(iwest),ng),                &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, N(ng), 2, 1, Mm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % vG_west)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(ieast,isUvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU3bc(ieast),                     &
-     &                     ncBRYid(idU3bc(ieast),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU3bc(ieast),ng),                   &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU3bc(ieast),ng),                &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % uG_east)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(ieast,isVvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV3bc(ieast),                     &
-     &                     ncBRYid(idV3bc(ieast),ng),                   &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV3bc(ieast),ng),                   &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV3bc(ieast),ng),                &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     JLB, JUB, N(ng), 2, 1, Mm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % vG_east)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(isouth,isUvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU3bc(isouth),                    &
-     &                     ncBRYid(idU3bc(isouth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU3bc(isouth),ng),                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU3bc(isouth),ng),               &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, N(ng), 2, 1, Lm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % uG_south)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(isouth,isVvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV3bc(isouth),                    &
-     &                     ncBRYid(idV3bc(isouth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV3bc(isouth),ng),                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV3bc(isouth),ng),               &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % vG_south)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(inorth,isUvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idU3bc(inorth),                    &
-     &                     ncBRYid(idU3bc(inorth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idU3bc(inorth),ng),                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idU3bc(inorth),ng),               &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, N(ng), 2, 1, Lm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % uG_north)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+!
         IF (ad_LBC(inorth,isVvel,ng)%acquire) THEN
           CALL get_ngfldr (ng, iADM, idV3bc(inorth),                    &
-     &                     ncBRYid(idV3bc(inorth),ng),                  &
-     &                     nBCfiles(ng), BRY(1,ng), update(1),          &
+     &                     BRYncid(idV3bc(inorth),ng),                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     BRYpioFile(idV3bc(inorth),ng),               &
+#   endif
+     &                     nBCfiles(ng), BRY(1,ng),                     &
+     &                     recordless, update(1),                       &
      &                     ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),      &
      &                     BOUNDARY(ng) % vG_north)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -874,41 +1076,57 @@
         DO i=1,NT(ng)
           IF (ad_LBC(iwest,isTvar(i),ng)%acquire) THEN
             CALL get_ngfldr (ng, iADM, idTbry(iwest,i),                 &
-     &                       ncBRYid(idTbry(iwest,i),ng),               &
-     &                       nBCfiles(ng), BRY(1,ng), update(1),        &
+     &                       BRYncid(idTbry(iwest,i),ng),               &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                       BRYpioFile(idTbry(iwest,i),ng),            &
+#   endif
+     &                       nBCfiles(ng), BRY(1,ng),                   &
+     &                       recordless, update(1),                     &
      &                       JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),    &
      &                       BOUNDARY(ng) % tG_west(:,:,:,i))
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
-
+!
         DO i=1,NT(ng)
           IF (ad_LBC(ieast,isTvar(i),ng)%acquire) THEN
             CALL get_ngfldr (ng, iADM, idTbry(ieast,i),                 &
-     &                       ncBRYid(idTbry(ieast,i),ng),               &
-     &                       nBCfiles(ng), BRY(1,ng), update(1),        &
+     &                       BRYncid(idTbry(ieast,i),ng),               &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                       BRYpioFile(idTbry(ieast,i),ng),            &
+#   endif
+     &                       nBCfiles(ng), BRY(1,ng),                   &
+     &                       recordless, update(1),                     &
      &                       JLB, JUB, N(ng), 2, 0, Mm(ng)+1, N(ng),    &
      &                       BOUNDARY(ng) % tG_east(:,:,:,i))
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
-
+!
         DO i=1,NT(ng)
           IF (ad_LBC(isouth,isTvar(i),ng)%acquire) THEN
             CALL get_ngfldr (ng, iADM, idTbry(isouth,i),                &
-     &                       ncBRYid(idTbry(isouth,i),ng),              &
-     &                       nBCfiles(ng), BRY(1,ng), update(1),        &
+     &                       BRYncid(idTbry(isouth,i),ng),              &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                       BRYpioFile(idTbry(isouth,i),ng),           &
+#   endif
+     &                       nBCfiles(ng), BRY(1,ng),                   &
+     &                       recordless, update(1),                     &
      &                       ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),    &
      &                       BOUNDARY(ng) % tG_south(:,:,:,i))
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
-
+!
         DO i=1,NT(ng)
           IF (ad_LBC(inorth,isTvar(i),ng)%acquire) THEN
             CALL get_ngfldr (ng, iADM, idTbry(inorth,i),                &
-     &                       ncBRYid(idTbry(inorth,i),ng),              &
-     &                       nBCfiles(ng), BRY(1,ng), update(1),        &
+     &                       BRYncid(idTbry(inorth,i),ng),              &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                       BRYpioFile(idTbry(inorth,i),ng),           &
+#   endif
+     &                       nBCfiles(ng), BRY(1,ng),                   &
+     &                       recordless, update(1),                     &
      &                       ILB, IUB, N(ng), 2, 0, Lm(ng)+1, N(ng),    &
      &                       BOUNDARY(ng) % tG_north(:,:,:,i))
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -927,7 +1145,10 @@
 !  Free-surface.
 !
       IF (LsshCLM(ng)) THEN
-        CALL get_2dfldr (ng, iADM, idSSHc, ncCLMid(idSSHc,ng),          &
+        CALL get_2dfldr (ng, iADM, idSSHc, CLMncid(idSSHc,ng),          &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                   CLMpioFile(idSSHc,ng),                         &
+#  endif
      &                   nCLMfiles(ng), CLM(1,ng), update(1),           &
      &                   LBi, UBi, LBj, UBj, 2, 1,                      &
 #  ifdef MASKING
@@ -942,7 +1163,10 @@
 !  2D momentum.
 !
       IF (Lm2CLM(ng)) THEN
-        CALL get_2dfldr (ng, iADM, idUbcl, ncCLMid(idUbcl,ng),          &
+        CALL get_2dfldr (ng, iADM, idUbcl, CLMncid(idUbcl,ng),          &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                   CLMpioFile(idUbcl,ng),                         &
+#  endif
      &                   nCLMfiles(ng), CLM(1,ng), update(1),           &
      &                   LBi, UBi, LBj, UBj, 2, 1,                      &
 #  ifdef MASKING
@@ -951,7 +1175,10 @@
      &                   CLIMA(ng) % ubarclmG)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-        CALL get_2dfldr (ng, iADM, idVbcl, ncCLMid(idVbcl,ng),          &
+        CALL get_2dfldr (ng, iADM, idVbcl, CLMncid(idVbcl,ng),          &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                   CLMpioFile(idVbcl,ng),                         &
+#  endif
      &                   nCLMfiles(ng), CLM(1,ng), update(1),           &
      &                   LBi, UBi, LBj, UBj, 2, 1,                      &
 #  ifdef MASKING
@@ -967,7 +1194,10 @@
 !  3D momentum.
 !
       IF (Lm3CLM(ng)) THEN
-        CALL get_3dfldr (ng, iADM, idUclm, ncCLMid(idUclm,ng),          &
+        CALL get_3dfldr (ng, iADM, idUclm, CLMncid(idUclm,ng),          &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                   CLMpioFile(idUclm,ng),                         &
+#   endif
      &                   nCLMfiles(ng), CLM(1,ng), update(1),           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,            &
 #   ifdef MASKING
@@ -976,7 +1206,10 @@
      &                   CLIMA(ng) % uclmG)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
-        CALL get_3dfldr (ng, iADM, idVclm, ncCLMid(idVclm,ng),          &
+        CALL get_3dfldr (ng, iADM, idVclm, CLMncid(idVclm,ng),          &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                   CLMpioFile(idVclm,ng),                         &
+#   endif
      &                   nCLMfiles(ng), CLM(1,ng), update(1),           &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,            &
 #   ifdef MASKING
@@ -995,7 +1228,10 @@
         IF (LtracerCLM(i,ng)) THEN
           ic=ic+1
           CALL get_3dfldr (ng, iADM, idTclm(i),                         &
-     &                     ncCLMid(idTclm(i),ng),                       &
+     &                     CLMncid(idTclm(i),ng),                       &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     CLMpioFile(idTclm(i),ng),                     &
+#   endif
      &                     nCLMfiles(ng), CLM(1,ng), update(1),         &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,          &
 #   ifdef MASKING
@@ -1017,6 +1253,9 @@
 !  Read in free-surface.
 !
       CALL get_2dfldr (ng, iADM, idFsur, FWD(ng)%ncid,                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#  endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #  ifdef MASKING
@@ -1028,6 +1267,9 @@
 !  Read 2D momentum.
 !
       CALL get_2dfldr (ng, iADM, idUbar, FWD(ng)%ncid,                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#  endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #  ifdef MASKING
@@ -1037,6 +1279,9 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       CALL get_2dfldr (ng, iADM, idVbar, FWD(ng)%ncid,                  &
+#  if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#  endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #  ifdef MASKING
@@ -1050,6 +1295,9 @@
 !  Read in variables associated with 2D right-hand-side terms.
 !
       CALL get_2dfldr (ng, iADM, idRzet, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1057,8 +1305,11 @@
 #   endif
      &                 OCEAN(ng) % rzetaG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idRu2d, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1066,8 +1317,11 @@
 #   endif
      &                 OCEAN(ng) % rubarG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idRv2d, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1082,6 +1336,9 @@
 !  Read in variables associated with time-averaged 2D momentum terms.
 !
       CALL get_2dfldr (ng, iADM, idUfx1, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1089,8 +1346,11 @@
 #   endif
      &                 COUPLING(ng) % DU_avg1G)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idUfx2, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1098,8 +1358,11 @@
 #   endif
      &                 COUPLING(ng) % DU_avg2G)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idVfx1, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1107,8 +1370,11 @@
 #   endif
      &                 COUPLING(ng) % DV_avg1G)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idVfx2, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #   ifdef MASKING
@@ -1120,6 +1386,9 @@
 !  Read in 3D momentum.
 !
       CALL get_3dfldr (ng, iADM, idUvel, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,              &
 #   ifdef MASKING
@@ -1127,8 +1396,11 @@
 #   endif
      &                 OCEAN(ng) % uG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_3dfldr (ng, iADM, idVvel, FWD(ng)%ncid,                  &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#   endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,              &
 #   ifdef MASKING
@@ -1142,6 +1414,9 @@
 !  Read in variables associated with 3D momentum right-hand-side terms.
 !
       CALL get_2dfldr (ng, iADM, idRuct, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -1149,8 +1424,11 @@
 #    endif
      &                 COUPLING(ng) % rufrcG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_2dfldr (ng, iADM, idRvct, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -1158,8 +1436,11 @@
 #    endif
      &                 COUPLING(ng) % rvfrcG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_3dfldr (ng, iADM, idRu3d, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 1, N(ng),  2, 1,             &
 #    ifdef MASKING
@@ -1167,8 +1448,11 @@
 #    endif
      &                 OCEAN(ng) % ruG)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       CALL get_3dfldr (ng, iADM, idRv3d, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1182,6 +1466,9 @@
 !
       DO i=1,NT(ng)
         CALL get_3dfldr (ng, iADM, idTvar(i), FWD(ng)%ncid,             &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                   FWD(ng)%pioFile,                               &
+#   endif
      &                   1, FWD(ng), update(1),                         &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,            &
 #   ifdef MASKING
@@ -1199,6 +1486,9 @@
         scale=Fscale(idDiff(i),ng)                    ! save and rescale
         Fscale(idDiff(i),ng)=ad_Akt_fac(i,ng)
         CALL get_3dfldr (ng, iADM, idDiff(i), FWD(ng)%ncid,             &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                   FWD(ng)%pioFile,                               &
+#    endif
      &                   1, FWD(ng), update(1),                         &
      &                   LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,            &
 #    ifdef MASKING
@@ -1208,10 +1498,13 @@
         Fscale(idDiff(i),ng)=scale
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
-
+!
       scale=Fscale(idVvis,ng)                         ! save and rescale
       Fscale(idVvis,ng)=ad_Akv_fac(ng)
       CALL get_3dfldr (ng, iADM, idVvis, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1227,6 +1520,9 @@
 !  Read in turbulent kinetic energy.
 !
       CALL get_3dfldr (ng, iADM, idMtke, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1238,6 +1534,9 @@
 !  Read in turbulent kinetic energy times length scale.
 !
       CALL get_3dfldr (ng, iADM, idMtls, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1249,6 +1548,9 @@
 !  Read in vertical mixing length scale.
 !
       CALL get_3dfldr (ng, iADM, idVmLS, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1260,6 +1562,9 @@
 !  Read in vertical mixing coefficient for turbulent kinetic energy.
 !
       CALL get_3dfldr (ng, iADM, idVmKK, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #    ifdef MASKING
@@ -1273,6 +1578,9 @@
 !  Read in vertical mixing coefficient for turbulent length scale.
 !
       CALL get_3dfldr (ng, iADM, idVmKP, FWD(ng)%ncid,                  &
+#     if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#     endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,              &
 #     ifdef MASKING
@@ -1288,6 +1596,9 @@
 !  Read in depth of surface oceanic boundary layer.
 !
       CALL get_2dfldr (ng, iADM, idHsbl, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -1302,6 +1613,9 @@
 !  Read in depth of bottom oceanic boundary layer.
 !
       CALL get_2dfldr (ng, iADM, idHbbl, FWD(ng)%ncid,                  &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                 1, FWD(ng), update(1),                           &
      &                 LBi, UBi, LBj, UBj, 2, 1,                        &
 #    ifdef MASKING
@@ -1317,6 +1631,9 @@
 !
       DO i=1,NAT
         CALL get_3dfldr (ng, iADM, idGhat(i), FWD(ng)%ncid,             &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                 FWD(ng)%pioFile,                                 &
+#    endif
      &                   1, FWD(ng), update(1),                         &
      &                   LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,            &
 #    ifdef MASKING
@@ -1345,6 +1662,9 @@
 #   endif
         IF (SCALARS(ng)%Lstate(isFsur)) THEN
           CALL get_2dfldr (ng, iADM, idZads, ADS(ng)%ncid,              &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#   endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 2, 1,                    &
 #   ifdef MASKING
@@ -1358,6 +1678,9 @@
 !
         IF (SCALARS(ng)%Lstate(isUbar)) THEN
           CALL get_2dfldr (ng, iADM, idUbas, ADS(ng)%ncid,              &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#   endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 2, 1,                    &
 #   ifdef MASKING
@@ -1369,6 +1692,9 @@
 !
         IF (SCALARS(ng)%Lstate(isVbar)) THEN
           CALL get_2dfldr (ng, iADM, idVbas, ADS(ng)%ncid,              &
+#   if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#   endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 2, 1,                    &
 #   ifdef MASKING
@@ -1384,6 +1710,9 @@
 !
         IF (SCALARS(ng)%Lstate(isUvel)) THEN
           CALL get_3dfldr (ng, iADM, idUads, ADS(ng)%ncid,              &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#    endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,          &
 #    ifdef MASKING
@@ -1395,6 +1724,9 @@
 !
         IF (SCALARS(ng)%Lstate(isVvel)) THEN
           CALL get_3dfldr (ng, iADM, idVads, ADS(ng)%ncid,              &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#    endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,          &
 #    ifdef MASKING
@@ -1406,6 +1738,9 @@
 !
         IF (SCALARS(ng)%Lstate(isWvel)) THEN
           CALL get_3dfldr (ng, iADM, idWads, ADS(ng)%ncid,              &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                     ADS(ng)%pioFile,                             &
+#    endif
      &                     1, ADS(ng), update(1),                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), 2, 1,          &
 #    ifdef MASKING
@@ -1420,6 +1755,9 @@
         DO i=1,NT(ng)
           IF (SCALARS(ng)%Lstate(isTvar(i))) THEN
             CALL get_3dfldr (ng, iADM, idTads(i), ADS(ng)%ncid,         &
+#    if defined PIO_LIB && defined DISTRIBUTE
+     &                       ADS(ng)%pioFile,                           &
+#    endif
      &                       1, ADS(ng), update(1),                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 2, 1,        &
 #    ifdef MASKING

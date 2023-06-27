@@ -6,9 +6,10 @@
 
         SUBROUTINE tl_sqlq(innLoop, a, tl_a, tau, tl_tau, y, tl_y)
 !
-!svn $Id: tl_sqlq.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: tl_sqlq.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -70,8 +71,8 @@
         ELSE
           tl_zbeta=0.0_r8
         END IF
-!>      zbeta=-SIGN(zbeta,a(ii,ii))
-!>
+!^      zbeta=-SIGN(zbeta,a(ii,ii))
+!^
         tl_zbeta=-SIGN(1.0_r8,zbeta)*SIGN(1.0_r8,a(ii,ii))*tl_zbeta
         zbeta=-SIGN(zbeta,a(ii,ii))
         tau(ii)=(zbeta-a(ii,ii))/zbeta

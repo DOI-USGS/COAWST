@@ -5,9 +5,10 @@
       MODULE lmd_skpp_mod
 #if defined NONLINEAR && defined LMD_SKPP && defined SOLVE3D
 !
-!svn $Id: lmd_skpp.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: lmd_skpp.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -50,7 +51,6 @@
       USE mod_mixing
       USE mod_ocean
       USE mod_stepping
-      USE mod_clima
 !
 !  Imported variable declarations.
 !
@@ -90,9 +90,6 @@
 # endif
      &                    MIXING(ng) % Akt,                             &
      &                    MIXING(ng) % Akv,                             &
-#ifdef AKT_3D
-     &                    CLIMA(ng) % tclm,                             &
-#endif
      &                    MIXING(ng) % hsbl,                            &
      &                    MIXING(ng) % ksbl)
       RETURN
@@ -118,11 +115,7 @@
 # ifdef LMD_NONLOCAL
      &                          ghats,                                  &
 # endif
-     &                          Akt, Akv,                               &
-#ifdef AKT_3D
-     &                          tclm,                                   &
-#endif
-     &                          hsbl, ksbl)
+     &                          Akt, Akv, hsbl, ksbl)
 !***********************************************************************
 !
       USE mod_param
@@ -167,9 +160,6 @@
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
       real(r8), intent(inout) :: Akt(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
-#ifdef AKT_3D
-      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
-# endif
       real(r8), intent(inout) :: hsbl(LBi:,LBj:)
       integer,  intent(out) :: ksbl(LBi:,LBj:)
 #  ifdef LMD_NONLOCAL
@@ -199,9 +189,6 @@
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
       real(r8), intent(inout) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
-#ifdef AKT_3D
-      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng)+2)
-# endif
       real(r8), intent(inout) :: hsbl(LBi:UBi,LBj:UBj)
       integer,  intent(out) :: ksbl(LBi:UBi,LBj:UBj)
 #  ifdef LMD_NONLOCAL
@@ -223,8 +210,7 @@
       real(r8) :: depth, dK_bl, hekman, hmonob, sigma, zbl
       real(r8) :: zetahat, zetapar
 # ifdef QUADRATIC
-      real(r8) :: slope_up, slope_down
-      real(r8) :: a_co, b_co, c_co, z_up, sqrt_arg
+      real(r8) :: slope_up, a_co, b_co, c_co, z_up, sqrt_arg
 # endif
 
       real(r8), dimension (IminS:ImaxS) :: Rref
@@ -523,50 +509,10 @@
         END DO
 # else
 #  ifdef QUADRATIC
-#   ifdef KATE
-!    Quadratic interpolation to find hsbl, using a scheme from Bill
-!    Large et al. (personal communication)
-        DO k=N(ng),2,-1
-          DO i=Istr,Iend
-!    CAE version.  Assumes that FC is calculated on w-points.
-!    Solve FC = a*z^2 + b*z + c,
-!    If F' is d(FC)/dz, either up or down a half grid-point,
-!    a=(F'(k+.5)-F'(k-.5))/(z(k+1)-z(k-1)
-!    b=F'(k+.5)-2*a*z(k+.5)
-!    c=F(k)-a*z(k)*z(k)-bz(k)
-!    or 0 = a*z^2 + b*z + (c-FC).
-!    Let a_co=a, b_co=b, and c_co=c-Ric.
-            IF (k .eq. N(ng)) THEN
-              slope_up = 0.0_r8
-            ELSE
-              slope_up = (FC(i,k+1) - FC(i,k)) /                      &
-     &                   (z_w(i,j,k+1) - z_w(i,j,k))
-            END IF
-            slope_down = (FC(i,k) - FC(i,k-1)) /                        &
-     &                 (z_w(i,j,k) - z_w(i,j,k-1))
-            a_co = (slope_up-slope_down)/(z_w(i,j,k+1)-z_w(i,j,k-1))
-            b_co = slope_up - a_co*(z_w(i,j,k+1)+z_w(i,j,k))
-            c_co = FC(i,k) - a_co*z_w(i,j,k)*z_w(i,j,k) -               &
-     &               b_co*z_w(i,j,k)-lmd_Ric
-            sqrt_arg = b_co*b_co - 4.0_r8*a_co*c_co
-            IF ( ( (abs(b_co) .gt. eps) .and.                           &
-     &           (abs(a_co/b_co) .le. eps) ) .or.                       &
-     &           (sqrt_arg .le.  0.0_r8 ) ) THEN
-!   If problem using quadratic, then use linear approx.
-              hsbl(i,j)=((FC(i,k-1)-lmd_Ric)*z_w(i,j,k  )+              &
-     &                    (lmd_Ric-FC(i,k  ))*z_w(i,j,k-1))/            &
-     &                    (FC(i,k-1)-FC(i,k))
-            ELSE
-              hsbl(i,j) = (-b_co - sqrt(sqrt_arg)) / (2.0_r8*a_co)
-              IF (hsbl(i,j) .gt. z_w(i,j,k)) THEN
-                write(6,*) 'Bad calculation of hsbl. Exiting', i,j
-                stop
-              END IF
-            END IF
-            ksbl(i,j)=k
-          END DO
-        END DO
-#   else
+!
+! Quadratic interpolation to find hsbl, using a scheme from Bill Large
+! (personal communication).
+!
         DO k=N(ng),2,-1
           DO i=Istr,Iend
             IF ((ksbl(i,j).eq.1).and.(FC(i,k-1).ge.lmd_Ric)) THEN
@@ -592,7 +538,6 @@
             END IF
           END DO
         END DO
-#   endif
 #  else
         DO k=N(ng),2,-1
           DO i=Istr,Iend
@@ -979,17 +924,6 @@
           END DO
         END DO
       END DO
-#ifdef AKT_3D
-      DO itrc=1,2
-        DO j=Jstr-2,Jend+2
-          DO k=1,N(ng)
-            DO i=Istr-2,Iend+2
-              Akt(i,j,k,itrc)=tclm(i,j,k,iAKt3)
-            END DO
-          END DO
-        END DO
-      END DO
-#endif
 
       RETURN
       END SUBROUTINE lmd_skpp_tile

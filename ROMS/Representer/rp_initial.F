@@ -2,9 +2,10 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_initial (ng)
 !
-!svn $Id: rp_initial.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_initial.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,7 +19,7 @@
 # ifdef BBL_MODEL_NOT_YET
       USE mod_bbl
 # endif
-      Use mod_boundary
+      USE mod_boundary
 # ifdef SOLVE3D
       USE mod_coupling
 # endif
@@ -37,9 +38,14 @@
       USE mod_stepping
 !
       USE analytical_mod
+      USE close_io_mod,        ONLY : close_inp
       USE dateclock_mod,       ONLY : time_string
 # ifdef DISTRIBUTE
       USE distribute_mod,      ONLY : mp_bcasti
+# endif
+      USE get_state_mod,       ONLY : get_state
+# ifdef WET_DRY
+      USE get_wetdry_mod,      ONLY : get_wetdry
 # endif
 # ifdef TLM_CHECK
       USE ini_adjust_mod,      ONLY : tl_ini_perturb
@@ -57,6 +63,12 @@
       USE omega_mod,           ONLY : omega
       USE rho_eos_mod,         ONLY : rho_eos
       USE set_massflux_mod,    ONLY : set_massflux
+# endif
+# ifdef OBSERVATIONS
+      USE obs_initial_mod,     ONLY : obs_initial
+# endif
+# ifdef WEAK_CONSTRAINT
+      USE rp_def_ini_mod,      ONLY : rp_def_ini
 # endif
 # ifdef MASKING
       USE set_masks_mod,       ONLY : set_masks
@@ -367,11 +379,11 @@
 !  Read in representer model initial conditions.
 !
 # ifdef INI_FILE
-      CALL get_state (ng, iRPM, 1, IRP(ng)%name, IniRec, Tindex)
+      CALL get_state (ng, iRPM, 1, IRP(ng), IniRec, Tindex)
       time(ng)=io_time                       ! needed for shared-memory
 # else
       IF (nrrec(ng).ne.0) THEN
-        CALL get_state (ng, iRPM, 1, IRP(ng)name, IniRec, Tindex)
+        CALL get_state (ng, iRPM, 1, IRP(ng), IniRec, Tindex)
         time(ng)=io_time                     ! needed for shared-memory
 # ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iNLM, exit_flag)
@@ -389,9 +401,11 @@
 !  If restart, read in wet/dry masks.
 !
       IF (nrrec(ng).ne.0) THEN
-        CALL get_wetdry (ng, iRPM, IniRec(ng))
 #  ifdef DISTRIBUTE
+        CALL get_wetdry (ng, MyRank, iRPM, IniRec(ng))
         CALL mp_bcasti (ng, iRPM, exit_flag)
+#  else
+        CALL get_wetdry (ng, -1, iRPM, IniRec(ng))
 #  endif
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       ELSE

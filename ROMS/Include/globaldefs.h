@@ -1,9 +1,10 @@
 /*
 ** Include file "globaldef.h"
 **
-** svn $Id: globaldefs.h 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: globaldefs.h 1151 2023-02-09 03:08:53Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2021 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -48,12 +49,59 @@
 #endif
 
 /*
-** Make sure that either "mpi_allgather" or "mpi_allreduce" is used
-** in mp_reduce.  Low-level routines give an error.
+** Make sure that either "mpi_allgather", "mpi_allreduce" or lower
+** level point-to-point comunications send/recv are used in
+** "mp_collect".  Use "mpi_allreduce" as default since it is more
+** efficient in mostly all computers.
 */
 
 #ifdef DISTRIBUTE
-# if !(defined REDUCE_ALLGATHER || defined REDUCE_ALLREDUCE)
+# if !(defined ASSEMBLE_ALLGATHER || \
+       defined ASSEMBLE_ALLREDUCE || \
+       defined ASSEMBLE_SENDRECV)
+#  define ASSEMBLE_ALLREDUCE
+# endif
+#endif
+
+/*
+** Make sure that either "mpi_allgather" or "mpi_allreduce" are used
+** in "mp_boundary".  Use "mpi_allreduce" as default since it is more
+** efficient in mostly all computers.
+*/
+
+#ifdef DISTRIBUTE
+# if !(defined BOUNDARY_ALLGATHER || \
+       defined BOUNDARY_ALLREDUCE)
+#  define BOUNDARY_ALLREDUCE
+# endif
+#endif
+
+/*
+** Make sure that either "mpi_allgather", "mpi_allreduce" or lower
+** level point-to-point comunications send/recv are used in
+** "mp_collect".  Use "mpi_allreduce" as default since it is more
+** efficient in mostly all computers.
+*/
+
+#ifdef DISTRIBUTE
+# if !(defined COLLECT_ALLGATHER || \
+       defined COLLECT_ALLREDUCE || \
+       defined COLLECT_SENDRECV)
+#  define COLLECT_ALLREDUCE
+# endif
+#endif
+
+/*
+** Make sure that either "mpi_allgather", "mpi_allreduce" or lower
+** level point-to-point comunications send/recv are used in
+** "mp_reduce". Use "mpi_allreduce" as default since it is more
+** efficient in mostly all computers.
+*/
+
+#ifdef DISTRIBUTE
+# if !(defined REDUCE_ALLGATHER || \
+       defined REDUCE_ALLREDUCE || \
+       defined REDUCE_SENDRECV)
 #  define REDUCE_ALLREDUCE
 # endif
 #endif
@@ -322,6 +370,7 @@
     defined INNER_PRODUCT          || \
     defined I4DVAR                 || \
     defined I4DVAR_ANA_SENSITIVITY || \
+    defined JEDI                   || \
     defined OPT_PERTURBATION       || \
     defined OPT_OBSERVATIONS       || \
     defined PICARD_TEST            || \
@@ -357,6 +406,7 @@
     defined INNER_PRODUCT          || \
     defined I4DVAR                 || \
     defined I4DVAR_ANA_SENSITIVITY || \
+    defined JEDI                   || \
     defined OPT_PERTURBATION       || \
     defined OPT_OBSERVATIONS       || \
     defined RBL4DVAR               || \
@@ -417,6 +467,20 @@
     defined STOCHASTIC_OPT   || \
     defined TLM_DRIVER
 # undef NONLINEAR
+#endif
+
+/*
+** Activate switch for full adjoint output solution. Due to the
+** predictor/corrector and multiple time level schemes, pieces of
+** the adjoint solution are in two-time levels and need to be added
+** in the "_sol" arrays for output purposes.
+*/
+
+#ifdef ADJOINT
+# if !defined AD_OUTPUT_STATE && \
+     (defined STOCHASTIC_OPT  && !defined STOCH_OPT_WHITE)
+#  define AD_OUTPUT_STATE
+# endif
 #endif
 
 /*
@@ -620,6 +684,7 @@
      defined CLIPPING               || \
      defined I4DVAR                 || \
      defined I4DVAR_ANA_SENSITIVITY || \
+     defined JEDI                   || \
      defined RBL4DVAR               || \
      defined R4DVAR                 || \
      defined SENSITIVITY_4DVAR      || \
@@ -691,7 +756,6 @@
 # define BBL_MODEL
 #endif
 
-
 /*
 ** Check if spatially varying bottom friction parameters are needed.
 */
@@ -716,23 +780,17 @@
 ** module.
 */
 
-#if defined BIO_FENNEL  || defined ECOSIM      || \
-    defined ESTUARYBGC  || defined NEMURO      || \
-    defined HYPOXIA_SRM || defined NPZD_FRANKS || \
-    defined NPZD_IRON   || defined NPZD_POWELL || \
-    defined BIO_UMAINE  || defined BEST_NPZ    || \
-    defined RED_TIDE
+#if defined BIO_FENNEL  || \
+    defined ECOSIM      || \
+    defined HYPOXIA_SRM || \
+    defined NEMURO      || \
+    defined NPZD_FRANKS || \
+    defined NPZD_IRON   || \
+    defined NPZD_POWELL || \
+    defined RED_TIDE    || \
+    defined ESTUARYBGC  || \
+    defined BIO_UMAINE
 # define BIOLOGY
-#endif
-
-/*
-** Use AVERAGES structures to write out filtered data
- */
-
-#ifdef FILTERED
-# define AVERAGES
-# undef  FILTRIM            /* define for fewer time-filtered fields */
-# define FILTERED_RST       /* define if use restart files for time-filtering */
 #endif
 
 /*
@@ -839,6 +897,7 @@
 #if defined MODEL_COUPLING && \
     defined ESMF_LIB
 # define REGRESS_STARTCLOCK
+# define ESM_SETRUNCLOCK
 #endif
 /* end of ROMS coupling cpps */
 
@@ -847,7 +906,7 @@
 */
 
 #if defined WEC_MELLOR || defined WEC_VF
-#   define WEC
+# define WEC
 #endif
 
 #if defined SSW_LOGINT && defined WEC
@@ -855,8 +914,11 @@
 #endif
 
 #if defined WEC
+# if defined SWAN_COUPLING
+#   define SPECTRUM_STOKES
+# else
 #   define BULK_STOKES
-#   undef  SPECTRUM_STOKES
+# endif
 #endif
 
 /*
@@ -924,9 +986,10 @@
 #endif
 
 #if (defined TKE_WAVEDISS || defined WEC_VF) && \
-  (!defined WDISS_THORGUZA && \
-   !defined WDISS_CHURTHOR && !defined WDISS_WAVEMOD \
-   && !defined WDISS_INWAVE)
+    (!defined WDISS_THORGUZA                 && \
+     !defined WDISS_CHURTHOR                 && \
+     !defined WDISS_WAVEMOD                  && \
+     !defined WDISS_INWAVE)
 # define WAVES_DISS
 #endif
 

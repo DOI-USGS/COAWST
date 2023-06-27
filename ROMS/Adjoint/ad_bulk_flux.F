@@ -2,9 +2,10 @@
       MODULE ad_bulk_flux_mod
 #if defined ADJOINT && defined BULK_FLUXES_NOT_YET
 !
-!svn $Id: ad_bulk_flux.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_bulk_flux.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -489,25 +490,25 @@
 !-----------------------------------------------------------------------
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_sustr, tl_svstr)
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_sustr, tl_svstr)
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_sustr, ad_svstr)
 #  ifdef EMINUSP
-!>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_evap,                                      &
-!>   &                    tl_stflx(:,:,isalt))
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_evap,                                      &
+!^   &                    tl_stflx(:,:,isalt))
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
@@ -515,13 +516,13 @@
      &                       ad_evap,                                   &
      &                       ad_stflx(:,:,isalt))
 #  endif
-!>    CALL mp_exchange2d (ng, tile, iTLM, 4,                            &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    tl_lrflx, tl_lhflx, tl_shflx,                 &
-!>   &                    tl_stflx(:,:,itemp))
-!>
+!^    CALL mp_exchange2d (ng, tile, iTLM, 4,                            &
+!^   &                    LBi, UBi, LBj, UBj,                           &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    tl_lrflx, tl_lhflx, tl_shflx,                 &
+!^   &                    tl_stflx(:,:,itemp))
+!^
       CALL ad_mp_exchange2d (ng, tile, iADM, 4,                         &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       NghostPoints,                              &
@@ -530,61 +531,61 @@
      &                       ad_stflx(:,:,itemp))
 # endif
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>      CALL exchange_v2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_svstr)
-!>
+!^      CALL exchange_v2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_svstr)
+!^
         CALL ad_exchange_v2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_svstr)
-!>      CALL exchange_u2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_sustr)
-!>
+!^      CALL exchange_u2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_sustr)
+!^
         CALL ad_exchange_u2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_sustr)
 # ifdef EMINUSP
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_stflx(:,:,isalt))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_stflx(:,:,isalt))
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_stflx(:,:,isalt))
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_evap)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_evap)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_evap)
 # endif
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_stflx(:,:,itemp))
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_stflx(:,:,itemp))
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_stflx(:,:,itemp))
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_shflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_shflx)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_shflx)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_lhflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_lhflx)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_lhflx)
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_lrflx)
-!>
+!^      CALL exchange_r2d_tile (ng, tile,                               &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          tl_lrflx)
+!^
         CALL ad_exchange_r2d_tile (ng, tile,                            &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ad_lrflx)
@@ -626,10 +627,10 @@
       DO j=JstrR,JendR
         DO i=Istr,IendR
 # ifdef MASKING
-!>        tl_sustr(i,j)=tl_sustr(i,j)*umask(i,j)
+!^        tl_sustr(i,j)=tl_sustr(i,j)*umask(i,j)
           ad_sustr(i,j)=ad_sustr(i,j)*umask(i,j)
 # endif
-!>        tl_sustr(i,j)=cff*(tl_Taux(i-1,j)+tl_Taux(i,j))
+!^        tl_sustr(i,j)=cff*(tl_Taux(i-1,j)+tl_Taux(i,j))
           adfac=cff*ad_sustr(i,j)
           ad_Taux(i-1,j)=ad_Taux(i-1,j)+adfac
           ad_Taux(i  ,j)=ad_Taux(i  ,j)+adfac
@@ -643,10 +644,10 @@
       DO j=Jstr,JendR
         DO i=IstrR,IendR
 # ifdef MASKING
-!>        tl_svstr(i,j)=tl_svstr(i,j)*vmask(i,j)
+!^        tl_svstr(i,j)=tl_svstr(i,j)*vmask(i,j)
           ad_svstr(i,j)=ad_svstr(i,j)*vmask(i,j)
 # endif
-!>        tl_svstr(i,j)=cff*(tl_Tauy(i,j-1)+tl_Tauy(i,j))
+!^        tl_svstr(i,j)=cff*(tl_Tauy(i,j-1)+tl_Tauy(i,j))
           adfac=cff*ad_svstr(i,j)
           ad_Tauy(i,j-1)=ad_Tauy(i,j-1)+adfac
           ad_Tauy(i,j  )=ad_Tauy(i,j  )+adfac
@@ -674,24 +675,24 @@
         DO i=IstrR,IendR
 # ifdef MASKING
 #   ifdef EMINUSP
-!>        tl_evap(i,j)=tl_evap(i,j)*rmask(i,j)
+!^        tl_evap(i,j)=tl_evap(i,j)*rmask(i,j)
           ad_evap(i,j)=ad_evap(i,j)*rmask(i,j)
-!>        tl_stflx(i,j,isalt)=tl_stflx(i,j,isalt)*rmask(i,j)
+!^        tl_stflx(i,j,isalt)=tl_stflx(i,j,isalt)*rmask(i,j)
           ad_stflx(i,j,isalt)=ad_stflx(i,j,isalt)*rmask(i,j)
 #   endif
-!>        tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)*rmask(i,j)
+!^        tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)*rmask(i,j)
           ad_stflx(i,j,itemp)=ad_stflx(i,j,itemp)*rmask(i,j)
 # endif
 # ifdef EMINUSP
-!>        tl_stflx(i,j,isalt)=cff*tl_evap(i,j)
+!^        tl_stflx(i,j,isalt)=cff*tl_evap(i,j)
           ad_evap(i,j)=ad_evap(i,j)+cff*ad_stflx(i,j,isalt)
 #  if !(defined AD_SENSITIVITY         || defined ADJUST_STFLUX    || \
         defined I4DVAR_ANA_SENSITIVITY || defined OPT_OBSERVATIONS || \
         defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #  endif
-!>        tl_evap(i,j)=tl_LHeat(i,j)/Hlv(i,j)-                          &
-!>   &                               tl_Hlv(i,j)*evap(i,j)/Hlv(i,j)
+!^        tl_evap(i,j)=tl_LHeat(i,j)/Hlv(i,j)-                          &
+!^   &                               tl_Hlv(i,j)*evap(i,j)/Hlv(i,j)
           adfac=ad_evap(i,j)/Hlv(i,j)
           ad_LHeat(i,j)=ad_LHeat(i,j)+adfac
           ad_Hlv(i,j)=ad_Hlv(i,j)-adfac*evap(i,j)
@@ -700,8 +701,8 @@
           ad_evap(i,j)=0.0_r8
 #  endif
 # endif
-!>        tl_stflx(i,j,itemp)=(tl_lrflx(i,j)+                           &
-!>   &                      tl_lhflx(i,j)+tl_shflx(i,j))
+!^        tl_stflx(i,j,itemp)=(tl_lrflx(i,j)+                           &
+!^   &                      tl_lhflx(i,j)+tl_shflx(i,j))
           ad_lrflx(i,j)=ad_lrflx(i,j)+ad_stflx(i,j,itemp)
           ad_lhflx(i,j)=ad_lhflx(i,j)+ad_stflx(i,j,itemp)
           ad_shflx(i,j)=ad_shflx(i,j)+ad_stflx(i,j,itemp)
@@ -709,19 +710,19 @@
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_stflx(i,j,itemp)=0.0_r8
 # endif
-!>        tl_shflx(i,j)=-tl_SHeat(i,j)*Hscale
+!^        tl_shflx(i,j)=-tl_SHeat(i,j)*Hscale
           ad_SHeat(i,j)=ad_SHeat(i,j)-ad_shflx(i,j)*Hscale
 # if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_shflx(i,j)=0.0_r8
 # endif
-!>        tl_lhflx(i,j)=-tl_LHeat(i,j)*Hscale
+!^        tl_lhflx(i,j)=-tl_LHeat(i,j)*Hscale
           ad_LHeat(i,j)=ad_LHeat(i,j)-ad_lhflx(i,j)*Hscale
 # if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_lhflx(i,j)=0.0_r8
 # endif
-!>        tl_lrflx(i,j)=tl_LRad(i,j)*Hscale
+!^        tl_lrflx(i,j)=tl_LRad(i,j)*Hscale
           ad_LRad(i,j)=ad_LRad(i,j)+ad_lrflx(i,j)*Hscale
           ad_lrflx(i,j)=0.0_r8
 
@@ -1110,21 +1111,21 @@
 !
 
 # ifdef MASKING
-!>          tl_Tauy(i,j)=tl_Tauy(i,j)*rmask(i,j)
+!^          tl_Tauy(i,j)=tl_Tauy(i,j)*rmask(i,j)
             ad_Tauy(i,j)=ad_Tauy(i,j)*rmask(i,j)
 # endif
-!>          tl_Tauy(i,j)=tl_cff*Vwind(i,j)
+!^          tl_Tauy(i,j)=tl_cff*Vwind(i,j)
             ad_cff=ad_cff+ad_Tauy(i,j)*Vwind(i,j)
             ad_Tauy(i,j)=0.0_r8
 # ifdef MASKING
-!>          tl_Taux(i,j)=tl_Taux(i,j)*rmask(i,j)
+!^          tl_Taux(i,j)=tl_Taux(i,j)*rmask(i,j)
             ad_Taux(i,j)=ad_Taux(i,j)*rmask(i,j)
 # endif
-!>          tl_Taux(i,j)=tl_cff*Uwind(i,j)
+!^          tl_Taux(i,j)=tl_cff*Uwind(i,j)
             ad_cff=ad_cff+ad_Taux(i,j)*Uwind(i,j)
             ad_Taux(i,j)=0.0_r8
 
-!>          tl_cff=rhoAir(i)*(tl_Cd*Wspeed+Cd*tl_Wspeed)
+!^          tl_cff=rhoAir(i)*(tl_Cd*Wspeed+Cd*tl_Wspeed)
             adfac=rhoAir(i)*ad_cff
             ad_Cd=ad_Cd+Wspeed*adfac
             ad_Wspeed=ad_Wspeed+Cd*adfac
@@ -1135,25 +1136,25 @@
 
 
 # ifdef MASKING
-!>          tl_LHeat(i,j)=tl_LHeat(i,j)*rmask(i,j)
+!^          tl_LHeat(i,j)=tl_LHeat(i,j)*rmask(i,j)
             ad_LHeat(i,j)=ad_LHeat(i,j)*rmask(i,j)
 # endif
-!>          tl_LHeat(i,j)=(tl_Hl+tl_Hlw)
+!^          tl_LHeat(i,j)=(tl_Hl+tl_Hlw)
             ad_Hl=ad_Hl+ad_LHeat(i,j)
             ad_Hlw=ad_Hlw+ad_LHeat(i,j)
             ad_LHeat(i,j)=0.0_r8
 
-!>          tl_Hlw=rhoAir(i)*Q(i)*(tl_Hlv(i,j)*upvel+                   &
-!>   &                         Hlv(i,j)*tl_upvel)
+!^          tl_Hlw=rhoAir(i)*Q(i)*(tl_Hlv(i,j)*upvel+                   &
+!^   &                         Hlv(i,j)*tl_upvel)
             adfac=rhoAir(i)*Q(i)*ad_Hlw
             ad_Hlv(i,j)=ad_Hlv(i,j)+upvel*adfac
             ad_upvel=ad_upvel+Hlv(i,j)*adfac
             ad_Hlw=0.0_r8
 
-!>          tl_upvel=-1.61_r8*                                          &
-!>   &            (tl_Wstar(i)*Qstar(i)+Wstar(i)*tl_Qstar(i))-          &
-!>   &            (1.0_r8+1.61_r8*Q(i))*(tl_Wstar(i)*Tstar(i)+          &
-!>   &                                Wstar(i)*tl_Tstar(i))/TairK(i)
+!^          tl_upvel=-1.61_r8*                                          &
+!^   &            (tl_Wstar(i)*Qstar(i)+Wstar(i)*tl_Qstar(i))-          &
+!^   &            (1.0_r8+1.61_r8*Q(i))*(tl_Wstar(i)*Tstar(i)+          &
+!^   &                                Wstar(i)*tl_Tstar(i))/TairK(i)
             adfac=-1.61_r8*ad_upvel
             adfac1=-(1.0_r8+1.61_r8*Q(i))*ad_upvel/TairK(i)
             ad_Wstar(i)=ad_Wstar(i)+Qstar(i)*adfac+Tstar(i)*adfac1
@@ -1161,9 +1162,9 @@
             ad_Tstar(i)=ad_Tstar(i)+Wstar(i)*adfac1
             ad_upvel=0.0_r8
 
-!>          tl_Hl=-tl_Hlv(i,j)*rhoAir(i)*Wstar(i)*Qstar(i)-             &
-!>   &             Hlv(i,j)*rhoAir(i)*(tl_Wstar(i)*Qstar(i)+            &
-!>   &                                     Wstar(i)*tl_Qstar(i) )
+!^          tl_Hl=-tl_Hlv(i,j)*rhoAir(i)*Wstar(i)*Qstar(i)-             &
+!^   &             Hlv(i,j)*rhoAir(i)*(tl_Wstar(i)*Qstar(i)+            &
+!^   &                                     Wstar(i)*tl_Qstar(i) )
             adfac=Hlv(i,j)*rhoAir(i)*ad_Hl
             ad_Hlv(i,j)=ad_Hlv(i,j)-rhoAir(i)*Wstar(i)*Qstar(i)*ad_Hl
             ad_Wstar(i)=ad_Wstar(i)-Qstar(i)*adfac
@@ -1175,19 +1176,19 @@
 
 
 # ifdef MASKING
-!>          tl_SHeat(i,j)=tl_SHeat(i,j)*rmask(i,j)
+!^          tl_SHeat(i,j)=tl_SHeat(i,j)*rmask(i,j)
             ad_SHeat(i,j)=ad_SHeat(i,j)*rmask(i,j)
 # endif
 
-!>          tl_SHeat(i,j)=(tl_Hs+tl_Hsr)
+!^          tl_SHeat(i,j)=(tl_Hs+tl_Hsr)
             ad_Hs=ad_Hs+ad_SHeat(i,j)
             ad_Hsr=ad_Hsr+ad_SHeat(i,j)
             ad_SHeat(i,j)=0.0_r8
 
-!>          tl_Hsr=Hsr*tl_wet_bulb/wet_bulb+                            &
-!>   &          rain(i,j)*wet_bulb*blk_Cpw*                             &
-!>   &          (tl_TseaC(i)+tl_Qsea(i)*Hlv(i,j)/blk_Cpa+               &
-!>   &          (Qsea(i)-Q(i))*tl_Hlv(i,j)/blk_Cpa)
+!^          tl_Hsr=Hsr*tl_wet_bulb/wet_bulb+                            &
+!^   &          rain(i,j)*wet_bulb*blk_Cpw*                             &
+!^   &          (tl_TseaC(i)+tl_Qsea(i)*Hlv(i,j)/blk_Cpa+               &
+!^   &          (Qsea(i)-Q(i))*tl_Hlv(i,j)/blk_Cpa)
             adfac=rain(i,j)*wet_bulb*blk_Cpw*ad_Hsr
             adfac1=adfac/blk_Cpa
             ad_wet_bulb=ad_wet_bulb+Hsr*ad_Hsr/wet_bulb
@@ -1196,18 +1197,18 @@
             ad_Hlv(i,j)=ad_Hlv(i,j)+(Qsea(i)-Q(i))*adfac1
             ad_Hsr=0.0_r8
 
-!>          tl_wet_bulb=-tl_fac*wet_bulb*wet_bulb
+!^          tl_wet_bulb=-tl_fac*wet_bulb*wet_bulb
             ad_fac=-wet_bulb*wet_bulb*ad_wet_bulb
             ad_wet_bulb=0.0_r8
 
-!>          tl_fac=0.622_r8*diffw*(tl_cff*Hlv(i,j)+cff*tl_Hlv(i,j))/    &
-!>   &                                      (blk_Cpa*diffh)
+!^          tl_fac=0.622_r8*diffw*(tl_cff*Hlv(i,j)+cff*tl_Hlv(i,j))/    &
+!^   &                                      (blk_Cpa*diffh)
             adfac=0.622_r8*diffw*ad_fac/(blk_Cpa*diffh)
             ad_cff=ad_cff+Hlv(i,j)*adfac
             ad_Hlv(i,j)=ad_Hlv(i,j)+cff*adfac
             ad_fac=0.0_r8
 
-!>          tl_cff=Qair(i)*tl_Hlv(i,j)/(blk_Rgas*TairK(i)*TairK(i))
+!^          tl_cff=Qair(i)*tl_Hlv(i,j)/(blk_Rgas*TairK(i)*TairK(i))
             ad_Hlv(i,j)=ad_Hlv(i,j)+Qair(i)*ad_cff/                     &
      &                                     (blk_Rgas*TairK(i)*TairK(i))
             ad_cff=0.0_r8
@@ -1215,8 +1216,8 @@
 !  Adjoint turbulent sensible heat flux (W/m2), Hs.
 !
 
-!>          tl_Hs=-blk_Cpa*rhoAir(i)*(tl_Wstar(i)*Tstar(i)+             &
-!>   &                                Wstar(i)*tl_Tstar(i))
+!^          tl_Hs=-blk_Cpa*rhoAir(i)*(tl_Wstar(i)*Tstar(i)+             &
+!^   &                                Wstar(i)*tl_Tstar(i))
             adfac=-blk_Cpa*rhoAir(i)*ad_Hs
             ad_Wstar(i)=ad_Wstar(i)+Tstar(i)*adfac
             ad_Tstar(i)=ad_Tstar(i)+Wstar(i)*adfac
@@ -1225,19 +1226,19 @@
 !
 !  Adjoint transfer coefficients for momentum (Cd).
 !
-!>        tl_Cd=2.0_r8*(tl_Wstar(i)*Wstar(i)/(Wspeed*Wspeed+eps)        &
-!>   &          -tl_Wspeed*Wspeed*Cd/(Wspeed*Wspeed+eps))
+!^        tl_Cd=2.0_r8*(tl_Wstar(i)*Wstar(i)/(Wspeed*Wspeed+eps)        &
+!^   &          -tl_Wspeed*Wspeed*Cd/(Wspeed*Wspeed+eps))
           adfac=2.0_r8*ad_Cd/(Wspeed*Wspeed+eps)
           ad_Wstar(i)=ad_Wstar(i)+Wstar(i)*adfac
           ad_Wspeed=ad_Wspeed-Wspeed*Cd*adfac
           ad_Cd=0.0_r8
 
           IF (Wspeed.ne.0.0_r8) THEN
-!>          tl_Wspeed=tl_Wgus(i)*Wgus(i)/Wspeed
+!^          tl_Wspeed=tl_Wgus(i)*Wgus(i)/Wspeed
             ad_Wgus(i)=ad_Wgus(i)+Wgus(i)*ad_Wspeed/Wspeed
             ad_Wspeed=0.0_r8
           ELSE
-!>          tl_Wspeed=0.0_r8
+!^          tl_Wspeed=0.0_r8
             ad_Wspeed=0.0_r8
           END IF
 
@@ -1687,7 +1688,7 @@
 !
 
 
-!>          tl_delQc(i)=tl_Cwet(i)*delTc1(i)+Cwet(i)*tl_delTc(i)
+!^          tl_delQc(i)=tl_Cwet(i)*delTc1(i)+Cwet(i)*tl_delTc(i)
             ad_Cwet(i)=ad_Cwet(i)+delTc1(i)*ad_delQc(i)
             ad_delTc(i)=ad_delTc(i)+Cwet(i)*ad_delQc(i)
             ad_delQc(i)=0.0_-r8
@@ -1697,24 +1698,24 @@
               fac2=fac1*Wstar1(i)+eps
               Hcool=lambd*blk_visw/fac2
 
-!>            tl_delTc(i)=(tl_Qcool*Hcool+Qcool*tl_Hcool)/blk_tcw
+!^            tl_delTc(i)=(tl_Qcool*Hcool+Qcool*tl_Hcool)/blk_tcw
               adfac=ad_delTc(i)/blk_tcw
               ad_Qcool=ad_Qcool+Hcool*adfac
               ad_Hcool=ad_Hcool+Qcool*adfac
               ad_delTc(i)=0.0_r8
 
-!>            tl_Hcool=tl_lambd*blk_visw/fac2-tl_fac2*Hcool/fac2
+!^            tl_Hcool=tl_lambd*blk_visw/fac2-tl_fac2*Hcool/fac2
               adfac=ad_Hcool/fac2
               ad_lambd=ad_lambd+blk_visw*adfac
               ad_fac2=-Hcool*adfac
               ad_Hcool=0.0_r8
 
               IF (fac1.ne.0.0_r8) THEN
-!>                tl_fac1=-0.5_r8*tl_rhoSea(i)*fac1/rhoSea(i)
+!^                tl_fac1=-0.5_r8*tl_rhoSea(i)*fac1/rhoSea(i)
                   ad_rhoSea(i)=ad_rhoSea(i)-0.5*fac1*ad_fac1/rhoSea(i)
                   ad_fac1=0.0_r8
               ELSE
-!>                tl_fac1=0.0_r8
+!^                tl_fac1=0.0_r8
                   ad_fac1=0.0_r8
               END IF
 
@@ -1723,30 +1724,30 @@
               fac3=(fac2/fac1)**0.75_r8
               lambd=6.0_r8/(1.0_r8+fac3)**r3
 
-!>            tl_lambd=-r3*6.0_r8*tl_fac3/(1.0_r8+fac3)**(r3+1.0_r8)
+!^            tl_lambd=-r3*6.0_r8*tl_fac3/(1.0_r8+fac3)**(r3+1.0_r8)
               ad_fac3=-r3*6.0_r8*ad_lambd/(1.0_r8+fac3)**(r3+1.0_r8)
               ad_lambd=0.0_r8
 
-!>            tl_fac3=0.75_r8*(fac2/fac1)**(-0.25_r8)*                  &
-!>   &              (tl_fac2/fac1-tl_fac1*fac2/(fac1*fac1))
+!^            tl_fac3=0.75_r8*(fac2/fac1)**(-0.25_r8)*                  &
+!^   &              (tl_fac2/fac1-tl_fac1*fac2/(fac1*fac1))
               adfac=0.75_r8*(fac2/fac1)**(-0.25_r8)*ad_fac3
               ad_fac2=adfac/fac1
               ad_fac1=-fac2*adfac/(fac1*fac1)
               ad_fac3=0.0_r8
 
-!>            tl_fac2=tl_Clam*Qbouy+Clam*tl_Qbouy
+!^            tl_fac2=tl_Clam*Qbouy+Clam*tl_Qbouy
 
               ad_Clam=ad_Clam+Qbouy*ad_fac2
               ad_Qbouy=ad_Qbouy+Clam*ad_fac2
               ad_fac2=0.0_r8
 
-!>            tl_fac1=4.0_r8*tl_Wstar(i)*(Wstar1(i)+eps)**3
+!^            tl_fac1=4.0_r8*tl_Wstar(i)*(Wstar1(i)+eps)**3
 
               ad_Wstar(i)=ad_Wstar(i)+4.0_r8*ad_fac1*(Wstar1(i)+eps)**3
               ad_fac1=0.0_r8
 
             ELSE
-!>            tl_delTc(i)=0.0_r8
+!^            tl_delTc(i)=0.0_r8
               ad_delTc(i)=0.0_r8
             END IF
 !
@@ -1774,10 +1775,10 @@
             Qcool=LRad(i,j)+Hsb+Hlb-SRad(i,j)*Fc
             Qbouy=Tcff(i)*Qcool+Scff(i)*Hlb*blk_Cpw/Hlv(i,j)
 
-!>          tl_Qbouy=tl_Tcff(i)*Qcool+Tcff(i)*tl_Qcool+                 &
-!>   &                  (tl_Scff(i)*Hlb*blk_Cpw+                        &
-!>   &                  Scff(i)*tl_Hlb*blk_Cpw)/Hlv(i,j)-               &
-!>   &               tl_Hlv(i,j)*Scff(i)*Hlb*blk_Cpw/(Hlv(i,j)*Hlv(i,j))
+!^          tl_Qbouy=tl_Tcff(i)*Qcool+Tcff(i)*tl_Qcool+                 &
+!^   &                  (tl_Scff(i)*Hlb*blk_Cpw+                        &
+!^   &                  Scff(i)*tl_Hlb*blk_Cpw)/Hlv(i,j)-               &
+!^   &               tl_Hlv(i,j)*Scff(i)*Hlb*blk_Cpw/(Hlv(i,j)*Hlv(i,j))
 
             adfac=ad_Qbouy*blk_Cpw/Hlv(i,j)
             ad_Tcff(i)=ad_Tcff(i)+Qcool*ad_Qbouy
@@ -1789,7 +1790,7 @@
             ad_Qbouy=0.0_r8
 
 
-!>          tl_Qcool=tl_LRad(i,j)+tl_Hsb+tl_Hlb
+!^          tl_Qcool=tl_LRad(i,j)+tl_Hsb+tl_Hlb
             ad_LRad(i,j)=ad_LRad(i,j)+ad_Qcool
             ad_Hsb=ad_Hsb+ad_Qcool
             ad_Hlb=ad_Hlb+ad_Qcool
@@ -1797,9 +1798,9 @@
 !
 ! Adjoint  Backgound sensible and latent heat.
 !
-!>          tl_Hlb=-rhoAir(i)*(tl_Hlv(i,j)*Wstar1(i)*Qstar1(i)+         &
-!>   &                         Hlv(i,j)*(tl_Wstar(i)*Qstar1(i)+         &
-!>   &                                 Wstar1(i)*tl_Qstar(i))
+!^          tl_Hlb=-rhoAir(i)*(tl_Hlv(i,j)*Wstar1(i)*Qstar1(i)+         &
+!^   &                         Hlv(i,j)*(tl_Wstar(i)*Qstar1(i)+         &
+!^   &                                 Wstar1(i)*tl_Qstar(i))
 
             adfac=-rhoAir(i)*ad_Hlb
             adfac1=Hlv(i,j)*adfac
@@ -1808,8 +1809,8 @@
             ad_Qstar(i)=ad_Qstar(i)+Wstar1(i)*adfac1
             ad_Hlb=0.0_r8
 
-!>          tl_Hsb=-rhoAir(i)*blk_Cpa*(tl_Wstar(i)*Tstar1(i)+           &
-!>   &                                 Wstar1(i)*tl_Tstar(i))
+!^          tl_Hsb=-rhoAir(i)*blk_Cpa*(tl_Wstar(i)*Tstar1(i)+           &
+!^   &                                 Wstar1(i)*tl_Tstar(i))
             adfac=-rhoAir(i)*blk_Cpa*ad_Hsb
             ad_Wstar(i)=ad_Wstar(i)+Tstar1(i)*adfac
             ad_Tstar(i)=ad_Tstar(i)+Wstar1(i)*adfac
@@ -1819,9 +1820,9 @@
 ! Adjoint  Cool skin correction constants. Clam: part of Saunders constant
 !  lambda; Cwet: slope of saturation vapor.
 !
-!>            tl_Clam=48.0_r8*g*blk_Cpw*tl_rhoSea(i)*blk_visw*          &
-!>   &                (rhoSea(i)*blk_visw)**2/                          &
-!>   &                (blk_tcw*blk_tcw*rhoAir(i)*rhoAir(i))
+!^            tl_Clam=48.0_r8*g*blk_Cpw*tl_rhoSea(i)*blk_visw*          &
+!^   &                (rhoSea(i)*blk_visw)**2/                          &
+!^   &                (blk_tcw*blk_tcw*rhoAir(i)*rhoAir(i))
 
               ad_rhoSea(i)=ad_rhoSea(i)+                                &
      &                     48.0_r8*g*blk_Cpw*ad_Clam*blk_visw*          &
@@ -1834,28 +1835,28 @@
 ! Adjoint  Compute gustiness in wind speed.
 !
             IF (delW1(i).ne.0.0_r8)THEN
-!>             tl_delW(i)=tl_Wgus(i)*Wgus(i)/delW1(i)
+!^             tl_delW(i)=tl_Wgus(i)*Wgus(i)/delW1(i)
                ad_Wgus(i)=ad_Wgus(i)+Wgus(i)*ad_delW(i)/delW1(i)
                ad_delW(i)=0.0_r8
             ELSE
-!>             tl_delW(i)=0.0_r8
+!^             tl_delW(i)=0.0_r8
                ad_delW(i)=0.0_r8
             END IF
 
             IF (Bf.gt.0.0_r8) THEN
-!>            tl_Wgus(i)=r3*blk_beta*tl_Bf*blk_Zabl*                    &
-!>   &                                      (Bf*blk_Zabl)**(r3-1.0_r8)
+!^            tl_Wgus(i)=r3*blk_beta*tl_Bf*blk_Zabl*                    &
+!^   &                                      (Bf*blk_Zabl)**(r3-1.0_r8)
               ad_Bf=ad_Bf+r3*blk_beta*ad_Wgus(i)*blk_Zabl*              &
      &                                      (Bf*blk_Zabl)**(r3-1.0_r8)
               ad_Wgus(i)=0.0_r8
             ELSE
-!>            tl_Wgus(i)=0.0_r8
+!^            tl_Wgus(i)=0.0_r8
               ad_Wgus(i)=0.0_r8
             END IF
 
-!>          tl_Bf=-g/TairK(i)*(                                         &
-!>   &         tl_Wstar(i)*(Tstar1(i)+0.61_r8*TairK(i)*Qstar1(i))+      &
-!>   &         Wstar1(i)*(tl_Tstar(i)+0.61_r8*TairK(i)*tl_Qstar(i)) )
+!^          tl_Bf=-g/TairK(i)*(                                         &
+!^   &         tl_Wstar(i)*(Tstar1(i)+0.61_r8*TairK(i)*Qstar1(i))+      &
+!^   &         Wstar1(i)*(tl_Tstar(i)+0.61_r8*TairK(i)*tl_Qstar(i)) )
             adfac=-g/TairK(i)*ad_Bf
             adfac1=Wstar1(i)*adfac
             ad_Wstar(i)=ad_Wstar(i)+                                    &
@@ -1871,8 +1872,8 @@
             fac1=blk_ZQ(ng)/ZoQ(i)
             fac2=LOG(fac1)
 
-!>          tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/(fac2-Qpsi(i))-&
-!>   &                    (tl_fac2-tl_Qpsi(i))*Qstar1(i)/(fac2-Qpsi(i))
+!^          tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/(fac2-Qpsi(i))-&
+!^   &                    (tl_fac2-tl_Qpsi(i))*Qstar1(i)/(fac2-Qpsi(i))
             adfac=-ad_Qstar(i)*vonKar/(fac2-Qpsi(i))
             adfac1=-ad_Qstar(i)*Qstar1(i)/(fac2-Qpsi(i))
             ad_delQ(i)=ad_delQ(i)+adfac
@@ -1881,19 +1882,19 @@
             ad_Qpsi(i)=ad_Qpsi(i)-adfac1
             ad_Qstar(i)=0.0_r8
 
-!>          tl_fac2=tl_fac1/fac1
+!^          tl_fac2=tl_fac1/fac1
             ad_fac1=ad_fac2/fac1
             ad_fac2=0.0_r8
 
-!>          tl_fac1=-tl_ZoQ(i)*fac1/ZoQ(i)
+!^          tl_fac1=-tl_ZoQ(i)*fac1/ZoQ(i)
             ad_ZoQ(i)=ad_ZoQ(i)-fac1*ad_fac1/ZoQ(i)
             ad_fac1=0.0_r8
 
             fac1=blk_ZT(ng)/ZoT(i)
             fac2=LOG(fac1)
 
-!>          tl_Tstar(i)=-(tl_delT(i)-tl_delTc(i))*vonKar/(fac2-Tpsi(i))-&
-!>   &           (tl_fac2-tl_Tpsi(i))*Tstar1(i)/(fac2-Tpsi(i))
+!^          tl_Tstar(i)=-(tl_delT(i)-tl_delTc(i))*vonKar/(fac2-Tpsi(i))-&
+!^   &           (tl_fac2-tl_Tpsi(i))*Tstar1(i)/(fac2-Tpsi(i))
             adfac=-ad_Tstar(i)*vonKar/(fac2-Tpsi(i))
             adfac1=-ad_Tstar(i)*Tstar1(i)/(fac2-Tpsi(i))
             ad_delT(i)=ad_delT(i)+adfac
@@ -1902,11 +1903,11 @@
             ad_Tpsi(i)=ad_Tpsi(i)-adfac1
             ad_Tstar(i)=0.0_r8
 
-!>          tl_fac2=tl_fac1/fac1
+!^          tl_fac2=tl_fac1/fac1
             ad_fac1=ad_fac1+ad_fac2/fac1
             ad_fac2=0.0_r8
 
-!>          tl_fac1=-tl_ZoT(i)*fac1/ZoT(i)
+!^          tl_fac1=-tl_ZoT(i)*fac1/ZoT(i)
             ad_ZoT(i)=ad_ZoT(i)-fac1*ad_fac1/ZoT(i)
             ad_fac1=0.0_r8
 
@@ -1914,12 +1915,12 @@
             fac2=LOG(fac1)
             fac3=delW(i)*vonKar/(fac2-Wpsi(i))
 
-!>          tl_Wstar(i)=(0.5_r8-SIGN(0.5_r8,eps-fac3))*tl_fac3
+!^          tl_Wstar(i)=(0.5_r8-SIGN(0.5_r8,eps-fac3))*tl_fac3
             ad_fac3=ad_Wstar(i)*(0.5_r8-SIGN(0.5_r8,eps-fac3))
             ad_Wstar(i)=0.0_r8
 
-!>          tl_fac3=tl_delW(i)*vonKar/(fac2-Wpsi(i))-                   &
-!>   &             (tl_fac2-tl_Wpsi(i))*fac3/(fac2-Wpsi(i))
+!^          tl_fac3=tl_delW(i)*vonKar/(fac2-Wpsi(i))-                   &
+!^   &             (tl_fac2-tl_Wpsi(i))*fac3/(fac2-Wpsi(i))
             adfac=ad_fac3/(fac2-Wpsi(i))
             adfac1=fac3*adfac
             ad_delW(i)=ad_delW(i)+vonKar*adfac
@@ -1927,25 +1928,25 @@
             ad_Wpsi(i)=ad_Wpsi(i)+adfac1
             ad_fac3=0.0_r8
 
-!>          tl_fac2=tl_fac1/fac1
+!^          tl_fac2=tl_fac1/fac1
             ad_fac1=ad_fac1+ad_fac2/fac1
             ad_fac2=0.0_r8
 
-!>          tl_fac1=-tl_ZoW(i)*fac1/ZoW(i)
+!^          tl_fac1=-tl_ZoW(i)*fac1/ZoW(i)
             ad_ZoW(i)=ad_ZoW(i)-fac1*ad_fac1/ZoW(i)
             ad_fac1=0.0_r8
 
 # ifdef COOL_SKIN
-!>          tl_delQc(i)=tl_Cwet(i)*delTc(i)+Cwet(i)*tl_delTc(i)
+!^          tl_delQc(i)=tl_Cwet(i)*delTc(i)+Cwet(i)*tl_delTc(i)
             ad_Cwet(i)=ad_Cwet(i)+delTc(i)*ad_delQc(i)
             ad_delTc(i)=ad_delTc(i)+Cwet(i)*ad_delQc(i)
             ad_delQc(i)=0.0_r8
 
-!>          tl_Cwet(i)=0.622_r8*(tl_Hlv(i,j)*Qsea(i)+                   &
-!>   &                                           Hlv(i,j)*tl_Qsea(i))/  &
-!>   &              (blk_Rgas*TseaK(i)*TseaK(i))-                       &
-!>   &               2.0_r8*blk_Rgas*tl_TseaK(i)*TseaK(i)*Cwet(i)/      &
-!>   &              (blk_Rgas*TseaK(i)*TseaK(i))
+!^          tl_Cwet(i)=0.622_r8*(tl_Hlv(i,j)*Qsea(i)+                   &
+!^   &                                           Hlv(i,j)*tl_Qsea(i))/  &
+!^   &              (blk_Rgas*TseaK(i)*TseaK(i))-                       &
+!^   &               2.0_r8*blk_Rgas*tl_TseaK(i)*TseaK(i)*Cwet(i)/      &
+!^   &              (blk_Rgas*TseaK(i)*TseaK(i))
 
             adfac=ad_Cwet(i)/(blk_Rgas*TseaK(i)*TseaK(i))
             adfac1=2.0_r8*blk_Rgas*TseaK(i)*Cwet(i)*adfac
@@ -1961,43 +1962,43 @@
 !  Adjoint stability functions at Z/L.
 !
             fac=blk_ZQ(ng)/L(i)
-!>          tl_Qpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
+!^          tl_Qpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
             ad_fac=ad_bulk_psit(ad_Qpsi(i),fac,pi)
             ad_Qpsi(i)=0.0_r8
 
-!>          tl_fac=-tl_L(i)*fac/L(i)
+!^          tl_fac=-tl_L(i)*fac/L(i)
             ad_L(i)=ad_L(i)-ad_fac*fac/L(i)
             ad_fac=0.0_r8
 
             fac=blk_ZT(ng)/L(i)
-!>          tl_Tpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
+!^          tl_Tpsi(i)=tl_bulk_psit(tl_fac,fac,pi)
             ad_fac=ad_bulk_psit(ad_Tpsi(i),fac,pi)
             ad_Tpsi(i)=0.0_r8
 
-!>          tl_fac=-tl_L(i)*fac/L(i)
+!^          tl_fac=-tl_L(i)*fac/L(i)
             ad_L(i)=ad_L(i)-ad_fac*fac/L(i)
             ad_fac=0.0_r8
 
-!>          tl_Wpsi(i)=tl_bulk_psiu(tl_ZoL(i),ZoL(i),pi)
+!^          tl_Wpsi(i)=tl_bulk_psiu(tl_ZoL(i),ZoL(i),pi)
             ad_ZoL(i)=ad_ZoL(i)+ad_bulk_psiu(ad_Wpsi(i),ZoL(i),pi)
             ad_Wpsi(i)=0.0_r8
 
 !
 !  Adjoint Monin-Obukhov stability parameter, Z/L.
 !
-!>          tl_L(i)=-tl_ZoL(i)*L(i)/(ZoL(i)+eps)
+!^          tl_L(i)=-tl_ZoL(i)*L(i)/(ZoL(i)+eps)
             ad_ZoL(i)=ad_ZoL(i)-L(i)*ad_L(i)/(ZoL(i)+eps)
             ad_L(i)=0.0_r8
 
-!>          tl_ZoL(i)=vonKar*g*blk_ZW(ng)*                              &
-!>   &             (tl_Tstar(i)*(1.0_r8+0.61_r8*Q(i))+                  &
-!>   &                        0.61_r8*TairK(i)*tl_Qstar(i))/            &
-!>   &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
-!>   &             (1.0_r8+0.61_r8*Q(i))+eps)-                          &
-!>   &             2.0_r8*TairK(i)*tl_Wstar(i)*Wstar(i)*                &
-!>   &             (1.0_r8+0.61_r8*Q(i))*ZoL(i)/                        &
-!>   &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
-!>   &             (1.0_r8+0.61_r8*Q(i))+eps) )
+!^          tl_ZoL(i)=vonKar*g*blk_ZW(ng)*                              &
+!^   &             (tl_Tstar(i)*(1.0_r8+0.61_r8*Q(i))+                  &
+!^   &                        0.61_r8*TairK(i)*tl_Qstar(i))/            &
+!^   &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
+!^   &             (1.0_r8+0.61_r8*Q(i))+eps)-                          &
+!^   &             2.0_r8*TairK(i)*tl_Wstar(i)*Wstar(i)*                &
+!^   &             (1.0_r8+0.61_r8*Q(i))*ZoL(i)/                        &
+!^   &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
+!^   &             (1.0_r8+0.61_r8*Q(i))+eps) )
             adfac=vonKar*g*blk_ZW(ng)*ad_ZoL(i)/                        &
      &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
      &             (1.0_r8+0.61_r8*Q(i))+eps)
@@ -2009,19 +2010,19 @@
      &             (1.0_r8+0.61_r8*Q(i))+eps)
             ad_ZoL(i)=0.0_r8
 
-!>          tl_ZoT(i)=tl_ZoQ(i)
+!^          tl_ZoT(i)=tl_ZoQ(i)
             ad_ZoQ(i)=ad_ZoQ(i)+ad_ZoT(i)
             ad_ZoT(i)=0.0_r8
 
-!>          tl_ZoQ(i)=                                                  &
-!>   &         -(0.5_r8-SIGN(0.5_r8,5.5e-5_r8/Rr(i)**0.6-1.15e-4_r8))   &
-!>   &          *0.6_r8*5.5e-5_r8*tl_Rr(i)/Rr(i)**1.6
+!^          tl_ZoQ(i)=                                                  &
+!^   &         -(0.5_r8-SIGN(0.5_r8,5.5e-5_r8/Rr(i)**0.6-1.15e-4_r8))   &
+!^   &          *0.6_r8*5.5e-5_r8*tl_Rr(i)/Rr(i)**1.6
             ad_Rr(i)=ad_Rr(i)-                                          &
      &          (0.5_r8-SIGN(0.5_r8,5.5e-5_r8/Rr(i)**0.6-1.15e-4_r8))   &
      &          *0.6_r8*5.5e-5_r8*ad_ZoQ(i)/Rr(i)**1.6
             ad_ZoQ(i)=0.0_r8
 
-!>          tl_Rr(i)=(tl_ZoW(i)*Wstar(i)+ZoW(i)*tl_Wstar(i))/VisAir(i)
+!^          tl_Rr(i)=(tl_ZoW(i)*Wstar(i)+ZoW(i)*tl_Wstar(i))/VisAir(i)
             adfac=ad_Rr(i)/VisAir(i)
             ad_ZoW(i)=ad_ZoW(i)+Wstar(i)*adfac
             ad_Wstar(i)=ad_Wstar(i)+ZoW(i)*adfac
@@ -2029,26 +2030,26 @@
 
 # ifdef BBL_MODEL_NOT_YET
 #  ifdef WIND_WAVES
-!>          tl_ZoW(i)=(25._r8/pi)*Lwave(i)*4.5_r8*tl_Wstar(i)*          &
-!>   &                (Wstar(i)/Cwave(i))**3.5/Cwave(i)-                &
-!>   &               tl_Wstar(i)*0.11_r8*VisAir(i)/                     &
-!>   &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
+!^          tl_ZoW(i)=(25._r8/pi)*Lwave(i)*4.5_r8*tl_Wstar(i)*          &
+!^   &                (Wstar(i)/Cwave(i))**3.5/Cwave(i)-                &
+!^   &               tl_Wstar(i)*0.11_r8*VisAir(i)/                     &
+!^   &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
             ad_Wstar(i)=ad_Wstar(i)+(25._r8/pi)*Lwave(i)*4.5_r8*        &
      &             (Wstar(i)/Cwave(i))**3.5*ad_ZoW(i)/Cwave(i)-         &
      &             0.11_r8*VisAir(i)*ad_ZoW(i)/                         &
      &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
             ad_ZoW(i)0.0_r8
 #  else
-!>          tl_ZoW(i)=-tl_Wstar(i)*0.11_r8*VisAir(i)/                   &
-!>   &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
+!^          tl_ZoW(i)=-tl_Wstar(i)*0.11_r8*VisAir(i)/                   &
+!^   &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
             ad_Wstar(i)=ad_Wstar(i)-0.11_r8*VisAir(i)*ad_ZoW(i)/        &
      &                              ((Wstar(i)+eps)*(Wstar(i)+eps))
             ad_ZoW(i)0.0_r8
 #  endif
 # else
-!>          tl_ZoW(i)=2.0_r8*charn(i)*tl_Wstar(i)*Wstar(i)/g-           &
-!>   &             tl_Wstar(i)*0.11_r8*VisAir(i)/                       &
-!>   &                           ((Wstar(i)+eps)*(Wstar(i)+eps))
+!^          tl_ZoW(i)=2.0_r8*charn(i)*tl_Wstar(i)*Wstar(i)/g-           &
+!^   &             tl_Wstar(i)*0.11_r8*VisAir(i)/                       &
+!^   &                           ((Wstar(i)+eps)*(Wstar(i)+eps))
             adfac=ad_ZoW(i)/g
             ad_Wstar(i)=ad_Wstar(i)+2.0_r8*charn(i)*Wstar(i)*adfac-     &
      &              0.11_r8*VisAir(i)*ad_ZoW(i)/                        &
@@ -2277,13 +2278,13 @@
 !
 
           IF (delW(i).gt.18.0_r8) THEN
-!>          tl_charn(i)=0.0_r8
+!^          tl_charn(i)=0.0_r8
             ad_charn(i)=0.0_r8
           ELSE IF ((10.0_r8.lt.delW(i)).and.(delW(i).le.18.0_r8)) THEN
-!>          tl_charn(i)=0.0_r8
+!^          tl_charn(i)=0.0_r8
             ad_charn(i)=0.0_r8
           ELSE
-!>          tl_charn(i)=0.0_r8
+!^          tl_charn(i)=0.0_r8
             ad_charn(i)=0.0_r8
           END IF
 
@@ -2294,10 +2295,10 @@
           fac1=blk_ZQ(ng)/L10(i)
           fac2=LOG(blk_ZQ(ng)/ZoT10(i))
 
-!>        tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/                 &
-!>   &             (fac2-bulk_psit(fac1,pi))-                           &
-!>   &             (tl_fac2-tl_bulk_psit(tl_fac1,fac1,pi))*Qstar(i)/    &
-!>   &             (fac2-bulk_psit(fac1,pi))
+!^        tl_Qstar(i)=-(tl_delQ(i)-tl_delQc(i))*vonKar/                 &
+!^   &             (fac2-bulk_psit(fac1,pi))-                           &
+!^   &             (tl_fac2-tl_bulk_psit(tl_fac1,fac1,pi))*Qstar(i)/    &
+!^   &             (fac2-bulk_psit(fac1,pi))
 
           adfac=ad_Qstar(i)*vonKar/                                     &
      &             (fac2-bulk_psit(fac1,pi))
@@ -2305,59 +2306,59 @@
           ad_delQ(i)=ad_delQ(i)-adfac
           ad_delQc(i)=ad_delQc(i)+adfac
           ad_fac2=-cff*ad_Qstar(i)
-!>          ad_fac1=ad_bulk_psit(ad_Qstar(i),fac1,pi)*cff
+!^          ad_fac1=ad_bulk_psit(ad_Qstar(i),fac1,pi)*cff
           ad_fac1=ad_bulk_psit(cff*ad_Qstar(i),fac1,pi)
           ad_Qstar(i)=0.0_r8
 
-!>        tl_fac2=-tl_ZoT10(i)/ZoT10(i)
+!^        tl_fac2=-tl_ZoT10(i)/ZoT10(i)
           ad_ZoT10(i)=ad_ZoT10(i)-ad_fac2/ZoT10(i)
           ad_fac2=0.0_r8
 
-!>        tl_fac1=-tl_L10(i)*fac1/L10(i)
+!^        tl_fac1=-tl_L10(i)*fac1/L10(i)
           ad_L10(i)=ad_L10(i)-ad_fac1*fac1/L10(i)
           ad_fac1=0.0_r8
 
           fac1=blk_ZT(ng)/L10(i)
           fac2=LOG(blk_ZT(ng)/ZoT10(i))
 
-!>        tl_Tstar(i)=-(tl_delT(i)-tl_delTc(i))*vonKar/                 &
-!>   &             (fac2-bulk_psit(fac1,pi))-                           &
-!>   &             (tl_fac2-tl_bulk_psit(tl_fac1,fac1,pi))*Tstar(i)/    &
-!>   &             (fac2-bulk_psit(fac1,pi))
+!^        tl_Tstar(i)=-(tl_delT(i)-tl_delTc(i))*vonKar/                 &
+!^   &             (fac2-bulk_psit(fac1,pi))-                           &
+!^   &             (tl_fac2-tl_bulk_psit(tl_fac1,fac1,pi))*Tstar(i)/    &
+!^   &             (fac2-bulk_psit(fac1,pi))
           adfac=ad_Tstar(i)*vonKar/                                     &
      &             (fac2-bulk_psit(fac1,pi))
           cff=Tstar(i)/(fac2-bulk_psit(fac1,pi))
           ad_delT(i)=ad_delT(i)-adfac
           ad_delTc(i)=ad_delTc(i)+adfac
           ad_fac2=-cff*ad_Tstar(i)
-!>          ad_fac1=ad_bulk_psit(ad_Tstar(i),fac1,pi)*cff
+!^          ad_fac1=ad_bulk_psit(ad_Tstar(i),fac1,pi)*cff
           ad_fac1=ad_bulk_psit(cff*ad_Tstar(i),fac1,pi)
           ad_Tstar(i)=0.0_r8
 
-!>        tl_fac2=-tl_ZoT10(i)/ZoT10(i)
+!^        tl_fac2=-tl_ZoT10(i)/ZoT10(i)
           ad_ZoT10(i)=ad_ZoT10(i)-ad_fac2/ZoT10(i)
           ad_fac2=0.0_r8
 
-!>        tl_fac1=-tl_L10(i)*fac1/L10(i)
+!^        tl_fac1=-tl_L10(i)*fac1/L10(i)
           ad_L10(i)=ad_L10(i)-fac1*ad_fac1/L10(i)
           ad_fac1=0.0_r8
 
           fac1=blk_ZW(ng)/L10(i)
           fac2=LOG(blk_ZW(ng)/Zo10(i))
 
-!>        tl_Wstar(i)=-(tl_fac2-tl_bulk_psiu(tl_fac1,fac1,pi))*Wstar(i) &
-!>   &                                 /(fac2-bulk_psiu(fac1,pi))
+!^        tl_Wstar(i)=-(tl_fac2-tl_bulk_psiu(tl_fac1,fac1,pi))*Wstar(i) &
+!^   &                                 /(fac2-bulk_psiu(fac1,pi))
           cff=Wstar(i)/(fac2-bulk_psiu(fac1,pi))
           ad_fac2=-cff*ad_Wstar(i)
-!>          ad_fac1=cff*ad_bulk_psiu(ad_Wstar(i),fac1,pi)
+!^          ad_fac1=cff*ad_bulk_psiu(ad_Wstar(i),fac1,pi)
           ad_fac1=ad_bulk_psiu(cff*ad_Wstar(i),fac1,pi)
           ad_Wstar(i)=0.0_r8
 
-!>        tl_fac2=-tl_Zo10(i)/Zo10(i)
+!^        tl_fac2=-tl_Zo10(i)/Zo10(i)
           ad_Zo10(i)=ad_Zo10(i)-ad_fac2/Zo10(i)
           ad_fac2=0.0_r8
 
-!>        tl_fac1=-tl_L10(i)*fac1/L10(i)
+!^        tl_fac1=-tl_L10(i)*fac1/L10(i)
           ad_L10(i)=ad_L10(i)-ad_fac1*fac1/L10(i)
           ad_fac1=0.0_r8
 
@@ -2365,29 +2366,29 @@
 !  Adjoint Richardson number.
 !
 
-!>        tl_L10(i)=-L10(i)*L10(i)*tl_Zetu(i)/blk_ZW(ng)
+!^        tl_L10(i)=-L10(i)*L10(i)*tl_Zetu(i)/blk_ZW(ng)
           ad_Zetu(i)=ad_Zetu(i)-L10(i)*L10(i)*ad_L10(i)/blk_ZW(ng)
           ad_L10(i)=0.0_r8
 
           IF (Ri(i).lt.0.0_r8) THEN
-!>          tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/                 &
-!>   &                                 (1.0_r8+Ri(i)/Ribcu(i))-         &
-!>   &              (tl_Ri(i)/Ribcu(i))*Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))
+!^          tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/                 &
+!^   &                                 (1.0_r8+Ri(i)/Ribcu(i))-         &
+!^   &              (tl_Ri(i)/Ribcu(i))*Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))
             adfac=ad_Zetu(i)/(1.0_r8+Ri(i)/Ribcu(i))
             ad_CC(i)=ad_CC(i)+Ri(i)*adfac
             ad_Ri(i)=ad_Ri(i)+CC(i)*adfac-Zetu(i)*adfac/Ribcu(i)
             ad_Zetu(i)=0.0_r8
           ELSE
             fac=3.0_r8*Ri(i)/CC(i)
-!>          tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/(1.0_r8+fac)     &
-!>   &                -tl_fac*Zetu(i)/(1.0_r8+fac)
+!^          tl_Zetu(i)=(tl_CC(i)*Ri(i)+CC(i)*tl_Ri(i))/(1.0_r8+fac)     &
+!^   &                -tl_fac*Zetu(i)/(1.0_r8+fac)
             adfac=ad_Zetu(i)/(1.0_r8+fac)
             ad_CC(i)=ad_CC(i)+Ri(i)*adfac
             ad_Ri(i)=ad_Ri(i)+CC(i)*adfac
             ad_fac=-Zetu(i)*adfac
             ad_Zetu(i)=0.0_r8
 
-!>          tl_fac=3.0_r8*tl_Ri(i)/CC(i)-tl_CC(i)*fac/CC(i)
+!^          tl_fac=3.0_r8*tl_Ri(i)/CC(i)-tl_CC(i)*fac/CC(i)
             ad_Ri(i)=ad_Ri(i)+3.0_r8*ad_fac/CC(i)
             ad_CC(i)=ad_CC(i)-ad_fac*fac/CC(i)
             ad_fac=0.0_r8
@@ -2395,9 +2396,9 @@
 
           fac=1.0/(TairK(i)*delW(i)*delW(i))
 
-!>        tl_Ri(i)=-fac*g*blk_ZW(ng)*((tl_delT(i)-tl_delTc(i))+         &
-!>   &                                 0.61_r8*TairK(i)*tl_delQ(i))
-!>
+!^        tl_Ri(i)=-fac*g*blk_ZW(ng)*((tl_delT(i)-tl_delTc(i))+         &
+!^   &                                 0.61_r8*TairK(i)*tl_delQ(i))
+!^
           adfac=-fac*g*blk_ZW(ng)*ad_Ri(i)
           ad_delT(i)=ad_delT(i)+adfac
           ad_delTc(i)=ad_delTc(i)-adfac
@@ -2405,14 +2406,14 @@
           ad_Ri(i)=0.0_r8
 
 # ifdef COOL_SKIN
-!>        tl_delTc(i)=0.0_r8
+!^        tl_delTc(i)=0.0_r8
           ad_delTc(i)=0.0_r8
 # endif
 
-!>        tl_delTc(i)=0.0_r8
+!^        tl_delTc(i)=0.0_r8
           ad_delTc(i)=0.0_r8
 
-!>        tl_CC(i)=vonKar*tl_Ct(i)/Cd-tl_Cd*CC(i)/Cd
+!^        tl_CC(i)=vonKar*tl_Ct(i)/Cd-tl_Cd*CC(i)/Cd
           adfac=ad_CC(i)/Cd
           ad_Ct(i)=ad_Ct(i)+vonKar*adfac
           ad_Cd=ad_Cd-CC(i)*adfac
@@ -2420,10 +2421,10 @@
 
           fac=LOG(blk_ZT(ng)/ZoT10(i))
 
-!>        tl_Ct(i)=-tl_fac*Ct(i)/fac
+!^        tl_Ct(i)=-tl_fac*Ct(i)/fac
           ad_fac=-ad_Ct(i)*Ct(i)/fac
 
-!>        tl_fac=-tl_ZoT10(i)/ZoT10(i)
+!^        tl_fac=-tl_ZoT10(i)/ZoT10(i)
           ad_ZoT10(i)=ad_ZoT10(i)-ad_fac/ZoT10(i)
           ad_fac=0.0_r8
 
@@ -2432,54 +2433,54 @@
 !
           fac=LOG(blk_ZW(ng)/Zo10(i))
 
-!>        tl_Cd=-2.0_r8*tl_fac*Cd/fac
+!^        tl_Cd=-2.0_r8*tl_fac*Cd/fac
           ad_fac=-2.0_r8*ad_Cd/fac
           ad_Cd=0.0_r8
 
-!>        tl_fac=-tl_Zo10(i)/Zo10(i)
+!^        tl_fac=-tl_Zo10(i)/Zo10(i)
           ad_Zo10(i)=ad_Zo10(i)-ad_fac/Zo10(i)
           ad_fac=0.0_r8
 
           fac=vonKar/Ct10(i)
 
-!>        tl_ZoT10(i)=-tl_fac*ZoT10(i)
+!^        tl_ZoT10(i)=-tl_fac*ZoT10(i)
           ad_fac=-ad_ZoT10(i)*ZoT10(i)
           ad_fac=0.0_r8
 
-!>        tl_fac=-tl_Ct10(i)*fac/Ct10(i)
+!^        tl_fac=-tl_Ct10(i)*fac/Ct10(i)
           ad_Ct10(i)=ad_Ct10(i)-fac*ad_fac/Ct10(i)
           ad_fac=0.0_r8
 
-!>        tl_Ct10(i)=-0.5_r8*tl_Cd10(i)*Ct10(i)/Cd10(i)
+!^        tl_Ct10(i)=-0.5_r8*tl_Cd10(i)*Ct10(i)/Cd10(i)
           ad_Cd10(i)=ad_Cd10(i)-0.5_r8*Ct10(i)*ad_Ct10(i)/Cd10(i)
           ad_Ct10(i)=0.0_r8
 
           fac=LOG(10.0_r8/Zo10(i))
 
-!>        tl_Cd10(i)=-2.0_r8*tl_fac*Cd10(i)/fac
+!^        tl_Cd10(i)=-2.0_r8*tl_fac*Cd10(i)/fac
           ad_fac=-2.0_r8*Cd10(i)*ad_Cd10(i)/fac
           ad_Cd10(i)=0.0_r8
 
-!>        tl_fac=-tl_Zo10(i)/Zo10(i)
+!^        tl_fac=-tl_Zo10(i)/Zo10(i)
           ad_Zo10(i)=ad_Zo10(i)-ad_fac/Zo10(i)
           ad_fac=0.0_r8
 
-!>        tl_Zo10(i)=0.022_r8*tl_Wstar(i)*Wstar(i)/g-                   &
-!>   &            tl_Wstar(i)*0.11_r8*VisAir(i)/(Wstar(i)*Wstar(i))
+!^        tl_Zo10(i)=0.022_r8*tl_Wstar(i)*Wstar(i)/g-                   &
+!^   &            tl_Wstar(i)*0.11_r8*VisAir(i)/(Wstar(i)*Wstar(i))
 
           ad_Wstar(i)=ad_Wstar(i)+0.022_r8*Wstar(i)*ad_Zo10(i)/g-       &
      &            0.11_r8*VisAir(i)*ad_Zo10(i)/(Wstar(i)*Wstar(i))
           ad_Zo10(i)=0.0_r8
 
-!>        tl_Wstar(i)=0.035_r8*tl_u10(i)
+!^        tl_Wstar(i)=0.035_r8*tl_u10(i)
           ad_u10(i)=ad_u10(i)+0.035_r8*ad_Wstar(i)
           ad_Wstar(i)=0.0_r8
 
-!>        tl_u10(i)=0.0_r8
+!^        tl_u10(i)=0.0_r8
 
           ad_u10(i)=0.0_r8
 
-!>        tl_ZoW(i)=0.0_r8
+!^        tl_ZoW(i)=0.0_r8
           ad_ZoW(i)=0.0_r8
 
 
@@ -2488,25 +2489,25 @@
 !  gustiness.
 !
 
-!>        tl_delT(i)=tl_TseaC(i)
+!^        tl_delT(i)=tl_TseaC(i)
           ad_TseaC(i)=ad_TseaC(i)+ad_delT(i)
           ad_delT(i)=0.0_r8
 
-!>        tl_delQ(i)=tl_Qsea(i)
+!^        tl_delQ(i)=tl_Qsea(i)
           ad_Qsea(i)=ad_Qsea(i)+ad_delQ(i)
           ad_delQ(i)=0.0_r8
 
-!>        tl_delW(i)=0.0_r8
+!^        tl_delW(i)=0.0_r8
           ad_delW(i)=0.0_r8
 
-!>        tl_Wgus(i)=0.0_r8
+!^        tl_Wgus(i)=0.0_r8
           ad_Wgus(i)=0.0_r8
 
 !
 !  Adjoint latent heat of vaporization (J/kg) at sea surface, Hlv.
 !
-!>        tl_Hlv(i,j)=-0.00237_r8*tl_TseaC(i)*1.0E+6_r8
-!>
+!^        tl_Hlv(i,j)=-0.00237_r8*tl_TseaC(i)*1.0E+6_r8
+!^
           ad_TseaC(i)=ad_TseaC(i)-0.00237_r8*1.0E+6_r8*ad_Hlv(i,j)
           ad_Hlv(i,j)=0.0_r8
 !
@@ -2515,20 +2516,20 @@
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &        EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
           cff=cff*0.98_r8
-!>        tl_Qsea(i)=tl_fac*(1.0_r8+0.378_r8*cff/((PairM-0.378_r8*cff)))
-!>
+!^        tl_Qsea(i)=tl_fac*(1.0_r8+0.378_r8*cff/((PairM-0.378_r8*cff)))
+!^
           ad_fac=ad_Qsea(i)*(1.0_r8+0.378_r8*cff/((PairM-0.378_r8*cff)))
           ad_Qsea(i)=0.0_r8
-!>        tl_fac=0.62197_r8*(tl_cff/(PairM-0.378_r8*cff))
-!>
+!^        tl_fac=0.62197_r8*(tl_cff/(PairM-0.378_r8*cff))
+!^
           ad_cff=ad_cff+0.62197_r8*ad_fac/(PairM-0.378_r8*cff)
           ad_fac=0.0_r8
 !
 !  Adjoint Vapor Pressure reduced for salinity
 !  (Kraus and Businger, 1994, pp 42).
 !
-!>        tl_cff=tl_cff*0.98_r8
-!>
+!^        tl_cff=tl_cff*0.98_r8
+!^
           ad_cff=ad_cff*0.98_r8
 !
 !  Adjoint water saturation vapor pressure (mb), using Teten formula.
@@ -2536,13 +2537,13 @@
           fac=17.502_r8*TseaC(i)/(240.97_r8+TseaC(i))
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &        EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
-!>        tl_cff=tl_fac*cff
-!>
+!^        tl_cff=tl_fac*cff
+!^
           ad_fac=ad_cff*cff
           ad_cff=0.0_r8
-!>        tl_fac=17.502_r8*tl_TseaC(i)/(240.97_r8+TseaC(i))-            &
-!>   &           tl_TseaC(i)*fac/(240.97_r8+TseaC(i))
-!>
+!^        tl_fac=17.502_r8*tl_TseaC(i)/(240.97_r8+TseaC(i))-            &
+!^   &           tl_TseaC(i)*fac/(240.97_r8+TseaC(i))
+!^
           ad_TseaC(i)=ad_TseaC(i)+                                      &
      &                17.502_r8*ad_fac/(240.97_r8+TseaC(i))-            &
      &                fac*ad_fac/(240.97_r8+TseaC(i))
@@ -2553,8 +2554,8 @@
 !-----------------------------------------------------------------------
 !
 # ifdef MASKING
-!>        tl_LRad(i,j)=tl_LRad(i,j)*rmask(i,j)
-!>
+!^        tl_LRad(i,j)=tl_LRad(i,j)*rmask(i,j)
+!^
           ad_LRad(i,j)=ad_LRad(i,j)*rmask(i,j)
 # endif
 # if defined LONGWAVE
@@ -2566,8 +2567,8 @@
 !  1.0 at poles to 0.5 at the Equator).
 !
           cff2=TairK(i)*TairK(i)*TairK(i)
-!>        tl_LRad(i,j)=-emmiss*StefBo*cff2*4.0_r8*tl_TseaK(i)
-!>
+!^        tl_LRad(i,j)=-emmiss*StefBo*cff2*4.0_r8*tl_TseaK(i)
+!^
           ad_TseaK(i)=ad_TseaK(i)-emmiss*StefBo*cff2*4.0_r8*ad_LRad(i,j)
           ad_LRad(i,j)=0.0_r8
 
@@ -2576,63 +2577,63 @@
 !  Treat input longwave data as downwelling radiation only and add
 !  outgoing IR from model sea surface temperature.
 !
-!>        tl_LRad(i,j)=tl_lrflx(i,j)*Hscale-                            &
-!>   &                 4.0_r8*emmiss*StefBo*                            &
-!>   &                 tl_TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
-!>
+!^        tl_LRad(i,j)=tl_lrflx(i,j)*Hscale-                            &
+!^   &                 4.0_r8*emmiss*StefBo*                            &
+!^   &                 tl_TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
+!^
           ad_lrflx(i,j)=ad_lrflx(i,j)+ad_LRad(i,j)*Hscale
           ad_TseaK(i)=ad_TseaK(i)-                                      &
      &                4.0_r8*emmiss*StefBo*ad_LRad(i,j)*                &
      &                TseaK(i)*TseaK(i)*TseaK(i)
           ad_LRad(i,j)=0.0_r8
 # else
-!>        tl_LRad(i,j)=tl_lrflx(i,j)*Hscale
-!>
+!^        tl_LRad(i,j)=tl_lrflx(i,j)*Hscale
+!^
           ad_lrflx(i,j)=ad_lrflx(i,j)+ad_LRad(i,j)*Hscale
           ad_LRad(i,j)=0.0_r8
 # endif
 !
 !  Initialize.
 !
-!>        tl_delTc(i)=0.0_r8
-!>
+!^        tl_delTc(i)=0.0_r8
+!^
           ad_delQc(i)=0.0_r8
 
-!>        tl_delQc(i)=0.0_r8
-!>
+!^        tl_delQc(i)=0.0_r8
+!^
           ad_delTc(i)=0.0_r8
-!>        tl_LHeat(i,j)=tl_lhflx(i,j)*Hscale
-!>
+!^        tl_LHeat(i,j)=tl_lhflx(i,j)*Hscale
+!^
           ad_lhflx(i,j)=ad_lhflx(i,j)+ad_LHeat(i,j)*Hscale
           ad_LHeat(i,j)=0.0_r8
-!>        tl_SHeat(i,j)=tl_shflx(i,j)*Hscale
-!>
+!^        tl_SHeat(i,j)=tl_shflx(i,j)*Hscale
+!^
           ad_shflx(i,j)=ad_shflx(i,j)+ad_SHeat(i,j)*Hscale
           ad_SHeat(i,j)=0.0_r8
-!>        tl_Taux(i,j)=0.0_r8
-!>
+!^        tl_Taux(i,j)=0.0_r8
+!^
           ad_Taux(i,j)=0.0_r8
-!>        tl_Tauy(i,j)=0.0_r8
-!>
+!^        tl_Tauy(i,j)=0.0_r8
+!^
           ad_Tauy(i,j)=0.0_r8
-!>        tl_Scff(i)=tl_beta(i,j)
-!>
+!^        tl_Scff(i)=tl_beta(i,j)
+!^
           ad_beta(i,j)=ad_beta(i,j)+ad_Scff(i)
           ad_Scff(i)=0.0_r8
-!>        tl_Tcff(i)=tl_alpha(i,j)
-!>
+!^        tl_Tcff(i)=tl_alpha(i,j)
+!^
           ad_alpha(i,j)=ad_alpha(i,j)+ad_Tcff(i)
           ad_Tcff(i)=0.0_r8
-!>        tl_rhoSea(i)=tl_rho(i,j,N(ng))
-!>
+!^        tl_rhoSea(i)=tl_rho(i,j,N(ng))
+!^
           ad_rho(i,j,N(ng))=ad_rho(i,j,N(ng))+ad_rhoSea(i)
           ad_rhoSea(i)=0.0_r8
-!>        tl_TseaK(i)=tl_TseaC(i)
-!>
+!^        tl_TseaK(i)=tl_TseaC(i)
+!^
           ad_TseaC(i)=ad_TseaC(i)+ad_TseaK(i)
           ad_TseaK(i)=0.0_r8
-!>        tl_TseaC(i)=tl_t(i,j,N(ng),nrhs,itemp)
-!>
+!^        tl_TseaC(i)=tl_t(i,j,N(ng),nrhs,itemp)
+!^
           ad_t(i,j,N(ng),nrhs,itemp)=ad_t(i,j,N(ng),nrhs,itemp)+        &
      &                               ad_TseaC(i)
           ad_TseaC(i)=0.0_r8

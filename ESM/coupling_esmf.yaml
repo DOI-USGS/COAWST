@@ -1,0 +1,352 @@
+# ROMS Coupling ESMF/NUOPC System: Import/Export Metadata Dictionary
+#
+#git $Id$
+#svn $Id: coupling_esmf.yaml 1151 2023-02-09 03:08:53Z arango $
+#========================================================== Hernan G. Arango ==#
+#  Copyright (c) 2002-2023 The ROMS/TOMS Group                                 #
+#    Licensed under a MIT/X style license                                      #
+#    See License_ROMS.txt                                                      #
+#==============================================================================#
+#
+#   Coupler:    ROMS ESMF/NUOPC system
+#   Components: DATA-COAMPS-ROMS
+#
+#  Field Metadata Keywords:
+#
+#    standard_name         Field standard name
+#    long_name             Field long descriptive name
+#    short_name            Field short name private to NUOPC 'cap' module
+#    data_variables        DATA component NetCDF field and time variable names
+#    source_units          Field source units
+#    destination_units     Field destination units
+#    source_grid           Field source grid-cell location
+#    destination_grid      Field destination grid-cell location
+#    add_offset            Value to add to exchanged field
+#    scale                 Scale to convert data from source to destination
+#    debug_write           Switch to write out exchanged field, if DebugLevel>2
+#    connected_to          Source component to which field is connected
+#    regrid_method         Field regridding method from source to destination:
+#                            bilinear      => bilinear interpolation
+#                            patch         => high-order patch recovery
+#                            conservative1 => first-order conservative
+#                            conservative2 => second-order conservative
+#                            nearest       => nearest neighbor interpolation
+#    Extrapolate_method    Field extrapolation method for unmapped points:
+#                            none          => no extrapolation
+#                            nearest       => nearest source to destination
+#                            idavg         => nearest inverse distance average
+#                            creep         => creep fill at specified level
+#                            2steps        => Turuncoglu's 2 steps extrapolation
+#
+#   The ESM imported fields are processed as:
+#
+#     field (destination_units) = field (source_units) * scale + add_offset
+
+
+ATM_component:   &ATM WRF
+
+DATA_component:  data.nc
+
+ROMS_component:  %OCN ROMS
+
+metadata:
+
+  - standard_name:       sea_surface_temperature
+    long_name:           sea surface potential temperature
+    short_name:          SST
+    data_variables:      [temperature, time]
+    source_units:        C
+    destination_units:   K
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          273.15d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  nearest
+
+  - standard_name:       sea_surface_temperature_data
+    long_name:           sea surface temperature data
+    short_name:          dSST
+    data_variables:      [temperature, time]
+    source_units:        C
+    destination_units:   K
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          273.15d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  nearest
+
+  - standard_name:       surface_net_downward_longwave_flux
+    long_name:           surface downward longwave radiation flux
+    short_name:          dLWrad
+    data_variables:      [lwrad_down, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_net_longwave_flux
+    long_name:           surface net longwave radiation flux
+    short_name:          LWrad
+    data_variables:      [lwrad, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       net_downward_shortwave_flux_at_sea_water_surface
+    long_name:           surface downward shortwave radiation flux
+    short_name:          dSWrad
+    data_variables:      [dswrad, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       net_shortwave_flux_at_sea_water_surface
+    long_name:           surface shortwave radiation flux
+    short_name:          SWrad
+    data_variables:      [swrad, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_latent_heat_flux
+    long_name:           surface latent heat flux
+    short_name:          LHfx
+    data_variables:      [latent, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_sensible_heat_flux
+    long_name:           surface sensible heat flux
+    short_name:          SHfx
+    data_variables:      [sensible, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       mean_sea_level_pressure
+    long_name:           mean sea level pressure
+    short_name:          Pmsl
+    data_variables:      [pmsl, time]
+    source_units:        N m-2
+    destination_units:   mb
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d-02
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_air_pressure
+    long_name:           surface air pressure
+    short_name:          Pair
+    data_variables:      [pair, time]
+    source_units:        N m-2
+    destination_units:   mb
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d-2
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_air_temperature
+    long_name:           surface (2m) air temperature
+    short_name:          Tair
+    data_variables:      [tsfc, time]
+    source_units:        K
+    destination_units:   C
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          -273.15d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_specific_humidity
+    long_name:           surface specific humidity
+    short_name:          Hair
+    data_variables:      [shumidity, time]
+    source_units:        kg/kg
+    destination_units:   g/kg
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d+3
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_relative_humidity
+    long_name:           surface relative humidity
+    short_name:          Qair
+    data_variables:      [rhumidity, time]
+    source_units:        percent
+    destination_units:   fraction
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d-2
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       precipitation_flux
+    long_name:           total precipitation rate
+    short_name:          rain
+    data_variables:      [rainfall, time]
+    source_units:        kg m-2 s-1
+    destination_units:   kg m-2 s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_eastward_wind
+    long_name:           surface zonal wind component
+    short_name:          Uwind
+    data_variables:      [uwind, time]
+    source_units:        m s-1
+    destination_units:   m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_northward_wind
+    long_name:           surface meridional wind component
+    short_name:          Vwind
+    data_variables:      [vwind, time]
+    source_units:        m s-1
+    destination_units:   m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_downward_heat_flux_in_sea_water
+    long_name:           surface net heat flux
+    short_name:          shflux
+    data_variables:      [shf, time]
+    source_units:        W m-2
+    destination_units:   Celsius m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               -1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_upward_water_flux
+    long_name:           surface freshwater flux (E-P)
+    short_name:          swflux
+    data_variables:      [swf, time]
+    source_units:        kg m-2 s-1
+    destination_units:   m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_wind_x_stress
+    long_name:           surface zonal wind stress component
+    short_name:          sustr
+    data_variables:      [taux, time]
+    source_units:        N m-2
+    destination_units:   m2 s-2
+    source_grid:         cell_center
+    destination_grid:    left_right_edge
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none
+
+  - standard_name:       surface_wind_y_stress
+    long_name:           surface meridional wind stress component
+    short_name:          svstr
+    data_variables:      [tauy, time]
+    source_units:        N m-2
+    destination_units:   m2 s-2
+    source_grid:         cell_center
+    destination_grid:    lower_upper_edge
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    regrid_method:       bilinear
+    extrapolate_method:  none

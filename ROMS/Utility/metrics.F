@@ -2,9 +2,9 @@
       MODULE metrics_mod
 !
 !git $Id$
-!svn $Id: metrics.F 1099 2022-01-06 21:01:01Z arango $
+!svn $Id: metrics.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -327,10 +327,10 @@
 
 #ifdef DISTRIBUTE
 # ifdef MASKING
-      real(dp), dimension(20) :: buffer
+      real(dp), dimension(20) :: rbuffer
       character (len=3), dimension(20) :: op_handle
 # else
-      real(dp), dimension(14) :: buffer
+      real(dp), dimension(14) :: rbuffer
       character (len=3), dimension(14) :: op_handle
 # endif
 #endif
@@ -871,14 +871,8 @@
 #ifdef MASKING
           IF (rmask(i,j).gt.0.0_r8) THEN
 #endif
-#ifdef ICESHELF
-            cff=dtfast(ng)*                                             &
-     &          SQRT(g*ABS(h(i,j)-ABS(zice(i,j)))*                      &
-     &              (pm(i,j)*pm(i,j)+pn(i,j)*pn(i,j)))
-#else
             cff=dtfast(ng)*                                             &
      &          SQRT(g*ABS(h(i,j))*(pm(i,j)*pm(i,j)+pn(i,j)*pn(i,j)))
-#endif
             my_Cg_min=MIN(my_Cg_min,cff)
             my_Cg_max=MAX(my_Cg_max,cff)
 
@@ -940,107 +934,107 @@
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
 #ifdef DISTRIBUTE
-        buffer(1)=Cg_min(ng)
+        rbuffer(1)=Cg_min(ng)
         op_handle(1)='MIN'
-        buffer(2)=Cg_max(ng)
+        rbuffer(2)=Cg_max(ng)
         op_handle(2)='MAX'
-        buffer(3)=Cg_Cor(ng)
+        rbuffer(3)=Cg_Cor(ng)
         op_handle(3)='MAX'
-        buffer(4)=grdmax(ng)
+        rbuffer(4)=grdmax(ng)
         op_handle(4)='MAX'
-        buffer(5)=DXmin(ng)
+        rbuffer(5)=DXmin(ng)
         op_handle(5)='MIN'
-        buffer(6)=DXmax(ng)
+        rbuffer(6)=DXmax(ng)
         op_handle(6)='MAX'
-        buffer(7)=DYmin(ng)
+        rbuffer(7)=DYmin(ng)
         op_handle(7)='MIN'
-        buffer(8)=DYmax(ng)
+        rbuffer(8)=DYmax(ng)
         op_handle(8)='MAX'
 # ifdef SOLVE3D
-        buffer(9)=DZmin(ng)
+        rbuffer(9)=DZmin(ng)
         op_handle(9)='MIN'
-        buffer(10)=DZmax(ng)
+        rbuffer(10)=DZmax(ng)
         op_handle(10)='MAX'
 # else
-        buffer(9)=0.0_r8
+        rbuffer(9)=0.0_r8
         op_handle(9)='MIN'
-        buffer(10)=0.0_r8
+        rbuffer(10)=0.0_r8
         op_handle(10)='MAX'
 # endif
 # ifdef DIFF_3DCOEF
-        buffer(11)=DiffMin(ng)
+        rbuffer(11)=DiffMin(ng)
         op_handle(11)='MIN'
-        buffer(12)=DiffMax(ng)
+        rbuffer(12)=DiffMax(ng)
         op_handle(12)='MAX'
 # else
-        buffer(11)=0.0_dp
+        rbuffer(11)=0.0_dp
         op_handle(11)='MIN'
-        buffer(12)=0.0_dp
+        rbuffer(12)=0.0_dp
         op_handle(12)='MAX'
 # endif
 # ifdef VISC_3DCOEF
-        buffer(13)=ViscMin(ng)
+        rbuffer(13)=ViscMin(ng)
         op_handle(13)='MIN'
-        buffer(14)=ViscMax(ng)
+        rbuffer(14)=ViscMax(ng)
         op_handle(14)='MAX'
 # else
-        buffer(13)=0.0_dp
+        rbuffer(13)=0.0_dp
         op_handle(13)='MIN'
-        buffer(14)=0.0_dp
+        rbuffer(14)=0.0_dp
         op_handle(14)='MAX'
 # endif
 # ifdef MASKING
-        buffer(15)=DXminW(ng)
+        rbuffer(15)=DXminW(ng)
         op_handle(15)='MIN'
-        buffer(16)=DXmaxW(ng)
+        rbuffer(16)=DXmaxW(ng)
         op_handle(16)='MAX'
-        buffer(17)=DYminW(ng)
+        rbuffer(17)=DYminW(ng)
         op_handle(17)='MIN'
-        buffer(18)=DYmaxW(ng)
+        rbuffer(18)=DYmaxW(ng)
         op_handle(18)='MAX'
 #  ifdef SOLVE3D
-        buffer(19)=DZminW(ng)
+        rbuffer(19)=DZminW(ng)
         op_handle(19)='MIN'
-        buffer(20)=DZmaxW(ng)
+        rbuffer(20)=DZmaxW(ng)
         op_handle(20)='MAX'
 #  else
-        buffer(19)=0.0_dp
+        rbuffer(19)=0.0_dp
         op_handle(19)='MIN'
-        buffer(20)=0.0_dp
+        rbuffer(20)=0.0_dp
         op_handle(20)='MAX'
 #  endif
-        CALL mp_reduce (ng, model, 20, buffer, op_handle)
+        CALL mp_reduce (ng, model, 20, rbuffer, op_handle)
 # else
-        CALL mp_reduce (ng, model, 14, buffer, op_handle)
+        CALL mp_reduce (ng, model, 14, rbuffer, op_handle)
 # endif
-        Cg_min(ng)=buffer(1)
-        Cg_max(ng)=buffer(2)
-        Cg_Cor(ng)=buffer(3)
-        grdmax(ng)=buffer(4)
-        DXmin(ng)=buffer(5)
-        DXmax(ng)=buffer(6)
-        DYmin(ng)=buffer(7)
-        DYmax(ng)=buffer(8)
+        Cg_min(ng)=rbuffer(1)
+        Cg_max(ng)=rbuffer(2)
+        Cg_Cor(ng)=rbuffer(3)
+        grdmax(ng)=rbuffer(4)
+        DXmin(ng)=rbuffer(5)
+        DXmax(ng)=rbuffer(6)
+        DYmin(ng)=rbuffer(7)
+        DYmax(ng)=rbuffer(8)
 # ifdef SOLVE3D
-        DZmin(ng)=buffer(9)
-        DZmax(ng)=buffer(10)
+        DZmin(ng)=rbuffer(9)
+        DZmax(ng)=rbuffer(10)
 # endif
 # ifdef DIFF_3DCOEF
-        DiffMin(ng)=buffer(11)
-        DiffMax(ng)=buffer(12)
+        DiffMin(ng)=rbuffer(11)
+        DiffMax(ng)=rbuffer(12)
 # endif
 # ifdef VISC_3DCOEF
-        ViscMin(ng)=buffer(13)
-        ViscMax(ng)=buffer(14)
+        ViscMin(ng)=rbuffer(13)
+        ViscMax(ng)=rbuffer(14)
 # endif
 # ifdef MASKING
-        DXminW(ng)=buffer(15)
-        DXmaxW(ng)=buffer(16)
-        DYminW(ng)=buffer(17)
-        DYmaxW(ng)=buffer(18)
+        DXminW(ng)=rbuffer(15)
+        DXmaxW(ng)=rbuffer(16)
+        DYminW(ng)=rbuffer(17)
+        DYmaxW(ng)=rbuffer(18)
 #  ifdef SOLVE3D
-        DZminW(ng)=buffer(19)
-        DZmaxW(ng)=buffer(20)
+        DZminW(ng)=rbuffer(19)
+        DZmaxW(ng)=rbuffer(20)
 #  endif
 # endif
 #endif

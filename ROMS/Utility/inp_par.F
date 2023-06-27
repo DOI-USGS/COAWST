@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE inp_par_mod
 !
-!svn $Id: inp_par.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: inp_par.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -21,10 +22,6 @@
       SUBROUTINE inp_par (model)
 !***********************************************************************
 !
-
-#ifdef FILTERED
-      USE mod_filter, ONLY: nfil,fcount,nw,dtfil,FILN
-#endif
       USE mod_param
       USE mod_parallel
       USE mod_iounits
@@ -37,12 +34,19 @@
       USE mod_tides, ONLY : nstep_hour
 # endif
 !
-      USE dateclock_mod,  ONLY : get_date
+      USE dateclock_mod,   ONLY : get_date
 #ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
+      USE distribute_mod,  ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE ran_state,      ONLY : ran_seed
-      USE strings_mod,    ONLY : FoundError
+      USE lbc_mod,         ONLY : lbc_report
+      USE ran_state,       ONLY : ran_seed
+#ifdef NESTING
+      USE set_contact_mod, ONLY : set_contact
+#endif
+      USE strings_mod,     ONLY : FoundError
+#ifdef SOLVE3D
+      USE tadv_mod,        ONLY : tadv_report
+#endif
 !
       implicit none
 !
@@ -61,14 +65,14 @@
       integer :: MaxHaloLenI, MaxHaloLenJ
 #endif
       integer :: ibry, inp, out, i, ic, ifield, itrc, j, ng, npts
-      integer :: ifile, sequence, varid
-
+      integer :: io_err, sequence, varid
+!
       real(r8) :: cff
       real(r8), parameter :: epsilon = 1.0E-8_r8
       real(r8), parameter :: spv = 0.0_r8
-      character*2 :: ngnumber
 !
-      character (len=10) :: stdout_file
+      character (len=10 ) :: stdout_file
+      character (len=256) :: io_errmsg
 
       character (len=*), parameter :: MyFile =                          &
      &  __FILE__
@@ -99,11 +103,23 @@
        IF (Master) THEN
          IF (Lappend) THEN
            OPEN (stdout, FILE=TRIM(stdout_file), FORM='formatted',      &
-     &           STATUS='old', POSITION='append', ACTION='write')
+     &           STATUS='old', POSITION='append', ACTION='write',       &
+     &           IOSTAT=io_err, IOMSG=io_errmsg)
          ELSE
            OPEN (stdout, FILE=TRIM(stdout_file), FORM='formatted',      &
-     &           STATUS='replace')
+     &           STATUS='replace', IOSTAT=io_err, IOMSG=io_errmsg)
          END IF
+       END IF
+# ifdef DISTRIBUTE
+       CALL mp_bcasti (1, model, io_err)
+# endif
+       IF (io_err.ne.0) THEN
+         IF (Master) WRITE (stdout,10) TRIM(stdout_file),               &
+     &                                 TRIM(io_errmsg)
+         exit_flag=5
+ 10      FORMAT (/,' INP_PAR - Cannot open standard output file: ',a,   &
+     &           /,11x,'ERROR: ',a)
+         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
        END IF
 #endif
 !
@@ -130,21 +146,19 @@
 !
 !  Get current date.
 !
-#ifndef NO_DATE_STAMP
-# ifdef DISTRIBUTE
+#ifdef DISTRIBUTE
       IF (Master) CALL get_date (date_str)
       CALL mp_bcasts (1, model, date_str)
-# else
+#else
       CALL get_date (date_str)
-# endif
 #endif
 !
 !-----------------------------------------------------------------------
 !  Read in physical model input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Master.and.Lwrite) WRITE (out,10) version, TRIM(date_str)
- 10   FORMAT (80('-'),/,                                                &
+      IF (Master.and.Lwrite) WRITE (out,20) version, TRIM(date_str)
+ 20   FORMAT (80('-'),/,                                                &
               ' Model Input Parameters:  ROMS/TOMS version ',a,/,       &
      &        26x,a,/,80('-'))
 
@@ -155,15 +169,14 @@
 !  Its file name is specified in the coupling standard input script.
 !
       OPEN (inp, FILE=TRIM(Iname), FORM='formatted', STATUS='old',      &
-     &      ERR=20)
-      GO TO 40
- 20   IF (Master) WRITE (stdout,30)
-      exit_flag=2
-      RETURN
- 30   FORMAT (/,' INP_PAR - Unable to open ROMS/TOMS input script ',    &
-     &              'file.')
- 40   CONTINUE
-
+     &      IOSTAT=io_err, IOMSG=io_errmsg)
+      IF (io_err.ne.0) THEN
+        IF (Master) WRITE (stdout,30) TRIM(io_errmsg)
+        exit_flag=5
+        RETURN
+ 30     FORMAT (/,' INP_PAR - Unable to open ROMS/TOMS input script ',  &
+     &              'file.',/,11x,'ERROR: ',a)
+      END IF
 #else
 # ifdef DISTRIBUTE
 !
@@ -176,21 +189,21 @@
       IF (Master) CALL my_getarg (1, Iname)
       CALL mp_bcasts (1, model, Iname)
       OPEN (inp, FILE=TRIM(Iname), FORM='formatted', STATUS='old',      &
-     &      ERR=20)
-      GO TO 40
- 20   IF (Master) WRITE (stdout,30)
-      exit_flag=2
-      RETURN
- 30   FORMAT (/,' INP_PAR - Unable to open ROMS/TOMS input script ',    &
-     &              'file.',                                            &
-     &        /,11x,'In distributed-memory applications, the input',    &
-     &        /,11x,'script file is processed in parallel. The Unix',   &
-     &        /,11x,'routine GETARG is used to get script file name.',  &
-     &        /,11x,'For example, in MPI applications make sure that',  &
-     &        /,11x,'command line is something like:',/,                &
-     &        /,11x,'mpirun -np 4 romsM roms.in',/,/,11x,'and not',/,   &
-     &        /,11x,'mpirun -np 4 romsM < roms.in',/)
- 40   CONTINUE
+     &      IOSTAT=io_err, IOMSG=io_errmsg)
+      IF (io_err.ne.0) THEN
+        IF (Master) WRITE (stdout,30) TRIM(io_errmsg)
+        exit_flag=5
+        RETURN
+ 30     FORMAT (/,' INP_PAR - Unable to open ROMS/TOMS input script ',  &
+     &              'file.',/,11x,'ERROR: ',a,/,                        &
+     &          /,11x,'In distributed-memory applications, the input',  &
+     &          /,11x,'script file is processed in parallel. The Unix', &
+     &          /,11x,'routine GETARG is used to get script file name.',&
+     &          /,11x,'For example, in MPI applications make sure that',&
+     &          /,11x,'command line is something like:',/,              &
+     &          /,11x,'mpirun -np 4 romsM roms.in',/,/,11x,'and not',/, &
+     &          /,11x,'mpirun -np 4 romsM < roms.in',/)
+      END IF
 # endif
 #endif
 !
@@ -981,71 +994,6 @@
       gorho0=g/rho0
       DO ng=1,Ngrids
         dtfast(ng)=dt(ng)/REAL(ndtfast(ng),r8)
-#ifdef FILTERED
-!
-!  Check various parameters for writing time-filtered output
-!
-        IF (ntsAVG(ng).ne.1) THEN
-          ntsAVG(ng) = 1
-          IF (Master) print *, 'Resetting ntsAVG to 1'
-        END IF
-        IF (MOD(dt(ng),1.0_r8).ne.0) THEN
-          IF (Master) print *, 'Model timestep must be a whole number'
-          exit_flag=2
-        END IF
-        IF (MOD(dtfil,INT(dt(ng))).ne.0) THEN
-          IF (Master) print *,                                          &
-     &                'Model timesteps must fall on filter interval'
-          exit_flag=2
-        END IF
-        nfil = nw*dtfil/INT(dt(ng))
-        IF (MOD(nfil,navg(ng)).ne.0) THEN
-          IF (Master) print *,                                          &
-     &                'Must write out in sync with filter length'
-          exit_flag=2
-        END IF
-        IF (nfil/navg(ng).ne.FILN) THEN
-          IF (Master) print *, 'Number of filter sums is wrong'
-          exit_flag=2
-        END IF
-        DO itrc=1,FILN
-          fcount(itrc) = (1-itrc)*nw/FILN
-        END DO
-# ifdef FILTERED_RST
-!
-!  Hardcode the names of the filter restart files.
-!
-        WRITE(ngnumber,'(i2.2)') ng
-        FIL(1,ng)%name=TRIM(ADJUSTL('ocean_fil2d_'//ngnumber//'.nc'))
-        FIL(2,ng)%name=TRIM(ADJUSTL('ocean_filu_'//ngnumber//'.nc'))
-        FIL(3,ng)%name=TRIM(ADJUSTL('ocean_filv_'//ngnumber//'.nc'))
-        FIL(4,ng)%name=TRIM(ADJUSTL('ocean_filakt_'//ngnumber//'.nc'))
-        FIL(5,ng)%name=TRIM(ADJUSTL('ocean_filaks_'//ngnumber//'.nc'))
-        FIL(6,ng)%name=TRIM(ADJUSTL('ocean_filakv_'//ngnumber//'.nc'))
-        FIL(7,ng)%name=TRIM(ADJUSTL('ocean_filr_'//ngnumber//'.nc'))
-        FIL(8,ng)%name=TRIM(ADJUSTL('ocean_filt_'//ngnumber//'.nc'))
-        FIL(9,ng)%name=TRIM(ADJUSTL('ocean_filw_'//ngnumber//'.nc'))
-
-        DO ifile=1,nfile
-          allocate ( FIL(ifile,ng)%Nrec(1) )
-          allocate ( FIL(ifile,ng)%Vid(NV) )
-          allocate ( FIL(ifile,ng)%Tid(MT) )
-          allocate ( FIL(ifile,ng)%time_min(1) )
-          allocate ( FIL(ifile,ng)%time_max(1) )
-          allocate ( FIL(ifile,ng)%files(1) )
-          FIL(ifile,ng)%Nfiles=1
-          FIL(ifile,ng)%Rindex=0
-          FIL(ifile,ng)%Fcount=1
-          FIL(ifile,ng)%Nrec=0
-          FIL(ifile,ng)%ncid=-1
-          FIL(ifile,ng)%Vid=-1
-          FIL(ifile,ng)%Tid=-1
-          FIL(ifile,ng)%time_min=0.0_r8
-          FIL(ifile,ng)%time_max=0.0_r8
-          FIL(ifile,ng)%label='FILTER - tidal filtering'
-        END DO
-# endif
-#endif
 #ifdef UV_WAVEDRAG
         IF (MOD(3600,INT(dt(ng))).ne.0) THEN
           IF (Master) print *,                                          &

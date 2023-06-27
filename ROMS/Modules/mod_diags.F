@@ -2,12 +2,15 @@
       MODULE mod_diags
 #ifdef DIAGNOSTICS
 !
-!svn $Id: mod_diags.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_diags.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
+!                                                                      !
+!  avgzeta   Time-averaged free surface                                !
 !                                                                      !
 !  Diagnostics fields for output.                                      !
 !                                                                      !
@@ -44,7 +47,17 @@
 !
         implicit none
 !
+        PUBLIC :: allocate_diags
+        PUBLIC :: deallocate_diags
+        PUBLIC :: initialize_diags
+!
+!-----------------------------------------------------------------------
+!  Define T_DIAGS structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_DIAGS
+
+          real(r8), pointer :: avgzeta(:,:)
 
 # ifdef DIAGNOSTICS_BIO
 #  if defined BIO_FENNEL
@@ -83,8 +96,13 @@
 #  endif
 # endif
 
-        END TYPE T_DIAGS
+# ifdef DIAGNOSTICS_INWAVE
+          real(r8), pointer :: DiaInw(:,:,:,:)
+          real(r8), pointer :: DiaInwrk(:,:,:,:)
+# endif
 
+        END TYPE T_DIAGS
+!
         TYPE (T_DIAGS), allocatable :: DIAGS(:)
 !
       CONTAINS
@@ -102,8 +120,11 @@
 # if defined DIAGNOSTICS_BIO && defined ECOSIM
       USE mod_biology
 # endif
+# if defined DIAGNOSTICS_INWAVE
+      USE mod_inwave_params
+# endif
 !
-!  Local variable declarations.
+!  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
@@ -123,6 +144,9 @@
 !
 !  Diagnostic arrays.
 !
+      allocate ( DIAGS(ng) % avgzeta(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
 # ifdef DIAGNOSTICS_BIO
 #  if defined BIO_FENNEL
       IF (NDbio2d.gt.0) THEN
@@ -208,9 +232,152 @@
 #  endif
 
 # endif
+# ifdef DIAGNOSTICS_INWAVE
+      IF (NDInw.gt.0) THEN
+        allocate ( DIAGS(ng) % DiaInw(LBi:UBi,LBj:UBj,ND,NDInw) )
+        Dmem(ng)=Dmem(ng)+REAL(ND*NDInw,r8)*size2d
+
+        allocate ( DIAGS(ng) % DiaInwrk(LBi:UBi,LBj:UBj,ND,NDInw) )
+        Dmem(ng)=Dmem(ng)+REAL(ND*NDInw,r8)*size2d
+
+      END IF
+# endif
 !
       RETURN
       END SUBROUTINE allocate_diags
+!
+      SUBROUTINE deallocate_diags (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+      USE destroy_mod, ONLY : destroy
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_diags"
+
+# ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_DIAGS structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Diagnostic arrays.
+!
+      IF (.not.destroy(ng, DIAGS(ng)%avgzeta, MyFile,                   &
+     &                 __LINE__, 'DIAGS(ng)%DiaBio2d')) RETURN
+
+#  ifdef DIAGNOSTICS_BIO
+#   if defined BIO_FENNEL
+      IF (NDbio2d.gt.0) THEN
+        IF (.not.destroy(ng, DIAGS(ng)%DiaBio2d, MyFile,                &
+     &                   __LINE__, 'DIAGS(ng)%DiaBio2d')) RETURN
+      END IF
+
+      IF (NDbio3d.gt.0) THEN
+        IF (.not.destroy(ng, DIAGS(ng)%DiaBio3d, MyFile,                &
+     &                   __LINE__, 'DIAGS(ng)%DiaBio3d')) RETURN
+      END IF
+#   elif defined ECOSIM
+      IF (NDbio3d.gt.0) THEN
+        IF (.not.destroy(ng, DIAGS(ng)%DiaBio3d, MyFile,                &
+     &                   __LINE__, 'DIAGS(ng)%DiaBio3d')) RETURN
+      END IF
+
+      IF (NDbio4d.gt.0) THEN
+        IF (.not.destroy(ng, DIAGS(ng)%DiaBio4d, MyFile,                &
+     &                   __LINE__, 'DIAGS(ng)%DiaBio4d')) RETURN
+      END IF
+#   endif
+#  endif
+
+#  ifdef DIAGNOSTICS_TS
+      IF (.not.destroy(ng, DIAGS(ng)%DiaTrc, MyFile,                    &
+     &                 __LINE__, 'DIAGS(ng)%DiaTrc')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaTwrk, MyFile,                   &
+     &                 __LINE__, 'DIAGS(ng)%DiaTwrk')) RETURN
+#  endif
+
+#  ifdef DIAGNOSTICS_UV
+      IF (.not.destroy(ng, DIAGS(ng)%DiaU2d, MyFile,                    &
+     &                 __LINE__, 'DIAGS(ng)%DiaU2d')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaV2d, MyFile,                    &
+     &                 __LINE__, 'DIAGS(ng)%DiaV2d')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaU2wrk, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaU2wrk')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaV2wrk, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaV2wrk')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRUbar, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaRUbar')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRVbar, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaRVbar')) RETURN
+
+#   ifdef SOLVE3D
+      IF (.not.destroy(ng, DIAGS(ng)%DiaU2int, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaU2int')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaV2int, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaV2int')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRUfrc, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaRUfrc')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRVfrc, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaRVfrc')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaU3d, MyFile,                    &
+     &                 __LINE__, 'DIAGS(ng)%DiaU3d')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaV3d, MyFile,                    &
+     &                 __LINE__, 'DIAGS(ng)%DiaV3d')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaU3wrk, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaU3wrk')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaV3wrk, MyFile,                  &
+     &                 __LINE__, 'DIAGS(ng)%DiaV3wrk')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRU, MyFile,                     &
+     &                 __LINE__, 'DIAGS(ng)%DiaRU')) RETURN
+
+      IF (.not.destroy(ng, DIAGS(ng)%DiaRV, MyFile,                     &
+     &                 __LINE__, 'DIAGS(ng)%DiaRV')) RETURN
+#   endif
+#  endif
+# endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type DIAGS structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(DIAGS)) deallocate ( DIAGS )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_diags
 !
       SUBROUTINE initialize_diags (ng, tile)
 !
@@ -227,6 +394,9 @@
       USE mod_param
 # if defined DIAGNOSTICS_BIO && defined ECOSIM
       USE mod_biology
+# endif
+# if defined DIAGNOSTICS_INWAVE
+      USE mod_inwave_params
 # endif
 !
 !  Imported variable declarations.
@@ -280,6 +450,10 @@
 !-----------------------------------------------------------------------
 !
       DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          DIAGS(ng) % avgzeta(i,j) = IniVal
+        END DO
+
 # ifdef DIAGNOSTICS_BIO
 #  if defined BIO_FENNEL
         IF (NDbio2d.gt.0) THEN
@@ -384,6 +558,18 @@
           END DO
         END DO
 #  endif
+# endif
+# ifdef DIAGNOSTICS_INWAVE
+        IF (NDInw.gt.0) THEN
+          DO idiag=1,NDInw
+            DO k=1,N(ng)
+              DO i=Imin,Imax
+                DIAGS(ng) % DiaInw(i,j,k,idiag) = IniVal
+                DIAGS(ng) % DiaInwrk(i,j,k,idiag) = IniVal
+              END DO
+            END DO
+          END DO
+        END IF
 # endif
       END DO
 !

@@ -10,7 +10,6 @@
 !                                                                      !
 !=======================================================================
 !
-      USE swan_iounits
       USE M_COUPLING
       USE mod_coupler_kinds
 

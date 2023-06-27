@@ -2,9 +2,9 @@
       MODULE mod_grid
 !
 !git $Id$
-!svn $Id: mod_grid.F 1099 2022-01-06 21:01:01Z arango $
+!svn $Id: mod_grid.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -102,17 +102,11 @@
 !  rmask_full Full mask at   U-points (0=dry, 1=wet).                  !
 !  rmask_full Full mask at   V-points (0=dry, 1=wet).                  !
 #endif
-#ifdef OUTFLOW_MASK
-!  mask_outflow  Mask at RHO-points for ice BC (0=weak, 1=strong)      !
-#endif
 #ifdef WET_DRY
 !  pmask_wet  Wet/Dry mask at PSI-points (0=dry, 1=wet, 2=no-slip).    !
-!  rmask_wet  Wet/Dry mask at RHO-points (0=dry, 1=wet)                !
-!  umask_wet  Wet/Dry mask at   U-points (0=dry, 1,2=wet)              !
-!  vmask_wet  Wet/Dry mask at   V-points (0=dry, 1,2=wet)              !
-!
-!  umask_diff Diffusion Wet/Dry mask at U-points (0=dry, 1=wet)        !
-!  vmask_diff Diffusion Wet/Dry mask at V-points (0=dry, 1=wet)        !
+!  rmask_wet  Wet/Dry mask at RHO-points (0=dry, 1=wet).               !
+!  umask_wet  Wet/Dry mask at   U-points (0=dry, 1,2=wet).             !
+!  vmask_wet  Wet/Dry mask at   V-points (0=dry, 1,2=wet).             !
 #endif
 #if defined UV_LOGDRAG || defined GLS_MIXING || \
     defined BBL_MODEL  || defined SEDIMENT
@@ -150,7 +144,15 @@
         USE mod_kinds
 !
         implicit none
-
+!
+        PUBLIC :: allocate_grid
+        PUBLIC :: deallocate_grid
+        PUBLIC :: initialize_grid
+!
+!-----------------------------------------------------------------------
+!  Define T_GRID structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_GRID
 !
 !  Nonlinear model state.
@@ -269,16 +271,11 @@
           real(r8), pointer :: umask_full(:,:)
           real(r8), pointer :: vmask_full(:,:)
 #endif
-#ifdef OUTFLOW_MASK
-          real(r8), pointer :: mask_outflow(:,:)
-#endif
 #ifdef WET_DRY
           real(r8), pointer :: pmask_wet(:,:)
           real(r8), pointer :: rmask_wet(:,:)
           real(r8), pointer :: umask_wet(:,:)
           real(r8), pointer :: vmask_wet(:,:)
-          real(r8), pointer :: umask_diff(:,:)
-          real(r8), pointer :: vmask_diff(:,:)
 # ifdef SOLVE3D
           real(r8), pointer :: rmask_wet_avg(:,:)
 # endif
@@ -628,10 +625,6 @@
       Dmem(ng)=Dmem(ng)+size2d
 #endif
 
-#ifdef OUTFLOW_MASK
-      allocate ( GRID(ng) % mask_outflow(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-#endif
 #ifdef WET_DRY
       allocate ( GRID(ng) % pmask_wet(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -643,10 +636,6 @@
       Dmem(ng)=Dmem(ng)+size2d
 
       allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-      allocate ( GRID(ng) % umask_diff(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-      allocate ( GRID(ng) % vmask_diff(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # ifdef SOLVE3D
       allocate ( GRID(ng) % rmask_wet_avg(LBi:UBi,LBj:UBj) )
@@ -729,7 +718,411 @@
 !
       RETURN
       END SUBROUTINE allocate_grid
+!
+      SUBROUTINE deallocate_grid (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+#ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_grid"
 
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_GRID structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+# if defined MASKING && defined PROPAGATOR
+      IF (.not.destroy(ng, GRID(ng)%IJwaterR, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterR')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%IJwaterU, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterU')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%IJwaterV, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterV')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%angler, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%angler')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%CosAngler, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%CosAngler')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%SinAngler, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%SinAngler')) RETURN
+
+# if defined TIDE_GENERATING_FORCES
+      IF (.not.destroy(ng, GRID(ng)%Cos2Lat, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%Cos2Lat')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%SinLat2, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%SinLat2')) RETURN
+# endif
+
+# if defined CURVGRID && defined UV_ADV
+      IF (.not.destroy(ng, GRID(ng)%dmde, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dmde')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%dndx, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dndx')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%f, MyFile,                          &
+     &                 __LINE__, 'GRID(ng)%f')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%fomn, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%fomn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%grdscl, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%grdscl')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%h, MyFile,                          &
+     &                 __LINE__, 'GRID(ng)%h')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latp, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latr, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latu, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latv, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonp, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonr, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonu, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonv, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Mylon, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%Mylon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%omn, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%omn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_p, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_u, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_v, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_p, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_u, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_v, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pm, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%pm')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pn, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%pn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_p, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_u, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_v, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_p, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_u, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_v, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_v')) RETURN
+
+# if defined UV_LOGDRAG || defined GLS_MIXING || \
+     defined BBL_MODEL  || defined SEDIMENT
+      IF (.not.destroy(ng, GRID(ng)%ZoBot, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%ZoBot')) RETURN
+# endif
+
+# if defined UV_LDRAG
+      IF (.not.destroy(ng, GRID(ng)%rdrag, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%rdrag')) RETURN
+
+# elif defined UV_QDRAG
+      IF (.not.destroy(ng, GRID(ng)%rdrag2, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%rdrag2')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%xp, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xr, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xu, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xv, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yp, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yr, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yu, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yv, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yv')) RETURN
+
+# ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%Hz, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%Hz')) RETURN
+
+#  ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%Hz_bry, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Hz_bry')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, GRID(ng)%Huon, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Hvom, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z0_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%z0_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z0_w, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%z0_w')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_r, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_v, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_w, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_w')) RETURN
+
+#  ifdef ICESHELF
+      IF (.not.destroy(ng, GRID(ng)%IcePress, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IcePress')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%zice, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%zice')) RETURN
+#  endif
+
+# endif
+
+# ifdef MASKING
+      IF (.not.destroy(ng, GRID(ng)%pmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%pmask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%rmask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%umask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%vmask')) RETURN
+
+#  if defined AVERAGES    || \
+     (defined AD_AVERAGES && defined ADJOINT) || \
+     (defined RP_AVERAGES && defined TL_IOMS) || \
+     (defined TL_AVERAGES && defined TANGENT)
+      IF (.not.destroy(ng, GRID(ng)%pmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_avg')) RETURN
+#  endif
+
+#  ifdef DIAGNOSTICS
+      IF (.not.destroy(ng, GRID(ng)%pmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_dia')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, GRID(ng)%pmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%pmask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%rmask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%umask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%vmask_full')) RETURN
+# endif
+
+# ifdef WET_DRY
+      IF (.not.destroy(ng, GRID(ng)%pmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_wet')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%rmask_wet_avg, MyFile,              &
+     &                 __LINE__, 'GRID(ng)%rmask_wet_avg')) RETURN
+#  endif
+# endif
+
+# if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
+     defined SO_SEMI
+      IF (.not.destroy(ng, GRID(ng)%Rscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Rscope')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Uscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Uscope')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Vscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Vscope')) RETURN
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      IF (.not.destroy(ng, GRID(ng)%tl_h, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%tl_h')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%tl_Hz, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%tl_Hz')) RETURN
+
+#   ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%tl_Hz_bry, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%tl_Hz_bry')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, GRID(ng)%tl_Huon, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%tl_Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_Hvom, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%tl_Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_z_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%tl_z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_z_w, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%tl_z_w')) RETURN
+#  endif
+# endif
+
+# ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      IF (.not.destroy(ng, GRID(ng)%ad_h, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%ad_h')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%ad_Hz, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%ad_Hz')) RETURN
+
+#   ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%ad_Hz_bry, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%ad_Hz_bry')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, GRID(ng)%ad_Huon, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%ad_Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_Hvom, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%ad_Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_z_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%ad_z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_z_w, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%ad_z_w')) RETURN
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type GRID structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(GRID)) deallocate ( GRID )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_grid
+!
       SUBROUTINE initialize_grid (ng, tile, model)
 !
 !=======================================================================
@@ -921,16 +1314,11 @@
             GRID(ng) % vmask_full(i,j) = IniVal
 #endif
 
-#ifdef OUTFLOW_MASK
-            GRID(ng) % mask_outflow(i,j) = IniVal
-#endif
 #ifdef WET_DRY
             GRID(ng) % pmask_wet(i,j) = IniVal
             GRID(ng) % rmask_wet(i,j) = IniVal
             GRID(ng) % umask_wet(i,j) = IniVal
             GRID(ng) % vmask_wet(i,j) = IniVal
-            GRID(ng) % umask_diff(i,j) = IniVal
-            GRID(ng) % vmask_diff(i,j) = IniVal
 # ifdef SOLVE3D
             GRID(ng) % rmask_wet_avg(i,j) = IniVal
 # endif

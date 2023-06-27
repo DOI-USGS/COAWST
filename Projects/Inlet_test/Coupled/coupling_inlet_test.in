@@ -40,7 +40,6 @@
   NnodesATM =  0                     ! atmospheric model
   NnodesWAV =  1                     ! wave model
   NnodesOCN =  1                     ! ocean model
-  NnodesHYD =  18                    ! hydrology model
   NnodesHYD =  0                    ! hydrology model
 
 ! Time interval (seconds) between exchange of fields between models.

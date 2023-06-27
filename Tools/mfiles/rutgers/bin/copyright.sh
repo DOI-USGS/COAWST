@@ -1,8 +1,8 @@
-#!/bin/csh -f
+#!/bin/bash
 #
-# svn $Id: copyright.sh 996 2020-01-10 04:28:56Z arango $
+# svn $Id: copyright.sh 1156 2023-02-18 01:44:37Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -12,7 +12,7 @@
 # Script to update the copyright information on 'matlab' source files.  :::
 # This script replaces the copyright string in the source files and     :::
 # updates the copyright svn property. This script must be executed      :::
-# from the top level 'matlab' source code.                              :::
+# from top level of the 'matlab' source code.                           :::
 #                                                                       :::
 # Usage:                                                                :::
 #                                                                       :::
@@ -27,45 +27,43 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set search = "2002-2019 The ROMS/TOMS"
-set replace = "2002-2020 The ROMS/TOMS"
+search="2002-2022 The ROMS/TOMS"
+replace="2002-2023 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-set c_dirs = "4dvar"
-set c_dirs = "$c_dirs bathymetry"
-set c_dirs = "$c_dirs bin"
-set c_dirs = "$c_dirs boundary"
-set c_dirs = "$c_dirs coastlines"
-set c_dirs = "$c_dirs colormaps"
-set c_dirs = "$c_dirs coupling"
-set c_dirs = "$c_dirs forcing"
-set c_dirs = "$c_dirs grid"
-set c_dirs = "$c_dirs initial"
-set c_dirs = "$c_dirs landmask"
-set c_dirs = "$c_dirs netcdf"
-set c_dirs = "$c_dirs utility"
+c_dirs="4dvar"
+c_dirs="$c_dirs bathymetry"
+c_dirs="$c_dirs bin"
+c_dirs="$c_dirs boundary"
+c_dirs="$c_dirs coastlines"
+c_dirs="$c_dirs colormaps"
+c_dirs="$c_dirs coupling"
+c_dirs="$c_dirs forcing"
+c_dirs="$c_dirs grid"
+c_dirs="$c_dirs initial"
+c_dirs="$c_dirs ioda"
+c_dirs="$c_dirs landmask"
+c_dirs="$c_dirs netcdf"
+c_dirs="$c_dirs utility"
 
-set setsvn = 1
+setsvn=1
+verbose=0
 
-# verbose is a csh command to print all lines of the script so I changed
-# this variable to "verb".
-
-set verb = 0
-
-while ( ($#argv) > 0 )
-  switch ($1)
-    case "-nosvn":
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -nosvn )
       shift
-      set setsvn = 0
-    breaksw
+      setsvn=0
+      ;;
 
-    case "-verbose":
+    -verbose )
       shift
-      set verb = 1
-    breaksw
+      verbose=1
+      ;;
 
-    case "-*":
+    * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
       echo ""
@@ -77,73 +75,67 @@ while ( ($#argv) > 0 )
       echo "-verbose  list files that are modified"
       echo ""
       exit 1
-    breaksw
+      ;;
+  esac
+done
 
-  endsw
-end
-
-echo ""
-echo "Replacing Copyright String in Files ..."
-echo ""
+echo -e "\nReplacing Copyright String in Files ...\n"
 
 # The "! -path '*/.svn/*'" is there to keep it from messing with
 # files in the .svn directories. The "! -name 'copyright.*'" is to
 # keep it from messing with the file that's making the reaplacements.
-# There is no way to redirect only stderr with csh.
+# The "2>" redirects stderr so errors don't get put in FILE.
 
-foreach FILE ( `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f -print` )
+for FILE in `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f -print 2> /dev/null`
+do
 
 # Double check that we're not changing a file in a .svn folder.
 
-  if ( `echo $FILE | grep -vc '.svn/'` ) then
-    if ( $verb == 1 ) then
+  if [ `echo $FILE | grep -vc '.svn/'` -gt 0 ]; then
+    if [ $verbose -eq 1 ]; then
       grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
     else
       grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
-    endif
+    fi
   else
     echo "There is a .svn in the path: $FILE skipped"
-  endif
+  fi
+done
 
-end
+echo -e "\nDone.\n"
 
-echo ""
-echo "Done."
-echo ""
+if [ $setsvn -eq 1 ]; then
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' 4dvar
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' bathymetry
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' bin
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' boundary
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' coastlines
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' colormaps
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' coupling
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' forcing
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' grid
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' initial
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' ioda
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' landmask
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' netcdf
+  svn propset -R copyright '(c) 2002-2023 The ROMS/TOMS Group' utility
 
-if ( $setsvn == 1 ) then
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' 4dvar
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' bathymetry
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' bin
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' boundary
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' coastlines
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' colormaps
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' coupling
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' forcing
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' grid
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' initial
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' landmask
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' netcdf
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' utility
-
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' mex
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' mex/Contents.m
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' mex/mexinside
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' mex/mexrect
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' mex/mexsepeli
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/presto
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/presto/@presto
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/presto/@ps
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/presto/@pst
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/@seagrid
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seagrid/test_data
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' seawater
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' t_tide
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' . startup.m
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' mex
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' mex/Contents.m
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' mex/mexinside
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' mex/mexrect
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' mex/mexsepeli
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/presto
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/presto/@presto
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/presto/@ps
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/presto/@pst
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/@seagrid
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seagrid/test_data
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' seawater
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' t_tide
+  svn propset copyright '(c) 2002-2023 The ROMS/TOMS Group' . startup.m
 else
-  echo ""
-  echo "Not updating svn properties."
-  echo ""
-endif
+  echo -e "Not updating svn properties.\n"
+fi
 

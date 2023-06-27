@@ -1,9 +1,10 @@
 /*
 ** Include file "defs_cmake.h"
 **
-** svn $Id: defs_cmake.h 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: defs_cmake.h 1151 2023-02-09 03:08:53Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2021 The ROMS/TOMS Group              David Robertson  **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group              David Robertson  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -126,6 +127,7 @@
     defined INNER_PRODUCT          || \
     defined I4DVAR                 || \
     defined I4DVAR_ANA_SENSITIVITY || \
+    defined JEDI                   || \
     defined OPT_PERTURBATION       || \
     defined OPT_OBSERVATIONS       || \
     defined PICARD_TEST            || \
@@ -162,6 +164,7 @@ TANGENT
     defined INNER_PRODUCT          || \
     defined I4DVAR                 || \
     defined I4DVAR_ANA_SENSITIVITY || \
+    defined JEDI                   || \
     defined OPT_PERTURBATION       || \
     defined OPT_OBSERVATIONS       || \
     defined RBL4DVAR               || \
@@ -206,6 +209,15 @@ REPRESENTER
     defined TL_RBL4DVAR              || \
     defined TL_R4DVAR
 ARPACK
+#define FOUND
+#endif
+
+/*
+** Determine if using the NCAR parallel-IO (SCORPIO) library is needed.
+*/
+
+#ifdef PIO_LIB
+SCORPIO
 #define FOUND
 #endif
 

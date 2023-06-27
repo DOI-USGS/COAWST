@@ -1,8 +1,8 @@
-function [out_files]=obs_extract(time_interval, obs_inp, obs_out, report)
+function [out_files]=obs_extract(TimeInterval, obs_inp, obs_out, varargin)
 
 % OBS_EXTRACT:  Extacts and creates observation NetCDF files
 %
-% [obs_files]=obs_extract(time_interval, obs_inp, obs_out, report)
+% [obs_files]=obs_extract(TimeInterval, obs_inp, obs_out, epoch, report)
 %
 % Extracts data from input observations NetCDF file at the
 % requested time interval (days) and creates new observation
@@ -10,8 +10,14 @@ function [out_files]=obs_extract(time_interval, obs_inp, obs_out, report)
 %
 % On Input:
 %
-%    time_interval    Sampling time interval for extraction (days)
-%                       For esample, use time_interval=1.0 for daily
+%    TimeInterval    Sampling time interval for extraction (real or struc)
+%
+%                       If real, TimeInterval is the sampling interval.
+%                         For example, use TimeInterval=1.0 for daily
+%
+%                       If struc, TimeInterval is the time range:
+%                         TimeIterval.Start   start time to extract
+%                         TimeIterval.End     end   time to extract
 %
 %    obs_inp          Input observation NetCDF file name to process
 %                       (string)
@@ -19,7 +25,10 @@ function [out_files]=obs_extract(time_interval, obs_inp, obs_out, report)
 %    obs_out          Output observation NetCDF base name (string)
 %                       It is concatenated with day to create new files
 %
+%    epoch            Reference time datenum (days; OPTIONAL)
+%
 %    report           Report extracting information (logical; OPTIONAL)
+%
 %
 % On Output:
 %
@@ -30,17 +39,24 @@ function [out_files]=obs_extract(time_interval, obs_inp, obs_out, report)
 %    out_files = obs_extract(1, 'obs_37623.nc', 'obs_new', true);
 %
   
-% svn $Id: obs_extract.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: obs_extract.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
 
-if (nargin < 4)
-  report = false;
+report = false;
+gotref = false;
+
+switch numel(varargin)
+  case 1
+    epoch = varargin{1};
+    gotref = true;
+ case 2
+   report = varargin{2};
 end
-  
+
 %--------------------------------------------------------------------------
 % Inquire input observations NetCDF file.
 %--------------------------------------------------------------------------
@@ -53,6 +69,18 @@ I = nc_inq(obs_inp);
 
 S = obs_read(obs_inp);
 
+% Check it reference date ('days since YYYY-MM-DD hh:mm:ss') exist and
+% get its datenum.
+
+TimeAtt = nc_getatt(obs_inp, 'units', 'survey_time');
+
+ind = findstr(TimeAtt,'since');
+
+if (~gotref & ind > 0)
+  epoch = datenum(TimeAtt(ind+5:end));
+  gotref = true;
+end
+
 %--------------------------------------------------------------------------
 % Determine number of sample interval, number of surveys per sample
 % interval, and number of observations per sample interval.  Load values
@@ -62,17 +90,28 @@ S = obs_read(obs_inp);
 survey_min = min(S.survey_time);
 survey_max = max(S.survey_time);
 
-survey_samples = floor(survey_min):time_interval:ceil(survey_max);
-if (survey_samples(end) < survey_max)
-  survey_samples = [survey_samples survey_samples(end)+time_interval];
+if (isstruct(TimeInterval))
+  survey_samples(1) = TimeInterval.Start;
+  survey_samples(2) = TimeInterval.End;
+  Nsamples = 1;
+else
+  survey_samples = floor(survey_min):TimeInterval:ceil(survey_max);
+  if (survey_samples(end) < survey_max)
+    survey_samples = [survey_samples survey_samples(end)+TimeInterval];
+  end
+  Nsamples = length(survey_samples) - 1;
 end
-Nsamples = length(survey_samples) - 1;
 
 for n=1:Nsamples
   ind = find(S.survey_time >  survey_samples(n)     &                   ...
              S.survey_time <= survey_samples(n+1));
 
-  ncfile = strcat(obs_out,'_',num2str(survey_samples(n)),'.nc');
+  if (gotref)
+    suffix = datestr(epoch+survey_samples(n), 'yyyymmdd');
+  else
+    suffix = num2str(survey_samples(n));
+  end
+  ncfile = strcat(obs_out,'_', suffix,'.nc');
 
   E.sample(n).ncfile = ncfile;
   E.sample(n).survey_time = S.survey_time(ind);

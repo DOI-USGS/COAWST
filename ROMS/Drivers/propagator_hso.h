@@ -1,14 +1,39 @@
-      SUBROUTINE propagator (RunInterval, Iter, state, ad_state)
+      MODULE propagator_mod
 !
-!svn $Id: propagator_hso.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: propagator_hso.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Stochastic Optimals Propagator for white noise forcing.             !
 !                                                                      !
+!   Reference:                                                         !
+!                                                                      !
+!     Moore, A.M. et al., 2004: A comprehensive ocean prediction and   !
+!       analysis system based on the tangent linear and adjoint of a   !
+!       regional ocean model, Ocean Modelling, 7, 227-258.             !
+!                                                                      !
+!     Smith, K. D., A. M. Moore, and H. G. Arango, 2015: Estimates of  !
+!       ocean forecast error covariance derived from Hessian Singular  !
+!       Vectors, Ocean Modelling, 89, 104-121,                         !
+!       doi:10.1016/j.ocemod.2015.03.003.                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_kinds
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: propagator_hso
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE propagator_hso (RunInterval, Iter, state, ad_state)
 !***********************************************************************
 !
       USE mod_param
@@ -23,6 +48,7 @@
       USE mod_stepping
       USE mod_storage
 !
+      USE close_io_mod,    ONLY : close_inp
       USE dotproduct_mod,  ONLY : tl_statenorm
       USE ini_adjust_mod,  ONLY : ad_ini_perturb
       USE mod_forces,      ONLY : initialize_forces
@@ -516,4 +542,6 @@
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')')
 !
       RETURN
-      END SUBROUTINE propagator
+      END SUBROUTINE propagator_hso
+
+      END MODULE propagator_mod

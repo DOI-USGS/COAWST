@@ -1,11 +1,12 @@
-      SUBROUTINE ad_uv3dmix4 (ng, tile)
+      MODULE ad_uv3dmix4_mod
 !
-!svn $Id: ad_uv3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: ad_uv3dmix4_s.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes adjoint biharmonic mixing  of momentum,    !
 !  along constant S-surfaces, from the horizontal divergence of the    !
@@ -31,6 +32,17 @@
 !                                                                      !
 !  Basic state variables required:  visc4, u, v, Hz.                   !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC ad_uv3dmix4
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE ad_uv3dmix4 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -58,39 +70,39 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iADM, 32, __LINE__, MyFile)
 #endif
-      CALL ad_uv3dmix4_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       nrhs(ng), nnew(ng),                        &
+      CALL ad_uv3dmix4_s_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         IminS, ImaxS, JminS, JmaxS,              &
+     &                         nrhs(ng), nnew(ng),                      &
 #ifdef MASKING
-     &                       GRID(ng) % pmask,                          &
+     &                         GRID(ng) % pmask,                        &
 #endif
-     &                       GRID(ng) % Hz,                             &
-     &                       GRID(ng) % ad_Hz,                          &
-     &                       GRID(ng) % om_p,                           &
-     &                       GRID(ng) % om_r,                           &
-     &                       GRID(ng) % on_p,                           &
-     &                       GRID(ng) % on_r,                           &
-     &                       GRID(ng) % pm,                             &
-     &                       GRID(ng) % pmon_p,                         &
-     &                       GRID(ng) % pmon_r,                         &
-     &                       GRID(ng) % pn,                             &
-     &                       GRID(ng) % pnom_p,                         &
-     &                       GRID(ng) % pnom_r,                         &
-     &                       MIXING(ng) % visc4_p,                      &
-     &                       MIXING(ng) % visc4_r,                      &
+     &                         GRID(ng) % Hz,                           &
+     &                         GRID(ng) % ad_Hz,                        &
+     &                         GRID(ng) % om_p,                         &
+     &                         GRID(ng) % om_r,                         &
+     &                         GRID(ng) % on_p,                         &
+     &                         GRID(ng) % on_r,                         &
+     &                         GRID(ng) % pm,                           &
+     &                         GRID(ng) % pmon_p,                       &
+     &                         GRID(ng) % pmon_r,                       &
+     &                         GRID(ng) % pn,                           &
+     &                         GRID(ng) % pnom_p,                       &
+     &                         GRID(ng) % pnom_r,                       &
+     &                         MIXING(ng) % visc4_p,                    &
+     &                         MIXING(ng) % visc4_r,                    &
 !!#ifdef DIAGNOSTICS_UV
-!!   &                       DIAGS(ng) % DiaRUfrc,                      &
-!!   &                       DIAGS(ng) % DiaRVfrc,                      &
-!!   &                       DIAGS(ng) % DiaU3wrk,                      &
-!!   &                       DIAGS(ng) % DiaV3wrk,                      &
+!!   &                         DIAGS(ng) % DiaRUfrc,                    &
+!!   &                         DIAGS(ng) % DiaRVfrc,                    &
+!!   &                         DIAGS(ng) % DiaU3wrk,                    &
+!!   &                         DIAGS(ng) % DiaV3wrk,                    &
 !!#endif
-     &                       OCEAN(ng) % u,                             &
-     &                       OCEAN(ng) % v,                             &
-     &                       COUPLING(ng) % ad_rufrc,                   &
-     &                       COUPLING(ng) % ad_rvfrc,                   &
-     &                       OCEAN(ng) % ad_u,                          &
-     &                       OCEAN(ng) % ad_v)
+     &                         OCEAN(ng) % u,                           &
+     &                         OCEAN(ng) % v,                           &
+     &                         COUPLING(ng) % ad_rufrc,                 &
+     &                         COUPLING(ng) % ad_rvfrc,                 &
+     &                         OCEAN(ng) % ad_u,                        &
+     &                         OCEAN(ng) % ad_v)
 #ifdef PROFILE
       CALL wclock_off (ng, iADM, 32, __LINE__, MyFile)
 #endif
@@ -100,24 +112,24 @@
 
 !
 !***********************************************************************
-      SUBROUTINE ad_uv3dmix4_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj,                  &
-     &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             nrhs, nnew,                          &
+      SUBROUTINE ad_uv3dmix4_s_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj,                &
+     &                               IminS, ImaxS, JminS, JmaxS,        &
+     &                               nrhs, nnew,                        &
 #ifdef MASKING
-     &                             pmask,                               &
+     &                               pmask,                             &
 #endif
-     &                             Hz, ad_Hz,                           &
-     &                             om_p, om_r, on_p, on_r,              &
-     &                             pm, pmon_p, pmon_r,                  &
-     &                             pn, pnom_p, pnom_r,                  &
-     &                             visc4_p, visc4_r,                    &
+     &                               Hz, ad_Hz,                         &
+     &                               om_p, om_r, on_p, on_r,            &
+     &                               pm, pmon_p, pmon_r,                &
+     &                               pn, pnom_p, pnom_r,                &
+     &                               visc4_p, visc4_r,                  &
 !!#ifdef DIAGNOSTICS_UV
-!!   &                             DiaRUfrc, DiaRVfrc,                  &
-!!   &                             DiaU3wrk, DiaV3wrk,                  &
+!!   &                               DiaRUfrc, DiaRVfrc,                &
+!!   &                               DiaU3wrk, DiaV3wrk,                &
 !!#endif
-     &                             u, v,                                &
-     &                             ad_rufrc, ad_rvfrc, ad_u, ad_v)
+     &                               u, v,                              &
+     &                               ad_rufrc, ad_rvfrc, ad_u, ad_v)
 !***********************************************************************
 !
       USE mod_param
@@ -480,21 +492,21 @@
 !!          DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)-cff1
 !!          DiaV3wrk(i,j,k,M3hvis)=-cff2
 !!#endif
-!>          tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-tl_cff2
-!>
+!^          tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)-tl_cff2
+!^
             ad_cff2=ad_cff2-ad_v(i,j,k,nnew)
-!>          tl_rvfrc(i,j)=tl_rvfrc(i,j)-tl_cff1
-!>
+!^          tl_rvfrc(i,j)=tl_rvfrc(i,j)-tl_cff1
+!^
             ad_cff1=ad_cff1-ad_rvfrc(i,j)
-!>          tl_cff2=dt(ng)*cff*tl_cff1
-!>
+!^          tl_cff2=dt(ng)*cff*tl_cff1
+!^
             ad_cff1=ad_cff1+dt(ng)*cff*ad_cff2
             ad_cff2=0.0_r8
-!>          tl_cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                        &
-!>   &                      (tl_VFx(i+1,j)-tl_VFx(i,j  ))-              &
-!>   &                      (pm(i,j-1)+pm(i,j))*                        &
-!>   &                      (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
-!>
+!^          tl_cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                        &
+!^   &                      (tl_VFx(i+1,j)-tl_VFx(i,j  ))-              &
+!^   &                      (pm(i,j-1)+pm(i,j))*                        &
+!^   &                      (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
+!^
             adfac=0.5_r8*ad_cff1
             adfac1=adfac*(pn(i,j-1)+pn(i,j))
             adfac2=adfac*(pm(i,j-1)+pm(i,j))
@@ -512,21 +524,21 @@
 !!          DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)-cff1
 !!          DiaU3wrk(i,j,k,M3hvis)=-cff2
 !!#endif
-!>          tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-tl_cff2
-!>
+!^          tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)-tl_cff2
+!^
             ad_cff2=ad_cff2-ad_u(i,j,k,nnew)
-!>          tl_rufrc(i,j)=tl_rufrc(i,j)-tl_cff1
-!>
+!^          tl_rufrc(i,j)=tl_rufrc(i,j)-tl_cff1
+!^
             ad_cff1=ad_cff1-ad_rufrc(i,j)
-!>          tl_cff2=dt(ng)*cff*tl_cff1
-!>
+!^          tl_cff2=dt(ng)*cff*tl_cff1
+!^
             ad_cff1=ad_cff1+dt(ng)*cff*ad_cff2
             ad_cff2=0.0_r8
-!>          tl_cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                        &
-!>   &                      (tl_UFx(i,j  )-tl_UFx(i-1,j))+              &
-!>   &                      (pm(i-1,j)+pm(i,j))*                        &
-!>   &                      (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
-!>
+!^          tl_cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                        &
+!^   &                      (tl_UFx(i,j  )-tl_UFx(i-1,j))+              &
+!^   &                      (pm(i-1,j)+pm(i,j))*                        &
+!^   &                      (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
+!^
             adfac=0.5_r8*ad_cff1
             adfac1=adfac*(pn(i-1,j)+pn(i,j))
             adfac2=adfac*(pm(i-1,j)+pm(i,j))
@@ -543,37 +555,37 @@
 !
         DO j=Jstr,Jend+1
           DO i=Istr,Iend+1
-!>          tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
-!>
+!^          tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
+!^
             ad_cff=ad_cff+on_p(i,j)*on_p(i,j)*ad_VFx(i,j)
             ad_VFx(i,j)=0.0_r8
-!>          tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
-!>
+!^          tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
+!^
             ad_cff=ad_cff+om_p(i,j)*om_p(i,j)*ad_UFe(i,j)
             ad_UFe(i,j)=0.0_r8
 #ifdef MASKING
-!>          tl_cff=tl_cff*pmask(i,j)
-!>
+!^          tl_cff=tl_cff*pmask(i,j)
+!^
             ad_cff=ad_cff*pmask(i,j)
 #endif
-!>          tl_cff=visc4_p(i,j)*0.125_r8*                               &
-!>   &             ((tl_Hz(i-1,j  ,k)+tl_Hz(i,j  ,k)+                   &
-!>   &               tl_Hz(i-1,j-1,k)+tl_Hz(i,j-1,k))*                  &
-!>   &              (pmon_p(i,j)*                                       &
-!>   &               ((pn(i  ,j-1)+pn(i  ,j))*LapV(i  ,j)-              &
-!>   &                (pn(i-1,j-1)+pn(i-1,j))*LapV(i-1,j))+             &
-!>   &               pnom_p(i,j)*                                       &
-!>   &               ((pm(i-1,j  )+pm(i,j  ))*LapU(i,j  )-              &
-!>   &                (pm(i-1,j-1)+pm(i,j-1))*LapU(i,j-1)))+            &
-!>   &              (Hz(i-1,j  ,k)+Hz(i,j  ,k)+                         &
-!>   &               Hz(i-1,j-1,k)+Hz(i,j-1,k))*                        &
-!>   &               (pmon_p(i,j)*                                      &
-!>   &                ((pn(i  ,j-1)+pn(i  ,j))*tl_LapV(i  ,j)-          &
-!>   &                 (pn(i-1,j-1)+pn(i-1,j))*tl_LapV(i-1,j))+         &
-!>   &                pnom_p(i,j)*                                      &
-!>   &                ((pm(i-1,j  )+pm(i,j  ))*tl_LapU(i,j  )-          &
-!>   &                 (pm(i-1,j-1)+pm(i,j-1))*tl_LapU(i,j-1))))
-!>
+!^          tl_cff=visc4_p(i,j)*0.125_r8*                               &
+!^   &             ((tl_Hz(i-1,j  ,k)+tl_Hz(i,j  ,k)+                   &
+!^   &               tl_Hz(i-1,j-1,k)+tl_Hz(i,j-1,k))*                  &
+!^   &              (pmon_p(i,j)*                                       &
+!^   &               ((pn(i  ,j-1)+pn(i  ,j))*LapV(i  ,j)-              &
+!^   &                (pn(i-1,j-1)+pn(i-1,j))*LapV(i-1,j))+             &
+!^   &               pnom_p(i,j)*                                       &
+!^   &               ((pm(i-1,j  )+pm(i,j  ))*LapU(i,j  )-              &
+!^   &                (pm(i-1,j-1)+pm(i,j-1))*LapU(i,j-1)))+            &
+!^   &              (Hz(i-1,j  ,k)+Hz(i,j  ,k)+                         &
+!^   &               Hz(i-1,j-1,k)+Hz(i,j-1,k))*                        &
+!^   &               (pmon_p(i,j)*                                      &
+!^   &                ((pn(i  ,j-1)+pn(i  ,j))*tl_LapV(i  ,j)-          &
+!^   &                 (pn(i-1,j-1)+pn(i-1,j))*tl_LapV(i-1,j))+         &
+!^   &                pnom_p(i,j)*                                      &
+!^   &                ((pm(i-1,j  )+pm(i,j  ))*tl_LapU(i,j  )-          &
+!^   &                 (pm(i-1,j-1)+pm(i,j-1))*tl_LapU(i,j-1))))
+!^
             adfac=visc4_p(i,j)*0.125_r8*ad_cff
             adfac1=adfac*(pmon_p(i,j)*                                  &
      &                    ((pn(i  ,j-1)+pn(i  ,j))*LapV(i  ,j)-         &
@@ -603,30 +615,30 @@
 !
         DO j=JstrV-1,Jend
           DO i=IstrU-1,Iend
-!>          tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
-!>
+!^          tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
+!^
             ad_cff=ad_cff+om_r(i,j)*om_r(i,j)*ad_VFe(i,j)
             ad_VFe(i,j)=0.0_r8
-!>          tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
-!>
+!^          tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
+!^
             ad_cff=ad_cff+on_r(i,j)*on_r(i,j)*ad_UFx(i,j)
             ad_UFx(i,j)=0.0_r8
-!>          tl_cff=visc4_r(i,j)*0.5_r8*                                 &
-!>   &             (tl_Hz(i,j,k)*
-!>   &              (pmon_r(i,j)*                                       &
-!>   &               ((pn(i  ,j)+pn(i+1,j))*LapU(i+1,j)-                &
-!>   &                (pn(i-1,j)+pn(i  ,j))*LapU(i  ,j))-               &
-!>   &               pnom_r(i,j)*                                       &
-!>   &               ((pm(i,j  )+pm(i,j+1))*LapV(i,j+1)-                &
-!>   &                (pm(i,j-1)+pm(i,j  ))*LapV(i,j  )))+              &
-!>   &              Hz(i,j,k)*                                          &
-!>   &              (pmon_r(i,j)*                                       &
-!>   &               ((pn(i  ,j)+pn(i+1,j))*tl_LapU(i+1,j)-             &
-!>   &                (pn(i-1,j)+pn(i  ,j))*tl_LapU(i  ,j))-            &
-!>   &               pnom_r(i,j)*                                       &
-!>   &               ((pm(i,j  )+pm(i,j+1))*tl_LapV(i,j+1)-             &
-!>   &                (pm(i,j-1)+pm(i,j  ))*tl_LapV(i,j  ))))
-!>
+!^          tl_cff=visc4_r(i,j)*0.5_r8*                                 &
+!^   &             (tl_Hz(i,j,k)*
+!^   &              (pmon_r(i,j)*                                       &
+!^   &               ((pn(i  ,j)+pn(i+1,j))*LapU(i+1,j)-                &
+!^   &                (pn(i-1,j)+pn(i  ,j))*LapU(i  ,j))-               &
+!^   &               pnom_r(i,j)*                                       &
+!^   &               ((pm(i,j  )+pm(i,j+1))*LapV(i,j+1)-                &
+!^   &                (pm(i,j-1)+pm(i,j  ))*LapV(i,j  )))+              &
+!^   &              Hz(i,j,k)*                                          &
+!^   &              (pmon_r(i,j)*                                       &
+!^   &               ((pn(i  ,j)+pn(i+1,j))*tl_LapU(i+1,j)-             &
+!^   &                (pn(i-1,j)+pn(i  ,j))*tl_LapU(i  ,j))-            &
+!^   &               pnom_r(i,j)*                                       &
+!^   &               ((pm(i,j  )+pm(i,j+1))*tl_LapV(i,j+1)-             &
+!^   &                (pm(i,j-1)+pm(i,j  ))*tl_LapV(i,j  ))))
+!^
             adfac=visc4_r(i,j)*0.5_r8*ad_cff
             adfac1=adfac*Hz(i,j,k)
             adfac2=adfac1*pmon_r(i,j)
@@ -657,18 +669,18 @@
         IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
      &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-!>          tl_LapV(Iend+1,Jend+1)=0.5_r8*                              &
-!>   &                             (tl_LapV(Iend  ,Jend+1)+             &
-!>   &                              tl_LapV(Iend+1,Jend  ))
-!>
+!^          tl_LapV(Iend+1,Jend+1)=0.5_r8*                              &
+!^   &                             (tl_LapV(Iend  ,Jend+1)+             &
+!^   &                              tl_LapV(Iend+1,Jend  ))
+!^
             adfac=0.5_r8*ad_LapV(Iend+1,Jend+1)
             ad_LapV(Iend  ,Jend+1)=ad_LapV(Iend  ,Jend+1)+adfac
             ad_LapV(Iend+1,Jend  )=ad_LapV(Iend+1,Jend  )+adfac
             ad_LapV(Iend+1,Jend+1)=0.0_r8
-!>          tl_LapU(Iend+1,Jend+1)=0.5_r8*                              &
-!>   &                             (tl_LapU(Iend  ,Jend+1)+             &
-!>   &                              tl_LapU(Iend+1,Jend  ))
-!>
+!^          tl_LapU(Iend+1,Jend+1)=0.5_r8*                              &
+!^   &                             (tl_LapU(Iend  ,Jend+1)+             &
+!^   &                              tl_LapU(Iend+1,Jend  ))
+!^
             adfac=0.5_r8*ad_LapU(Iend+1,Jend+1)
             ad_LapU(Iend  ,Jend+1)=ad_LapU(Iend  ,Jend+1)+adfac
             ad_LapU(Iend+1,Jend  )=ad_LapU(Iend+1,Jend  )+adfac
@@ -679,18 +691,18 @@
         IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
      &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-!>          tl_LapV(Istr-1,Jend+1)=0.5_r8*                              &
-!>   &                             (tl_LapV(Istr  ,Jend+1)+             &
-!>   &                              tl_LapV(Istr-1,Jend  ))
-!>
+!^          tl_LapV(Istr-1,Jend+1)=0.5_r8*                              &
+!^   &                             (tl_LapV(Istr  ,Jend+1)+             &
+!^   &                              tl_LapV(Istr-1,Jend  ))
+!^
             adfac=0.5_r8*ad_LapV(Istr-1,Jend+1)
             ad_LapV(Istr  ,Jend+1)=ad_LapV(Istr  ,Jend+1)+adfac
             ad_LapV(Istr-1,Jend  )=ad_LapV(Istr-1,Jend  )+adfac
             ad_LapV(Istr-1,Jend+1)=0.0_r8
-!>          tl_LapU(Istr  ,Jend+1)=0.5_r8*                              &
-!>   &                             (tl_LapU(Istr+1,Jend+1)+             &
-!>   &                              tl_LapU(Istr  ,Jend  ))
-!>
+!^          tl_LapU(Istr  ,Jend+1)=0.5_r8*                              &
+!^   &                             (tl_LapU(Istr+1,Jend+1)+             &
+!^   &                              tl_LapU(Istr  ,Jend  ))
+!^
             adfac=0.5_r8*ad_LapU(Istr,Jend+1)
             ad_LapU(Istr+1,Jend+1)=ad_LapU(Istr+1,Jend+1)+adfac
             ad_LapU(Istr  ,Jend  )=ad_LapU(Istr  ,Jend  )+adfac
@@ -701,18 +713,18 @@
         IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
      &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-!>          tl_LapV(Iend+1,Jstr  )=0.5_r8*                              &
-!>   &                             (tl_LapV(Iend  ,Jstr  )+             &
-!>   &                              tl_LapV(Iend+1,Jstr+1))
-!>
+!^          tl_LapV(Iend+1,Jstr  )=0.5_r8*                              &
+!^   &                             (tl_LapV(Iend  ,Jstr  )+             &
+!^   &                              tl_LapV(Iend+1,Jstr+1))
+!^
             adfac=0.5_r8*ad_LapV(Iend+1,Jstr)
             ad_LapV(Iend  ,Jstr  )=ad_LapV(Iend  ,Jstr  )+adfac
             ad_LapV(Iend+1,Jstr+1)=ad_LapV(Iend+1,Jstr+1)+adfac
             ad_LapV(Iend+1,Jstr  )=0.0_r8
-!>          tl_LapU(Iend+1,Jstr-1)=0.5_r8*                              &
-!>   &                             (tl_LapU(Iend  ,Jstr-1)+             &
-!>   &                              tl_LapU(Iend+1,Jstr  ))
-!>
+!^          tl_LapU(Iend+1,Jstr-1)=0.5_r8*                              &
+!^   &                             (tl_LapU(Iend  ,Jstr-1)+             &
+!^   &                              tl_LapU(Iend+1,Jstr  ))
+!^
             adfac=0.5_r8*ad_LapU(Iend+1,Jstr-1)
             ad_LapU(Iend  ,Jstr-1)=ad_LapU(Iend  ,Jstr-1)+adfac
             ad_LapU(Iend+1,Jstr  )=ad_LapU(Iend+1,Jstr  )+adfac
@@ -723,18 +735,18 @@
         IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
      &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-!>          tl_LapV(Istr-1,Jstr  )=0.5_r8*                              &
-!>   &                             (tl_LapV(Istr-1,Jstr+1)+             &
-!>   &                              tl_LapV(Istr  ,Jstr  ))
-!>
+!^          tl_LapV(Istr-1,Jstr  )=0.5_r8*                              &
+!^   &                             (tl_LapV(Istr-1,Jstr+1)+             &
+!^   &                              tl_LapV(Istr  ,Jstr  ))
+!^
             adfac=0.5_r8*ad_LapV(Istr-1,Jstr)
             ad_LapV(Istr-1,Jstr+1)=ad_LapV(Istr-1,Jstr+1)+adfac
             ad_LapV(Istr  ,Jstr  )=ad_LapV(Istr  ,Jstr  )+adfac
             ad_LapV(Istr-1,Jstr  )=0.0_r8
-!>          tl_LapU(Istr  ,Jstr-1)=0.5_r8*                              &
-!>   &                             (tl_LapU(Istr+1,Jstr-1)+             &
-!>   &                              tl_LapU(Istr  ,Jstr  ))
-!>
+!^          tl_LapU(Istr  ,Jstr-1)=0.5_r8*                              &
+!^   &                             (tl_LapU(Istr+1,Jstr-1)+             &
+!^   &                              tl_LapU(Istr  ,Jstr  ))
+!^
             adfac=0.5_r8*ad_LapU(Istr,Jstr-1)
             ad_LapU(Istr+1,Jstr-1)=ad_LapU(Istr+1,Jstr-1)+adfac
             ad_LapU(Istr  ,Jstr  )=ad_LapU(Istr  ,Jstr  )+adfac
@@ -746,30 +758,30 @@
           IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
             IF (ad_LBC(inorth,isVvel,ng)%closed) THEN
               DO i=IminV,ImaxV
-!>              tl_LapV(i,Jend+1)=0.0_r8
-!>
+!^              tl_LapV(i,Jend+1)=0.0_r8
+!^
                 ad_LapV(i,Jend+1)=0.0_r8
               END DO
             ELSE
               DO i=IminV,ImaxV
-!>              tl_LapV(i,Jend+1)=tl_LapV(i,Jend)
-!>
+!^              tl_LapV(i,Jend+1)=tl_LapV(i,Jend)
+!^
                 ad_LapV(i,Jend)=ad_LapV(i,Jend)+ad_LapV(i,Jend+1)
                 ad_LapV(i,Jend+1)=0.0_r8
               END DO
             END IF
             IF (ad_LBC(inorth,isUvel,ng)%closed) THEN
               DO i=IminU,ImaxU
-!>              tl_LapU(i,Jend+1)=gamma2(ng)*tl_LapU(i,Jend)
-!>
+!^              tl_LapU(i,Jend+1)=gamma2(ng)*tl_LapU(i,Jend)
+!^
                 ad_LapU(i,Jend)=ad_LapU(i,Jend)+                        &
      &                          gamma2(ng)*ad_LapU(i,Jend+1)
                 ad_LapU(i,Jend+1)=0.0_r8
               END DO
             ELSE
               DO i=IminU,ImaxU
-!>              tl_LapU(i,Jend+1)=0.0_r8
-!>
+!^              tl_LapU(i,Jend+1)=0.0_r8
+!^
                 ad_LapU(i,Jend+1)=0.0_r8
               END DO
             END IF
@@ -780,30 +792,30 @@
           IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
             IF (ad_LBC(isouth,isVvel,ng)%closed) THEN
               DO i=IminV,ImaxV
-!>              tl_LapV(i,JstrV-1)=0.0_r8
-!>
+!^              tl_LapV(i,JstrV-1)=0.0_r8
+!^
                 ad_LapV(i,JstrV-1)=0.0_r8
               END DO
             ELSE
               DO i=IminV,ImaxV
-!>              tl_LapV(i,JstrV-1)=tl_LapV(i,JstrV)
-!>
+!^              tl_LapV(i,JstrV-1)=tl_LapV(i,JstrV)
+!^
                 ad_LapV(i,JstrV)=ad_LapV(i,JstrV)+ad_LapV(i,JstrV-1)
                 ad_LapV(i,JstrV-1)=0.0_r8
               END DO
             END IF
             IF (ad_LBC(isouth,isUvel,ng)%closed) THEN
               DO i=IminU,ImaxU
-!>              tl_LapU(i,Jstr-1)=gamma2(ng)*tl_LapU(i,Jstr)
-!>
+!^              tl_LapU(i,Jstr-1)=gamma2(ng)*tl_LapU(i,Jstr)
+!^
                 ad_LapU(i,Jstr)=ad_LapU(i,Jstr)+                        &
      &                          gamma2(ng)*ad_LapU(i,Jstr-1)
                 ad_LapU(i,Jstr-1)=0.0_r8
               END DO
             ELSE
               DO i=IminU,ImaxU
-!>              tl_LapU(i,Jstr-1)=0.0_r8
-!>
+!^              tl_LapU(i,Jstr-1)=0.0_r8
+!^
                 ad_LapU(i,Jstr-1)=0.0_r8
               END DO
             END IF
@@ -814,29 +826,29 @@
           IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
             IF (ad_LBC(ieast,isVvel,ng)%closed) THEN
               DO j=JminV,JmaxV
-!>              tl_LapV(Iend+1,j)=gamma2(ng)*tl_LapV(Iend,j)
-!>
+!^              tl_LapV(Iend+1,j)=gamma2(ng)*tl_LapV(Iend,j)
+!^
                 ad_LapV(Iend,j)=ad_LapV(Iend,j)+                        &
      &                          gamma2(ng)*ad_LapV(Iend+1,j)
                 ad_LapV(Iend+1,j)=0.0_r8
               END DO
             ELSE
               DO j=JminV,JmaxV
-!>              tl_LapV(Iend+1,j)=0.0_r8
-!>
+!^              tl_LapV(Iend+1,j)=0.0_r8
+!^
                 ad_LapV(Iend+1,j)=0.0_r8
               END DO
             END IF
             IF (ad_LBC(ieast,isUvel,ng)%closed) THEN
               DO j=JminU,JmaxU
-!>              tl_LapU(Iend+1,j)=0.0_r8
-!>
+!^              tl_LapU(Iend+1,j)=0.0_r8
+!^
                 ad_LapU(Iend+1,j)=0.0_r8
               END DO
             ELSE
               DO j=JminU,JmaxU
-!>              tl_LapU(Iend+1,j)=tl_LapU(Iend,j)
-!>
+!^              tl_LapU(Iend+1,j)=tl_LapU(Iend,j)
+!^
                 ad_LapU(Iend,j)=ad_LapU(Iend,j)+ad_LapU(Iend+1,j)
                 ad_LapU(Iend+1,j)=0.0_r8
               END DO
@@ -848,29 +860,29 @@
           IF (DOMAIN(ng)%Western_Edge(tile)) THEN
             IF (ad_LBC(iwest,isVvel,ng)%closed) THEN
               DO j=JminV,JmaxV
-!>              tl_LapV(Istr-1,j)=gamma2(ng)*tl_LapV(Istr,j)
-!>
+!^              tl_LapV(Istr-1,j)=gamma2(ng)*tl_LapV(Istr,j)
+!^
                 ad_LapV(Istr,j)=ad_LapV(Istr,j)+                        &
      &                          gamma2(ng)*ad_LapV(Istr-1,j)
                 ad_LapV(Istr-1,j)=0.0_r8
               END DO
             ELSE
               DO j=JminV,JmaxV
-!>              tl_LapV(Istr-1,j)=0.0_r8
-!>
+!^              tl_LapV(Istr-1,j)=0.0_r8
+!^
                 ad_LapV(Istr-1,j)=0.0_r8
               END DO
             END IF
             IF (ad_LBC(iwest,isUvel,ng)%closed) THEN
               DO j=JminU,JmaxU
-!>              tl_LapU(IstrU-1,j)=0.0_r8
-!>
+!^              tl_LapU(IstrU-1,j)=0.0_r8
+!^
                 ad_LapU(IstrU-1,j)=0.0_r8
               END DO
             ELSE
               DO j=JminU,JmaxU
-!>              tl_LapU(IstrU-1,j)=tl_LapU(IstrU,j)
-!>
+!^              tl_LapU(IstrU-1,j)=tl_LapU(IstrU,j)
+!^
                 ad_LapU(IstrU,j)=ad_LapU(IstrU,j)+ad_LapU(IstrU-1,j)
                 ad_LapU(IstrU-1,j)=0.0_r8
               END DO
@@ -883,12 +895,12 @@
         DO j=JminV,JmaxV
           DO i=IminV,ImaxV
             cff=0.125_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
-!>          tl_LapV(i,j)=cff*                                           &
-!>   &                   ((pn(i,j-1)+pn(i,j))*                          &
-!>   &                    (tl_VFx(i+1,j)-tl_VFx(i,j  ))-                &
-!>   &                    (pm(i,j-1)+pm(i,j))*                          &
-!>   &                    (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
-!>
+!^          tl_LapV(i,j)=cff*                                           &
+!^   &                   ((pn(i,j-1)+pn(i,j))*                          &
+!^   &                    (tl_VFx(i+1,j)-tl_VFx(i,j  ))-                &
+!^   &                    (pm(i,j-1)+pm(i,j))*                          &
+!^   &                    (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
+!^
             adfac=cff*ad_LapV(i,j)
             adfac1=adfac*(pn(i,j-1)+pn(i,j))
             adfac2=adfac*(pm(i,j-1)+pm(i,j))
@@ -902,12 +914,12 @@
         DO j=JminU,JmaxU
           DO i=IminU,ImaxU
             cff=0.125_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
-!>          tl_LapU(i,j)=cff*                                           &
-!>   &                   ((pn(i-1,j)+pn(i,j))*                          &
-!>   &                    (tl_UFx(i,j  )-tl_UFx(i-1,j))+                &
-!>   &                    (pm(i-1,j)+pm(i,j))*                          &
-!>   &                    (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
-!>
+!^          tl_LapU(i,j)=cff*                                           &
+!^   &                   ((pn(i-1,j)+pn(i,j))*                          &
+!^   &                    (tl_UFx(i,j  )-tl_UFx(i-1,j))+                &
+!^   &                    (pm(i-1,j)+pm(i,j))*                          &
+!^   &                    (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
+!^
             adfac=cff*ad_LapU(i,j)
             adfac1=adfac*(pn(i-1,j)+pn(i,j))
             adfac2=adfac*(pm(i-1,j)+pm(i,j))
@@ -928,27 +940,27 @@
 !
         DO j=JminU,JmaxU+1
           DO i=IminV,ImaxV+1
-!>          tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
-!>
+!^          tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
+!^
             ad_cff=ad_cff+on_p(i,j)*on_p(i,j)*ad_VFx(i,j)
             ad_VFx(i,j)=0.0_r8
-!>          tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
-!>
+!^          tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
+!^
             ad_cff=ad_cff+om_p(i,j)*om_p(i,j)*ad_UFe(i,j)
             ad_UFe(i,j)=0.0_r8
 #ifdef MASKING
-!>          tl_cff=tl_cff*pmask(i,j)
-!>
+!^          tl_cff=tl_cff*pmask(i,j)
+!^
             ad_cff=ad_cff*pmask(i,j)
 #endif
-!>          tl_cff=visc4_p(i,j)*0.5_r8*                                 &
-!>   &          (pmon_p(i,j)*                                           &
-!>   &           ((pn(i  ,j-1)+pn(i  ,j))*tl_v(i  ,j,k,nrhs)-           &
-!>   &            (pn(i-1,j-1)+pn(i-1,j))*tl_v(i-1,j,k,nrhs))+          &
-!>   &           pnom_p(i,j)*                                           &
-!>   &           ((pm(i-1,j  )+pm(i,j  ))*tl_u(i,j  ,k,nrhs)-           &
-!>   &            (pm(i-1,j-1)+pm(i,j-1))*tl_u(i,j-1,k,nrhs)))
-!>
+!^          tl_cff=visc4_p(i,j)*0.5_r8*                                 &
+!^   &          (pmon_p(i,j)*                                           &
+!^   &           ((pn(i  ,j-1)+pn(i  ,j))*tl_v(i  ,j,k,nrhs)-           &
+!^   &            (pn(i-1,j-1)+pn(i-1,j))*tl_v(i-1,j,k,nrhs))+          &
+!^   &           pnom_p(i,j)*                                           &
+!^   &           ((pm(i-1,j  )+pm(i,j  ))*tl_u(i,j  ,k,nrhs)-           &
+!^   &            (pm(i-1,j-1)+pm(i,j-1))*tl_u(i,j-1,k,nrhs)))
+!^
             adfac=visc4_p(i,j)*0.5_r8*ad_cff
             adfac1=adfac*pmon_p(i,j)
             adfac2=adfac*pnom_p(i,j)
@@ -965,22 +977,22 @@
         END DO
         DO j=-1+JminV,JmaxV
           DO i=-1+IminU,ImaxU
-!>          tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
-!>
+!^          tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
+!^
             ad_cff=ad_cff+om_r(i,j)*om_r(i,j)*ad_VFe(i,j)
             ad_VFe(i,j)=0.0_r8
-!>          tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
-!>
+!^          tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
+!^
             ad_cff=ad_cff+on_r(i,j)*on_r(i,j)*ad_UFx(i,j)
             ad_UFx(i,j)=0.0_r8
-!>          tl_cff=visc4_r(i,j)*0.5_r8*                                 &
-!>   &          (pmon_r(i,j)*                                           &
-!>   &           ((pn(i  ,j)+pn(i+1,j))*tl_u(i+1,j,k,nrhs)-             &
-!>   &            (pn(i-1,j)+pn(i  ,j))*tl_u(i  ,j,k,nrhs))-            &
-!>   &           pnom_r(i,j)*                                           &
-!>   &           ((pm(i,j  )+pm(i,j+1))*tl_v(i,j+1,k,nrhs)-             &
-!>   &            (pm(i,j-1)+pm(i,j  ))*tl_v(i,j  ,k,nrhs)))
-!>
+!^          tl_cff=visc4_r(i,j)*0.5_r8*                                 &
+!^   &          (pmon_r(i,j)*                                           &
+!^   &           ((pn(i  ,j)+pn(i+1,j))*tl_u(i+1,j,k,nrhs)-             &
+!^   &            (pn(i-1,j)+pn(i  ,j))*tl_u(i  ,j,k,nrhs))-            &
+!^   &           pnom_r(i,j)*                                           &
+!^   &           ((pm(i,j  )+pm(i,j+1))*tl_v(i,j+1,k,nrhs)-             &
+!^   &            (pm(i,j-1)+pm(i,j  ))*tl_v(i,j  ,k,nrhs)))
+!^
             adfac=visc4_r(i,j)*0.5_r8*ad_cff
             adfac1=adfac*pmon_r(i,j)
             adfac2=adfac*pnom_r(i,j)
@@ -998,4 +1010,6 @@
       END DO K_LOOP
 !
       RETURN
-      END SUBROUTINE ad_uv3dmix4_tile
+      END SUBROUTINE ad_uv3dmix4_s_tile
+
+      END MODULE ad_uv3dmix4_mod

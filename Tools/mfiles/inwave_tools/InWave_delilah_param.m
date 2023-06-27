@@ -18,7 +18,7 @@ make_InWave_bry=0;
 %%%%%                GRID AND BATHYMETRY DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-filepath='E:\data\models\InWave\readswan\Projects\Delilah\coawst\';
+filepath='../../../Projects/Delilah/';
 
 if (make_InWave_grd)
 %  Need to define: 1) grid_name
@@ -140,7 +140,7 @@ if (make_InWave_grd)
   end
 
 else
-  grd_file=strcat(filepath,'delilah_grid.nc');  % name of the grid file
+  grd_file=strcat(filepath,'InWave_delilah_grd5_per.nc');  % name of the grid file
   ang=ncread(grd_file,'angle')*180/pi;
   depth=ncread(grd_file,'h');
   [Lp,Mp]=size(depth);
@@ -154,14 +154,14 @@ end
 
 if (make_InWave_ini)
 
-  Bindirs_centers = [10:5:170];  % center angles of the directional bins,
+  Bindirs_centers = [10:15:170];  % center angles of the directional bins,
   Nbins= length(Bindirs_centers);% number of computational directional bins
 %                                  size Nbins. Directions coming from.
   TA= 8.3;                       % representative absolute wave period (sec)
 
   ini_file=strcat(filepath,'InWave_delilah_ini.nc');  % name of the initial file
 
-  [Lp,Mp]=size(x);
+  [Lp,Mp]=size(depth);
   Ac=ones(Lp  ,Mp  ,Nbins).*0;
   Cx=ones(Lp-1,Mp  ,Nbins).*0;
   Cy=ones(Lp  ,Mp-1,Nbins).*0;

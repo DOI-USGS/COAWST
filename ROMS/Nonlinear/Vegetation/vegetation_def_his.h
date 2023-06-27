@@ -28,7 +28,8 @@
 #  if defined WRITE_WATER && defined MASKING
            Vinfo(20)='mask_rho'
 #  endif
-!           Vinfo(22)='coordinates'
+           Vinfo(21)=Vname(6,idvprp(i))
+!          Vinfo(22)='coordinates'
            Aval(5)=REAL(Iinfo(1,idvprp(i),ng),r8)
            status=def_var(ng, iNLM, HIS(ng)%ncid,HIS(ng)%Vid(idvprp(i))  &
      &                   ,NF_FOUT, nvd4, v3pgrd, Aval, Vinfo, ncname,    &
@@ -51,6 +52,7 @@
 # if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 # endif
+          Vinfo(21)=Vname(6,idWdvg)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWdvg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg),   &
@@ -59,9 +61,9 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
-!  Define spectral Cd due to wave vegetation. 
+!  Define spectral Cd due to wave vegetation.
 !
-        IF (Hout(idCdvg,ng)) THEN 
+        IF (Hout(idCdvg,ng)) THEN
           Vinfo( 1)=Vname(1,idCdvg)
           Vinfo( 2)=Vname(2,idCdvg)
           Vinfo( 3)=Vname(3,idCdvg)
@@ -71,6 +73,7 @@
 # if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 # endif
+          Vinfo(21)=Vname(6,idCdvg)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idCdvg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idCdvg),   &
@@ -78,7 +81,7 @@
      &                   SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
-        END IF 
+        END IF
 #endif
 #ifdef MARSH_DYNAMICS
 !
@@ -93,10 +96,11 @@
 #  if defined WRITE_WATER && defined MASKING
          Vinfo(20)='mask_rho'
 #  endif
+         Vinfo(21)=Vname(6,idTims)
          Vinfo(22)='coordinates'
          Aval(5)=REAL(Iinfo(1,idTims,ng),r8)
-         status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTims),    & 
-     &                  NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname ,    & 
+         status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTims),    &
+     &                  NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname ,    &
      &                  SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
        END IF
@@ -113,10 +117,11 @@
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
+          Vinfo(21)=Vname(6,idTtot)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTtot,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTtot),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    & 
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
      &                   SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
@@ -135,6 +140,7 @@
 #   if defined WRITE_WATER && defined MASKING
             Vinfo(20)='mask_rho'
 #   endif
+            Vinfo(21)=Vname(6,idTmfo(i))
             Vinfo(22)='coordinates'
             Aval(5)=REAL(Iinfo(1,idTmfo(i),ng))
             status=def_var(ng, iNLM, HIS(ng)%ncid,                      &
@@ -158,6 +164,7 @@
 #    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #    endif
+          Vinfo(21)=Vname(6,idTmmr)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmmr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmmr),   &
@@ -181,16 +188,17 @@
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
+          Vinfo(21)=Vname(6,idTmtr)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmtr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmtr),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    & 
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
      &                     SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-# endif 
+# endif
 !
-# if defined MARSH_VERT_GROWTH 	
+# if defined MARSH_VERT_GROWTH
 !
         IF (Hout(idTmhw,ng)) THEN
           Vinfo( 1)=Vname(1,idTmhw)
@@ -201,6 +209,7 @@
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
+          Vinfo(21)=Vname(6,idTmhw)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmhw,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmhw),   &
@@ -209,9 +218,9 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 	END IF
 !
-!  Amount of marsh mean low water over a given frequency. 
+!  Amount of marsh mean low water over a given frequency.
 !
-        IF (Hout(idTmlw,ng)) THEN 
+        IF (Hout(idTmlw,ng)) THEN
           Vinfo( 1)=Vname(1,idTmlw)
           Vinfo( 2)=Vname(2,idTmlw)
           Vinfo( 3)=Vname(3,idTmlw)
@@ -220,6 +229,7 @@
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
+          Vinfo(21)=Vname(6,idTmlw)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmlw,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmlw),   &
@@ -231,7 +241,7 @@
 !
 !  Amount of marsh biomass peak (kg/sq.m).
 !
-        IF (Hout(idTmbp,ng)) THEN 
+        IF (Hout(idTmbp,ng)) THEN
           Vinfo( 1)=Vname(1,idTmbp)
           Vinfo( 2)=Vname(2,idTmbp)
           Vinfo( 3)=Vname(3,idTmbp)
@@ -240,6 +250,7 @@
 #    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #    endif
+          Vinfo(21)=Vname(6,idTmbp)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmbp,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmbp),   &
@@ -250,7 +261,7 @@
 !
 !  Rate of marsh vertical growth (m/year).
 !
-        IF (Hout(idTmvg,ng)) THEN 
+        IF (Hout(idTmvg,ng)) THEN
           Vinfo( 1)=Vname(1,idTmvg)
           Vinfo( 2)=Vname(2,idTmvg)
           Vinfo( 3)=Vname(3,idTmvg)
@@ -259,6 +270,7 @@
 #    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #    endif
+          Vinfo(21)=Vname(6,idTmvg)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmvg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmvg),   &
@@ -269,7 +281,7 @@
 !
 !  Amount of marsh vertical growth (m).
 !
-        IF (Hout(idTmvt,ng)) THEN 
+        IF (Hout(idTmvt,ng)) THEN
           Vinfo( 1)=Vname(1,idTmvt)
           Vinfo( 2)=Vname(2,idTmvt)
           Vinfo( 3)=Vname(3,idTmvt)
@@ -278,6 +290,7 @@
 #    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #    endif
+          Vinfo(21)=Vname(6,idTmvt)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTmvt,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmvt),   &
@@ -285,5 +298,5 @@
      &                     SetFillVal = .FALSE.)
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-# endif  
-#endif   
+# endif
+#endif

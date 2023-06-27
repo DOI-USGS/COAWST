@@ -1,13 +1,16 @@
-function [Fvalues,S] = refined_gridvar(Cinp, Finp, field, varargin)
+function [Fvalues,S] = refined_gridvar(Cinp, Finp, field, method, varargin)
 
 %
 % REFINED_GRIDVAR: Sets requested refined grid field from ROMS coarse grid
 %
-% [Fvalues,S] = refined_gridvar(Cinp, Finp, field, DivideCoarse)
+% [Fvalues,S] = refined_gridvar(Cinp, Finp, field, quadratic, DivideCoarse)
 %
-% Sets requested refined grid variable from ROMS coarse grid division or
-% quadratic conservative interpolation (Clark and Farley, 1984), such
-% that the coarse-to-fine and fine-to-coarse are reversible:
+% Sets requested refined grid variable from ROMS coarse grid division,
+% regular intepolation, or quadratic conservative interpolation (Clark and
+% Farley, 1984).
+%
+% In the quadratic interpolation, the coarse-to-fine and fine-to-coarse are
+% reversible:
 %
 %       AVG[F.field(:,:)_i , i=1,rfactor] = C.field(Idg,Jdg)
 %
@@ -29,6 +32,11 @@ function [Fvalues,S] = refined_gridvar(Cinp, Finp, field, varargin)
 %    field         Field name to process (NetCDF variable name or
 %                  structure field)
 %
+%    method        Coarse-to-fine interpolation method (string)
+%                    method = 'linear'        via griddedInterpolant
+%                    method = 'spline'        via griddedIntenpolant
+%                    method = 'quadratic'     Clark and Farley (1984)
+%  
 %    DivideCoarse  Switch to return the coarse value divided by the grid
 %                  refinement ratio.  This only apply for 'pm' or 'pn'
 %                  fields to garanttee exact area conservation (OPTIONAL,
@@ -70,9 +78,9 @@ function [Fvalues,S] = refined_gridvar(Cinp, Finp, field, varargin)
 %  pcolor(S.xavg, S.yavg, S.sum); shading facetted; colorbar;
 %
   
-% svn $Id: refined_gridvar.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: refined_gridvar.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -268,6 +276,8 @@ else
                                  F.y_u  (L   ,1:Mp)).^2).*2.0;
             Fvalues = 1 ./ dx;
           else
+            % Sub-optimal (we never use this choice, currently).
+
             Fvalues = C.(field)(fix(IrF),fix(JrF)) .* rfactor;
           end       
         case {'pn'}
@@ -287,11 +297,25 @@ else
                                  F.y_v  (1:Lp,M   )).^2).*2.0;          
             Fvalues = 1 ./ dy;
           else
+            % Sub-optimal (we never use this choice, currently).
+
             Fvalues = C.(field)(fix(IrF),fix(JrF)) .* rfactor;
           end
         otherwise
-          [Fvalues, S] = qc_interp(C, F, C.(field), masked);
-      end
+          if (strcmp(method, 'quadratic'))
+            [Fvalues, S] = qc_interp(C, F, C.(field), masked);
+          else
+            l = C.Lm+1;  lp = l+1;
+            m = C.Mm+1;  mp = m+1;
+
+            [YrC, XrC] = meshgrid(0.5:1:mp-0.5, 0.5:1:lp-0.5);
+            [YrF, XrF] = meshgrid(JrF, IrF);
+
+            FCr = griddedInterpolant(XrC, YrC, C.(field), method);
+
+            Fvalues = FCr(XrF, YrF);
+          end
+     end
   end
   [Im,Jm] = size(XF);
 
@@ -325,31 +349,35 @@ if (nargout > 1)
     S.q = [];
     S.w = [];
 
-% Average interpolated field interior points back to coarse grid locations.
-% This equivalent to the fine-to-coarse operation.
+    if (strcmp(method, 'quadratic'))
+    
+      % Average interpolated field interior points back to coarse grid
+      % locations. This equivalent to the fine-to-coarse operation.
 
-    Imid = 2+(rfactor-1)/2:rfactor:Im;
-    Jmid = 2+(rfactor-1)/2:rfactor:Jm;
+      Imid = 2+(rfactor-1)/2:rfactor:Im;
+      Jmid = 2+(rfactor-1)/2:rfactor:Jm;
 
-    S.xavg = S.x(Imid, Jmid);
-    S.yavg = S.y(Imid, Jmid);
+      S.xavg = S.x(Imid, Jmid);
+      S.yavg = S.y(Imid, Jmid);
 
-    Istr = 2:rfactor:Im-1;
-    Iend = Istr(2)-1:rfactor:Im;
+      Istr = 2:rfactor:Im-1;
+      Iend = Istr(2)-1:rfactor:Im;
 
-    Jstr = 2:rfactor:Jm-1;
-    Jend = Jstr(2)-1:rfactor:Jm;
+      Jstr = 2:rfactor:Jm-1;
+      Jend = Jstr(2)-1:rfactor:Jm;
 
-    S.avg = nan([length(Imid) length(Jmid)]);
-    S.sum = nan(size(S.avg));
+      S.avg = nan([length(Imid) length(Jmid)]);
+      S.sum = nan(size(S.avg));
   
-    for j = 1:length(Jstr)
-      for i = 1:length(Istr)
-        values = S.val(Istr(i):Iend(i), Jstr(j):Jend(j));
-        S.avg(i,j) = mean(values(:));
-        S.sum(i,j) = sum(values(:));
+      for j = 1:length(Jstr)
+        for i = 1:length(Istr)
+          values = S.val(Istr(i):Iend(i), Jstr(j):Jend(j));
+          S.avg(i,j) = mean(values(:));
+          S.sum(i,j) = sum(values(:));
+        end
       end
     end
+  
   end
 end
 

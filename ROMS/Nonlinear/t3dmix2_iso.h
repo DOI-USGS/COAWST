@@ -1,15 +1,27 @@
-      SUBROUTINE t3dmix2 (ng, tile)
+      MODULE t3dmix2_mod
 !
-!svn $Id: t3dmix2_iso.h 1054 2021-03-06 19:47:12Z arango $
-!***********************************************************************
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: t3dmix2_iso.h 1151 2023-02-09 03:08:53Z arango $
+!=======================================================================
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
-!****************************************** Alexander F. Shchepetkin ***
+!========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine computes horizontal harmonic mixing of tracers      !
 !  along isopycnic surfaces.                                           !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC t3dmix2
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE t3dmix2 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -38,37 +50,37 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 26, __LINE__, MyFile)
 #endif
-      CALL t3dmix2_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nrhs(ng), nstp(ng), nnew(ng),                  &
+      CALL t3dmix2_iso_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+     &                       nrhs(ng), nstp(ng), nnew(ng),              &
 #ifdef MASKING
-     &                   GRID(ng) % umask,                              &
-     &                   GRID(ng) % vmask,                              &
+     &                       GRID(ng) % umask,                          &
+     &                       GRID(ng) % vmask,                          &
 #endif
 #ifdef WET_DRY
-     &                   GRID(ng) % umask_diff,                         &
-     &                   GRID(ng) % vmask_diff,                         &
+     &                       GRID(ng) % umask_wet,                      &
+     &                       GRID(ng) % vmask_wet,                      &
 #endif
-     &                   GRID(ng) % om_v,                               &
-     &                   GRID(ng) % on_u,                               &
-     &                   GRID(ng) % pm,                                 &
-     &                   GRID(ng) % pn,                                 &
-     &                   GRID(ng) % Hz,                                 &
-     &                   GRID(ng) % z_r,                                &
+     &                       GRID(ng) % om_v,                           &
+     &                       GRID(ng) % on_u,                           &
+     &                       GRID(ng) % pm,                             &
+     &                       GRID(ng) % pn,                             &
+     &                       GRID(ng) % Hz,                             &
+     &                       GRID(ng) % z_r,                            &
 #ifdef DIFF_3DCOEF
-     &                   MIXING(ng) % diff3d_r,                         &
+     &                       MIXING(ng) % diff3d_r,                     &
 #else
-     &                   MIXING(ng) % diff2,                            &
+     &                       MIXING(ng) % diff2,                        &
 #endif
-     &                   OCEAN(ng) % pden,                              &
+     &                       OCEAN(ng) % pden,                          &
 #ifdef TS_MIX_CLIMA
-     &                   CLIMA(ng) % tclm,                              &
+     &                       CLIMA(ng) % tclm,                          &
 #endif
 #ifdef DIAGNOSTICS_TS
-     &                   DIAGS(ng) % DiaTwrk,                           &
+     &                       DIAGS(ng) % DiaTwrk,                       &
 #endif
-     &                   OCEAN(ng) % t)
+     &                       OCEAN(ng) % t)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 26, __LINE__, MyFile)
 #endif
@@ -77,31 +89,31 @@
       END SUBROUTINE t3dmix2
 !
 !***********************************************************************
-      SUBROUTINE t3dmix2_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj,                      &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nrhs, nstp, nnew,                        &
+      SUBROUTINE t3dmix2_iso_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
+     &                             nrhs, nstp, nnew,                    &
 #ifdef MASKING
-     &                         umask, vmask,                            &
+     &                             umask, vmask,                        &
 #endif
 #ifdef WET_DRY
-     &                         umask_diff, vmask_diff,                  &
+     &                             umask_wet, vmask_wet,                &
 #endif
-     &                         om_v, on_u, pm, pn,                      &
-     &                         Hz, z_r,                                 &
+     &                             om_v, on_u, pm, pn,                  &
+     &                             Hz, z_r,                             &
 #ifdef DIFF_3DCOEF
-     &                         diff3d_r,                                &
+     &                             diff3d_r,                            &
 #else
-     &                         diff2,                                   &
+     &                             diff2,                               &
 #endif
-     &                         pden,                                    &
+     &                             pden,                                &
 #ifdef TS_MIX_CLIMA
-     &                         tclm,                                    &
+     &                             tclm,                                &
 #endif
 #ifdef DIAGNOSTICS_TS
-     &                         DiaTwrk,                                 &
+     &                             DiaTwrk,                             &
 #endif
-     &                         t)
+     &                             t)
 !***********************************************************************
 !
       USE mod_param
@@ -120,8 +132,8 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_diff(LBi:,LBj:)
-      real(r8), intent(in) :: vmask_diff(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:,LBj:,:)
@@ -148,8 +160,8 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_diff(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vmask_diff(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:UBi,LBj:UBj,N(ng))
@@ -221,7 +233,7 @@
                 cff=cff*umask(i,j)
 #endif
 #ifdef WET_DRY
-                cff=cff*umask_diff(i,j)
+                cff=cff*umask_wet(i,j)
 #endif
                 dRdx(i,j,k2)=cff*(pden(i  ,j,k+1)-                      &
      &                            pden(i-1,j,k+1))
@@ -253,7 +265,7 @@
                 cff=cff*vmask(i,j)
 #endif
 #ifdef WET_DRY
-                cff=cff*vmask_diff(i,j)
+                cff=cff*vmask_wet(i,j)
 #endif
                 dRde(i,j,k2)=cff*(pden(i,j  ,k+1)-                      &
      &                            pden(i,j-1,k+1))
@@ -427,4 +439,6 @@
       END DO T_LOOP
 !
       RETURN
-      END SUBROUTINE t3dmix2_tile
+      END SUBROUTINE t3dmix2_iso_tile
+
+      END MODULE t3dmix2_mod

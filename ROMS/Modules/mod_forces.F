@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE mod_forces
 !
-!svn $Id: mod_forces.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_forces.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -102,7 +103,6 @@
 !  Tair         Surface air temperature (Celsius)                      !
 !  TairG        Latest two-time snapshots of input "Tair" grided       !
 !                 data used for interpolation.                         !
-!  PotT         Surface air potential temperature (Kelvin)             !
 !  Surface Winds.                                                      !
 !                                                                      !
 !  Uwind        Surface wind in the XI-direction (m/s) at              !
@@ -119,12 +119,6 @@
 !  evap         Evaporation rate (kg/m2/s).                            !
 !  rain         Rain fall rate (kg/m2/s).                              !
 !  rainG        Latest two-time snapshots of input "rain" grided       !
-!                 data used for interpolation.                         !
-!                                                                      !
-!  Snow fall rate.                                                     !
-!                                                                      !
-!  snow         Snow fall rate (kg/m2/s).                              !
-!  snowG        Latest two-time snapshots of input "snow" grided       !
 !                 data used for interpolation.                         !
 !                                                                      !
 !  Surface tracer fluxes.                                              !
@@ -179,9 +173,6 @@
 !  sss          Sea surface salinity (PSU).                            !
 !  sssG         Latest two-time snapshots of input "sss" grided        !
 !                 data used for interpolation.                         !
-!  sssflx       Sea surface salinity flux correction.                  !
-!  sssflxG      Latest two-time snapshots of input "sssflx" grided     !
-!                 data used for interpolation.                         !
 !                                                                      !
 !  Surface spectral downwelling irradiance.                            !
 !                                                                      !
@@ -193,17 +184,25 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_forces
+        PUBLIC :: deallocate_forces
+        PUBLIC :: initialize_forces
+!
+!-----------------------------------------------------------------------
+!  Define T_FORCES structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_FORCES
 !
 !  Nonlinear model state.
 !
           real(r8), pointer :: sustr(:,:)
           real(r8), pointer :: svstr(:,:)
-#if !defined ANA_SMFLUX && !defined BULK_FLUXES && \
-    !defined BULK_FLUXES2D || defined FORWARD_FLUXES
+#if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+     defined FORWARD_FLUXES
           real(r8), pointer :: sustrG(:,:,:)
           real(r8), pointer :: svstrG(:,:,:)
 #endif
@@ -218,7 +217,7 @@
           real(r8), pointer :: bustr(:,:)
           real(r8), pointer :: bvstr(:,:)
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-     defined SPECTRAL_LIGHT  || defined ATM2OCN_FLUXES
+     defined SPECTRAL_LIGHT  || defined AIR_OCEAN
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -352,18 +351,15 @@
           real(r8), pointer :: cloudG(:,:,:)
 #  endif
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
           real(r8), pointer :: lhflx(:,:)
           real(r8), pointer :: lrflx(:,:)
-#  ifndef LONGWAVE
-          real(r8), pointer :: lrflxG(:,:,:)
-#  endif
           real(r8), pointer :: shflx(:,:)
 # endif
-# if defined ATM2OCN_FLUXES
-          real(r8), pointer :: lhflx(:,:)
-          real(r8), pointer :: lrflx(:,:)
-          real(r8), pointer :: shflx(:,:)
+
+# if !defined LONGWAVE && (defined BULK_FLUXES || \
+      defined AIR_OCEAN)
+          real(r8), pointer :: lrflxG(:,:,:)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM ||  \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
@@ -376,8 +372,8 @@
           real(r8), pointer :: TairG(:,:,:)
 #  endif
 # endif
-# if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-     defined ATM2OCN_FLUXES ||  defined SPECTRAL_LIGHT
+# if defined BULK_FLUXES || defined ECOSIM || \
+     defined AIR_OCEAN ||  defined SPECTRAL_LIGHT
           real(r8), pointer :: Uwind(:,:)
           real(r8), pointer :: Vwind(:,:)
 #  ifndef ANA_WINDS
@@ -387,23 +383,13 @@
 # endif
 
 
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
           real(r8), pointer :: rain(:,:)
-#  ifdef SNOWFALL
-          real(r8), pointer :: snow(:,:)
-#  endif
 #  ifndef ANA_RAIN
           real(r8), pointer :: rainG(:,:,:)
-#  ifdef SNOWFALL
-          real(r8), pointer :: snowG(:,:,:)
-#  endif
 #  endif
 #  ifdef EMINUSP
           real(r8), pointer :: evap(:,:)
-#  endif
-#  ifdef RUNOFF
-          real(r8), pointer :: runoff(:,:)
-          real(r8), pointer :: runoffG(:,:,:)
 #  endif
 # endif
 
@@ -437,13 +423,6 @@
           real(r8), pointer :: sss(:,:)
 #  ifndef ANA_SSS
           real(r8), pointer :: sssG(:,:,:)
-#  endif
-# endif
-
-# if defined SSSFLX
-          real(r8), pointer :: sssflx(:,:)
-#  ifndef ANA_SSSFLX
-          real(r8), pointer :: sssflxG(:,:,:)
 #  endif
 # endif
 
@@ -551,11 +530,11 @@
 #endif
 
         END TYPE T_FORCES
-
+!
         TYPE (T_FORCES), allocatable :: FORCES(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_forces (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
@@ -626,7 +605,7 @@
       Dmem(ng)=Dmem(ng)+size2d
 
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
+    defined SPECTRAL_LIGHT || defined AIR_OCEAN
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_PAIR
@@ -806,20 +785,21 @@
 #  endif
 # endif
 
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
       allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 
       allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 
-#  ifndef LONGWAVE
-      allocate ( FORCES(ng) % lrflxG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
-#  endif
-
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+# endif
+
+# if !defined LONGWAVE && (defined BULK_FLUXES || \
+      defined AIR_OCEAN)
+      allocate ( FORCES(ng) % lrflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
 # if defined BULK_FLUXES || defined ECOSIM || \
@@ -840,8 +820,8 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
-# if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined ECOSIM || \
+     defined AIR_OCEAN ||  defined SPECTRAL_LIGHT
       allocate ( FORCES(ng) % Uwind(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 
@@ -856,39 +836,19 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
-# ifdef ATM2OCN_FLUXES
-      allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-      allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-      allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-# endif
 
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
       allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
-#  ifdef SNOWFALL
-      allocate ( FORCES(ng) % snow(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-#  endif
+
 #  ifndef ANA_RAIN
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
-#  ifdef SNOWFALL
-      allocate ( FORCES(ng) % snowG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
-#  endif
+
 #  endif
 #  ifdef EMINUSP
       allocate ( FORCES(ng) % evap(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
-#  endif
-#  ifdef RUNOFF
-      allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-      allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
@@ -950,15 +910,6 @@
 #  endif
 # endif
 
-# if defined SSSFLX
-      allocate ( FORCES(ng) % sssflx(LBi:UBi,LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+size2d
-
-#  ifndef ANA_SSSFLX
-      allocate ( FORCES(ng) % sssflxG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
-#  endif
-# endif
 
 # if defined ECOSIM || defined SPECTRAL_LIGHT 
       allocate ( FORCES(ng) % SpecIr(LBi:UBi,LBj:UBj,NBands) )
@@ -1132,10 +1083,578 @@
 #  endif
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE allocate_forces
+!
+      SUBROUTINE deallocate_forces (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+#ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_forces"
 
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_FORCES structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state
+!
+      IF (.not.destroy(ng, FORCES(ng)%sustr, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%svstr, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%svstr')) RETURN
+
+# if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+      defined FORWARD_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%sustrG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%sustrG')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%svstrG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%svstrG')) RETURN
+# endif
+
+#ifdef ATM2OCN_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%Taux, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%Taux')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%Tauy, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%Tauy')) RETURN
+#endif
+
+# ifdef ADJUST_WSTRESS
+      IF (.not.destroy(ng, FORCES(ng)%ustr, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%ustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%vstr, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%vstr')) RETURN
+# endif
+
+      IF (.not.destroy(ng, FORCES(ng)%bustr, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%bustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%bvstr, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%bvstr')) RETURN
+
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+     defined SPECTRAL_LIGHT  || defined AIR_OCEAN
+      IF (.not.destroy(ng, FORCES(ng)%Pair, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%Pair')) RETURN
+#  ifndef ANA_PAIR
+      IF (.not.destroy(ng, FORCES(ng)%PairG, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%PairG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_DIR
+      IF (.not.destroy(ng, FORCES(ng)%Dwave, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%Dwave')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%DwaveG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%DwaveG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_DIRP
+      IF (.not.destroy(ng, FORCES(ng)%Dwavep, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%Dwavep')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%DwavepG, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%DwavepG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_HEIGHT
+      IF (.not.destroy(ng, FORCES(ng)%Hwave, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%Hwave')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%HwaveG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%HwaveG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_LENGTH
+      IF (.not.destroy(ng, FORCES(ng)%Lwave, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%Lwave')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%LwaveG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%LwaveG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_LENGTHP
+      IF (.not.destroy(ng, FORCES(ng)%Lwavep, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%Lwavep')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%LwavepG, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%LwavepG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_TOP_PERIOD
+      IF (.not.destroy(ng, FORCES(ng)%Pwave_top, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%Pwave_top')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Pwave_topG, MyFile,               &
+     &                 __LINE__, 'FORCES(ng)%Pwave_topG')) RETURN
+#  endif
+# endif
+
+# ifdef WAVES_BOT_PERIOD
+      IF (.not.destroy(ng, FORCES(ng)%Pwave_bot, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%Pwave_bot')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Pwave_botG, MyFile,               &
+     &                 __LINE__, 'FORCES(ng)%Pwave_botG')) RETURN
+#  endif
+# endif
+
+# if defined BBL_MODEL || defined WAVES_OCEAN || \
+    defined SED_BEDLOAD_VANDERA
+      IF (.not.destroy(ng, FORCES(ng)%Uwave_rms, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%Uwave_rms')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Uwave_rmsG, MyFile,               &
+     &                 __LINE__, 'FORCES(ng)%Uwave_rmsG')) RETURN
+#  endif
+# endif
+
+# if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WAVES_DISS || defined WDISS_INWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_break, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_break')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcap, MyFile,              &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcap')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_breakG, MyFile,            &
+     &                 __LINE__, 'FORCES(ng)%Dissip_breakG')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcapG, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcapG')) RETURN
+#  endif
+# endif
+# if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_fric, MyFile,              &
+     &                 __LINE__, 'FORCES(ng)%Dissip_fric')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_fricG, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_fricG')) RETURN
+#  endif
+# endif
+
+# if defined WEC_ROLLER
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_roller, MyFile,            &
+     &                 __LINE__, 'FORCES(ng)%Dissip_roller')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%rollA, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%rollA')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_rollerG, MyFile,           &
+     &                 __LINE__, 'FORCES(ng)%Dissip_rollerG')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%rollAG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%rollAG')) RETURN
+#  endif
+# endif
+
+# if defined ROLLER_SVENDSEN
+      IF (.not.destroy(ng, FORCES(ng)%wave_break, MyFile,               &
+     &                 __LINE__, 'FORCES(ng)%wave_break')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Wave_breakG, MyFile,              &
+     &                 __LINE__, 'FORCES(ng)%Wave_breakG')) RETURN
+#  endif
+# endif
+
+# if defined WAVES_DSPR
+      IF (.not.destroy(ng, FORCES(ng)%Wave_ds, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%Wave_ds')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Wave_qp, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%Wave_qp')) RETURN
+#  ifndef ANA_WWAVE
+      IF (.not.destroy(ng, FORCES(ng)%Wave_dsG, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%Wwave_dsG')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Wave_qpG, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%Wave_qpG')) RETURN
+#  endif
+# endif
+
+# ifdef SPECTRUM_STOKES
+      IF (.not.destroy(ng, FORCES(ng)%spec_wn, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%spec_wn')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%spec_us, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%spec_us')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%spec_vs, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%spec_vs')) RETURN
+# endif
+
+# ifdef SOLVE3D
+
+#  ifdef SHORTWAVE
+      IF (.not.destroy(ng, FORCES(ng)%srflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%srflx')) RETURN
+#   ifndef ANA_SRFLUX
+      IF (.not.destroy(ng, FORCES(ng)%srflxG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%srflxG')) RETURN
+#   endif
+#  endif
+
+#  if defined RED_TIDE && defined DAILY_SHORTWAVE
+      IF (.not.destroy(ng, FORCES(ng)%srflx_avg, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%srflx_avg')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%srflxG_avg, MyFile,               &
+     &                 __LINE__, 'FORCES(ng)%srflxG_avg')) RETURN
+#  endif
+
+#  ifdef CLOUDS
+      IF (.not.destroy(ng, FORCES(ng)%cloud, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%cloud')) RETURN
+#   ifndef ANA_CLOUD
+      IF (.not.destroy(ng, FORCES(ng)%cloudG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%cloudG')) RETURN
+#   endif
+#  endif
+
+#  if defined BULK_FLUXES || defined AIR_OCEAN
+      IF (.not.destroy(ng, FORCES(ng)%lhflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%lhflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%lrflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%lrflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%shflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%shflx')) RETURN
+#  endif
+
+# if !defined LONGWAVE && (defined BULK_FLUXES || \
+      defined AIR_OCEAN)
+      IF (.not.destroy(ng, FORCES(ng)%lrflxG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%lrflxG')) RETURN
+#  endif
+
+# if defined BULK_FLUXES || defined ECOSIM ||  \
+    defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
+      IF (.not.destroy(ng, FORCES(ng)%Hair, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%Hair')) RETURN
+
+#   ifndef ANA_HUMIDITY
+      IF (.not.destroy(ng, FORCES(ng)%HairG, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%HairG')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, FORCES(ng)%Tair, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%Tair')) RETURN
+
+#   ifndef ANA_TAIR
+      IF (.not.destroy(ng, FORCES(ng)%TairG, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%TairG')) RETURN
+#   endif
+#  endif
+
+# if defined BULK_FLUXES || defined ECOSIM || \
+     defined AIR_OCEAN ||  defined SPECTRAL_LIGHT
+      IF (.not.destroy(ng, FORCES(ng)%Uwind, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%Uwind')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%Vwind, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%Vwind')) RETURN
+
+#   ifndef ANA_WINDS
+      IF (.not.destroy(ng, FORCES(ng)%UwindG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%UwindG')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%VwindG, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%VwindG')) RETURN
+#   endif
+#  endif
+
+# if defined BULK_FLUXES || defined AIR_OCEAN
+      IF (.not.destroy(ng, FORCES(ng)%rain, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%rain')) RETURN
+
+#   ifndef ANA_RAIN
+      IF (.not.destroy(ng, FORCES(ng)%rainG, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%rainG')) RETURN
+#   endif
+
+#   ifdef EMINUSP
+      IF (.not.destroy(ng, FORCES(ng)%evap, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%evap')) RETURN
+#   endif
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%stflux, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%stflux')) RETURN
+
+#  if !defined ANA_STFLUX || !defined ANA_SSFLUX || \
+      !defined ANA_SPFLUX
+      IF (.not.destroy(ng, FORCES(ng)%stfluxG, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%stfluxG')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%stflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%stflx')) RETURN
+
+#  ifdef ADJUST_STFLUX
+      IF (.not.destroy(ng, FORCES(ng)%tflux, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%tflux')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%btflux, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%btflux')) RETURN
+
+#  if !defined ANA_BTFLUX || !defined ANA_BSFLUX || \
+      !defined ANA_BPFLUX
+      IF (.not.destroy(ng, FORCES(ng)%btfluxG, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%btfluxG')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%btflx, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%btflx')) RETURN
+
+#  ifdef QCORRECTION
+      IF (.not.destroy(ng, FORCES(ng)%dqdt, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%dqdt')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%sst, MyFile,                      &
+     &                 __LINE__, 'FORCES(ng)%sst')) RETURN
+
+#   ifndef ANA_SST
+      IF (.not.destroy(ng, FORCES(ng)%dqdtG, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%dqdtG')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%sstG, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%sstG')) RETURN
+#   endif
+#  endif
+
+#  if defined SALINITY && (defined SCORRECTION || defined SRELAXATION)
+      IF (.not.destroy(ng, FORCES(ng)%sss, MyFile,                      &
+     &                 __LINE__, 'FORCES(ng)%sss')) RETURN
+
+#   ifndef ANA_SSS
+      IF (.not.destroy(ng, FORCES(ng)%sssG, MyFile,                     &
+     &                 __LINE__, 'FORCES(ng)%sssG')) RETURN
+#   endif
+#  endif
+
+# if defined ECOSIM  || defined SPECTRAL_LIGHT
+      IF (.not.destroy(ng, FORCES(ng)%SpecIr, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%SpecIr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%avcos, MyFile,                    &
+     &                 __LINE__, 'FORCES(ng)%avcos')) RETURN
+#  endif
+
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state
+!
+      IF (.not.destroy(ng, FORCES(ng)%tl_sustr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_svstr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_svstr')) RETURN
+
+#  ifdef ADJUST_WSTRESS
+      IF (.not.destroy(ng, FORCES(ng)%tl_ustr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%tl_ustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_vstr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%tl_vstr')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_bustr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_bustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_bvstr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_bvstr')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, FORCES(ng)%tl_stflux, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%tl_stflux')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_stflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_stflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_btflux, MyFile,                &
+     &                 __LINE__, 'FORCES(ng)%tl_btflux')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_btflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_btflx')) RETURN
+
+#   ifdef ADJUST_STFLUX
+      IF (.not.destroy(ng, FORCES(ng)%tl_tflux, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_tflux')) RETURN
+#   endif
+
+#   ifdef SHORTWAVE
+      IF (.not.destroy(ng, FORCES(ng)%tl_srflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_srflx')) RETURN
+#   endif
+
+#   ifdef BULK_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%tl_lhflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_lhflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_lrflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_lrflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%tl_shflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%tl_shflx')) RETURN
+
+#    ifdef EMINUSP
+      IF (.not.destroy(ng, FORCES(ng)%tl_evap, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%tl_evap')) RETURN
+#    endif
+#   endif
+#  endif
+# endif
+
+# ifdef ADJOINT
+!
+!  Adjoint model state
+!
+      IF (.not.destroy(ng, FORCES(ng)%ad_sustr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_svstr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_svstr')) RETURN
+
+#  ifdef ADJUST_WSTRESS
+      IF (.not.destroy(ng, FORCES(ng)%ad_ustr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%ad_ustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_vstr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%ad_vstr')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_bustr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_bustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_bvstr, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_bvstr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_bustr_sol, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%ad_bustr_sol')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_bvstr_sol, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%ad_bvstr_sol')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, FORCES(ng)%ad_stflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_stflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_btflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_btflx')) RETURN
+
+#   ifdef ADJUST_STFLUX
+      IF (.not.destroy(ng, FORCES(ng)%ad_tflux, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_tflux')) RETURN
+#   endif
+
+#   ifdef SHORTWAVE
+      IF (.not.destroy(ng, FORCES(ng)%ad_srflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_srflx')) RETURN
+#   endif
+
+#   ifdef BULK_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%ad_lhflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_lhflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_lrflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_lrflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%ad_shflx, MyFile,                 &
+     &                 __LINE__, 'FORCES(ng)%ad_shflx')) RETURN
+
+#    ifdef EMINUSP
+      IF (.not.destroy(ng, FORCES(ng)%ad_evap, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%ad_evap')) RETURN
+#    endif
+#   endif
+#  endif
+# endif
+
+# if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
+!
+!  Working arrays to store adjoint impulse forcing, background error
+!  covariance, background-error standard deviations, or descent
+!  conjugate vectors (directions).
+!
+#  if defined FOUR_DVAR || defined IMPULSE
+#   ifdef ADJUST_WSTRESS
+      IF (.not.destroy(ng, FORCES(ng)%b_sustr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%b_sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%b_svstr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%b_svstr')) RETURN
+#   endif
+
+#   if defined ADJUST_STFLUX && defined SOLVE3D
+      IF (.not.destroy(ng, FORCES(ng)%b_stflx, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%b_stflx')) RETURN
+#   endif
+#  endif
+
+#  ifdef FOUR_DVAR
+#   ifdef ADJUST_WSTRESS
+      IF (.not.destroy(ng, FORCES(ng)%d_sustr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%d_sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%d_svstr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%d_svstr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%e_sustr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%e_sustr')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%e_svstr, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%e_svstr')) RETURN
+#   endif
+
+#   if defined ADJUST_STFLUX && defined SOLVE3D
+      IF (.not.destroy(ng, FORCES(ng)%d_stflx, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%d_stflx')) RETURN
+
+      IF (.not.destroy(ng, FORCES(ng)%e_stflx, MyFile,                  &
+     &                 __LINE__, 'FORCES(ng)%e_stflx')) RETURN
+#   endif
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type FORCES structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(FORCES)) deallocate ( FORCES )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_forces
+!
       SUBROUTINE initialize_forces (ng, tile, model)
 !
 !=======================================================================
@@ -1236,7 +1755,7 @@
             FORCES(ng) % bvstr(i,j) = IniVal
 
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
+    defined SPECTRAL_LIGHT || defined AIR_OCEAN
             FORCES(ng) % Pair(i,j) = IniVal
 # ifndef ANA_PAIR
             FORCES(ng) % PairG(i,j,1) = IniVal
@@ -1379,7 +1898,7 @@
             FORCES(ng) % cloudG(i,j,2) = IniVal
 #  endif
 # endif
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
             FORCES(ng) % lhflx(i,j) = IniVal
             FORCES(ng) % lrflx(i,j) = IniVal
             FORCES(ng) % shflx(i,j) = IniVal
@@ -1389,28 +1908,21 @@
             FORCES(ng) % Hair(i,j) = IniVal
             FORCES(ng) % Tair(i,j) = IniVal
 # endif
-# if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined ECOSIM || \
+    defined SPECTRAL_LIGHT || defined AIR_OCEAN
             FORCES(ng) % Uwind(i,j) = IniVal
             FORCES(ng) % Vwind(i,j) = IniVal
 # endif
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
             FORCES(ng) % rain(i,j) = IniVal
-#  ifdef SNOWFALL
-            FORCES(ng) % snow(i,j) = IniVal
-#  endif
 #  ifdef EMINUSP
             FORCES(ng) % evap(i,j) = IniVal
 #  endif
-#  ifdef RUNOFF
-            FORCES(ng) % runoff(i,j) = IniVal
-#  endif
 # endif
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
-#  if !defined LONGWAVE && defined BULK_FLUXES
+# if !defined LONGWAVE && (defined BULK_FLUXES || \
+      defined AIR_OCEAN)
             FORCES(ng) % lrflxG(i,j,1) = IniVal
             FORCES(ng) % lrflxG(i,j,2) = IniVal
-#  endif
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
@@ -1418,13 +1930,16 @@
             FORCES(ng) % HairG(i,j,1) = IniVal
             FORCES(ng) % HairG(i,j,2) = IniVal
 #  endif
+# endif
+# if defined BULK_FLUXES || defined ECOSIM || \
+    defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
 #  ifndef ANA_TAIR
             FORCES(ng) % TairG(i,j,1) = IniVal
             FORCES(ng) % TairG(i,j,2) = IniVal
 #  endif
 # endif
-# if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined ECOSIM || \
+    defined SPECTRAL_LIGHT || defined AIR_OCEAN
 #  ifndef ANA_WINDS
             FORCES(ng) % UwindG(i,j,1) = IniVal
             FORCES(ng) % UwindG(i,j,2) = IniVal
@@ -1432,26 +1947,10 @@
             FORCES(ng) % VwindG(i,j,2) = IniVal
 #  endif
 # endif
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
 #  ifndef ANA_RAIN
             FORCES(ng) % rainG(i,j,1) = IniVal
             FORCES(ng) % rainG(i,j,2) = IniVal
-#   ifdef SNOWFALL
-            FORCES(ng) % snowG(i,j,1) = IniVal
-            FORCES(ng) % snowG(i,j,2) = IniVal
-#   endif
-#  endif
-#  ifdef RUNOFF
-            FORCES(ng) % runoffG(i,j,1) = IniVal
-            FORCES(ng) % runoffG(i,j,2) = IniVal
-#  endif
-# endif
-# if !defined ANA_RAIN && defined BULK_FLUXES
-            FORCES(ng) % rainG(i,j,1) = IniVal
-            FORCES(ng) % rainG(i,j,2) = IniVal
-#  ifdef SNOWFALL
-            FORCES(ng) % snowG(i,j,1) = IniVal
-            FORCES(ng) % snowG(i,j,2) = IniVal
 #  endif
 # endif
 # ifdef QCORRECTION
@@ -1469,13 +1968,6 @@
 #  ifndef ANA_SSS
             FORCES(ng) % sssG(i,j,1) = IniVal
             FORCES(ng) % sssG(i,j,2) = IniVal
-#  endif
-# endif
-# if defined SSSFLX
-            FORCES(ng) % sssflx(i,j) = IniVal
-#  ifndef ANA_SSSFLX
-            FORCES(ng) % sssflxG(i,j,1) = IniVal
-            FORCES(ng) % sssflxG(i,j,2) = IniVal
 #  endif
 # endif
             DO itrc=1,NT(ng)
@@ -1664,7 +2156,7 @@
       END IF
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE initialize_forces
 

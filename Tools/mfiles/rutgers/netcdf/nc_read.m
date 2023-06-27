@@ -42,9 +42,9 @@ function f = nc_read(ncfile, Vname, Tindex, ReplaceValue, PreserveType)
 %                  nc_read_matlab, nc_read_java, nc_read_mexnc (private)
 %
 
-% svn $Id: nc_read.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_read.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

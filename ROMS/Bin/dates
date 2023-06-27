@@ -1,8 +1,9 @@
 #!/usr/bin/env perl
 #
-# svn $Id: dates 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: dates 1151 2023-02-09 03:08:53Z arango $
 #######################################################################
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license           Hernan G. Arango   #
 #   See License_ROMS.txt                           David Robertson    #
 #######################################################################
@@ -36,6 +37,9 @@
 #               YYYY-MM-DD                                            #
 #               YYYYMMDD                                              #
 #                                                                     #
+#               YYYY-MM-DD-HH                                         #
+#               YYYYMMDDHH                                            #
+#                                                                     #
 #  Usage:                                                             #
 #                                                                     #
 #           dates [command] [date | daynumber] [date]                 #
@@ -49,6 +53,8 @@
 #           dates datenum                                             #
 #           dates datenum 2001-05-03                                  #
 #           dates datenum 20010503                                    #
+#           dates datenum 2001-05-03-12                               #
+#           dates datenum 2001050312                                  #
 #                                                                     #
 #           dates numdate 730974                                      #
 #                                                                     #
@@ -115,7 +121,9 @@ sub datenum{ # Convert DATE to serial day NUMBER in C.E.
   # my $j2g_skip_start = 640152; my $j2g_skip_end = 640162; my $j2g_skip = 11;
   # j2g
 
-  my $_y; my $_m; my $_d; my $junk; my $base=-306; my $ymd; my $_ld; my $_dn;
+  my $_y; my $_m; my $_d; my $_h; my $base=-306; my $ymd; my $_ld; my $_dn;
+
+  $_h=0;
 
   if( $_[0] == '' ){
     ($_y,$_m,$_d) = (localtime)[5,4,3];
@@ -127,10 +135,13 @@ sub datenum{ # Convert DATE to serial day NUMBER in C.E.
   elsif( is_date($_[0]) ){
     ($ymd) = @_;
     # extract YYYYMMDD from passed argument
-    $ymd =~ s/^(\d{4})-?([0-1][0-9])-?([0-3][0-9]).*$/$1$2$3/gi;
+    $ymd =~ s/^(\d{4})-?([0-1][0-9])-?([0-3][0-9])-?(.*)$/$1$2$3$4/gi;
     $_y  = substr $ymd, 0, 4; # OFFSET=0, LENGTH=4
     $_m  = substr $ymd, 4, 2; # OFFSET=4, LENGTH=2
     $_d  = substr $ymd, 6, 2; # could also be OFFSET=-2 (remove length)
+    if( length($ymd) > 8 ){
+      $_h = substr $ymd, 8, 2; #OFFSET=8, LENGTH=2
+    }
   }
   else{
     return -1; # Given DATE is invalid
@@ -140,7 +151,7 @@ sub datenum{ # Convert DATE to serial day NUMBER in C.E.
   $_y  = int( $_m / 12 );                           # Adjust year if necessary
   $_ld = int($_y/4) - int($_y/100) + int($_y/400);  # Number of leap days
   # Final datenum calculation
-  $_dn = int((734 * $_m + 15) / 24) -  2 * $_y + $_ld + $_d + $base + 366 ;
+  $_dn = int((734 * $_m + 15) / 24) -  2 * $_y + $_ld + $_d + $base + 366 + ($_h / 24);
 
   if( $_dn < 1 ){
     return -1;  # Invalid date
@@ -165,11 +176,11 @@ sub numdate{ # Convert serial day NUMBER in C.E. to DATE
   # my $_j2gstart=640152; my $_j2gskip = 11;
   # j2g
 
-  my $_day; my $_mnth; my $_yr; my $_cent; my $base=-306;
+  my $_hour; my $_day; my $_mnth; my $_yr; my $_cent; my $base=-306;
   my ($_dnum)=@_; my $_d400y=146097; my $numdate;
 
   # Make sure just an integer was passed and it's not zero
-  if( !($_dnum =~ /^\s*\d+\s*$/) || ($_dnum == 0)) {
+  if( !($_dnum =~ /^\s*\d+\.?\d*\s*$/) || ($_dnum == 0)) {
     return -1;
   }
 
@@ -180,7 +191,8 @@ sub numdate{ # Convert serial day NUMBER in C.E. to DATE
   # j2g
 
   # In the calculations below, int() truncates decimals
-  $_day  = $_dnum - $base - 366;
+  $_hour = ($_dnum - int($_dnum)) * 24;
+  $_day  = int($_dnum) - $base - 366;
   $_cent = int( (4 * $_day - 1) / $_d400y );
   $_day  = $_day + $_cent - int($_cent / 4);
   $_yr   = int( (4 * $_day - 1) / 1461 );
@@ -192,7 +204,7 @@ sub numdate{ # Convert serial day NUMBER in C.E. to DATE
   $_mnth = $_mnth % 12 + 1;
 
   # Format the output to return (YYYY-MM-DD)
-  return sprintf('%d-%02d-%02d', $_yr, $_mnth, $_day);
+  return sprintf('%d-%02d-%02d %02d', $_yr, $_mnth, $_day, $_hour);
 }
 
 sub yday{ # Return day of the year for given date

@@ -1,33 +1,21 @@
 #include "cppdefs.h"
-      MODULE rp_uv3dmix_mod
 
 #if defined TL_IOMS && defined SOLVE3D && \
    (defined UV_VIS2 || defined UV_VIS4)
-!
-!svn $Id: rp_uv3dmix.F 1054 2021-03-06 19:47:12Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
-!    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                                              !
-!=======================================================================
-!                                                                      !
-!  This subroutine computes representers tangent linear horizontal     !
-!  viscosity of momentum.                                              !
-!                                                                      !
-!=======================================================================
-!
-      implicit none
-
-      PRIVATE
-# ifdef UV_VIS2
-      PUBLIC rp_uv3dmix2
-# endif
-# ifdef UV_VIS4
-      PUBLIC rp_uv3dmix4
-# endif
-
-      CONTAINS
-
+!!
+!!git $Id$
+!!svn $Id: rp_uv3dmix.F 1151 2023-02-09 03:08:53Z arango $
+!!================================================= Hernan G. Arango ===
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
+!!   Licensed under a MIT/X style license                              !
+!!   See License_ROMS.txt                                              !
+!!======================================================================
+!!                                                                     !
+!! This subroutine computes representers tangent linear horizontal     !
+!! viscosity of momentum.                                              !
+!!                                                                     !
+!!======================================================================
+!!
 # ifdef UV_VIS2
 #  if defined MIX_S_UV
 #   include "rp_uv3dmix2_s.h"
@@ -43,7 +31,10 @@
 #   include "rp_uv3dmix4_geo.h"
 #  endif
 # endif
+#else
+      MODULE rp_uv3dmix2_mod
+      END MODULE rp_uv3dmix2_mod
 
+      MODULE rp_uv3dmix4_mod
+      END MODULE rp_uv3dmix4_mod
 #endif
-
-      END MODULE rp_uv3dmix_mod

@@ -269,6 +269,7 @@
 !
       USE mod_parallel
       USE mct_coupler_params
+      USE mod_param
       USE mod_scalars
 !
 !  Imported variable definitions.

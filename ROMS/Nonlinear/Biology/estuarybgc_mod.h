@@ -1,3 +1,4 @@
+      MODULE mod_biology
 !
 !svn $Id: estuarybgc_mod.h 2232 2019-01-03 18:55:20Z arango $
 !================================================== Hernan G. Arango ==!
@@ -229,6 +230,8 @@
       integer, parameter :: ilab=1    ! labile index for DOC.
       integer, parameter :: irct=2    ! relict index for DOC.
       character (len=11), dimension(Ndom) :: DomName
+# else
+      integer, parameter :: Ndom = 1         ! DOM constituents
 # endif
       real(r8), allocatable :: SIGATRB(:)             
       real(r8), allocatable :: STRB(:)                
@@ -654,3 +657,5 @@
 !
       RETURN
       END SUBROUTINE initialize_biology
+
+      END MODULE mod_biology

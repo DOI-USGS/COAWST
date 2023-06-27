@@ -1,11 +1,12 @@
-      SUBROUTINE biology (ng,tile)
+      MODULE biology_mod
 !
-!svn $Id: npzd_iron.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Jerome Fiechter   !
+!git $Id$
+!svn $Id: npzd_iron.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Jerome Fiechter   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Nutrient-Phytoplankton-Zooplankton-Detritus Model,                  !
 !  including Iron Limitation on Phytoplankton Growth.                  !
@@ -20,6 +21,17 @@
 !      and K. Hedstrom, 2009: Modeling iron limitation of primary      !
 !      production in the coastal Gulf of Alaska, Deep Sea Res. II      !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE biology (ng,tile)
 !***********************************************************************
 !
       USE mod_param
@@ -54,21 +66,21 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 15, __LINE__, MyFile)
 #endif
-      CALL biology_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
-     &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nstp(ng), nnew(ng),                            &
+      CALL npzd_iron_tile (ng, tile,                                    &
+     &                     LBi, UBi, LBj, UBj, N(ng), NT(ng),           &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
+     &                     nstp(ng), nnew(ng),                          &
 #ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
+     &                     GRID(ng) % rmask,                            &
 #endif
 #ifdef IRON_LIMIT
-     &                   GRID(ng) % h,                                  &
+     &                     GRID(ng) % h,                                &
 #endif
-     &                   GRID(ng) % Hz,                                 &
-     &                   GRID(ng) % z_r,                                &
-     &                   GRID(ng) % z_w,                                &
-     &                   FORCES(ng) % srflx,                            &
-     &                   OCEAN(ng) % t)
+     &                     GRID(ng) % Hz,                               &
+     &                     GRID(ng) % z_r,                              &
+     &                     GRID(ng) % z_w,                              &
+     &                     FORCES(ng) % srflx,                          &
+     &                     OCEAN(ng) % t)
 
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 15, __LINE__, MyFile)
@@ -78,19 +90,19 @@
       END SUBROUTINE biology
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE biology_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj, UBk, UBt,            &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nstp, nnew,                              &
+      SUBROUTINE npzd_iron_tile (ng, tile,                              &
+     &                           LBi, UBi, LBj, UBj, UBk, UBt,          &
+     &                           IminS, ImaxS, JminS, JmaxS,            &
+     &                           nstp, nnew,                            &
 #ifdef MASKING
-     &                         rmask,                                   &
+     &                           rmask,                                 &
 #endif
 #ifdef IRON_LIMIT
-     &                         h,                                       &
+     &                           h,                                     &
 #endif
-     &                         Hz, z_r, z_w,                            &
-     &                         srflx,                                   &
-     &                         t)
+     &                           Hz, z_r, z_w,                          &
+     &                           srflx,                                 &
+     &                           t)
 !-----------------------------------------------------------------------
 !
       USE mod_param
@@ -771,4 +783,6 @@
       END DO J_LOOP
 !
       RETURN
-      END SUBROUTINE biology_tile
+      END SUBROUTINE npzd_iron_tile
+
+      END MODULE biology_mod

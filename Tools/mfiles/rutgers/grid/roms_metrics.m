@@ -45,7 +45,7 @@ function S = roms_metrics(Ginp, varargin)
   
 % svn $Id$
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                                Hernan G. Arango %
 %=========================================================================%
@@ -143,7 +143,7 @@ for j=1:Jm
       dLnX1=dLnX1-2*pi;                     % function of its indices,
     elseif (dLnX1 < -pi)                    % however it may experience
       dLnX1=dLnX1+2*pi;                     % 2*pi jumps due to periodicity
-    end                                     % resulting in large vales of
+    end                                     % resulting in large values of
     dLnX=lonp(i+1,j)-lonp(i,j);             % differences dLnX,dLnY. If
     if (dLnX > pi)                          % this happens, 2*pi is added
       dLnX=dLnX-2*pi;                       % or subtracted as appropriate.
@@ -181,7 +181,7 @@ for j=1:Jm
     pn(i,j)=1./(Eradius*sqrt(a12^2+a22^2)); % their previously computed
                                             % analytical counterparts.
     if (a21 < -abs(a11))
-      ang1=-0.5*pi-atan(a11/a21);           % For a perfectly othogonal
+      ang1=-0.5*pi-atan(a11/a21);           % For a perfectly orthogonal
     elseif (a21 > abs(a11))                 % curvilinear grid "ang1" and
       ang1= 0.5*pi-atan(a11/a21);           % "ang2" should be the same.
     else                                    % Here we chose to compute both
@@ -318,62 +318,104 @@ S.f = 2.*omega.*sin(G.lat_rho.*deg2rad);
 
 if (Lplot)
   figure;
-  pcolor(S.lon, S.lat, 0.001.*S.dx);
-  colorbar; title('DX (km)')
+  F=0.001.*S.dx;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('DX (km)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
 
   figure;
-  pcolor(S.lon, S.lat, 0.001.*S.dy);
-  colorbar; title('DY (km)')
+  F=0.001.*S.dy;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('DY (km)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
   
   figure;
-  pcolor(S.lon, S.lat, S.pm);
-  colorbar; title('Inverse Metric factor pm (m-1)')
+  F=S.pm;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('Inverse Metric factor pm (m-1)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
 
   figure;
-  pcolor(S.lon, S.lat, S.pn);
-  colorbar; title('Inverse Metric factor pn (m-1)')
+  F=S.pn;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('Inverse Metric factor pn (m-1)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
 
   figure;
-  pcolor(S.lon, S.lat, S.dmde);
-  colorbar; title('Metric derivative d(pm)/d(eta)')
+  F=S.dmde;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('Metric derivative d(pm)/d(eta)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
 
   figure;
-  pcolor(S.lon, S.lat, S.dndx);
-  colorbar; title('Metric derivative d(pn)/d(xi)')
+  F=S.dndx;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('Metric derivative d(pn)/d(xi)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
   
   figure;
-  pcolor(S.lon, S.lat, rad2deg.*S.angle);
-  colorbar; title('Rotation Angle between XI and EAST')
+  F=rad2deg.*S.angle;
+  pcolor(S.lon, S.lat, F);
+  shading flat; colorbar;
+  title('Rotation Angle between XI and EAST (degrees)')
+  xlabel(['Min = ', num2str(min(F(:))),',  Max = ', num2str(max(F(:)))]);
 end  
 
 if (Ldiff)
   figure;
-  pcolor(S.lon, S.lat, 0.001.*((1./G.pm)-S.dx));
-  colorbar; title('G.DX - S.DX (km)')
-
-  figure;
-  pcolor(S.lon, S.lat, 0.001.*((1./G.pn)-S.dy));
-  colorbar; title('G.DY - S.DY (km)')
+  D=0.001.*((1./G.pm)-S.dx);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('G.DX - S.DX (km)')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
   
   figure;
-  pcolor(S.lon, S.lat, (G.pm-S.pm));
-  colorbar; title('Inverse Metric factor pm (m-1)')
-
-  figure;
-  pcolor(S.lon, S.lat, (G.pn-S.pn));
-  colorbar; title('Inverse Metric factor pn (m-1)')
-
-  figure;
-  pcolor(S.lon, S.lat, (G.dmde-S.dmde));
-  colorbar; title('Metric derivative G.dmde - S.dmde')
-
-  figure;
-  pcolor(S.lon, S.lat, (G.dndx-S.dndx));
-  colorbar; title('Metric derivative G.dndx - S.dndx')
+  D=0.001.*((1./G.pn)-S.dy);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('G.DY - S.DY (km)')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
   
   figure;
-  pcolor(S.lon, S.lat, rad2deg.*(G.angle-S.angle));
-  colorbar; title('Rotation Angle G.angle - S.angle')
+  D=(G.pm-S.pm);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('Inverse Metric factor pm (m-1)')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
+
+  figure;
+  D=(G.pn-S.pn);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('Inverse Metric factor pn (m-1)')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
+
+  figure;
+  D=(G.dmde-S.dmde);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('Metric derivative G.dmde - S.dmde')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
+
+  figure;
+  D=(G.dndx-S.dndx);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('Metric derivative G.dndx - S.dndx')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
+  
+  figure;
+  D=rad2deg.*(G.angle-S.angle);
+  pcolor(S.lon, S.lat, D);
+  shading flat; colorbar;
+  title('Rotation Angle G.angle - S.angle (degrees)')
+  xlabel(['Min = ', num2str(min(D(:))),',  Max = ', num2str(max(D(:)))]);
 end
 
 return

@@ -24,9 +24,9 @@
 % Select step:   0  3  6  9  12
 %
 
-% svn $Id: d_ecmwf2roms.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: d_ecmwf2roms.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango      %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group      Hernan G. Arango      %
 %    Licensed under a MIT/X style license           John Wilkin           %
 %    See License_ROMS.txt                                                 %
 %=========================================================================%
@@ -485,7 +485,7 @@ for n = doFields,
 % integration from previous accumulation.
 % At 3 hour step don't change anything
 
-      if (F(n).scale < 0),
+      if (F(n).scale < 0)
         step = rem(frc_time,0.5)*24;
         if step == 3
           fieldfinal = field;

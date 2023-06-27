@@ -2,9 +2,9 @@
       MODULE mod_ocean
 !
 !git $Id$
-!svn $Id: mod_ocean.F 1099 2022-01-06 21:01:01Z arango $
+!svn $Id: mod_ocean.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -28,19 +28,21 @@
 !  ru           Right-hand-side of 3D U-momentum equation (m4/s2).     !
 !  rv           Right hand side of 3D V-momentum equation (m4/s2).     !
 !  t            Tracer type variables (active and passive).            !
-!  st           Stationary production variables for GOANPZ             !
 !  u            3D U-momentum component (m/s).                         !
 !  v            3D V-momentum component (m/s).                         !
 !  W            S-coordinate (omega*Hz/mn) vertical velocity (m3/s).   !
-!  wvel         Z-coordinate vertical velocity (m/s).                  !
+#ifdef BIOLOGY
 !                                                                      !
 !  Biology Variables.                                                  !
 !                                                                      !
+# if defined BIO_FENNEL && defined CARBON
 !  pH           Surface concentration of hydrogen ions.                !
-#ifdef RED_TIDE
+# endif
+# ifdef RED_TIDE
 !  CystIni      Red tide dinoflagellate bottom cyst initial            !
 !                 concentration (cysts/m2).                            !
 !  DIN_obs      Observed Dissolved Inorganic Nutrient (micromoles).    !
+# endif
 #endif
 #ifdef HYPOXIA_SRM
 !  repiration   Total biological respiration rate (1/day).             !
@@ -96,9 +98,17 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
-
+!
+        PUBLIC :: allocate_ocean
+        PUBLIC :: deallocate_ocean
+        PUBLIC :: initialize_ocean
+!
+!-----------------------------------------------------------------------
+!  Define T_OCEAN structure.
+!-----------------------------------------------------------------------
+!
         TYPE T_OCEAN
 !
 !  Nonlinear model state.
@@ -442,6 +452,7 @@
 
       allocate ( OCEAN(ng) % zeta(LBi:UBi,LBj:UBj,3) )
       Dmem(ng)=Dmem(ng)+3.0_r8*size2d
+
 #if defined TIDE_GENERATING_FORCES
       allocate ( OCEAN(ng) % eq_tide(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -1002,10 +1013,556 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE allocate_ocean
+!
+      SUBROUTINE deallocate_ocean (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+#ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_ocean"
 
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_OCEAN structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+      IF (.not.destroy(ng, OCEAN(ng)%rubar, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%rubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rvbar, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%rvbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rzeta, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%rzeta')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ubar, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%vbar, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%zeta, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%zeta')) RETURN
+
+# if defined TIDE_GENERATING_FORCES
+      IF (.not.destroy(ng, OCEAN(ng)%eq_tide, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%eq_tide')) RETURN
+# endif
+
+# if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%rulag2d, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%rulag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rvlag2d, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%rvlag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ubar_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ubar_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%vbar_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%vbar_stokes')) RETURN
+# endif
+
+# ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%pden, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%pden')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rho, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%rho')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ru, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%ru')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rv, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%rv')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%t, MyFile,                         &
+     &                 __LINE__, 'OCEAN(ng)%t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%u, MyFile,                         &
+     &                 __LINE__, 'OCEAN(ng)%u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%v, MyFile,                         &
+     &                 __LINE__, 'OCEAN(ng)%v')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%W, MyFile,                         &
+     &                 __LINE__, 'OCEAN(ng)%W')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%wvel, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%wvel')) RETURN
+
+#  if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%rulag3d, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%rulag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rvlag3d, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%rvlag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%u_stokes, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%u_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%v_stokes, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%v_stokes')) RETURN
+#  endif
+
+#  if defined BIO_FENNEL && defined CARBON
+      IF (.not.destroy(ng, OCEAN(ng)%pH, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%pH')) RETURN
+#  endif
+
+#  ifdef RED_TIDE
+      IF (.not.destroy(ng, OCEAN(ng)%CystIni, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%CystIni')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%DIN_obs, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%DIN_obs')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%DIN_obsG, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%DIN_obsG')) RETURN
+#  endif
+
+#  ifdef HYPOXIA_SRM
+      IF (.not.destroy(ng, OCEAN(ng)%respiration, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%respiration')) RETURN
+
+#   ifndef ANA_RESPIRATION
+      IF (.not.destroy(ng, OCEAN(ng)%respirationG, MyFile,              &
+     &                 __LINE__, 'OCEAN(ng)%respirationG')) RETURN
+#   endif
+#  endif
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rubar, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%tl_rubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rvbar, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%tl_rvbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rzeta, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%tl_rzeta')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_ubar, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%tl_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_vbar, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%tl_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_zeta, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%tl_zeta')) RETURN
+
+#  if defined TIDE_GENERATING_FORCES
+      IF (.not.destroy(ng, OCEAN(ng)%tl_eq_tide, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%tl_eq_tide')) RETURN
+#  endif
+
+#  if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rulag2d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%tl_rulag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rvlag2d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%tl_rvlag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_ubar_stokes, MyFile,            &
+     &                 __LINE__, 'OCEAN(ng)%tl_ubar_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_vbar_stokes, MyFile,            &
+     &                 __LINE__, 'OCEAN(ng)%tl_vbar_stokes')) RETURN
+#  endif
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%tl_pden, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%tl_pden')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rho, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%tl_rho')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_ru, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%tl_ru')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rv, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%tl_rv')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_t, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%tl_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_u, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%tl_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_v, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%tl_v')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_W, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%tl_W')) RETURN
+
+#   ifdef NOT_YET
+      IF (.not.destroy(ng, OCEAN(ng)%tl_wvel, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%tl_wvel')) RETURN
+#   endif
+
+#   if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rulag3d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%tl_rulag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_rvlag3d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%tl_rvlag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_u_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%tl_u_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%tl_v_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%tl_v_stokes')) RETURN
+#   endif
+#  endif
+# endif
+
+# ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rubar, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_rubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rvbar, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_rvbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rzeta, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_rzeta')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_ubar, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%ad_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_vbar, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%ad_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_zeta, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%ad_zeta')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_ubar_sol, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ad_ubar_sol')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_vbar_sol, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ad_vbar_sol')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_zeta_sol, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ad_zeta_sol')) RETURN
+
+#  if defined TIDE_GENERATING_FORCES
+      IF (.not.destroy(ng, OCEAN(ng)%ad_eq_tide, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%ad_eq_tide')) RETURN
+#  endif
+
+#  if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rulag2d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%ad_rulag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rvlag2d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%ad_rvlag2d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_ubar_stokes, MyFile,            &
+     &                 __LINE__, 'OCEAN(ng)%ad_ubar_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_vbar_stokes, MyFile,            &
+     &                 __LINE__, 'OCEAN(ng)%ad_vbar_stokes')) RETURN
+#  endif
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%ad_pden, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%ad_pden')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rho, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%ad_rho')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_ru, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%ad_ru')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rv, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%ad_rv')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_t, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%ad_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_u, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%ad_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_v, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%ad_v')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_W, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%ad_W')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_wvel, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%ad_wvel')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_t_sol, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_t_sol')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_u_sol, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_u_sol')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_v_sol, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_v_sol')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_W_sol, MyFile,                  &
+     &                 __LINE__, 'OCEAN(ng)%ad_W_sol')) RETURN
+
+#   if defined NEARSHORE_MELLOR
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rulag3d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%ad_rulag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_rvlag3d, MyFile,                &
+     &                 __LINE__, 'OCEAN(ng)%ad_rvlag3d')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_u_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ad_u_stokes')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%ad_v_stokes, MyFile,               &
+     &                 __LINE__, 'OCEAN(ng)%ad_v_stokes')) RETURN
+#   endif
+#  endif
+# endif
+
+# if defined FOUR_DVAR  || defined IMPULSE || \
+   (defined HESSIAN_SV && defined BNORM)
+!
+!  Working arrays to store adjoint impulse forcing, background error
+!  covariance, background-error standard deviations, or descent
+!  conjugate vectors (directions).
+!
+      IF (.not.destroy(ng, OCEAN(ng)%b_ubar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%b_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%b_vbar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%b_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%b_zeta, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%b_zeta')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%b_t, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%b_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%b_u, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%b_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%b_v, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%b_v')) RETURN
+#  endif
+
+#  if defined FOUR_DVAR || (defined HESSIAN_SV && defined BNORM)
+      IF (.not.destroy(ng, OCEAN(ng)%d_ubar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%d_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%d_vbar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%d_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%d_zeta, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%d_zeta')) RETURN
+
+#   ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%d_t, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%d_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%d_u, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%d_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%d_v, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%d_v')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, OCEAN(ng)%e_ubar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%e_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%e_vbar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%e_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%e_zeta, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%e_zeta')) RETURN
+
+#   ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%e_t, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%e_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%e_u, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%e_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%e_v, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%e_v')) RETURN
+#   endif
+
+#   ifdef WEAK_CONSTRAINT
+#    ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%f_t, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_u, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_v, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_v')) RETURN
+#    endif
+      IF (.not.destroy(ng, OCEAN(ng)%f_ubar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vbar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_zeta, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_zeta')) RETURN
+
+#    ifdef TIME_CONV
+#     ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%f_tS, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_tS')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_uS, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_uS')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vS, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_vS')) RETURN
+#     endif
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_ubarS, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_ubarS')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vbarS, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_vbarS')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_zetaS, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_zetaS')) RETURN
+#    endif
+#   endif
+#  endif
+# endif
+
+# if defined FORCING_SV || defined HESSIAN_FSV
+      IF (.not.destroy(ng, OCEAN(ng)%f_ubar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_ubar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vbar, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_vbar')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_zeta, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%f_zeta')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%f_t, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_t')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_u, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_u')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_v, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%f_v')) RETURN
+#  endif
+# endif
+
+# if defined FORWARD_READ && \
+   (defined TANGENT || defined TL_IOMS || defined ADJOINT)
+!
+!  Latest two records of the nonlinear trajectory used to interpolate
+!  the background state in the tangent linear and adjoint models.
+!
+#  ifdef FORWARD_RHS
+      IF (.not.destroy(ng, OCEAN(ng)%rubarG, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%rubarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rvbarG, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%rvbarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rzetaG, MyFile,                    &
+     &                 __LINE__, 'OCEAN(ng)%rzetaG')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, OCEAN(ng)%ubarG, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%ubarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%vbarG, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%vbarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%zetaG, MyFile,                     &
+     &                 __LINE__, 'OCEAN(ng)%zetaG')) RETURN
+
+#  ifdef SOLVE3D
+#   ifdef FORWARD_RHS
+      IF (.not.destroy(ng, OCEAN(ng)%ruG, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%ruG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%rvG, MyFile,                       &
+     &                 __LINE__, 'OCEAN(ng)%rvG')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, OCEAN(ng)%tG, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%tG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%uG, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%uG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%vG, MyFile,                        &
+     &                 __LINE__, 'OCEAN(ng)%vG')) RETURN
+#  endif
+
+#  ifdef WEAK_CONSTRAINT
+#   ifdef SOLVE3D
+      IF (.not.destroy(ng, OCEAN(ng)%f_tG, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_tG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_uG, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_uG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vG, MyFile,                      &
+     &                 __LINE__, 'OCEAN(ng)%f_vG')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_ubarG, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_ubarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_vbarG, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_vbarG')) RETURN
+
+      IF (.not.destroy(ng, OCEAN(ng)%f_zetaG, MyFile,                   &
+     &                 __LINE__, 'OCEAN(ng)%f_zetaG')) RETURN
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type OCEAN structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(OCEAN)) deallocate ( OCEAN )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_ocean
+!
       SUBROUTINE initialize_ocean (ng, tile, model)
 !
 !=======================================================================
@@ -1389,6 +1946,7 @@
               OCEAN(ng) % ad_rv(i,j,k,2) = IniVal
 
               OCEAN(ng) % ad_W(i,j,k) = IniVal
+              OCEAN(ng) % ad_W_sol(i,j,k) = IniVal
               OCEAN(ng) % ad_wvel(i,j,k) = IniVal
             END DO
           END DO

@@ -24,9 +24,9 @@ function status = nc_attadd(ncfile, Aname, Avalue, varargin)
 %    status     Error flag
 %
 
-% svn $Id: nc_attadd.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_attadd.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -47,7 +47,7 @@ Info = nc_inq(ncfile);
 
 [method,~,~] = nc_interface(ncfile);
 
-switch(method),
+switch(method)
   case {'native'}
     status = nc_attadd_matlab(ncfile, Aname, Avalue, Vname, Info);
   case {'mexnc'}
@@ -94,7 +94,7 @@ function status = nc_attadd_matlab(ncfile, Aname, Avalue, Vname, Info)
 
 status = 0;
 
-if (isempty(Vname)),
+if (isempty(Vname))
   got_var = false;
 else
   got_var = true;
@@ -105,14 +105,14 @@ end
 ncid  = netcdf.open(ncfile, 'nc_write');
 netcdf.reDef(ncid);
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Add/modify a variable attribute.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if (got_var),
+if (got_var)
 
 % Get variable ID.
-
+ 
   if (~any(strcmp({Info.Variables.Name}, Vname)))
     nc_inq(ncfile, true);
     disp(' ');
@@ -125,24 +125,27 @@ if (got_var),
 
 % Inquire if variable attribute exist.
 
-  if (any(strcmp({Info.Variables(ivar).Attributes.Name}, Aname)))
-    disp(' ');
-    disp(['Requested attribute "',Aname,'" already exist in ',          ...
-          'variable "',Vname,'".']);
-    if ischar(Avalue),
-      disp(['Updating its value to: "',Avalue,'".']);
-    else
-      disp(['Updating its value to: ',num2str(Avalue),'.']);
+  if (~isempty(Info.Variables(ivar).Attributes))
+    if (any(strcmp({Info.Variables(ivar).Attributes.Name}, Aname)))
+      disp(' ');
+      disp(['Requested attribute "',Aname,'" already exist in ',        ...
+            'variable "',Vname,'".']);
+      if ischar(Avalue)
+        disp(['Updating its value to: "',Avalue,'".']);
+      else
+        disp(['Updating its value to: ',num2str(Avalue),'.']);
+      end
     end
   end
 
 % Add/modify variable attribute.
 
-  if ischar(Avalue),
+  if ischar(Avalue)
     netcdf.putAtt(ncid, varid, Aname, Avalue);
   else
     if (strcmpi(Aname,'_FillValue')    ||                               ...
-        strcmpi(Aname,'missing_value'))
+        strcmpi(Aname,'missing_value') ||                               ...
+        strcmpi(Aname,'scale_factor'))
       switch (vtype)
         case (netcdf.getConstant('nc_byte'))
           value = int8(Avalue);
@@ -161,9 +164,9 @@ if (got_var),
     end    
   end
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Add/modify a global attribute.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
    
 else
 
@@ -173,7 +176,7 @@ else
     disp(' ');
     disp(['Requested attribute "',Aname,'" already exist in file: ',    ...
           ncfile,'.']);
-    if ischar(Avalue),
+    if ischar(Avalue)
       disp(['Updating its value to: "',Avalue,'".']);
     else
       disp(['Updating its value to: ',num2str(Avalue),'.']);
@@ -226,7 +229,7 @@ function status = nc_attadd_mexnc(ncfile, Aname, Avalue, Vname, Info)
 
 % Initialize error flag.
 
-if (isempty(Vname)),
+if (isempty(Vname))
   got_var = false;
 else
   got_var = true;
@@ -235,7 +238,7 @@ end
 % Open NetCDF file.
 
 ncid = mexnc('open',ncfile,'nc_write');
-if (ncid < 0),
+if (ncid < 0)
   disp(' ');
   error(['NC_ATTADD_MEXNC: open - unable to open file: ', ncfile]);
 end
@@ -243,20 +246,20 @@ end
 % Put open file into define mode.
 
 status = mexnc('redef',ncid);
-if (status < 0),
+if (status < 0)
   status = -1;
   disp(' ');
   disp(mexnc('strerror',status));
   mexnc('close',ncid);
-  error(['NC_ATTADD_MEXNC: redef - unable to put in definition mode: ',  ...
+  error(['NC_ATTADD_MEXNC: redef - unable to put in definition mode: ', ...
          ncfile]);
 end
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Add/modify a variable attribute.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if (got_var),
+if (got_var)
 
 % Get variable ID.
 
@@ -270,7 +273,7 @@ if (got_var),
 % Inquire number of variable attributes.
 
   [nvatts,status] = mexnc('inq_varnatts',ncid,varid);
-  if (status < 0),
+  if (status < 0)
     disp(' ');
     disp(mexnc('strerror',status));
     error(['NC_ATTADD_MEXNC: inq_varnatts - unable to inquire number ', ...
@@ -283,22 +286,22 @@ if (got_var),
   
   for i=0:nvatts-1
     [attnam,status] = mexnc('inq_attname',ncid,varid,i);
-    if (status < 0),
+    if (status < 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: inq_attname: error while inquiring ',    ...
              'attribute: ',num2str(i)]);
-    end,
-    if (strcmp(Aname, attnam)),
+    end
+    if (strcmp(Aname, attnam))
       found = true;
       break
     end
   end
-  if (found),
+  if (found)
     disp(' ');
     disp(['Requested attribute "',Aname,'" already exist in ',          ...
           'variable "',Vname,'".']);
-    if ischar(Avalue),
+    if ischar(Avalue)
       disp(['Updating its value to: "',Avalue,'".']);
     else
       disp(['Updating its value to: ',num2str(Avalue),'.']);
@@ -308,7 +311,7 @@ if (got_var),
 % Inquire variable type.
 
   [vtype,status] = mexnc('inq_vartype',ncid,varid);
-  if (status < 0),
+  if (status < 0)
     disp(' ');
     disp(mexnc('strerror',status));
     error(['NC_ATTADD_MEXNC: inq_vartype - unable to inquire ',         ...
@@ -317,11 +320,11 @@ if (got_var),
 
 % Add/modify variable attribute.
 
-  if ischar(Avalue),
+  if ischar(Avalue)
     lstr = length(Avalue);
     status = mexnc('put_att_text',ncid,varid,Aname,                     ...
                    nc_constant('nc_char'),lstr,Avalue);
-    if (status < 0),
+    if (status < 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: put_att_text - unable to define ',       ...
@@ -333,7 +336,7 @@ if (got_var),
       case (nc_constant('nc_int'))
         value = int32(Avalue);
         status = mexnc('put_att_int',   ncid,varid,Aname,vtype,nval,value);
-        if (status < 0),
+        if (status < 0)
           disp(' ');
           disp(mexnc('strerror',status));
           error(['NC_ATTADD_MEXNC: put_att_int - unable to define ',    ...
@@ -342,7 +345,7 @@ if (got_var),
       case (nc_constant('nc_float'))
         value = single(Avalue);
         status = mexnc('put_att_float', ncid,varid,Aname,vtype,nval,value);
-        if (status < 0),
+        if (status < 0)
           disp(' ');
           disp(mexnc('strerror',status));
           error(['NC_ATTADD_MEXNC: put_att_float - unable to define ',  ...
@@ -351,7 +354,7 @@ if (got_var),
       case (nc_constant('nc_double'))
         value = double(Avalue);
         status = mexnc('put_att_double',ncid,varid,Aname,vtype,nval,value);
-        if (status < 0),
+        if (status < 0)
           disp(' ');
           disp(mexnc('strerror',status));
           error(['NC_ATTADD_MEXNC: put_att_double - unable to define ', ...
@@ -360,16 +363,16 @@ if (got_var),
     end
   end
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Add/modify a global attribute.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
    
 else
 
 %  Inquire number of global attributes.
 
   [natts,status]=mexnc('inq_natts',ncid);
-  if (status < 0),
+  if (status < 0)
     disp(' ');
     disp(mexnc('strerror',status));
     error(['NC_ATTADD_MEXNC: inq_natts - unable to inquire number of ', ...
@@ -383,18 +386,18 @@ else
   for i=0:natts-1
     [attnam,status] = mexnc('inq_attname',ncid,                         ...
                             nc_constant('nc_global'),i);
-    if (status < 0),
+    if (status < 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: inq_attname: error while inquiring ',    ...
              'attribute: ',num2str(i)]);
     end
-    if (strcmp(Aname, attnam)),
+    if (strcmp(Aname, attnam))
       found = true;
       break
     end
   end
-  if (found),
+  if (found)
     disp(' ');
     disp(['Requested attribute "',Aname,'" already exist in file: ',    ...
           ncfile,'.']);
@@ -403,31 +406,31 @@ else
   
 %  Add/modify character attribute.
 
-  if (ischar(Avalue)),
+  if (ischar(Avalue))
     lstr = length(Avalue);
     status = mexnc('put_att_text',ncid,nc_constant('nc_global'),Aname,  ...
                    nc_constant('nc_char'),lstr,Avalue);
-    if (status < 0),
+    if (status < 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: put_att_text - unable to define ',       ...
              'attribute "',Aname,'"in file: ',ncfile,'.']);
-    end,
-  elseif (isinteger(Avalue)),
+    end
+  elseif (isinteger(Avalue))
     nval = length(Avalue); 
     status = mexnc('put_att_int',ncid,nc_constant('nc_global'),Aname,   ...
                    nc_constant('nc_int'),nval,Avalue);
-    if (status ~= 0),
+    if (status ~= 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: PUT_ATT_INT - unable to define ',        ...
              'attribute: "',Aname,'"in file: ',ncfile,'.']);
     end
-  elseif (isfloat(Avalue)),
+  elseif (isfloat(Avalue))
     nval = length(Avalue);
     status = mexnc('put_att_double',ncid,nc_constant('nc_global'),Aname,...
                    nc_constant('nc_double'),nval,double(Avalue));
-    if (status ~= 0),
+    if (status ~= 0)
       disp(' ');
       disp(mexnc('strerror',status));
       error(['NC_ATTADD_MEXNC: PUT_ATT_FLOAT - unable to define ',      ...
@@ -440,17 +443,17 @@ end
 % Exit definition mode.
 
 status = mexnc('enddef',ncid);
-if (status < 0),
+if (status < 0)
   disp(' ');
   disp(mexnc('strerror',status));
   error(['NC_ATTADD_MEXNC: enddef - unable to exit definition mode: ',  ...
          ncfile]);
-end,
+end
 
 %  Close NetCDF file.
 
 cstatus = mexnc('ncclose',ncid);
-if (cstatus < 0),
+if (cstatus < 0)
   disp(' ');
   disp(mexnc('strerror',status));
   error(['NC_ATTADD_MEXNC: ncclose - unable to close NetCDF file: ',    ...

@@ -29,6 +29,9 @@
       USE mod_coupling
       USE mod_stepping
       USE mod_forces
+# ifdef DIAGNOSTICS_INWAVE
+      USE mod_diags
+# endif
 !
 !  Imported variable declarations.
 !
@@ -53,6 +56,9 @@
      &                 GRID(ng) % rmask_wet,                            &
      &                 GRID(ng) % umask_wet,                            &
      &                 GRID(ng) % vmask_wet,                            &
+# endif
+# ifdef DIAGNOSTICS_INWAVE
+     &                 DIAGS(ng) % DiaInwrk,                            &
 # endif
      &                 FORCES(ng) % Dissip_break,                       &
      &                 FORCES(ng) % Dissip_wcap,                        &
@@ -80,6 +86,9 @@
 # endif
 # ifdef WET_DRY
      &                       rmask_wet, umask_wet, vmask_wet,           &
+# endif
+# ifdef DIAGNOSTICS_INWAVE
+     &                       DiaInwrk,                                  &
 # endif
      &                       Dissip_break,                              &
      &                       Dissip_wcap,                               &
@@ -120,6 +129,9 @@
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #   endif
+#   ifdef DIAGNOSTICS_INWAVE
+      real(r8), intent(inout) :: DiaInwrk(LBi:,LBj:,:,:)
+#   endif
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
@@ -139,6 +151,9 @@
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
+#   ifdef DIAGNOSTICS_INWAVE
+      real(r8), intent(inout) :: DiaInwrk(LBi:UBi,LBj:UBj,1:ND,NDInw)
+#   endif
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
@@ -155,7 +170,7 @@
 !
       integer :: i, j, d
       real(r8) :: EW, oEW, TRM, H, Qb, Hmax_r, diff, Emax_r
-      real(r8) :: twopi, otwopi, ogrho0, cff, orho0, fac
+      real(r8) :: twopi, otwopi, ogrho0, cff, cff1, orho0, fac
 #  ifdef WDISS_FRIC
       real(r8) :: gamma, kd, dissfric
       real(r8), parameter :: eps=1.0e-08_r8
@@ -236,6 +251,8 @@
             Emax_r=0.125_r8*g*rho0*Hmax_r**2.0_r8
             diff=EW-Emax_r
             Dissip_break(i,j)=MAX(0.0_r8,diff)
+#  else
+            Dissip_break(i,j)=0.0_r8
 #  endif
           ELSE
             Dissip_break(i,j)=0.0_r8
@@ -262,12 +279,19 @@
           DO d=1,ND
 !           IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
             IF ((h_tot(i,j).ge.1.5_r8*Dcrit(ng)).and.(EW.gt.EWlim)) THEN
-#   ifdef WDISS_FRIC
-              EN(d)=MAX(0.0_r8,EN(d)-(Dissip_break(i,j)+dissfric)*      &
-     &                                EN(d)*oEW)
-#   else
-              EN(d)=MAX(0.0_r8,EN(d)-Dissip_break(i,j)*EN(d)*oEW)
+              cff1=EN(d)*oEW
+              cff=Dissip_break(i,j)*cff1
+              EN(d)=MAX(0.0_r8,EN(d)-cff)
+#  ifdef DIAGNOSTICS_INWAVE
+              DiaInwrk(i,j,d,iIbrak)=cff*Tr(i,j,d)*otwopi
+#  endif
+#  ifdef WDISS_FRIC
+              cff=dissfric*cff1
+              EN(d)=MAX(0.0_r8,EN(d)-cff)
+#   ifdef DIAGNOSTICS_INWAVE
+              DiaInwrk(i,j,d,iIfric)=cff*Tr(i,j,d)*otwopi
 #   endif
+#  endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
             ELSE
               AC(i,j,d,nout)=0.0_r8
@@ -278,6 +302,10 @@
 #  ifdef WET_DRY
             AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
 #  endif
+# if defined DIAGNOSTICS_INWAVE
+            DiaInwrk(i,j,d,iIrate)=DiaInwrk(i,j,d,iIrate)-              &
+     &                             AC(i,j,d,nout)
+# endif
           ENDDO
           Dissip_wcap(i,j)=0.0_r8
           Dissip_break(i,j)=Dissip_break(i,j)*orho0*fac

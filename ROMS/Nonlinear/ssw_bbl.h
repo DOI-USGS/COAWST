@@ -3,11 +3,12 @@
 #define N92_RIPRUF
 #define CRS_FIX
 
-      SUBROUTINE bblm (ng, tile)
+      MODULE bbl_mod
 !
-!svn $Id: ssw_bbl.h 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ssw_bbl.h 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group        Chris Sherwood   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -24,6 +25,17 @@
 !    105, 24119-24139.                                                 !
 !                                                                      !
 !=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: bblm
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE bblm (ng, tile)
+!***********************************************************************
 !
       USE mod_param
       USE mod_bbl
@@ -47,7 +59,7 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 37, __LINE__, MyFile)
 #endif
-      CALL bblm_tile (ng, tile,                                         &
+      CALL ssw_bbl_tile (ng, tile,                                      &
      &                LBi, UBi, LBj, UBj,                               &
      &                IminS, ImaxS, JminS, JmaxS,                       &
      &                nrhs(ng),                                         &
@@ -99,7 +111,7 @@
       END SUBROUTINE bblm
 !
 !***********************************************************************
-      SUBROUTINE bblm_tile (ng, tile,                                   &
+      SUBROUTINE ssw_bbl_tile (ng, tile,                                &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs,                                       &
@@ -1061,11 +1073,12 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,idpcx))
 #endif
-
+!
       RETURN
-      END SUBROUTINE bblm_tile
+      END SUBROUTINE ssw_bbl_tile
 
 #ifdef SGWC
+!
       SUBROUTINE sg_bstress (sg_row, sg_zrozn, sg_phicw, sg_ubokur,     &
      &                       sg_ubouc, sg_mu, sg_epsilon, sg_ro,        &
      &                       sg_fofx)
@@ -1235,9 +1248,10 @@
           sg_fofx=-sg_ubouc+sg_ubokur*sg_epsilon*LOG(sg_zrozn)
         END IF
       END IF
+!
       RETURN
       END SUBROUTINE sg_bstress
-
+!
       SUBROUTINE  sg_purewave (sg_row, sg_ubouwm, sg_znotp, sg_ro)
 !
 !=======================================================================
@@ -1339,9 +1353,10 @@
           sg_ubouwm=sg_ubouwmn
         END IF
       END DO
+!
       RETURN
       END SUBROUTINE  sg_purewave
-
+!
       SUBROUTINE sg_kelvin8m (x, ber, bei, ker, kei, berp, beip,        &
      &                        kerp, keip)
 !
@@ -1818,3 +1833,4 @@
       RETURN
       END SUBROUTINE log_interp
 #endif
+      END MODULE bbl_mod

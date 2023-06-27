@@ -5,9 +5,9 @@
       SUBROUTINE tides_date (ng)
 !
 !git $Id$
-!svn $Id: tides_date.F 1099 2022-01-06 21:01:01Z arango $
+!svn $Id: tides_date.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -77,9 +77,9 @@
       USE mod_pio_netcdf
 # endif
       USE mod_scalars
-      USE strings_mod,     ONLY : FoundError
 !
       USE dateclock_mod, ONLY : datenum, datestr
+      USE strings_mod,   ONLY : FoundError
 !
 !  Imported variables declarations.
 !
@@ -110,8 +110,8 @@
           END IF
         END IF
 !
-!        SELECT CASE (TIDE(1)%IOtype)
-!          CASE (io_nf90)
+        SELECT CASE (TIDE(1)%IOtype)
+          CASE (io_nf90)
             CALL netcdf_inq_var (ng, iNLM, TIDE(ng)%name,               &
      &                           MyVarName = Vname(1,idTref),           &
      &                           SearchVar = foundit)
@@ -132,7 +132,7 @@
      &                                  zero_phase_date)
             END IF
 # endif
-!        END SELECT
+        END SELECT
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  If found "zero_phase_date", decode from YYYYMMDD.dddd and compute

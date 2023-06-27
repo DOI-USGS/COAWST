@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       SUBROUTINE set_grid (ng, model)
 !
-!svn $Id: set_grid.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: set_grid.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== Hernan G. Arango ===
@@ -22,16 +23,22 @@
 !
       USE analytical_mod
 #ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti
+      USE distribute_mod,       ONLY : mp_bcasti
 #endif
 #ifdef TIDE_GENERATING_FORCES
       USE equilibrium_tide_mod, ONLY : harmonic_constituents
 #endif
-      USE metrics_mod,    ONLY : metrics
-#ifdef NESTING
-      USE nesting_mod,    ONLY : nesting
+#ifndef ANA_GRID
+      USE get_grid_mod,         ONLY : get_grid
 #endif
-      USE strings_mod,    ONLY : FoundError
+#ifndef ANA_NUDGCOEF
+      USE get_nudgcoef_mod,     ONLY : get_nudgcoef
+#endif
+      USE metrics_mod,          ONLY : metrics
+#ifdef NESTING
+      USE nesting_mod,          ONLY : nesting
+#endif
+      USE strings_mod,          ONLY : FoundError
 !
       implicit none
 !
@@ -66,7 +73,11 @@
 !$OMP BARRIER
 #else
 !$OMP MASTER
-      CALL get_grid (ng, model)
+# ifdef DISTRIBUTE
+      CALL get_grid (ng, MyRank, model)
+# else
+      CALL get_grid (ng, -1, model)
+# endif
 !$OMP END MASTER
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, model, exit_flag)
@@ -150,7 +161,11 @@
 # else
       IF (Lnudging(ng)) THEN
 !$OMP MASTER
-        CALL get_nudgcoef (ng, model)
+#  ifdef DISTRIBUTE
+        CALL get_nudgcoef (ng, MyRank, model)
+#  else
+        CALL get_nudgcoef (ng, -1, model)
+#  endif
 !$OMP END MASTER
 #  ifdef DISTRIBUTE
         CALL mp_bcasti (ng, model, exit_flag)
@@ -159,6 +174,7 @@
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END IF
 # endif
+
 # ifdef TIDE_GENERATING_FORCES
 !
 !-----------------------------------------------------------------------

@@ -3,9 +3,10 @@
 
 #if defined TANGENT && defined BALANCE_OPERATOR
 !
-!svn $Id: ad_balance.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: ad_balance.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -382,12 +383,12 @@
       IF (balance(isFsur)) THEN
 
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_zeta(:,:,Linp))
-!>
+!^      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_zeta(:,:,Linp))
+!^
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         NghostPoints,                            &
@@ -396,10 +397,10 @@
 
 # endif
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>        CALL exchange_r2d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            tl_zeta(:,:,Linp))
-!>
+!^        CALL exchange_r2d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            tl_zeta(:,:,Linp))
+!^
           CALL ad_exchange_r2d_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj,                &
      &                               ad_zeta(:,:,Linp))
@@ -411,26 +412,26 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_zeta_ref(i,j)
-!>
+!^          tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_zeta_ref(i,j)
+!^
             ad_zeta_ref(i,j)=ad_zeta(i,j,Linp)
           END DO
         END DO
 !
 !  Call the adjoint biconjugate gradient solver.
 !
-!>      CALL tl_biconj_tile (ng, tile, iTLM,                            &
-!>   &                       LBi, UBi, LBj, UBj,                        &
-!>   &                       IminS, ImaxS, JminS, JmaxS,                &
-!>   &                       Lbck,                                      &
-!>   &                       h, pmon_u, pnom_v, pm, pn,                 &
+!^      CALL tl_biconj_tile (ng, tile, iTLM,                            &
+!^   &                       LBi, UBi, LBj, UBj,                        &
+!^   &                       IminS, ImaxS, JminS, JmaxS,                &
+!^   &                       Lbck,                                      &
+!^   &                       h, pmon_u, pnom_v, pm, pn,                 &
 #  ifdef MASKING
-!>   &                       umask, vmask, rmask,                       &
+!^   &                       umask, vmask, rmask,                       &
 #  endif
-!>   &                       bc_ak, bc_bk, zdf1, zdf2, zdf3,            &
-!>   &                       pc_r2d, r_r2d, br_r2d, p_r2d, bp_r2d,      &
-!>   &                       tl_zeta_ref, tl_rhs_r2d)
-!>
+!^   &                       bc_ak, bc_bk, zdf1, zdf2, zdf3,            &
+!^   &                       pc_r2d, r_r2d, br_r2d, p_r2d, bp_r2d,      &
+!^   &                       tl_zeta_ref, tl_rhs_r2d)
+!^
         CALL ad_biconj_tile (ng, tile, iADM,                            &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
@@ -445,29 +446,29 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!>          tl_zeta_ref(i,j)=0.0_r8
-!>
+!^          tl_zeta_ref(i,j)=0.0_r8
+!^
             ad_zeta_ref(i,j)=0.0_r8
           END DO
         END DO
 
 #  ifdef DISTRIBUTE
-!>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_rhs_r2d)
-!>
+!^      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_rhs_r2d)
+!^
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         NghostPoints,                            &
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_rhs_r2d)
 #  endif
-!>      CALL r2d_bc (ng, tile,                                          &
-!>   &               LBi, UBi, LBj, UBj,                                &
-!>   &               tl_rhs_r2d)
-!>
+!^      CALL r2d_bc (ng, tile,                                          &
+!^   &               LBi, UBi, LBj, UBj,                                &
+!^   &               tl_rhs_r2d)
+!^
         CALL ad_r2d_bc (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  ad_rhs_r2d)
@@ -477,16 +478,16 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
 #  ifdef MASKING
-!>          tl_rhs_r2d(i,j)=tl_rhs_r2d(i,j)*rmask(i,j)
-!>
+!^          tl_rhs_r2d(i,j)=tl_rhs_r2d(i,j)*rmask(i,j)
+!^
             ad_rhs_r2d(i,j)=ad_rhs_r2d(i,j)*rmask(i,j)
 #  endif
-!>          tl_rhs_r2d(i,j)=-pm(i,j)*pn(i,j)*                           &
-!>   &                      (pmon_u(i+1,j)*tl_gradPx(i+1,j)-            &
-!>   &                       pmon_u(i  ,j)*tl_gradPx(i  ,j)+            &
-!>   &                       pnom_v(i,j+1)*tl_gradPy(i,j+1)-            &
-!>   &                       pnom_v(i,j  )*tl_gradPy(i,j  ))
-!>
+!^          tl_rhs_r2d(i,j)=-pm(i,j)*pn(i,j)*                           &
+!^   &                      (pmon_u(i+1,j)*tl_gradPx(i+1,j)-            &
+!^   &                       pmon_u(i  ,j)*tl_gradPx(i  ,j)+            &
+!^   &                       pnom_v(i,j+1)*tl_gradPy(i,j+1)-            &
+!^   &                       pnom_v(i,j  )*tl_gradPy(i,j  ))
+!^
             adfac=-pm(i,j)*pn(i,j)*ad_rhs_r2d(i,j)
             ad_gradPx(i  ,j)=ad_gradPx(i  ,j)-pmon_u(i  ,j)*adfac
             ad_gradPx(i+1,j)=ad_gradPx(i+1,j)+pmon_u(i+1,j)*adfac
@@ -498,17 +499,17 @@
 !
 !  Use forward boundary routines here since they are self-adjoint.
 !
-!>      CALL v2d_bc (ng, tile,                                          &
-!>   &               IminS, ImaxS, JminS, JmaxS,                        &
-!>   &               tl_gradPy)
-!>
+!^      CALL v2d_bc (ng, tile,                                          &
+!^   &               IminS, ImaxS, JminS, JmaxS,                        &
+!^   &               tl_gradPy)
+!^
         CALL v2d_bc (ng, tile,                                          &
      &               IminS, ImaxS, JminS, JmaxS,                        &
      &               ad_gradPy)
-!>      CALL u2d_bc (ng, tile,                                          &
-!>   &               IminS, ImaxS, JminS, JmaxS,                        &
-!>   &               tl_gradPx)
-!>
+!^      CALL u2d_bc (ng, tile,                                          &
+!^   &               IminS, ImaxS, JminS, JmaxS,                        &
+!^   &               tl_gradPx)
+!^
         CALL u2d_bc (ng, tile,                                          &
      &               IminS, ImaxS, JminS, JmaxS,                        &
      &               ad_gradPx)
@@ -522,16 +523,16 @@
           DO k=1,N(ng)
             DO j=Jstr,Jend
               DO i=Istr,Iend
-!>              tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
-!>
+!^              tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!^
                 ad_cff=ad_cff+ad_zeta(i,j,Linp)
 #  ifdef MASKING
-!>              tl_cff=tl_cff*rmask(i,j)
-!>
+!^              tl_cff=tl_cff*rmask(i,j)
+!^
                 ad_cff=ad_cff*rmask(i,j)
 #  endif
-!>              tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
-!>
+!^              tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!^
                 ad_rho(i,j,k)=ad_rho(i,j,k)-                            &
      &                        cff1*Hz(i,j,k)*ad_cff
                 ad_cff=0.0_r8
@@ -554,45 +555,45 @@
                 zwtop=ABS(z_w(i,j,k  ))
                 zwbot=ABS(z_w(i,j,k-1))
                 IF (zwbot.lt.LNM_depth(ng)) THEN
-!>                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
-!>
+!^                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!^
                   ad_cff=ad_cff+ad_zeta(i,j,Linp)
 #  ifdef MASKING
-!>                tl_cff=tl_cff*rmask(i,j)
-!>
+!^                tl_cff=tl_cff*rmask(i,j)
+!^
                   ad_cff=ad_cff*rmask(i,j)
 #  endif
-!>                tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
-!>
+!^                tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!^
                   ad_rho(i,j,k)=ad_rho(i,j,k)-                          &
      &                          cff1*Hz(i,j,k)*ad_cff
                   ad_cff=0.0_r8
                 ELSE IF ((Zwbot.gt.LNM_depth(ng)).and.                  &
      &                   (LNM_depth(ng).ge.Zwtop)) THEN    ! interpolate
-!>                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
-!>
+!^                tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)+tl_cff
+!^
                   ad_cff=ad_cff+ad_zeta(i,j,Linp)
 #  ifdef MASKING
-!>                tl_cff=tl_cff*rmask(i,j)
-!>
+!^                tl_cff=tl_cff*rmask(i,j)
+!^
                   ad_cff=ad_cff*rmask(i,j)
 #  endif
                   zphi=ABS(z_r(i,j,k))
                   IF (zphi.ge.LNM_depth(ng)) THEN    ! above cell center
                     IF (k.eq.N(ng)) THEN
-!>                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
-!>
+!^                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!^
                       ad_rho(i,j,k)=ad_rho(i,j,k)-                      &
      &                              cff1*Hz(i,j,k)*ad_cff
                       ad_cff=0.0_r8
                     ELSE
                       zphi1=ABS(z_r(i,j,k+1))
                       fac=(LNM_depth(ng)-zphi1)/(zphi-zphi1)
-!>                    tl_cff=-cff1*                                     &
-!>   &                       (tl_rho(i,j,k+1)+                          &
-!>   &                        fac*(tl_rho(i,j,k)-tl_rho(i,j,k+1)))*     &
-!>   &                       (LNM_depth(ng)-zwtop)
-!>
+!^                    tl_cff=-cff1*                                     &
+!^   &                       (tl_rho(i,j,k+1)+                          &
+!^   &                        fac*(tl_rho(i,j,k)-tl_rho(i,j,k+1)))*     &
+!^   &                       (LNM_depth(ng)-zwtop)
+!^
                       adfac=cff1*(LNM_depth(ng)-zwtop)*ad_cff
                       adfac1=fac*adfac
                       ad_rho(i,j,k  )=ad_rho(i,j,k  )-adfac1
@@ -601,19 +602,19 @@
                     END IF
                   ELSE                               ! below cell center
                     IF (k.eq.1) THEN
-!>                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
-!>
+!^                    tl_cff=-cff1*tl_rho(i,j,k)*Hz(i,j,k)
+!^
                       ad_rho(i,j,k)=ad_rho(i,j,k)-                      &
      &                              cff1*Hz(i,j,k)*ad_cff
                       ad_cff=0.0_r8
                     ELSE
                       zphi1=ABS(z_r(i,j,k-1))
                       fac=(LNM_depth(ng)-zphi)/(zphi1-zphi)
-!>                    tl_cff=-cff1*                                     &
-!>   &                       (tl_rho(i,j,k)+                            &
-!>   &                        fac*(tl_rho(i,j,k-1)-tl_rho(i,j,k)))*     &
-!>   &                       (zwbot-LNM_depth(ng))
-!>
+!^                    tl_cff=-cff1*                                     &
+!^   &                       (tl_rho(i,j,k)+                            &
+!^   &                        fac*(tl_rho(i,j,k-1)-tl_rho(i,j,k)))*     &
+!^   &                       (zwbot-LNM_depth(ng))
+!^
                       adfac=cff1*(zwbot-LNM_depth(ng))*ad_cff
                       adfac1=fac*adfac
                       ad_rho(i,j,k-1)=ad_rho(i,j,k-1)-adfac1
@@ -640,12 +641,12 @@
 !  Compute 3D V-velocity error covariance constraint.
 !
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, iTLM, 2,                          &
-!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
-!>
+!^      CALL mp_exchange3d (ng, tile, iTLM, 2,                          &
+!^   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
+!^
         CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
      &                         NghostPoints,                            &
@@ -653,17 +654,17 @@
      &                         ad_u(:,:,:,Linp), ad_v(:,:,:,Linp))
 # endif
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>        CALL exchange_v3d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-!>   &                            tl_v(:,:,:,Linp))
-!>
+!^        CALL exchange_v3d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!^   &                            tl_v(:,:,:,Linp))
+!^
           CALL ad_exchange_v3d_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
      &                               ad_v(:,:,:,Linp))
-!>        CALL exchange_u3d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-!>   &                            tl_u(:,:,:,Linp))
-!>
+!^        CALL exchange_u3d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!^   &                            tl_u(:,:,:,Linp))
+!^
           CALL ad_exchange_u3d_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
      &                               ad_u(:,:,:,Linp))
@@ -673,16 +674,16 @@
           DO j=JstrV,Jend
             DO i=Istr,Iend
 # ifdef MASKING
-!>            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)*vmask(i,j)
-!>
+!^            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)*vmask(i,j)
+!^
               ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*vmask(i,j)
 # endif
-!>            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)+                        &
-!>   &                         0.25_r8*(tl_gradP(i  ,j-1,k)+            &
-!>   &                                  tl_gradP(i+1,j-1,k)+            &
-!>   &                                  tl_gradP(i  ,j  ,k)+            &
-!>   &                                  tl_gradP(i+1,j  ,k))
-!>
+!^            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)+                        &
+!^   &                         0.25_r8*(tl_gradP(i  ,j-1,k)+            &
+!^   &                                  tl_gradP(i+1,j-1,k)+            &
+!^   &                                  tl_gradP(i  ,j  ,k)+            &
+!^   &                                  tl_gradP(i+1,j  ,k))
+!^
               adfac=0.25_r8*ad_v(i,j,k,Linp)
               ad_gradP(i  ,j-1,k)=ad_gradP(i  ,j-1,k)+adfac
               ad_gradP(i+1,j-1,k)=ad_gradP(i+1,j-1,k)+adfac
@@ -712,16 +713,16 @@
           IF (balance(isFsur)) THEN
             DO k=1,N(ng)
               DO i=Istr,Iend+1
-!>              tl_gradPx(i,j)=tl_gradPx(i,j)+tl_cff
-!>
+!^              tl_gradPx(i,j)=tl_gradPx(i,j)+tl_cff
+!^
                 ad_cff=ad_cff+ad_gradPx(i,j)
 #  ifdef MASKING
-!>              tl_cff=tl_cff*umask(i,j)
-!>
+!^              tl_cff=tl_cff*umask(i,j)
+!^
                 ad_cff=ad_cff*umask(i,j)
 #  endif
-!>              tl_cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))*tl_phi(i,k)
-!>
+!^              tl_cff=0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))*tl_phi(i,k)
+!^
                 ad_phi(i,k)=ad_phi(i,k)+                                &
      &                      0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))*ad_cff
                 ad_cff=0.0_r8
@@ -733,8 +734,8 @@
 !  Compute balanced, interior V-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
-!>        DO k=N(ng)-1,1,-1
-!>
+!^        DO k=N(ng)-1,1,-1
+!^
           DO k=1,N(ng)-1
             DO i=Istr,Iend+1
               cff1=1.0_r8/((z_r(i  ,j,k+1)-z_r(i  ,j,k))*               &
@@ -751,30 +752,30 @@
      &             (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i-1,j,k  ))
 
 # ifdef ZETA_ELLIPTIC
-!>            tl_phi(i,k)=tl_phix(i)
-!>
+!^            tl_phi(i,k)=tl_phix(i)
+!^
               ad_phix(i)=ad_phix(i)+ad_phi(i,k)
               ad_phi(i,k)=0.0_r8
 # endif
-!>            tl_gradP(i,j,k)=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/    &
-!>   &                        (f(i-1,j)+f(i,j))
-!>
+!^            tl_gradP(i,j,k)=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/    &
+!^   &                        (f(i-1,j)+f(i,j))
+!^
               ad_phix(i)=ad_phix(i)+                                    &
      &                   ad_gradP(i,j,k)*0.5_r8*(pm(i-1,j)+pm(i,j))/    &
      &                   (f(i-1,j)+f(i,j))
               ad_gradP(i,j,k)=0.0_r8
-!>            tl_phix(i)=tl_phix(i)+                                    &
-!>   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
-!>
+!^            tl_phix(i)=tl_phix(i)+                                    &
+!^   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
+!^
               ad_cff1=fac3*cff3*ad_phix(i)
               ad_cff2=-fac3*cff4*ad_phix(i)
-!>            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i-1,j,k+1)-                &
-!>   &                tl_rho(i,j,k  )-tl_rho(i-1,j,k  )
-!>            tl_cff1=(1.0_r8+gamma)*(tl_rho(i  ,j,k+1)-                &
-!>   &                                tl_rho(i-1,j,k+1))+               &
-!>   &                (1.0_r8-gamma)*(tl_rho(i  ,j,k  )-                &
-!>   &                                tl_rho(i-1,j,k  ))
-!>
+!^            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i-1,j,k+1)-                &
+!^   &                tl_rho(i,j,k  )-tl_rho(i-1,j,k  )
+!^            tl_cff1=(1.0_r8+gamma)*(tl_rho(i  ,j,k+1)-                &
+!^   &                                tl_rho(i-1,j,k+1))+               &
+!^   &                (1.0_r8-gamma)*(tl_rho(i  ,j,k  )-                &
+!^   &                                tl_rho(i-1,j,k  ))
+!^
               adfac1=(1.0_r8+gamma)*ad_cff1
               adfac2=(1.0_r8-gamma)*ad_cff1
               ad_rho(i-1,j,k  )=ad_rho(i-1,j,k  )-adfac2-ad_cff2
@@ -793,23 +794,23 @@
             cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                     &
      &           z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
 # ifdef ZETA_ELLIPTIC
-!>          tl_phi(i,N(ng))=tl_phix(i)
-!>
+!^          tl_phi(i,N(ng))=tl_phix(i)
+!^
             ad_phix(i)=ad_phix(i)+ad_phi(i,N(ng))
             ad_phi(i,N(ng))=0.0_r8
 # endif
-!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/  &
-!>   &                          (f(i-1,j)+f(i,j))
-!>
+!^          tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/  &
+!^   &                          (f(i-1,j)+f(i,j))
+!^
             ad_phix(i)=ad_phix(i)+                                      &
      &                 ad_gradP(i,j,N(ng))*0.5_r8*(pm(i-1,j)+pm(i,j))/  &
      &                 (f(i-1,j)+f(i,j))
             ad_gradP(i,j,N(ng))=0.0_r8
-!>          tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                       &
-!>                           tl_rho(i-1,j,N(ng)))*cff1+                 &
-!>   &                 fac2*(tl_zeta(i  ,j,Linp)-                       &
-!>                           tl_zeta(i-1,j,Linp))
-!>
+!^          tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                       &
+!^                           tl_rho(i-1,j,N(ng)))*cff1+                 &
+!^   &                 fac2*(tl_zeta(i  ,j,Linp)-                       &
+!^                           tl_zeta(i-1,j,Linp))
+!^
             adfac1=fac1*cff1*ad_phix(i)
             adfac2=fac2*ad_phix(i)
             ad_rho(i-1,j,N(ng))=ad_rho(i-1,j,N(ng))-adfac1
@@ -828,16 +829,16 @@
           DO j=Jstr,Jend
             DO i=IstrU,Iend
 # ifdef MASKING
-!>            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)*umask(i,j)
-!>
+!^            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)*umask(i,j)
+!^
               ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*umask(i,j)
 # endif
-!>            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)-                        &
-!>   &                       0.25_r8*(tl_gradP(i-1,j  ,k)+              &
-!>   &                                tl_gradP(i  ,j  ,k)+              &
-!>   &                                tl_gradP(i-1,j+1,k)+              &
-!>   &                                tl_gradP(i  ,j+1,k))
-!>
+!^            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)-                        &
+!^   &                       0.25_r8*(tl_gradP(i-1,j  ,k)+              &
+!^   &                                tl_gradP(i  ,j  ,k)+              &
+!^   &                                tl_gradP(i-1,j+1,k)+              &
+!^   &                                tl_gradP(i  ,j+1,k))
+!^
               adfac=0.25_r8*ad_u(i,j,k,Linp)
               ad_gradP(i-1,j  ,k)=ad_gradP(i-1,j  ,k)-adfac
               ad_gradP(i  ,j  ,k)=ad_gradP(i  ,j  ,k)-adfac
@@ -859,16 +860,16 @@
           IF (balance(isFsur)) THEN
             DO k=1,N(ng)
               DO i=Istr-1,Iend
-!>              tl_gradPy(i,j)=tl_gradPy(i,j)+tl_cff
-!>
+!^              tl_gradPy(i,j)=tl_gradPy(i,j)+tl_cff
+!^
                 ad_cff=ad_cff+ad_gradPy(i,j)
 #  ifdef MASKING
-!>              tl_cff=tl_cff*vmask(i,j)
-!>
+!^              tl_cff=tl_cff*vmask(i,j)
+!^
                 ad_cff=ad_cff*vmask(i,j)
 #  endif
-!>              tl_cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*tl_phi(i,k)
-!>
+!^              tl_cff=0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*tl_phi(i,k)
+!^
                 ad_phi(i,k)=ad_phi(i,k)+                                &
      &                      0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*ad_cff
                 ad_cff=0.0_r8
@@ -880,8 +881,8 @@
 !  Compute balanced, interior U-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
-!>        DO k=N(ng)-1,1,-1
-!>
+!^        DO k=N(ng)-1,1,-1
+!^
           DO k=1,N(ng)-1
             DO i=Istr-1,Iend
               cff1=1.0_r8/((z_r(i,j  ,k+1)-z_r(i,j  ,k))*               &
@@ -897,30 +898,30 @@
               cff4=(1.0_r8+gamma)*(z_r(i,j,k+1)-z_r(i,j-1,k+1))+        &
      &             (1.0_r8-gamma)*(z_r(i,j,k  )-z_r(i,j-1,k  ))
 # ifdef ZETA_ELLIPTIC
-!>            tl_phi(i,k)=tl_phie(i)
-!>
+!^            tl_phi(i,k)=tl_phie(i)
+!^
               ad_phie(i)=ad_phie(i)+ad_phi(i,k)
               ad_phi(i,k)=0.0_r8
 # endif
-!>            tl_gradP(i,j,k)=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/    &
-!>   &                        (f(i,j-1)+f(i,j))
-!>
+!^            tl_gradP(i,j,k)=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/    &
+!^   &                        (f(i,j-1)+f(i,j))
+!^
               ad_phie(i)=ad_phie(i)+                                    &
      &                   ad_gradP(i,j,k)*0.5_r8*(pn(i,j-1)+pn(i,j))/    &
      &                   (f(i,j-1)+f(i,j))
               ad_gradP(i,j,k)=0.0_r8
-!>            tl_phie(i)=tl_phie(i)+                                    &
-!>   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
-!>
+!^            tl_phie(i)=tl_phie(i)+                                    &
+!^   &                   fac3*(tl_cff1*cff3-tl_cff2*cff4)
+!^
               ad_cff1=fac3*cff3*ad_phie(i)
               ad_cff2=-fac3*cff4*ad_phie(i)
-!>            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i,j-1,k+1)-                &
-!>   &                tl_rho(i,j,k  )-tl_rho(i,j-1,k  )
-!>            tl_cff1=(1.0_r8+gamma)*(tl_rho(i,j  ,k+1)-                &
-!>   &                                tl_rho(i,j-1,k+1))+               &
-!>   &                (1.0_r8-gamma)*(tl_rho(i,j  ,k  )-                &
-!>   &                                tl_rho(i,j-1,k  ))
-!>
+!^            tl_cff2=tl_rho(i,j,k+1)+tl_rho(i,j-1,k+1)-                &
+!^   &                tl_rho(i,j,k  )-tl_rho(i,j-1,k  )
+!^            tl_cff1=(1.0_r8+gamma)*(tl_rho(i,j  ,k+1)-                &
+!^   &                                tl_rho(i,j-1,k+1))+               &
+!^   &                (1.0_r8-gamma)*(tl_rho(i,j  ,k  )-                &
+!^   &                                tl_rho(i,j-1,k  ))
+!^
               adfac1=(1.0_r8+gamma)*ad_cff1
               adfac2=(1.0_r8-gamma)*ad_cff1
               ad_rho(i,j-1,k  )=ad_rho(i,j-1,k  )-adfac2-ad_cff2
@@ -939,23 +940,23 @@
             cff1=z_w(i,j  ,N(ng))-z_r(i,j  ,N(ng))+                     &
      &           z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
 # ifdef ZETA_ELLIPTIC
-!>          tl_phi(i,N(ng))=tl_phie(i)
-!>
+!^          tl_phi(i,N(ng))=tl_phie(i)
+!^
             ad_phie(i)=ad_phie(i)+ad_phi(i,N(ng))
             ad_phi(i,N(ng))=0.0_r8
 # endif
-!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/  &
-!>   &                          (f(i,j-1)+f(i,j))
-!>
+!^          tl_gradP(i,j,N(ng))=0.5_r8*tl_phie(i)*(pn(i,j-1)+pn(i,j))/  &
+!^   &                          (f(i,j-1)+f(i,j))
+!^
             ad_phie(i)=ad_phie(i)+                                      &
      &                 ad_gradP(i,j,N(ng))*0.5_r8*(pn(i,j-1)+pn(i,j))/  &
      &                 (f(i,j-1)+f(i,j))
             ad_gradP(i,j,N(ng))=0.0_r8
-!>          tl_phie(i)=fac1*(tl_rho(i,j  ,N(ng))-                       &
-!>   &                       tl_rho(i,j-1,N(ng)))*cff1+                 &
-!>   &                 fac2*(tl_zeta(i,j  ,Linp)-                       &
-!>   &                       tl_zeta(i,j-1,Linp))
-!>
+!^          tl_phie(i)=fac1*(tl_rho(i,j  ,N(ng))-                       &
+!^   &                       tl_rho(i,j-1,N(ng)))*cff1+                 &
+!^   &                 fac2*(tl_zeta(i,j  ,Linp)-                       &
+!^   &                       tl_zeta(i,j-1,Linp))
+!^
             adfac1=fac1*cff1*ad_phie(i)
             adfac2=fac2*ad_phie(i)
             ad_rho(i,j-1,N(ng))=ad_rho(i,j-1,N(ng))-adfac1
@@ -972,11 +973,11 @@
 !
         DO j=JminS,JmaxS
           DO i=IminS,ImaxS
-!>          tl_gradPy(i,j)=0.0_r8
-!>
+!^          tl_gradPy(i,j)=0.0_r8
+!^
             ad_gradPy(i,j)=0.0_r8
-!>          tl_gradPx(i,j)=0.0_r8
-!>
+!^          tl_gradPx(i,j)=0.0_r8
+!^
             ad_gradPx(i,j)=0.0_r8
           END DO
         END DO
@@ -992,12 +993,12 @@
       IF (balance(isFsur).or.balance(isVvel)) THEN
 
 # ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
-!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_rho)
-!>
+!^      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
+!^   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_rho)
+!^
         CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
      &                         NghostPoints,                            &
@@ -1005,10 +1006,10 @@
      &                         ad_rho)
 # endif
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>        CALL exchange_r3d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-!>   &                            tl_rho)
-!>
+!^        CALL exchange_r3d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!^   &                            tl_rho)
+!^
           CALL ad_exchange_r3d_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
      &                               ad_rho)
@@ -1018,19 +1019,19 @@
           DO k=1,N(ng)
             DO i=IstrR,IendR
 # ifdef MASKING
-!>            tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
-!>
+!^            tl_rho(i,j,k)=tl_rho(i,j,k)*rmask(i,j)
+!^
               ad_rho(i,j,k)=ad_rho(i,j,k)*rmask(i,j)
 # endif
 # ifdef SALINITY
-!>            tl_rho(i,j,k)=tl_rho(i,j,k)+                              &
-!>   &                      rho0*beta(i,j)*tl_t(i,j,k,Linp,isalt)
-!>
+!^            tl_rho(i,j,k)=tl_rho(i,j,k)+                              &
+!^   &                      rho0*beta(i,j)*tl_t(i,j,k,Linp,isalt)
+!^
               ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)+            &
      &                               rho0*beta(i,j)*ad_rho(i,j,k)
 # endif
-!>            tl_rho(i,j,k)=-rho0*alpha(i,j)*tl_t(i,j,k,Linp,itemp)
-!>
+!^            tl_rho(i,j,k)=-rho0*alpha(i,j)*tl_t(i,j,k,Linp,itemp)
+!^
               ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)-            &
      &                               rho0*alpha(i,j)*ad_rho(i,j,k)
               ad_rho(i,j,k)=0.0
@@ -1048,12 +1049,12 @@
       IF (balance(isTvar(isalt))) THEN
 
 #  ifdef DISTRIBUTE
-!>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
-!>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      tl_t(:,:,:,Linp,isalt))
-!>
+!^      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
+!^   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      tl_t(:,:,:,Linp,isalt))
+!^
         CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
      &                         NghostPoints,                            &
@@ -1061,10 +1062,10 @@
      &                         ad_t(:,:,:,Linp,isalt))
 #  endif
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-!>        CALL exchange_r3d_tile (ng, tile,                             &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-!>   &                            tl_t(:,:,:,Linp,isalt))
-!>
+!^        CALL exchange_r3d_tile (ng, tile,                             &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!^   &                            tl_t(:,:,:,Linp,isalt))
+!^
           CALL ad_exchange_r3d_tile (ng, tile,                          &
      &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
      &                               ad_t(:,:,:,Linp,isalt))
@@ -1150,13 +1151,13 @@
             DO k=1,N(ng)
               cff=(1.0_r8-EXP(z_r(i,j,k)/ml_depth(ng)))*dSdT(k)
 #  ifdef MASKING
-!>            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)*rmask(i,j)
-!>
+!^            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)*rmask(i,j)
+!^
               ad_t(i,j,k,Linp,isalt)=ad_t(i,j,k,Linp,isalt)*rmask(i,j)
 #  endif
-!>            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)+            &
-!>   &                               cff*tl_t(i,j,k,Linp,itemp)
-!>
+!^            tl_t(i,j,k,Linp,isalt)=tl_t(i,j,k,Linp,isalt)+            &
+!^   &                               cff*tl_t(i,j,k,Linp,itemp)
+!^
               ad_t(i,j,k,Linp,itemp)=ad_t(i,j,k,Linp,itemp)+            &
      &                               cff*ad_t(i,j,k,Linp,isalt)
             END DO

@@ -3,9 +3,10 @@
 
 #if defined NESTING && defined TANGENT
 !
-!svn $Id: tl_nesting.F 1058 2021-03-25 19:04:23Z arango $
+!git $Id$
+!svn $Id: tl_nesting.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -181,8 +182,8 @@
 !
       IF ((isection.eq.nzwgt).and.get_Vweights) THEN
         DO tile=last_tile(ng),first_tile(ng),-1
-!>        CALL z_weights (ng, model, tile)
-!>
+!^        CALL z_weights (ng, model, tile)
+!^
           CALL tl_z_weights (ng, model, tile)
         END DO
 !$OMP BARRIER
@@ -228,8 +229,8 @@
 !
         ELSE IF (isection.eq.ngetD) THEN
           DO tile=first_tile(ng),last_tile(ng),+1
-!>          CALL get_refine (ng, model, tile)
-!>
+!^          CALL get_refine (ng, model, tile)
+!^
             CALL tl_get_refine (ng, model, tile)
           END DO
 !$OMP BARRIER
@@ -242,16 +243,16 @@
         ELSE IF (isection.eq.nputD) THEN
           LputFsur=.TRUE.
           DO tile=first_tile(ng),last_tile(ng),+1
-!>          CALL put_refine (ng, model, tile, LputFsur)
-!>
+!^          CALL put_refine (ng, model, tile, LputFsur)
+!^
             CALL tl_put_refine (ng, model, tile, LputFsur)
           END DO
 !$OMP BARRIER
 !
           LputFsur=.FALSE.
           DO tile=first_tile(ng),last_tile(ng),+1
-!>          CALL put_refine (ng, model, tile, LputFsur)
-!>
+!^          CALL put_refine (ng, model, tile, LputFsur)
+!^
             CALL tl_put_refine (ng, model, tile, LputFsur)
           END DO
 !$OMP BARRIER
@@ -263,8 +264,8 @@
 !
         ELSE IF (isection.eq.nmflx) THEN
           DO tile=first_tile(ng),last_tile(ng),+1
-!>          CALL check_massflux (ng, model, tile)
-!>
+!^          CALL check_massflux (ng, model, tile)
+!^
             CALL tl_check_massflux (ng, model, tile)
           END DO
 # endif
@@ -283,8 +284,8 @@
 !  boundary with the refined accumulated fluxes (Hz*u*T/n, Hz*v*T/m).
 !
           DO tile=first_tile(ngc),last_tile(ngc),+1
-!>          CALL correct_tracer (ngc, ng, model, tile)
-!>
+!^          CALL correct_tracer (ngc, ng, model, tile)
+!^
             CALL tl_correct_tracer (ngc, ng, model, tile)
           END DO
 !$OMP BARRIER
@@ -294,8 +295,8 @@
 !  values (two-way coupling).
 !
           DO tile=last_tile(ngc),first_tile(ngc),-1
-!>          CALL fine2coarse (ng, model, r2dvar, tile)
-!>
+!^          CALL fine2coarse (ng, model, r2dvar, tile)
+!^
             CALL tl_fine2coarse (ng, model, r2dvar, tile)
           END DO
 !$OMP BARRIER
@@ -307,8 +308,8 @@
 !  adjusted free-surface, Zt_avg1.
 !
           DO tile=first_tile(ngc),last_tile(ngc),+1
-!>          CALL set_depth (ngc, tile, model)
-!>
+!^          CALL set_depth (ngc, tile, model)
+!^
             CALL tl_set_depth (ngc, tile, model)
           END DO
 !$OMP BARRIER
@@ -317,8 +318,8 @@
 !  values (two-way coupling).
 !
           DO tile=last_tile(ngc),first_tile(ngc),-1
-!>          CALL fine2coarse (ng, model, r3dvar, tile)
-!>
+!^          CALL fine2coarse (ng, model, r3dvar, tile)
+!^
             CALL tl_fine2coarse (ng, model, r3dvar, tile)
           END DO
 !$OMP BARRIER
@@ -343,8 +344,8 @@
 !  at each contact point.
 !
         DO tile=first_tile(ng),last_tile(ng),+1
-!>        CALL get_composite (ng, model, isection, tile)
-!>
+!^        CALL get_composite (ng, model, isection, tile)
+!^
           CALL tl_get_composite (ng, model, isection, tile)
         END DO
 !$OMP BARRIER
@@ -353,8 +354,8 @@
 !  extracted donor grid data.
 !
         DO tile=last_tile(ng),first_tile(ng),-1
-!>        CALL put_composite (ng, model, isection, tile)
-!>
+!^        CALL put_composite (ng, model, isection, tile)
+!^
           CALL tl_put_composite (ng, model, isection, tile)
         END DO
 !$OMP BARRIER
@@ -456,26 +457,26 @@
 !  Process bottom stress (bustr, bvstr).
 !
           IF (isection.eq.nbstr) THEN
-!>          CALL get_contact2d (dg, model, tile,                        &
-!>   &                          u2dvar, Vname(1,idUbms),                &
-!>   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          FORCES(dg) % bustr,                     &
-!>   &                          COMPOSITE(cr) % bustr)
-!>
+!^          CALL get_contact2d (dg, model, tile,                        &
+!^   &                          u2dvar, Vname(1,idUbms),                &
+!^   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          FORCES(dg) % bustr,                     &
+!^   &                          COMPOSITE(cr) % bustr)
+!^
             CALL get_contact2d (dg, model, tile,                        &
      &                          u2dvar, Vname(1,idUbms),                &
      &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          FORCES(dg) % tl_bustr,                  &
      &                          COMPOSITE(cr) % tl_bustr)
-!>          CALL get_contact2d (dg, model, tile,                        &
-!>   &                          v2dvar, Vname(1,idVbms),                &
-!>   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          FORCES(dg) % bvstr,                     &
-!>   &                          COMPOSITE(cr) % bvstr)
-!>
+!^          CALL get_contact2d (dg, model, tile,                        &
+!^   &                          v2dvar, Vname(1,idVbms),                &
+!^   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          FORCES(dg) % bvstr,                     &
+!^   &                          COMPOSITE(cr) % bvstr)
+!^
             CALL get_contact2d (dg, model, tile,                        &
      &                          v2dvar, Vname(1,idVbms),                &
      &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
@@ -501,13 +502,13 @@
               ELSE
                 Tindex=knew(dg)
               END IF
-!>            CALL get_contact2d (dg, model, tile,                      &
-!>   &                            r2dvar, Vname(1,idFsur),              &
-!>   &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            OCEAN(dg) % zeta(:,:,Tindex),         &
-!>   &                            COMPOSITE(cr) % zeta(:,:,rec))
-!>
+!^            CALL get_contact2d (dg, model, tile,                      &
+!^   &                            r2dvar, Vname(1,idFsur),              &
+!^   &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            OCEAN(dg) % zeta(:,:,Tindex),         &
+!^   &                            COMPOSITE(cr) % zeta(:,:,rec))
+!^
               CALL get_contact2d (dg, model, tile,                      &
      &                            r2dvar, Vname(1,idFsur),              &
      &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
@@ -521,13 +522,13 @@
 !
           IF (isection.eq.n2dPS) THEN
             Tindex=1
-!>          CALL get_contact2d (dg, model, tile,                        &
-!>   &                          r2dvar, Vname(1,idRzet),                &
-!>   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          OCEAN(dg) % rzeta(:,:,Tindex),          &
-!>   &                          COMPOSITE(cr) % rzeta)
-!>
+!^          CALL get_contact2d (dg, model, tile,                        &
+!^   &                          r2dvar, Vname(1,idRzet),                &
+!^   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          OCEAN(dg) % rzeta(:,:,Tindex),          &
+!^   &                          COMPOSITE(cr) % rzeta)
+!^
             CALL get_contact2d (dg, model, tile,                        &
      &                          r2dvar, Vname(1,idRzet),                &
      &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
@@ -554,26 +555,26 @@
               ELSE
                 Tindex=knew(dg)
               END IF
-!>            CALL get_contact2d (dg, model, tile,                      &
-!>   &                            u2dvar, Vname(1,idUbar),              &
-!>   &                            cr, Ucontact(cr)%Npoints, Ucontact,   &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            OCEAN(dg) % ubar(:,:,Tindex),         &
-!>   &                            COMPOSITE(cr) % ubar(:,:,rec))
-!>
+!^            CALL get_contact2d (dg, model, tile,                      &
+!^   &                            u2dvar, Vname(1,idUbar),              &
+!^   &                            cr, Ucontact(cr)%Npoints, Ucontact,   &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            OCEAN(dg) % ubar(:,:,Tindex),         &
+!^   &                            COMPOSITE(cr) % ubar(:,:,rec))
+!^
               CALL get_contact2d (dg, model, tile,                      &
      &                            u2dvar, Vname(1,idUbar),              &
      &                            cr, Ucontact(cr)%Npoints, Ucontact,   &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            OCEAN(dg) % tl_ubar(:,:,Tindex),      &
      &                            COMPOSITE(cr) % tl_ubar(:,:,rec))
-!>            CALL get_contact2d (dg, model, tile,                      &
-!>   &                            v2dvar, Vname(1,idVbar),              &
-!>   &                            cr, Vcontact(cr)%Npoints, Vcontact,   &
-!>   &                            LBi, UBi, LBj, UBj,                   &
-!>   &                            OCEAN(dg) % vbar(:,:,Tindex),         &
-!>   &                            COMPOSITE(cr) % vbar(:,:,rec))
-!>
+!^            CALL get_contact2d (dg, model, tile,                      &
+!^   &                            v2dvar, Vname(1,idVbar),              &
+!^   &                            cr, Vcontact(cr)%Npoints, Vcontact,   &
+!^   &                            LBi, UBi, LBj, UBj,                   &
+!^   &                            OCEAN(dg) % vbar(:,:,Tindex),         &
+!^   &                            COMPOSITE(cr) % vbar(:,:,rec))
+!^
               CALL get_contact2d (dg, model, tile,                      &
      &                            v2dvar, Vname(1,idVbar),              &
      &                            cr, Vcontact(cr)%Npoints, Vcontact,   &
@@ -589,13 +590,13 @@
 !  (DU_avg1, DV_avg1).
 !
           IF (isection.eq.n2dfx) THEN
-!>          CALL get_contact2d (dg, model, tile,                        &
-!>   &                          r2dvar, 'Zt_avg1',                      &
-!>   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          COUPLING(dg) % Zt_avg1,                 &
-!>   &                          COMPOSITE(cr) % Zt_avg1)
-!>
+!^          CALL get_contact2d (dg, model, tile,                        &
+!^   &                          r2dvar, 'Zt_avg1',                      &
+!^   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
+!^   &                          LBi, UBi, LBj, UBj,                     &
+!^   &                          COUPLING(dg) % Zt_avg1,                 &
+!^   &                          COMPOSITE(cr) % Zt_avg1)
+!^
             CALL get_contact2d (dg, model, tile,                        &
      &                          r2dvar, 'Zt_avg1',                      &
      &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
@@ -643,13 +644,13 @@
               ELSE
                 Tindex=nnew(dg)
               END IF
-!>            CALL get_contact3d (dg, model, tile,                      &
-!>   &                            r3dvar, Vname(1,idTvar(itrc)),        &
-!>   &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
-!>   &                            LBi, UBi, LBj, UBj, 1, N(dg),         &
-!>   &                            OCEAN(dg) % t(:,:,:,Tindex,itrc),     &
-!>   &                            COMPOSITE(cr) % t(:,:,:,itrc))
-!>
+!^            CALL get_contact3d (dg, model, tile,                      &
+!^   &                            r3dvar, Vname(1,idTvar(itrc)),        &
+!^   &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
+!^   &                            LBi, UBi, LBj, UBj, 1, N(dg),         &
+!^   &                            OCEAN(dg) % t(:,:,:,Tindex,itrc),     &
+!^   &                            COMPOSITE(cr) % t(:,:,:,itrc))
+!^
               CALL get_contact3d (dg, model, tile,                      &
      &                            r3dvar, Vname(1,idTvar(itrc)),        &
      &                            cr, Rcontact(cr)%Npoints, Rcontact,   &
@@ -665,26 +666,26 @@
           IF ((isection.eq.n3dIC).or.                                   &
      &        (isection.eq.n3duv)) THEN
             Tindex=nnew(dg)
-!>          CALL get_contact3d (dg, model, tile,                        &
-!>   &                          u3dvar, Vname(1,idUvel),                &
-!>   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
-!>   &                          OCEAN(dg) % u(:,:,:,Tindex),            &
-!>   &                          COMPOSITE(cr) % u)
-!>
+!^          CALL get_contact3d (dg, model, tile,                        &
+!^   &                          u3dvar, Vname(1,idUvel),                &
+!^   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
+!^   &                          OCEAN(dg) % u(:,:,:,Tindex),            &
+!^   &                          COMPOSITE(cr) % u)
+!^
             CALL get_contact3d (dg, model, tile,                        &
      &                          u3dvar, Vname(1,idUvel),                &
      &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
      &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
      &                          OCEAN(dg) % tl_u(:,:,:,Tindex),         &
      &                          COMPOSITE(cr) % tl_u)
-!>          CALL get_contact3d (dg, model, tile,                        &
-!>   &                          v3dvar, Vname(1,idVvel),                &
-!>   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
-!>   &                          OCEAN(dg) % v(:,:,:,Tindex),            &
-!>   &                          COMPOSITE(cr) % v)
-!>
+!^          CALL get_contact3d (dg, model, tile,                        &
+!^   &                          v3dvar, Vname(1,idVvel),                &
+!^   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
+!^   &                          OCEAN(dg) % v(:,:,:,Tindex),            &
+!^   &                          COMPOSITE(cr) % v)
+!^
             CALL get_contact3d (dg, model, tile,                        &
      &                          v3dvar, Vname(1,idVvel),                &
      &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
@@ -696,13 +697,13 @@
 !  Process 3D momentum fluxes (Huon, Hvom).
 !
           IF (isection.eq.n3duv) THEN
-!>          CALL get_contact3d (dg, model, tile,                        &
-!>   &                          u3dvar, 'Huon',                         &
-!>   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
-!>   &                          GRID(dg) % Huon,                        &
-!>   &                          COMPOSITE(cr) % Huon)
-!>
+!^          CALL get_contact3d (dg, model, tile,                        &
+!^   &                          u3dvar, 'Huon',                         &
+!^   &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
+!^   &                          GRID(dg) % Huon,                        &
+!^   &                          COMPOSITE(cr) % Huon)
+!^
             CALL get_contact3d (dg, model, tile,                        &
      &                          u3dvar, 'Huon',                         &
      &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
@@ -710,13 +711,13 @@
      &                          GRID(dg) % tl_Huon,                     &
      &                          COMPOSITE(cr) % tl_Huon)
 
-!>          CALL get_contact3d (dg, model, tile,                        &
-!>   &                          v3dvar, 'Hvom',                         &
-!>   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
-!>   &                          GRID(dg) % Hvom,                        &
-!>   &                          COMPOSITE(cr) % Hvom)
-!>
+!^          CALL get_contact3d (dg, model, tile,                        &
+!^   &                          v3dvar, 'Hvom',                         &
+!^   &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
+!^   &                          GRID(dg) % Hvom,                        &
+!^   &                          COMPOSITE(cr) % Hvom)
+!^
             CALL get_contact3d (dg, model, tile,                        &
      &                          v3dvar, 'Hvom',                         &
      &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
@@ -875,13 +876,13 @@
 !  Extract free-surface.
 !
 # ifdef SOLVE3D
-!>        CALL get_contact2d (dg, model, tile,                          &
-!>   &                        r2dvar, 'Zt_avg1',                        &
-!>   &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        COUPLING(dg) % Zt_avg1,                   &
-!>   &                        REFINED(cr) % zeta(:,:,tnew))
-!>
+!^        CALL get_contact2d (dg, model, tile,                          &
+!^   &                        r2dvar, 'Zt_avg1',                        &
+!^   &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
+!^   &                        LBi, UBi, LBj, UBj,                       &
+!^   &                        COUPLING(dg) % Zt_avg1,                   &
+!^   &                        REFINED(cr) % zeta(:,:,tnew))
+!^
           CALL get_contact2d (dg, model, tile,                          &
      &                        r2dvar, 'Zt_avg1',                        &
      &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
@@ -889,13 +890,13 @@
      &                        COUPLING(dg) % tl_Zt_avg1,                &
      &                        REFINED(cr) % tl_zeta(:,:,tnew))
 # else
-!>        CALL get_contact2d (dg, model, tile,                          &
-!>   &                        r2dvar, 'zeta',                           &
-!>   &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        OCEAN(dg) % zeta(:,:,Tindex2d),           &
-!>   &                        REFINED(cr) % zeta(:,:,tnew))
-!>
+!^        CALL get_contact2d (dg, model, tile,                          &
+!^   &                        r2dvar, 'zeta',                           &
+!^   &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
+!^   &                        LBi, UBi, LBj, UBj,                       &
+!^   &                        OCEAN(dg) % zeta(:,:,Tindex2d),           &
+!^   &                        REFINED(cr) % zeta(:,:,tnew))
+!^
           CALL get_contact2d (dg, model, tile,                          &
      &                        r2dvar, 'zeta',                           &
      &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
@@ -906,13 +907,13 @@
 !
 !  Extract 2D momentum components (ubar, vbar).
 !
-!>        CALL get_contact2d (dg, model, tile,                          &
-!>   &                        u2dvar, Vname(1,idUbar),                  &
-!>   &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        OCEAN(dg) % ubar(:,:,Tindex2d),           &
-!>   &                        REFINED(cr) % ubar(:,:,tnew))
-!>
+!^        CALL get_contact2d (dg, model, tile,                          &
+!^   &                        u2dvar, Vname(1,idUbar),                  &
+!^   &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
+!^   &                        LBi, UBi, LBj, UBj,                       &
+!^   &                        OCEAN(dg) % ubar(:,:,Tindex2d),           &
+!^   &                        REFINED(cr) % ubar(:,:,tnew))
+!^
           CALL get_contact2d (dg, model, tile,                          &
      &                        u2dvar, Vname(1,idUbar),                  &
      &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
@@ -920,13 +921,13 @@
      &                        OCEAN(dg) % tl_ubar(:,:,Tindex2d),        &
      &                        REFINED(cr) % tl_ubar(:,:,tnew))
 
-!>        CALL get_contact2d (dg, model, tile,                          &
-!>   &                        v2dvar, Vname(1,idVbar),                  &
-!>   &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        OCEAN(dg) % vbar(:,:,Tindex2d),           &
-!>   &                        REFINED(cr) % vbar(:,:,tnew))
-!>
+!^        CALL get_contact2d (dg, model, tile,                          &
+!^   &                        v2dvar, Vname(1,idVbar),                  &
+!^   &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
+!^   &                        LBi, UBi, LBj, UBj,                       &
+!^   &                        OCEAN(dg) % vbar(:,:,Tindex2d),           &
+!^   &                        REFINED(cr) % vbar(:,:,tnew))
+!^
           CALL get_contact2d (dg, model, tile,                          &
      &                        v2dvar, Vname(1,idVbar),                  &
      &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
@@ -969,13 +970,13 @@
 !  Tracer-type variables.
 !
           DO itrc=1,NT(dg)
-!>          CALL get_contact3d (dg, model, tile,                        &
-!>   &                          r3dvar, Vname(1,idTvar(itrc)),          &
-!>   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
-!>   &                          OCEAN(dg) % t(:,:,:,Tindex3d,itrc),     &
-!>   &                          REFINED(cr) % t(:,:,:,tnew,itrc))
-!>
+!^          CALL get_contact3d (dg, model, tile,                        &
+!^   &                          r3dvar, Vname(1,idTvar(itrc)),          &
+!^   &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
+!^   &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
+!^   &                          OCEAN(dg) % t(:,:,:,Tindex3d,itrc),     &
+!^   &                          REFINED(cr) % t(:,:,:,tnew,itrc))
+!^
             CALL get_contact3d (dg, model, tile,                        &
      &                          r3dvar, Vname(1,idTvar(itrc)),          &
      &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
@@ -986,13 +987,13 @@
 !
 !  Extract 3D momentum components (u, v).
 !
-!>        CALL get_contact3d (dg, model, tile,                          &
-!>   &                        u3dvar, Vname(1,idUvel),                  &
-!>   &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
-!>   &                        OCEAN(dg) % u(:,:,:,Tindex3d),            &
-!>   &                        REFINED(cr) % u(:,:,:,tnew))
-!>
+!^        CALL get_contact3d (dg, model, tile,                          &
+!^   &                        u3dvar, Vname(1,idUvel),                  &
+!^   &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
+!^   &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
+!^   &                        OCEAN(dg) % u(:,:,:,Tindex3d),            &
+!^   &                        REFINED(cr) % u(:,:,:,tnew))
+!^
           CALL get_contact3d (dg, model, tile,                          &
      &                        u3dvar, Vname(1,idUvel),                  &
      &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
@@ -1000,13 +1001,13 @@
      &                        OCEAN(dg) % tl_u(:,:,:,Tindex3d),         &
      &                        REFINED(cr) % tl_u(:,:,:,tnew))
 
-!>        CALL get_contact3d (dg, model, tile,                          &
-!>   &                        v3dvar, Vname(1,idVvel),                  &
-!>   &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
-!>   &                        OCEAN(dg) % v(:,:,:,Tindex3d),            &
-!>   &                        REFINED(cr) % v(:,:,:,tnew))
-!>
+!^        CALL get_contact3d (dg, model, tile,                          &
+!^   &                        v3dvar, Vname(1,idVvel),                  &
+!^   &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
+!^   &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
+!^   &                        OCEAN(dg) % v(:,:,:,Tindex3d),            &
+!^   &                        REFINED(cr) % v(:,:,:,tnew))
+!^
           CALL get_contact3d (dg, model, tile,                          &
      &                        v3dvar, Vname(1,idVvel),                  &
      &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
@@ -1750,8 +1751,8 @@
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc-1,Jbc)
               tl_Tvalue=tl_Tvalue*GRID(ngc)%rmask(Ibc-1,Jbc)
 #  endif
-!>            OCEAN(ngc)%t(Ibc-1,Jbc,k,Tindex,itrc)=Tvalue
-!>
+!^            OCEAN(ngc)%t(Ibc-1,Jbc,k,Tindex,itrc)=Tvalue
+!^
               OCEAN(ngc)%tl_t(Ibc-1,Jbc,k,Tindex,itrc)=tl_Tvalue
             END DO
           END IF
@@ -1830,8 +1831,8 @@
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
               tl_Tvalue=tl_Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
 #  endif
-!>            OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
-!>
+!^            OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
+!^
               OCEAN(ngc)%tl_t(Ibc,Jbc,k,Tindex,itrc)=tl_Tvalue
             END DO
           END IF
@@ -1910,8 +1911,8 @@
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc-1)
               tl_Tvalue=tl_Tvalue*GRID(ngc)%rmask(Ibc,Jbc-1)
 #  endif
-!>            OCEAN(ngc)%t(Ibc,Jbc-1,k,Tindex,itrc)=Tvalue
-!>
+!^            OCEAN(ngc)%t(Ibc,Jbc-1,k,Tindex,itrc)=Tvalue
+!^
               OCEAN(ngc)%tl_t(Ibc,Jbc-1,k,Tindex,itrc)=tl_Tvalue
             END DO
           END IF
@@ -1991,8 +1992,8 @@
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
               tl_Tvalue=tl_Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
 #  endif
-!>            OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
-!>
+!^            OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
+!^
               OCEAN(ngc)%tl_t(Ibc,Jbc,k,Tindex,itrc)=tl_Tvalue
             END DO
           END IF
@@ -2005,13 +2006,13 @@
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-!>    CALL mp_exchange4d (ngc, tile, model, 1,                          &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ngc),                &
-!>   &                    1, NT(ngc),                                   &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ngc), NSperiodic(ngc),             &
-!>   &                    OCEAN(ngc)%t(:,:,:,Tindex,:))
-!>
+!^    CALL mp_exchange4d (ngc, tile, model, 1,                          &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ngc),                &
+!^   &                    1, NT(ngc),                                   &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ngc), NSperiodic(ngc),             &
+!^   &                    OCEAN(ngc)%t(:,:,:,Tindex,:))
+!^
       CALL mp_exchange4d (ngc, tile, model, 1,                          &
      &                    LBi, UBi, LBj, UBj, 1, N(ngc),                &
      &                    1, NT(ngc),                                   &
@@ -2327,48 +2328,48 @@
           IF (EWperiodic(rg).or.NSperiodic(rg)) THEN
             IF (vtype.eq.r2dvar) THEN
 # ifdef SOLVE3D
-!>            CALL exchange_r2d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR,           &
-!>   &                                COUPLING(rg)%Zt_avg1)
-!>
+!^            CALL exchange_r2d_tile (rg, tile,                         &
+!^   &                                LBiR, UBiR, LBjR, UBjR,           &
+!^   &                                COUPLING(rg)%Zt_avg1)
+!^
               CALL exchange_r2d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR,           &
      &                                COUPLING(rg)%tl_Zt_avg1)
               DO k=1,2
-!>              CALL exchange_u2d_tile (rg, tile,                       &
-!>   &                                  LBiR, UBiR, LBjR, UBjR,         &
-!>   &                                  OCEAN(rg)%ubar(:,:,k))
-!>
+!^              CALL exchange_u2d_tile (rg, tile,                       &
+!^   &                                  LBiR, UBiR, LBjR, UBjR,         &
+!^   &                                  OCEAN(rg)%ubar(:,:,k))
+!^
                 CALL exchange_u2d_tile (rg, tile,                       &
      &                                  LBiR, UBiR, LBjR, UBjR,         &
      &                                  OCEAN(rg)%tl_ubar(:,:,k))
-!>              CALL exchange_v2d_tile (rg, tile,                       &
-!>   &                                  LBiR, UBiR, LBjR, UBjR,         &
-!>   &                                  OCEAN(rg)%vbar(:,:,k))
-!>
+!^              CALL exchange_v2d_tile (rg, tile,                       &
+!^   &                                  LBiR, UBiR, LBjR, UBjR,         &
+!^   &                                  OCEAN(rg)%vbar(:,:,k))
+!^
                 CALL exchange_v2d_tile (rg, tile,                       &
      &                                  LBiR, UBiR, LBjR, UBjR,         &
      &                                  OCEAN(rg)%tl_vbar(:,:,k))
               END DO
 # else
 >             CALL exchange_r2d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR,           &
-!>   &                                OCEAN(rg)%zeta(:,:,Rindex2d))
-!>
+!^   &                                LBiR, UBiR, LBjR, UBjR,           &
+!^   &                                OCEAN(rg)%zeta(:,:,Rindex2d))
+!^
               CALL exchange_r2d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR,           &
      &                                OCEAN(rg)%tl_zeta(:,:,Rindex2d))
-!>            CALL exchange_u2d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR,           &
-!>   &                                OCEAN(rg)%ubar(:,:,Rindex2d))
-!>
+!^            CALL exchange_u2d_tile (rg, tile,                         &
+!^   &                                LBiR, UBiR, LBjR, UBjR,           &
+!^   &                                OCEAN(rg)%ubar(:,:,Rindex2d))
+!^
               CALL exchange_u2d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR,           &
      &                                OCEAN(rg)%tl_ubar(:,:,Rindex2d))
-!>            CALL exchange_v2d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR,           &
-!>   &                                OCEAN(rg)%vbar(:,:,Rindex2d))
-!>
+!^            CALL exchange_v2d_tile (rg, tile,                         &
+!^   &                                LBiR, UBiR, LBjR, UBjR,           &
+!^   &                                OCEAN(rg)%vbar(:,:,Rindex2d))
+!^
               CALL exchange_v2d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR,           &
      &                                OCEAN(rg)%tl_vbar(:,:,Rindex2d))
@@ -2376,27 +2377,27 @@
 # endif
 # ifdef SOLVE3D
             ELSE IF (vtype.eq.r3dvar) THEN
-!>            CALL exchange_u3d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
-!>   &                                OCEAN(rg)%u(:,:,:,Rindex3d))
-!>
+!^            CALL exchange_u3d_tile (rg, tile,                         &
+!^   &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
+!^   &                                OCEAN(rg)%u(:,:,:,Rindex3d))
+!^
               CALL exchange_u3d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
      &                                OCEAN(rg)%tl_u(:,:,:,Rindex3d))
-!>            CALL exchange_v3d_tile (rg, tile,                         &
-!>   &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
-!>   &                                OCEAN(rg)%v(:,:,:,Rindex3d))
-!>
+!^            CALL exchange_v3d_tile (rg, tile,                         &
+!^   &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
+!^   &                                OCEAN(rg)%v(:,:,:,Rindex3d))
+!^
               CALL exchange_v3d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
      &                                OCEAN(rg)%tl_v(:,:,:,Rindex3d))
               DO itrc=1,NT(rg)
-!>              CALL exchange_r3d_tile (rg, tile,                       &
-!>   &                                  LBiR, UBiR, LBjR, UBjR,         &
-!>                                      1, N(rg),                       &
-!>   &                                  OCEAN(rg)%t(:,:,:,Rindex3d,     &
-!>   &                                              itrc))
-!>
+!^              CALL exchange_r3d_tile (rg, tile,                       &
+!^   &                                  LBiR, UBiR, LBjR, UBjR,         &
+!^                                      1, N(rg),                       &
+!^   &                                  OCEAN(rg)%t(:,:,:,Rindex3d,     &
+!^   &                                              itrc))
+!^
                 CALL exchange_r3d_tile (rg, tile,                       &
      &                                  LBiR, UBiR, LBjR, UBjR,         &
      &                                  1, N(rg),                       &
@@ -2411,26 +2412,26 @@
 !
           IF (vtype.eq.r2dvar) THEN
 #  ifdef SOLVE3D
-!>          CALL mp_exchange2d (rg, tile, model, 1,                     &
-!>   &                          LBiR, UBiR, LBjR, UBjR,                 &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(rg), NSperiodic(rg),         &
-!>   &                          COUPLING(rg)%Zt_avg1)
-!>
+!^          CALL mp_exchange2d (rg, tile, model, 1,                     &
+!^   &                          LBiR, UBiR, LBjR, UBjR,                 &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(rg), NSperiodic(rg),         &
+!^   &                          COUPLING(rg)%Zt_avg1)
+!^
             CALL mp_exchange2d (rg, tile, model, 1,                     &
      &                          LBiR, UBiR, LBjR, UBjR,                 &
      &                          NghostPoints,                           &
      &                          EWperiodic(rg), NSperiodic(rg),         &
      &                          COUPLING(rg)%tl_Zt_avg1)
-!>          CALL mp_exchange2d (rg, tile, model, 4,                     &
-!>   &                          LBiR, UBiR, LBjR, UBjR,                 &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(rg), NSperiodic(rg),         &
-!>   &                          OCEAN(rg)%ubar(:,:,1),                  &
-!>   &                          OCEAN(rg)%vbar(:,:,1),                  &
-!>   &                          OCEAN(rg)%ubar(:,:,2),                  &
-!>   &                          OCEAN(rg)%vbar(:,:,2))
-!>
+!^          CALL mp_exchange2d (rg, tile, model, 4,                     &
+!^   &                          LBiR, UBiR, LBjR, UBjR,                 &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(rg), NSperiodic(rg),         &
+!^   &                          OCEAN(rg)%ubar(:,:,1),                  &
+!^   &                          OCEAN(rg)%vbar(:,:,1),                  &
+!^   &                          OCEAN(rg)%ubar(:,:,2),                  &
+!^   &                          OCEAN(rg)%vbar(:,:,2))
+!^
             CALL mp_exchange2d (rg, tile, model, 4,                     &
      &                          LBiR, UBiR, LBjR, UBjR,                 &
      &                          NghostPoints,                           &
@@ -2440,14 +2441,14 @@
      &                          OCEAN(rg)%tl_ubar(:,:,2),               &
      &                          OCEAN(rg)%tl_vbar(:,:,2))
 #  else
-!>          CALL mp_exchange2d (rg, tile, model, 3,                     &
-!>   &                          LBiR, UBiR, LBjR, UBjR,                 &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(rg), NSperiodic(rg),         &
-!>   &                          OCEAN(rg)%zeta(:,:,Rindex2d),           &
-!>   &                          OCEAN(rg)%ubar(:,:,Rindex2d),           &
-!>   &                          OCEAN(rg)%vbar(:,:,Rindex2d))
-!>
+!^          CALL mp_exchange2d (rg, tile, model, 3,                     &
+!^   &                          LBiR, UBiR, LBjR, UBjR,                 &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(rg), NSperiodic(rg),         &
+!^   &                          OCEAN(rg)%zeta(:,:,Rindex2d),           &
+!^   &                          OCEAN(rg)%ubar(:,:,Rindex2d),           &
+!^   &                          OCEAN(rg)%vbar(:,:,Rindex2d))
+!^
             CALL mp_exchange2d (rg, tile, model, 3,                     &
      &                          LBiR, UBiR, LBjR, UBjR,                 &
      &                          NghostPoints,                           &
@@ -2458,26 +2459,26 @@
 #  endif
 #  ifdef SOLVE3D
           ELSE IF (vtype.eq.r3dvar) THEN
-!>          CALL mp_exchange3d (rg, tile, model, 2,                     &
-!>   &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(rg), NSperiodic(rg),         &
-!>   &                          OCEAN(rg)%u(:,:,:,Rindex3d),            &
-!>   &                          OCEAN(rg)%v(:,:,:,Rindex3d))
-!>
+!^          CALL mp_exchange3d (rg, tile, model, 2,                     &
+!^   &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(rg), NSperiodic(rg),         &
+!^   &                          OCEAN(rg)%u(:,:,:,Rindex3d),            &
+!^   &                          OCEAN(rg)%v(:,:,:,Rindex3d))
+!^
             CALL mp_exchange3d (rg, tile, model, 2,                     &
      &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
      &                          NghostPoints,                           &
      &                          EWperiodic(rg), NSperiodic(rg),         &
      &                          OCEAN(rg)%tl_u(:,:,:,Rindex3d),         &
      &                          OCEAN(rg)%tl_v(:,:,:,Rindex3d))
-!>          CALL mp_exchange4d (rg, tile, model, 1,                     &
-!>   &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
-!>   &                          1, NT(rg),                              &
-!>   &                          NghostPoints,                           &
-!>   &                          EWperiodic(rg), NSperiodic(rg),         &
-!>   &                          OCEAN(rg)%t(:,:,:,Rindex3d,:))
-!>
+!^          CALL mp_exchange4d (rg, tile, model, 1,                     &
+!^   &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
+!^   &                          1, NT(rg),                              &
+!^   &                          NghostPoints,                           &
+!^   &                          EWperiodic(rg), NSperiodic(rg),         &
+!^   &                          OCEAN(rg)%t(:,:,:,Rindex3d,:))
+!^
             CALL mp_exchange4d (rg, tile, model, 1,                     &
      &                          LBiR, UBiR, LBjR, UBjR, 1, N(rg),       &
      &                          1, NT(rg),                              &
@@ -2643,25 +2644,25 @@
           j=Rcontact(cr)%Jrg(m)
           IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
      &        ((JstrT.le.j).and.(j.le.JendT))) THEN
-!>          my_value=Wold*                                              &
-!>   &               (Rcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%zeta(1,m,told)+              &
-!>   &                Rcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%zeta(2,m,told)+              &
-!>   &                Rcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%zeta(3,m,told)+              &
-!>   &                Rcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%zeta(4,m,told))+             &
-!>   &               Wnew*                                              &
-!>   &               (Rcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%zeta(1,m,tnew)+              &
-!>   &                Rcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%zeta(2,m,tnew)+              &
-!>   &                Rcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%zeta(3,m,tnew)+              &
-!>   &                Rcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%zeta(4,m,tnew))
-!>
+!^          my_value=Wold*                                              &
+!^   &               (Rcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%zeta(1,m,told)+              &
+!^   &                Rcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%zeta(2,m,told)+              &
+!^   &                Rcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%zeta(3,m,told)+              &
+!^   &                Rcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%zeta(4,m,told))+             &
+!^   &               Wnew*                                              &
+!^   &               (Rcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%zeta(1,m,tnew)+              &
+!^   &                Rcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%zeta(2,m,tnew)+              &
+!^   &                Rcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%zeta(3,m,tnew)+              &
+!^   &                Rcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%zeta(4,m,tnew))
+!^
             tl_my_value=Wold*                                           &
      &                  (Rcontact(cr)%Lweight(1,m)*                     &
      &                            REFINED(cr)%tl_zeta(1,m,told)+        &
@@ -2681,29 +2682,29 @@
      &                   Rcontact(cr)%Lweight(4,m)*                     &
      &                            REFINED(cr)%tl_zeta(4,m,tnew))
 # ifdef MASKING
-!>          my_value=my_value*GRID(ng)%rmask(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%rmask(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%rmask(i,j)
 # endif
 # ifdef WET_DRY
             IF (my_value.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
-!>            my_value=Dcrit(ng)-GRID(ng)%h(i,j)
-!>
+!^            my_value=Dcrit(ng)-GRID(ng)%h(i,j)
+!^
               tl_my_value=-GRID(ng)%tl_h(i,j)
             END IF
 # endif
-!>          OCEAN(ng)%zeta(i,j,1)=my_value
-!>
+!^          OCEAN(ng)%zeta(i,j,1)=my_value
+!^
             OCEAN(ng)%tl_zeta(i,j,1)=tl_my_value
-!>          OCEAN(ng)%zeta(i,j,2)=my_value
-!>
+!^          OCEAN(ng)%zeta(i,j,2)=my_value
+!^
             OCEAN(ng)%tl_zeta(i,j,2)=tl_my_value
-!>          OCEAN(ng)%zeta(i,j,3)=my_value
-!>
+!^          OCEAN(ng)%zeta(i,j,3)=my_value
+!^
             OCEAN(ng)%tl_zeta(i,j,3)=tl_my_value
 # ifdef SOLVE3D
-!>          COUPLING(ng)%Zt_avg1(i,j)=my_value
-!>
+!^          COUPLING(ng)%Zt_avg1(i,j)=my_value
+!^
             COUPLING(ng)%tl_Zt_avg1(i,j)=tl_my_value
 # endif
           END IF
@@ -2729,25 +2730,25 @@
           j=Ucontact(cr)%Jrg(m)
           IF (((IstrP.le.i).and.(i.le.IendT)).and.                      &
      &        ((JstrT.le.j).and.(j.le.JendT))) THEN
-!>          my_value=Wold*                                              &
-!>   &               (Ucontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%ubar(1,m,told)+              &
-!>   &                Ucontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%ubar(2,m,told)+              &
-!>   &                Ucontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%ubar(3,m,told)+              &
-!>   &                Ucontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%ubar(4,m,told))+             &
-!>   &               Wnew*                                              &
-!>   &               (Ucontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%ubar(1,m,tnew)+              &
-!>   &                Ucontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%ubar(2,m,tnew)+              &
-!>   &                Ucontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%ubar(3,m,tnew)+              &
-!>   &                Ucontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%ubar(4,m,tnew))
-!>
+!^          my_value=Wold*                                              &
+!^   &               (Ucontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%ubar(1,m,told)+              &
+!^   &                Ucontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%ubar(2,m,told)+              &
+!^   &                Ucontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%ubar(3,m,told)+              &
+!^   &                Ucontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%ubar(4,m,told))+             &
+!^   &               Wnew*                                              &
+!^   &               (Ucontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%ubar(1,m,tnew)+              &
+!^   &                Ucontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%ubar(2,m,tnew)+              &
+!^   &                Ucontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%ubar(3,m,tnew)+              &
+!^   &                Ucontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%ubar(4,m,tnew))
+!^
             tl_my_value=Wold*                                           &
      &                  (Ucontact(cr)%Lweight(1,m)*                     &
      &                            REFINED(cr)%tl_ubar(1,m,told)+        &
@@ -2767,13 +2768,13 @@
      &                   Ucontact(cr)%Lweight(4,m)*                     &
      &                            REFINED(cr)%tl_ubar(4,m,tnew))
 # ifdef MASKING
-!>          my_value=my_value*GRID(ng)%umask(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%umask(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%umask(i,j)
 # endif
 # ifdef WET_DRY
-!>          my_value=my_value*GRID(ng)%umask_wet(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%umask_wet(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%umask_wet(i,j)
 # endif
             DO irec=1,3
@@ -2781,15 +2782,15 @@
               Uboundary=(m.eq.BRY_CONTACT(iwest,cr)%C2Bindex(j)).or.    &
      &                  (m.eq.BRY_CONTACT(ieast,cr)%C2Bindex(j))
               IF(.not.(Uboundary.and.(irec.eq.indx1(ng)))) THEN
-!>              OCEAN(ng)%ubar(i,j,irec)=my_value
-!>
+!^              OCEAN(ng)%ubar(i,j,irec)=my_value
+!^
                 OCEAN(ng)%tl_ubar(i,j,irec)=tl_my_value
 !!            ELSE                                   ! for debugging
 !!              OCEAN(ng)%ubar(i,j,irec)=0.0_r8      ! purposes
               END IF
 # else
-!>            OCEAN(ng)%ubar(i,j,irec)=my_value
-!>
+!^            OCEAN(ng)%ubar(i,j,irec)=my_value
+!^
               OCEAN(ng)%tl_ubar(i,j,irec)=tl_my_value
 # endif
             END DO
@@ -2810,25 +2811,25 @@
           j=Vcontact(cr)%Jrg(m)
           IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
      &        ((JstrP.le.j).and.(j.le.JendT))) THEN
-!>          my_value=Wold*                                              &
-!>   &               (Vcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%vbar(1,m,told)+              &
-!>   &                Vcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%vbar(2,m,told)+              &
-!>   &                Vcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%vbar(3,m,told)+              &
-!>   &                Vcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%vbar(4,m,told))+             &
-!>   &               Wnew*                                              &
-!>   &               (Vcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%vbar(1,m,tnew)+              &
-!>   &                Vcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%vbar(2,m,tnew)+              &
-!>   &                Vcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%vbar(3,m,tnew)+              &
-!>   &                Vcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%vbar(4,m,tnew))
-!>
+!^          my_value=Wold*                                              &
+!^   &               (Vcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%vbar(1,m,told)+              &
+!^   &                Vcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%vbar(2,m,told)+              &
+!^   &                Vcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%vbar(3,m,told)+              &
+!^   &                Vcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%vbar(4,m,told))+             &
+!^   &               Wnew*                                              &
+!^   &               (Vcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%vbar(1,m,tnew)+              &
+!^   &                Vcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%vbar(2,m,tnew)+              &
+!^   &                Vcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%vbar(3,m,tnew)+              &
+!^   &                Vcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%vbar(4,m,tnew))
+!^
             tl_my_value=Wold*                                           &
      &                  (Vcontact(cr)%Lweight(1,m)*                     &
      &                            REFINED(cr)%tl_vbar(1,m,told)+        &
@@ -2848,12 +2849,12 @@
      &                   Vcontact(cr)%Lweight(4,m)*                     &
      &                            REFINED(cr)%tl_vbar(4,m,tnew))
 # ifdef MASKING
-!>          my_value=my_value*GRID(ng)%vmask(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%vmask(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%vmask(i,j)
 # endif
 # ifdef WET_DRY
-!>          my_value=my_value*GRID(ng)%vmask_wet(i,j)
+!^          my_value=my_value*GRID(ng)%vmask_wet(i,j)
             tl_my_value=tl_my_value*GRID(ng)%vmask_wet(i,j)
 # endif
             DO irec=1,3
@@ -2861,15 +2862,15 @@
               Vboundary=(m.eq.BRY_CONTACT(isouth,cr)%C2Bindex(i)).or.   &
      &                  (m.eq.BRY_CONTACT(inorth,cr)%C2Bindex(i))
               IF(.not.(Vboundary.and.(irec.eq.indx1(ng)))) THEN
-!>              OCEAN(ng)%vbar(i,j,irec)=my_value
-!>
+!^              OCEAN(ng)%vbar(i,j,irec)=my_value
+!^
                 OCEAN(ng)%tl_vbar(i,j,irec)=tl_my_value
 !!            ELSE                                   ! for debugging
 !!              OCEAN(ng)%vbar(i,j,irec)=0.0_r8      ! purposes
               END IF
 # else
-!>            OCEAN(ng)%vbar(i,j,irec)=my_value
-!>
+!^            OCEAN(ng)%vbar(i,j,irec)=my_value
+!^
               OCEAN(ng)%tl_vbar(i,j,irec)=tl_my_value
 # endif
             END DO
@@ -2933,13 +2934,13 @@
             tl_my_value=tl_my_value*GRID(ng)%umask_wet(Istr,j)
 #  endif
 #  ifdef NESTING_DEBUG
-!>          BRY_CONTACT(iwest,cr)%Mflux(j)=cff*my_value
-!>
+!^          BRY_CONTACT(iwest,cr)%Mflux(j)=cff*my_value
+!^
             BRY_CONTACT(iwest,cr)%tl_Mflux(j)=cff*tl_my_value+          &
      &                                        tl_cff*my_value
 #  endif
-!>          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_value
-!>
+!^          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_value
+!^
             OCEAN(ng)%tl_ubar(Istr,j,indx1(ng))=tl_my_value
           END DO
         END IF
@@ -2982,13 +2983,13 @@
             tl_my_value=tl_my_value*GRID(ng)%umask_wet(Iend+1,j)
 #  endif
 #  ifdef NESTING_DEBUG
-!>          BRY_CONTACT(ieast,cr)%Mflux(j)=cff*my_value
-!>
+!^          BRY_CONTACT(ieast,cr)%Mflux(j)=cff*my_value
+!^
             BRY_CONTACT(ieast,cr)%tl_Mflux(j)=tl_cff*my_value+          &
      &                                        cff*tl_my_value
 #  endif
-!>          OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_value
-!>
+!^          OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_value
+!^
             OCEAN(ng)%tl_ubar(Iend+1,j,indx1(ng))=tl_my_value
           END DO
         END IF
@@ -3031,13 +3032,13 @@
             tl_my_value=tl_my_value*GRID(ng)%vmask_wet(i,Jstr)
 #  endif
 #  ifdef NESTING_DEBUG
-!>          BRY_CONTACT(isouth,cr)%Mflux(i)=cff*my_value
-!>
+!^          BRY_CONTACT(isouth,cr)%Mflux(i)=cff*my_value
+!^
             BRY_CONTACT(isouth,cr)%tl_Mflux(i)=tl_cff*my_value+         &
      &                                         cff*tl_my_value
 #  endif
-!>          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_value
-!>
+!^          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_value
+!^
             OCEAN(ng)%tl_vbar(i,Jstr,indx1(ng))=tl_my_value
           END DO
         END IF
@@ -3080,13 +3081,13 @@
             tl_my_value=tl_my_value*GRID(ng)%vmask_wet(i,Jend+1)
 #  endif
 #  ifdef NESTING_DEBUG
-!>          BRY_CONTACT(inorth,cr)%Mflux(i)=cff*my_value
-!>
+!^          BRY_CONTACT(inorth,cr)%Mflux(i)=cff*my_value
+!^
             BRY_CONTACT(inorth,cr)%tl_Mflux(i)=tl_cff*my_value+         &
      &                                         cff*tl_my_value
 #  endif
-!>          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_value
-!>
+!^          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_value
+!^
             OCEAN(ng)%tl_vbar(i,Jend+1,indx1(ng))=tl_my_value
           END DO
         END IF
@@ -3102,22 +3103,22 @@
 !  Free-surface.
 !
       IF (LputFsur) THEN
-!>      CALL mp_exchange2d (ng, tile, model,                            &
+!^      CALL mp_exchange2d (ng, tile, model,                            &
 #  ifdef SOLVE3D
-!>   &                      4,                                          &
+!^   &                      4,                                          &
 #  else
-!>   &                      3,                                          &
+!^   &                      3,                                          &
 #  endif
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
 #  ifdef SOLVE3D
-!>   &                      COUPLING(ng)%Zt_avg1,                       &
+!^   &                      COUPLING(ng)%Zt_avg1,                       &
 #  endif
-!>   &                      OCEAN(ng)%zeta(:,:,1),                      &
-!>   &                      OCEAN(ng)%zeta(:,:,2),                      &
-!>   &                      OCEAN(ng)%zeta(:,:,3))
-!>
+!^   &                      OCEAN(ng)%zeta(:,:,1),                      &
+!^   &                      OCEAN(ng)%zeta(:,:,2),                      &
+!^   &                      OCEAN(ng)%zeta(:,:,3))
+!^
         CALL mp_exchange2d (ng, tile, model,                            &
 #  ifdef SOLVE3D
      &                      4,                                          &
@@ -3137,14 +3138,14 @@
 !  2D momentum.
 !
       ELSE
-!>      CALL mp_exchange2d (ng, tile, model, 3,                         &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      OCEAN(ng)%ubar(:,:,1),                      &
-!>   &                      OCEAN(ng)%ubar(:,:,2),                      &
-!>   &                      OCEAN(ng)%ubar(:,:,3))
-!>
+!^      CALL mp_exchange2d (ng, tile, model, 3,                         &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      OCEAN(ng)%ubar(:,:,1),                      &
+!^   &                      OCEAN(ng)%ubar(:,:,2),                      &
+!^   &                      OCEAN(ng)%ubar(:,:,3))
+!^
         CALL mp_exchange2d (ng, tile, model, 3,                         &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
@@ -3153,14 +3154,14 @@
      &                      OCEAN(ng)%tl_ubar(:,:,2),                   &
      &                      OCEAN(ng)%tl_ubar(:,:,3))
 
-!>      CALL mp_exchange2d (ng, tile, model, 3,                         &
-!>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints,                               &
-!>   &                      EWperiodic(ng), NSperiodic(ng),             &
-!>   &                      OCEAN(ng)%vbar(:,:,1),                      &
-!>   &                      OCEAN(ng)%vbar(:,:,2),                      &
-!>   &                      OCEAN(ng)%vbar(:,:,3))
-!>
+!^      CALL mp_exchange2d (ng, tile, model, 3,                         &
+!^   &                      LBi, UBi, LBj, UBj,                         &
+!^   &                      NghostPoints,                               &
+!^   &                      EWperiodic(ng), NSperiodic(ng),             &
+!^   &                      OCEAN(ng)%vbar(:,:,1),                      &
+!^   &                      OCEAN(ng)%vbar(:,:,2),                      &
+!^   &                      OCEAN(ng)%vbar(:,:,3))
+!^
         CALL mp_exchange2d (ng, tile, model, 3,                         &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
@@ -3171,24 +3172,24 @@
 
 #  ifdef NESTING_DEBUG
 !
-!>      CALL mp_assemble (ng, model, NptsWE, spv,                       &
-!>   &                    BRY_CONTACT(iwest ,cr)%Mflux(JLB:))
-!>
+!^      CALL mp_assemble (ng, model, NptsWE, spv,                       &
+!^   &                    BRY_CONTACT(iwest ,cr)%Mflux(JLB:))
+!^
         CALL mp_assemble (ng, model, NptsWE, spv,                       &
      &                    BRY_CONTACT(iwest ,cr)%tl_Mflux(JLB:))
-!>      CALL mp_assemble (ng, model, NptsWE, spv,                       &
-!>   &                    BRY_CONTACT(ieast ,cr)%Mflux(JLB:))
-!>
+!^      CALL mp_assemble (ng, model, NptsWE, spv,                       &
+!^   &                    BRY_CONTACT(ieast ,cr)%Mflux(JLB:))
+!^
         CALL mp_assemble (ng, model, NptsWE, spv,                       &
      &                    BRY_CONTACT(ieast ,cr)%tl_Mflux(JLB:))
-!>      CALL mp_assemble (ng, model, NptsSN, spv,                       &
-!>   &                    BRY_CONTACT(isouth,cr)%Mflux(ILB:))
-!>
+!^      CALL mp_assemble (ng, model, NptsSN, spv,                       &
+!^   &                    BRY_CONTACT(isouth,cr)%Mflux(ILB:))
+!^
         CALL mp_assemble (ng, model, NptsSN, spv,                       &
      &                    BRY_CONTACT(isouth,cr)%tl_Mflux(ILB:))
-!>      CALL mp_assemble (ng, model, NptsSN, spv,                       &
-!>   &                    BRY_CONTACT(inorth,cr)%Mflux(ILB:))
-!>
+!^      CALL mp_assemble (ng, model, NptsSN, spv,                       &
+!^   &                    BRY_CONTACT(inorth,cr)%Mflux(ILB:))
+!^
         CALL mp_assemble (ng, model, NptsSN, spv,                       &
      &                    BRY_CONTACT(inorth,cr)%tl_Mflux(ILB:))
 #  endif
@@ -3351,25 +3352,25 @@
      &      ((JstrT.le.j).and.(j.le.JendT))) THEN
           DO itrc=1,NT(ng)
             DO k=1,N(ng)
-!>            my_value=Wold*                                            &
-!>   &                 (Rcontact(cr)%Lweight(1,m)*                      &
-!>   &                           REFINED(cr)%t(1,k,m,told,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(2,m)*                      &
-!>   &                           REFINED(cr)%t(2,k,m,told,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(3,m)*                      &
-!>   &                           REFINED(cr)%t(3,k,m,told,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(4,m)*                      &
-!>   &                           REFINED(cr)%t(4,k,m,told,itrc))+       &
-!>   &                 Wnew*                                            &
-!>   &                 (Rcontact(cr)%Lweight(1,m)*                      &
-!>   &                           REFINED(cr)%t(1,k,m,tnew,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(2,m)*                      &
-!>   &                           REFINED(cr)%t(2,k,m,tnew,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(3,m)*                      &
-!>   &                           REFINED(cr)%t(3,k,m,tnew,itrc)+        &
-!>   &                  Rcontact(cr)%Lweight(4,m)*                      &
-!>   &                           REFINED(cr)%t(4,k,m,tnew,itrc))
-!>
+!^            my_value=Wold*                                            &
+!^   &                 (Rcontact(cr)%Lweight(1,m)*                      &
+!^   &                           REFINED(cr)%t(1,k,m,told,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(2,m)*                      &
+!^   &                           REFINED(cr)%t(2,k,m,told,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(3,m)*                      &
+!^   &                           REFINED(cr)%t(3,k,m,told,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(4,m)*                      &
+!^   &                           REFINED(cr)%t(4,k,m,told,itrc))+       &
+!^   &                 Wnew*                                            &
+!^   &                 (Rcontact(cr)%Lweight(1,m)*                      &
+!^   &                           REFINED(cr)%t(1,k,m,tnew,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(2,m)*                      &
+!^   &                           REFINED(cr)%t(2,k,m,tnew,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(3,m)*                      &
+!^   &                           REFINED(cr)%t(3,k,m,tnew,itrc)+        &
+!^   &                  Rcontact(cr)%Lweight(4,m)*                      &
+!^   &                           REFINED(cr)%t(4,k,m,tnew,itrc))
+!^
               tl_my_value=Wold*                                         &
      &                    (Rcontact(cr)%Lweight(1,m)*                   &
      &                              REFINED(cr)%tl_t(1,k,m,told,itrc)+  &
@@ -3389,18 +3390,18 @@
      &                     Rcontact(cr)%Lweight(4,m)*                   &
      &                              REFINED(cr)%tl_t(4,k,m,tnew,itrc))
 #  ifdef MASKING
-!>            my_value=my_value*GRID(ng)%rmask(i,j)
-!>
+!^            my_value=my_value*GRID(ng)%rmask(i,j)
+!^
               tl_my_value=tl_my_value*GRID(ng)%rmask(i,j)
 #  endif
-!>            OCEAN(ng)%t(i,j,k,1,itrc)=my_value
-!>
+!^            OCEAN(ng)%t(i,j,k,1,itrc)=my_value
+!^
               OCEAN(ng)%tl_t(i,j,k,1,itrc)=tl_my_value
-!>            OCEAN(ng)%t(i,j,k,2,itrc)=my_value
-!>
+!^            OCEAN(ng)%t(i,j,k,2,itrc)=my_value
+!^
               OCEAN(ng)%tl_t(i,j,k,2,itrc)=tl_my_value
-!>            OCEAN(ng)%t(i,j,k,3,itrc)=my_value
-!>
+!^            OCEAN(ng)%t(i,j,k,3,itrc)=my_value
+!^
               OCEAN(ng)%tl_t(i,j,k,3,itrc)=tl_my_value
             END DO
           END DO
@@ -3415,25 +3416,25 @@
         IF (((IstrP.le.i).and.(i.le.IendT)).and.                        &
      &      ((JstrT.le.j).and.(j.le.JendT))) THEN
           DO k=1,N(ng)
-!>          my_value=Wold*                                              &
-!>   &               (Ucontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%u(1,k,m,told)+               &
-!>   &                Ucontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%u(2,k,m,told)+               &
-!>   &                Ucontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%u(3,k,m,told)+               &
-!>   &                Ucontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%u(4,k,m,told))+              &
-!>   &               Wnew*                                              &
-!>   &               (Ucontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%u(1,k,m,tnew)+               &
-!>   &                Ucontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%u(2,k,m,tnew)+               &
-!>   &                Ucontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%u(3,k,m,tnew)+               &
-!>   &                Ucontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%u(4,k,m,tnew))
-!>
+!^          my_value=Wold*                                              &
+!^   &               (Ucontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%u(1,k,m,told)+               &
+!^   &                Ucontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%u(2,k,m,told)+               &
+!^   &                Ucontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%u(3,k,m,told)+               &
+!^   &                Ucontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%u(4,k,m,told))+              &
+!^   &               Wnew*                                              &
+!^   &               (Ucontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%u(1,k,m,tnew)+               &
+!^   &                Ucontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%u(2,k,m,tnew)+               &
+!^   &                Ucontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%u(3,k,m,tnew)+               &
+!^   &                Ucontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%u(4,k,m,tnew))
+!^
             tl_my_value=Wold*                                           &
      &               (Ucontact(cr)%Lweight(1,m)*                        &
      &                         REFINED(cr)%tl_u(1,k,m,told)+            &
@@ -3453,15 +3454,15 @@
      &                Ucontact(cr)%Lweight(4,m)*                        &
      &                         REFINED(cr)%tl_u(4,k,m,tnew))
 #  ifdef MASKING
-!>          my_value=my_value*GRID(ng)%umask(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%umask(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%umask(i,j)
 #  endif
-!>          OCEAN(ng)%u(i,j,k,1)=my_value
-!>
+!^          OCEAN(ng)%u(i,j,k,1)=my_value
+!^
             OCEAN(ng)%tl_u(i,j,k,1)=tl_my_value
-!>          OCEAN(ng)%u(i,j,k,2)=my_value
-!>
+!^          OCEAN(ng)%u(i,j,k,2)=my_value
+!^
             OCEAN(ng)%tl_u(i,j,k,2)=tl_my_value
           END DO
         END IF
@@ -3475,25 +3476,25 @@
         IF (((IstrT.le.i).and.(i.le.IendT)).and.                        &
      &      ((JstrP.le.j).and.(j.le.JendT))) THEN
           DO k=1,N(ng)
-!>          my_value=Wold*                                              &
-!>   &               (Vcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%v(1,k,m,told)+               &
-!>   &                Vcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%v(2,k,m,told)+               &
-!>   &                Vcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%v(3,k,m,told)+               &
-!>   &                Vcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%v(4,k,m,told))+              &
-!>   &               Wnew*                                              &
-!>   &               (Vcontact(cr)%Lweight(1,m)*                        &
-!>   &                         REFINED(cr)%v(1,k,m,tnew)+               &
-!>   &                Vcontact(cr)%Lweight(2,m)*                        &
-!>   &                         REFINED(cr)%v(2,k,m,tnew)+               &
-!>   &                Vcontact(cr)%Lweight(3,m)*                        &
-!>   &                         REFINED(cr)%v(3,k,m,tnew)+               &
-!>   &                Vcontact(cr)%Lweight(4,m)*                        &
-!>   &                         REFINED(cr)%v(4,k,m,tnew))
-!>
+!^          my_value=Wold*                                              &
+!^   &               (Vcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%v(1,k,m,told)+               &
+!^   &                Vcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%v(2,k,m,told)+               &
+!^   &                Vcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%v(3,k,m,told)+               &
+!^   &                Vcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%v(4,k,m,told))+              &
+!^   &               Wnew*                                              &
+!^   &               (Vcontact(cr)%Lweight(1,m)*                        &
+!^   &                         REFINED(cr)%v(1,k,m,tnew)+               &
+!^   &                Vcontact(cr)%Lweight(2,m)*                        &
+!^   &                         REFINED(cr)%v(2,k,m,tnew)+               &
+!^   &                Vcontact(cr)%Lweight(3,m)*                        &
+!^   &                         REFINED(cr)%v(3,k,m,tnew)+               &
+!^   &                Vcontact(cr)%Lweight(4,m)*                        &
+!^   &                         REFINED(cr)%v(4,k,m,tnew))
+!^
             tl_my_value=Wold*                                           &
      &               (Vcontact(cr)%Lweight(1,m)*                        &
      &                         REFINED(cr)%tl_v(1,k,m,told)+            &
@@ -3513,15 +3514,15 @@
      &                Vcontact(cr)%Lweight(4,m)*                        &
      &                         REFINED(cr)%tl_v(4,k,m,tnew))
 #  ifdef MASKING
-!>          my_value=my_value*GRID(ng)%vmask(i,j)
-!>
+!^          my_value=my_value*GRID(ng)%vmask(i,j)
+!^
             tl_my_value=tl_my_value*GRID(ng)%vmask(i,j)
 #  endif
-!>          OCEAN(ng)%v(i,j,k,1)=my_value
-!>
+!^          OCEAN(ng)%v(i,j,k,1)=my_value
+!^
             OCEAN(ng)%tl_v(i,j,k,1)=tl_my_value
-!>          OCEAN(ng)%v(i,j,k,2)=my_value
-!>
+!^          OCEAN(ng)%v(i,j,k,2)=my_value
+!^
             OCEAN(ng)%tl_v(i,j,k,2)=tl_my_value
           END DO
         END IF
@@ -3533,14 +3534,14 @@
 !  Exchange tile information.
 !-----------------------------------------------------------------------
 !
-!>    CALL mp_exchange4d (ng, tile, model, 3,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    OCEAN(ng)%t(:,:,:,1,:),                       &
-!>   &                    OCEAN(ng)%t(:,:,:,2,:),                       &
-!>   &                    OCEAN(ng)%t(:,:,:,3,:))
-!>
+!^    CALL mp_exchange4d (ng, tile, model, 3,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    OCEAN(ng)%t(:,:,:,1,:),                       &
+!^   &                    OCEAN(ng)%t(:,:,:,2,:),                       &
+!^   &                    OCEAN(ng)%t(:,:,:,3,:))
+!^
       CALL mp_exchange4d (ng, tile, model, 3,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
      &                    NghostPoints,                                 &
@@ -3548,15 +3549,15 @@
      &                    OCEAN(ng)%tl_t(:,:,:,1,:),                    &
      &                    OCEAN(ng)%tl_t(:,:,:,2,:),                    &
      &                    OCEAN(ng)%tl_t(:,:,:,3,:))
-!>    CALL mp_exchange3d (ng, tile, model, 4,                           &
-!>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints,                                 &
-!>   &                    EWperiodic(ng), NSperiodic(ng),               &
-!>   &                    OCEAN(ng)%u(:,:,:,1),                         &
-!>   &                    OCEAN(ng)%u(:,:,:,2),                         &
-!>   &                    OCEAN(ng)%v(:,:,:,1),                         &
-!>   &                    OCEAN(ng)%v(:,:,:,2))
-!>
+!^    CALL mp_exchange3d (ng, tile, model, 4,                           &
+!^   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+!^   &                    NghostPoints,                                 &
+!^   &                    EWperiodic(ng), NSperiodic(ng),               &
+!^   &                    OCEAN(ng)%u(:,:,:,1),                         &
+!^   &                    OCEAN(ng)%u(:,:,:,2),                         &
+!^   &                    OCEAN(ng)%v(:,:,:,1),                         &
+!^   &                    OCEAN(ng)%v(:,:,:,2))
+!^
       CALL mp_exchange3d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
@@ -4496,14 +4497,14 @@
             cff(8)=contact(cr)%Lweight(4,m)*contact(cr)%Vweight(2,k,m)
             tl_cff(8)=contact(cr)%Lweight(4,m)*                         &
      &                                   contact(cr)%tl_Vweight(2,k,m)
-!>          Ar(i,j,k)=cff(1)*Ac(1,kdgm1,m)+                             &
-!>   &                cff(2)*Ac(2,kdgm1,m)+                             &
-!>   &                cff(3)*Ac(3,kdgm1,m)+                             &
-!>   &                cff(4)*Ac(4,kdgm1,m)+                             &
-!>   &                cff(5)*Ac(1,kdg  ,m)+                             &
-!>   &                cff(6)*Ac(2,kdg  ,m)+                             &
-!>   &                cff(7)*Ac(3,kdg  ,m)+                             &
-!>   &                cff(8)*Ac(4,kdg  ,m)
+!^          Ar(i,j,k)=cff(1)*Ac(1,kdgm1,m)+                             &
+!^   &                cff(2)*Ac(2,kdgm1,m)+                             &
+!^   &                cff(3)*Ac(3,kdgm1,m)+                             &
+!^   &                cff(4)*Ac(4,kdgm1,m)+                             &
+!^   &                cff(5)*Ac(1,kdg  ,m)+                             &
+!^   &                cff(6)*Ac(2,kdg  ,m)+                             &
+!^   &                cff(7)*Ac(3,kdg  ,m)+                             &
+!^   &                cff(8)*Ac(4,kdg  ,m)
             tl_Ar(i,j,k)=tl_cff(1)*Ac(1,kdgm1,m)+                       &
      &                cff(1)*tl_Ac(1,kdgm1,m)+                          &
      &                tl_cff(2)*Ac(2,kdgm1,m)+                          &
@@ -4521,7 +4522,7 @@
      &                tl_cff(8)*Ac(4,kdg  ,m)+                          &
      &                cff(8)*tl_Ac(4,kdg  ,m)
 #  ifdef MASKING
-!>          Ar(i,j,k)=Ar(i,j,k)*Amask(i,j)
+!^          Ar(i,j,k)=Ar(i,j,k)*Amask(i,j)
             tl_Ar(i,j,k)=tl_Ar(i,j,k)*Amask(i,j)
 #  endif
           END IF

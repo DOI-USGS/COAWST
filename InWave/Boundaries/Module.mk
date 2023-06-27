@@ -2,9 +2,9 @@
 
 local_sub  := InWave/Boundaries
 
-local_lib  := libInWave_Boundaries.a
 local_src  := $(wildcard $(local_sub)/*.F)
 
-$(eval $(call make-library,$(local_lib),$(local_src)))
+sources    += $(local_src)
 
 $(eval $(compile-rules))
+

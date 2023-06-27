@@ -151,7 +151,7 @@
 !
       integer :: i, j, k, d
 
-      real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2
+      real(r8) :: alfa_wave, cff, cff1, cff2, cff3, cff4
       real(r8) :: crk, crx, cry, kh, S
 !     real(r8), parameter :: kwc_max = 10.0_r8
       real(r8), parameter :: kwc_max = 1.0_r8
@@ -160,6 +160,8 @@
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavecx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavecy
 !
 #  include "set_bounds.h"
 !
@@ -168,14 +170,23 @@
 ! Compute the time change of xi and etai components of the wave number
 !=======================================================================
       DO d=1,ND
+!
+!  compute wave c at rho points.
+!
+        DO j=Jstr-1,Jend+1
+          DO i=Istr-1,Iend+1
+            cff3=kwc(i,j,d)
+	    cff4=h_tot(i,j)
+	    alfa_wave=1.5_r8*pi-wd(d)-angler(i,j)
+!
+            wavecx(i,j)=sqrt(MAX(g/(cff3+eps)*tanh(cff3*cff4),eps))*    &
+     &                  cos(alfa_wave)
+            wavecy(i,j)=sqrt(MAX(g/(cff3+eps)*tanh(cff3*cff4),eps))*    &
+     &                  sin(alfa_wave)
+          END DO
+        END DO
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
-            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-            cff1=kwc(i-1,j,d)*h_tot(i-1,j)
-            cff2=kwc(i  ,j,d)*h_tot(i  ,j)
-            crk=0.5_r8*(sqrt(MAX(g/kwc(i-1,j,d)*tanh(cff1),eps))+       &
-     &                  sqrt(MAX(g/kwc(i  ,j,d)*tanh(cff2),eps)))
-            cff1=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
 #   ifdef DOPPLER_SHEAR
             cff=GRID(ng)%Hz(i,j,1)
             DO k=2,N(ng)
@@ -185,7 +196,8 @@
 !           crk=crk*sqrt(1.0_r8+S/cff/g*(cff1-cx(i,j,d)))
             crk=crk*sqrt(1.0_r8+S/cff/g*cx(i,j,d))
 #   endif
-            cff=(crk*cos(alfa_wave)+cff1)*on_u(i,j)
+            cff3=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
+            cff=(0.5_r8*(wavecx(i-1,j)+wavecx(i,j))+cff3)*on_u(i,j)
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FX(i,j)=cff1*kwc(i-1,j,d)+                                  &
@@ -194,13 +206,8 @@
         END DO
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-            cff1=kwc(i,j-1,d)*h_tot(i,j-1)
-            cff2=kwc(i,j  ,d)*h_tot(i,j  )
-            crk=0.5_r8*(sqrt(MAX(g/kwc(i,j-1,d)*tanh(cff1),eps))+       &
-     &                  sqrt(MAX(g/kwc(i,j  ,d)*tanh(cff2),eps)))
-            cff1=0.5_r8*(v_rho(i,j-1)+v_rho(i,j))
-            cff=(crk*sin(alfa_wave)+cff1)*om_v(i,j)
+            cff3=0.5_r8*(v_rho(i,j-1)+v_rho(i,j))
+            cff=(0.5_r8*(wavecy(i,j-1)+wavecy(i,j))+cff3)*om_v(i,j)
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FE(i,j)=cff1*kwc(i,j-1,d)+                                  &

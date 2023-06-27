@@ -1,6 +1,7 @@
-# svn $Id: CYGWIN-gfortran.mk 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: CYGWIN-gfortran.mk 1151 2023-02-09 03:08:53Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -17,11 +18,13 @@
 # HDF5_LIBDIR    HDF5 library directory
 # HDF5_LIBS      HDF5 library switches
 # LIBS           Required libraries during linking
+# ROMS_LIB       Directory and name for ROMS library
 # NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF library directory
 # NETCDF_LIBS    NetCDF library switches
-# LD             Program to load the objects into an executable
+
+# LD             Program to load the objects into an executable or shared library
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
 # MDEPFLAGS      Flags for sfmakedepend  (-s if you keep .f files)
@@ -29,25 +32,23 @@
 # First the defaults
 #
 
+# This needs an if block to prevent building the executable
+# when none is requested.
+ifdef BIN
               BIN := $(BIN).exe
+endif
 
                FC := gfortran
-           FFLAGS := -frepack-arrays -fallow-argument-mismatch
+           FFLAGS := -frepack-arrays
        FIXEDFLAGS := -ffixed-form
         FREEFLAGS := -ffree-form -ffree-line-length-none
               CPP := /usr/bin/cpp
-         CPPFLAGS := -P -traditional -w
-               CC := gcc
-              CXX := g++
-           CFLAGS :=
-         CXXFLAGS :=
+         CPPFLAGS := -P -traditional -w              # -w turns off warnings
            INCDIR := /usr/include /usr/local/bin
-            SLIBS := -L/usr/local/lib -L/usr/lib
+            SLIBS := -L/usr/local/lib -L/usr/lib -L/usr/lib64
             ULIBS :=
              LIBS := -L/usr/local/lib -L/usr/lib
-ifdef USE_ROMS
-             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
-endif
+         ROMS_LIB := -L$(SCRATCH_DIR) -lROMS
        MOD_SUFFIX := mod
                LD := $(FC)
           LDFLAGS :=
@@ -59,6 +60,29 @@ endif
            RANLIB := ranlib
              PERL := perl
              TEST := test
+      ST_LIB_NAME := libROMS.a
+      SH_LIB_NAME := cygROMS.dll
+
+#--------------------------------------------------------------------------
+# Checking for minimum version and versions requiring extra compile flags
+#--------------------------------------------------------------------------
+
+# Because of the recursive derived types in Utility/yaml_parser.F, gfortran
+# version 7 or greater is required.
+
+          MIN_VER := $(shell expr `$(FC) -dumpversion | cut -f1 -d.` \<= 6)
+ifeq "$(MIN_VER)" "1"
+      $(error gfortran version 7 or greater is required)
+endif
+
+# Starting with gfortran version 10, GNU takes a much stricter approach to argument
+# type and size matching. This conflicts with ROMS high level MPI calls so this flag
+# is added for compilation to complete successfully.
+
+       STRICT_VER := $(shell expr `$(FC) -dumpversion | cut -f1 -d.` \>= 10)
+ifeq "$(STRICT_VER)" "1"
+           FFLAGS += -fallow-argument-mismatch       # needed for gfortran 10 and higher
+endif
 
 #--------------------------------------------------------------------------
 # Compiling flags for ROMS Applications.
@@ -72,14 +96,16 @@ ifdef USE_ROMS
            FFLAGS += -fcheck=all
 #          FFLAGS += -fsanitize=address -fsanitize=undefined
            FFLAGS += -finit-real=nan -ffpe-trap=invalid,zero,overflow
-           FFLAGS += -fallow-argument-mismatch
  else
-           FFLAGS += -O2
-#          FFLAGS += -ffast-math
-           FFLAGS += -fallow-argument-mismatch
+           FFLAGS += -O3
+           FFLAGS += -ffast-math
+ endif
+ ifdef SHARED
+           FFLAGS += -fPIC
+       SH_LDFLAGS += -shared
  endif
 endif
-           MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.
@@ -121,11 +147,16 @@ endif
 ifdef CICE_APPLICATION
             SLIBS += $(SLIBS) $(LIBS)
 endif
+
+#--------------------------------------------------------------------------
 # Library locations, can be overridden by environment variables.
 #--------------------------------------------------------------------------
 
-          LDFLAGS := $(FFLAGS)
-
+ifdef USE_SWAN
+           FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
+           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/CMakeFiles/swan.exe.dir/swanmain.f.o
+           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
+endif
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
@@ -157,16 +188,9 @@ ifdef USE_ARPACK
 endif
 
 ifdef USE_MPI
-       MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
-       MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
-#       LIBS       += $(MPI_LIBDIR)\\libfmpich2g.a
-           FFLAGS += -I$(MPI_INCDIR)
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
                FC := mpif90
-  ifdef USE_DEBUG
-           FFLAGS += #-mpe=mpicheck
-  endif
  else
              LIBS += -lfmpi -lmpi
  endif
@@ -177,16 +201,23 @@ ifdef USE_OpenMP
            FFLAGS += -fopenmp -static-libgcc
 endif
 
-ifndef USE_ROMS
- ifdef USE_DEBUG
-           FFLAGS += -g -fbounds-check -fbacktrace
-           CFLAGS += -g
-         CXXFLAGS += -g
- else
-           FFLAGS += -O3
-           CFLAGS += -O3
-         CXXFLAGS += -O3
- endif
+ifndef USE_SCRIP
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+             LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
+endif
+
+ifdef USE_WW3
+             FFLAGS += -frecord-marker=4 -fconvert=big-endian
+             LIBS += WW3/build/model/src/CMakeFiles/ww3_shel.dir/ww3_shel.F90.o
+             LIBS += WW3/build/lib/libww3.a
+endif
+
+ifdef USE_MCT
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+           INCDIR += $(MCT_INCDIR) $(INCDIR)
 endif
 
 ifdef USE_ESMF
@@ -198,44 +229,55 @@ ifdef USE_ESMF
              LIBS += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
 endif
 
-ifdef USE_CXX
-             LIBS += -lstdc++
-endif
-
-ifndef USE_SCRIP
-             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
-endif
-
-ifdef USE_WW3
-             FFLAGS += -frecord-marker=4 -fconvert=big-endian
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
-endif
-
 ifdef USE_WRF
+ ifeq "$(strip $(WRF_LIB_DIR))" "$(WRF_SRC_DIR)"
              FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
-             LIBS += WRF/main/module_wrf_top.o
-             LIBS += WRF/main/libwrflib.a
-             LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
-             LIBS += WRF/external/io_grib1/libio_grib1.a
-             LIBS += WRF/external/io_grib_share/libio_grib_share.a
-             LIBS += WRF/external/io_int/libwrfio_int.a
-             LIBS += WRF/external/esmf_time_f90/libesmf_time.a
-             LIBS += WRF/external/RSL_LITE/librsl_lite.a
-             LIBS += WRF/frame/module_internal_header_util.o
-             LIBS += WRF/frame/pack_utils.o
-             LIBS += WRF/external/io_netcdf/libwrfio_nf.a
-#            LIBS += WRF/external/io_netcdf/wrf_io.o
+             LIBS += $(WRF_LIB_DIR)/main/module_wrf_top.o
+             LIBS += $(WRF_LIB_DIR)/main/libwrflib.a
+             LIBS += $(WRF_LIB_DIR)/external/fftpack/fftpack5/libfftpack.a
+             LIBS += $(WRF_LIB_DIR)/external/io_grib1/libio_grib1.a
+             LIBS += $(WRF_LIB_DIR)/external/io_grib_share/libio_grib_share.a
+             LIBS += $(WRF_LIB_DIR)/external/io_int/libwrfio_int.a
+             LIBS += $(WRF_LIB_DIR)/external/esmf_time_f90/libesmf_time.a
+             LIBS += $(WRF_LIB_DIR)/external/RSL_LITE/librsl_lite.a
+             LIBS += $(WRF_LIB_DIR)/frame/module_internal_header_util.o
+             LIBS += $(WRF_LIB_DIR)/frame/pack_utils.o
+             LIBS += $(WRF_LIB_DIR)/external/io_netcdf/libwrfio_nf.a
+     WRF_MOD_DIRS  = main frame phys share external/esmf_time_f90
+ else
+             LIBS += $(WRF_LIB_DIR)/module_wrf_top.o
+             LIBS += $(WRF_LIB_DIR)/libwrflib.a
+             LIBS += $(WRF_LIB_DIR)/libfftpack.a
+             LIBS += $(WRF_LIB_DIR)/libio_grib1.a
+             LIBS += $(WRF_LIB_DIR)/libio_grib_share.a
+             LIBS += $(WRF_LIB_DIR)/libwrfio_int.a
+             LIBS += $(WRF_LIB_DIR)/libesmf_time.a
+             LIBS += $(WRF_LIB_DIR)/librsl_lite.a
+             LIBS += $(WRF_LIB_DIR)/module_internal_header_util.o
+             LIBS += $(WRF_LIB_DIR)/pack_utils.o
+             LIBS += $(WRF_LIB_DIR)/libwrfio_nf.a
+ endif
 endif
 
-#
+ifdef USE_WRFHYDRO
+             FFLAGS += -I $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/main_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_hrldas_netcdf_io.o 
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmpdrv.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmplsm.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_glacier.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_groundwater.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_wrf_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_model_constants.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_date_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/kwm_string_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/CPL/COAWST_cpl/hydro_coupler.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_NoahMP_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/lib/libHYDRO.a
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_myjsfc.o
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_sfclay.o
+endif
+
 # Use full path of compiler.
 
                FC := $(shell which ${FC})
@@ -244,6 +286,28 @@ endif
 #--------------------------------------------------------------------------
 # ROMS specific rules.
 #--------------------------------------------------------------------------
+
+# CYGWIN can only load user compiled .dll files located in the same
+# directory as the executable. This rule will copy the cygROMS.dll
+# to the $(BINDIR) so the executable can run. This is only needed when
+# EXEC and SHARED are set and STATIC is NOT. If STATIC is set then
+# CYGWIN will automatically link with the static library.
+
+# Blank it out to be sure
+       CYG_DLL_CP :=
+
+ifdef SHARED
+ ifdef EXEC
+  ifndef STATIC
+	CYG_DLL_CP := cyg_dll_cp
+
+.PHONY: cyg_dll_cp
+cyg_dll_cp: $(BIN)
+	$(CP) $(SCRATCH_DIR)/$(SH_LIB_NAME) $(BINDIR)
+
+  endif
+ endif
+endif
 
 # Turn off bounds checking for function def_var, as "dimension(*)"
 # declarations confuse Gnu Fortran 95 bounds-checking code.
@@ -299,10 +363,18 @@ ifdef USE_COAMPS
  $(SCRATCH_DIR)/esmf_esm.o: FFLAGS += -I$(COAMPS_LIB_DIR)
 endif
 
-#
+# Add WRF library directory to include path of ESMF coupling files.
+
+ifdef USE_WRF
+ ifeq "$(strip $(WRF_LIB_DIR))" "$(WRF_SRC_DIR)"
+  $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += $(addprefix -I$(WRF_LIB_DIR)/,$(WRF_MOD_DIRS))
+ else
+  $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += -I$(WRF_LIB_DIR)
+ endif
+endif
+
 # Supress free format in SWAN source files since there are comments
 # beyond column 72.
-#
 
 ifdef USE_SWAN
 $(SCRATCH_DIR)/ocpcre.o: FFLAGS += -ffixed-form

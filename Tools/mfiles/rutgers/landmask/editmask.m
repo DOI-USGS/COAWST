@@ -61,9 +61,9 @@ function editmask(grid_file, varargin)
 %           BUTTON, RADIOBOX, TEXTBOX, AXISSCROLL,
 %
 
-% svn $Id: editmask.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: editmask.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                            A. Shcherbina        %
 %=========================================================================%
@@ -373,13 +373,8 @@ switch lower(grid_file)
     got_coast=all(isfield(G,{'lon_coast','lat_coast'}));  % GRID NetCDF has
                                                           % coastline data
     spherical=G.spherical;
-    if (spherical)
-      rlon=G.lon_rho;
-      rlat=G.lat_rho;
-    else
-      rlon=G.x_rho;
-      rlat=G.y_rho;
-    end
+    rlon=G.lon_rho;
+    rlat=G.lat_rho;
     mask=G.mask_rho;
     rmask=mask;
 

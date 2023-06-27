@@ -27,9 +27,9 @@ function T = nc_time(ncfile, Rdate, Tname, varargin)
 % T = nc_time ('myurl', datenum('1-Jan-2000 12:00:00')*86400, 'time', 1)
 %
   
-% svn $Id: nc_time.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: nc_time.m 1156 2023-02-18 01:44:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2023 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

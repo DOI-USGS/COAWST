@@ -8,7 +8,7 @@ because it depends on the application. However, there is a very easy
 way to generate these files using the CDL and the NetCDF "ncgen"
 program.
 
-The ROMS metadata design is very rich and extensive. See "varinfo.dat"
+The ROMS metadata design is very rich and extensive. See "varinfo.yaml"
 for a list of all the variables names, units, attributes, associated time
 variables, and scale factors. This is an user friendly file and variable
 parameters can be changed very easily. As a matter of fact, some users like

@@ -1,13 +1,14 @@
-      SUBROUTINE biology (ng, tile)
+      MODULE biology_mod
 !
-!svn $Id: ecosim.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: ecosim.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!*************************************************** W. Paul Bissett ***
+!=================================================== W. Paul Bissett ===
 !  Copyright (c) 1997 W. Paul Bissett, FERI                            !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  The EcoSim code has been developed for research purposes only. It   !
 !  consists of unpublished, proprietary formulations protected under   !
@@ -16,7 +17,7 @@
 !  of these formulations is forbidden without express written          !
 !  permission from FERI. All rights reserved.                          !
 !                                                                      !
-!************************************************** Hernan G. Arango ***
+!***********************************************************************
 !                                                                      !
 !  This routine computes the EcoSim sources and sinks and adds them    !
 !  to the global biological fields.                                    !
@@ -43,6 +44,17 @@
 !    fecal material and bio_sediment subroutine which remineralizes    !
 !    particulate nitrogen and returns it into dissolved nitrate pool.  !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: biology
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE biology (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -80,26 +92,26 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 15, __LINE__, MyFile)
 #endif
-      CALL biology_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
-     &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nstp(ng), nnew(ng),                            &
+      CALL ecosim_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, N(ng), NT(ng),              &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  nstp(ng), nnew(ng),                             &
 #ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
+     &                  GRID(ng) % rmask,                               &
 # if defined WET_DRY && defined DIAGNOSTICS_BIO
-     &                   GRID(ng) % rmask_full,                         &
+     &                  GRID(ng) % rmask_full,                          &
 # endif
 #endif
-     &                   GRID(ng) % Hz,                                 &
-     &                   GRID(ng) % z_r,                                &
-     &                   GRID(ng) % z_w,                                &
-     &                   FORCES(ng) % SpecIr,                           &
-     &                   FORCES(ng) % avcos,                            &
+     &                  GRID(ng) % Hz,                                  &
+     &                  GRID(ng) % z_r,                                 &
+     &                  GRID(ng) % z_w,                                 &
+     &                  FORCES(ng) % SpecIr,                            &
+     &                  FORCES(ng) % avcos,                             &
 #ifdef DIAGNOSTICS_BIO
-     &                   DIAGS(ng) % DiaBio3d,                          &
-     &                   DIAGS(ng) % DiaBio4d,                          &
+     &                  DIAGS(ng) % DiaBio3d,                           &
+     &                  DIAGS(ng) % DiaBio4d,                           &
 #endif
-     &                   OCEAN(ng) % t)
+     &                  OCEAN(ng) % t)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 15, __LINE__, MyFile)
 #endif
@@ -108,23 +120,23 @@
       END SUBROUTINE biology
 !
 !***********************************************************************
-      SUBROUTINE biology_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj, UBk, UBt,            &
-     &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nstp, nnew,                              &
+      SUBROUTINE ecosim_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, UBk, UBt,             &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
+     &                        nstp, nnew,                               &
 #ifdef MASKING
-     &                         rmask,                                   &
+     &                        rmask,                                    &
 # if defined WET_DRY && defined DIAGNOSTICS_BIO
-     &                         rmask_full,                              &
+     &                        rmask_full,                               &
 # endif
 #endif
-     &                         Hz, z_r, z_w,                            &
-     &                         SpecIr, avcos,                           &
+     &                        Hz, z_r, z_w,                             &
+     &                        SpecIr, avcos,                            &
 #ifdef DIAGNOSTICS_BIO
-     &                         DiaBio3d,                                &
-     &                         DiaBio4d,                                &
+     &                        DiaBio3d,                                 &
+     &                        DiaBio4d,                                 &
 #endif
-     &                         t)
+     &                        t)
 !***********************************************************************
 !
       USE mod_param
@@ -2560,4 +2572,6 @@
       END DO J_LOOP
 !
       RETURN
-      END SUBROUTINE biology_tile
+      END SUBROUTINE ecosim_tile
+
+      END MODULE biology_mod

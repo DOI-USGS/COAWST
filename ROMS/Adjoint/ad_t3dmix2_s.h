@@ -1,17 +1,29 @@
-      SUBROUTINE ad_t3dmix2 (ng, tile)
+      MODULE ad_t3dmix2_mod
 !
-!svn $Id: ad_t3dmix2_s.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: ad_t3dmix2_s.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  This subroutine computes adjoint horizontal harmonic mixing of      !
 !  tracers along S-coordinate levels surfaces.                         !
 !                                                                      !
 !  BASIC STATE variables needed:  t, Hz                                !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC ad_t3dmix2
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE ad_t3dmix2 (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -40,37 +52,37 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iADM, 24, __LINE__, MyFile)
 #endif
-      CALL ad_t3dmix2_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nrhs(ng), nstp(ng), nnew(ng),               &
+      CALL ad_t3dmix2_s_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        IminS, ImaxS, JminS, JmaxS,               &
+     &                        nrhs(ng), nstp(ng), nnew(ng),             &
 #ifdef MASKING
-     &                      GRID(ng) % umask,                           &
-     &                      GRID(ng) % vmask,                           &
+     &                        GRID(ng) % umask,                         &
+     &                        GRID(ng) % vmask,                         &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                      GRID(ng) % umask_wet,                       &
-     &                      GRID(ng) % vmask_wet,                       &
+     &                        GRID(ng) % umask_wet,                     &
+     &                        GRID(ng) % vmask_wet,                     &
 #endif
-     &                      GRID(ng) % Hz,                              &
-     &                      GRID(ng) % ad_Hz,                           &
-     &                      GRID(ng) % pmon_u,                          &
-     &                      GRID(ng) % pnom_v,                          &
-     &                      GRID(ng) % pm,                              &
-     &                      GRID(ng) % pn,                              &
+     &                        GRID(ng) % Hz,                            &
+     &                        GRID(ng) % ad_Hz,                         &
+     &                        GRID(ng) % pmon_u,                        &
+     &                        GRID(ng) % pnom_v,                        &
+     &                        GRID(ng) % pm,                            &
+     &                        GRID(ng) % pn,                            &
 #ifdef DIFF_3DCOEF
-     &                      MIXING(ng) % diff3d_r,                      &
+     &                        MIXING(ng) % diff3d_r,                    &
 #else
-     &                      MIXING(ng) % diff2,                         &
+     &                        MIXING(ng) % diff2,                       &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                      CLIMA(ng) % tclm,                           &
+     &                        CLIMA(ng) % tclm,                         &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                      DIAGS(ng) % DiaTwrk,                        &
+!!   &                        DIAGS(ng) % DiaTwrk,                      &
 #endif
-     &                      OCEAN(ng) % t,                              &
-     &                      OCEAN(ng) % ad_t)
+     &                        OCEAN(ng) % t,                            &
+     &                        OCEAN(ng) % ad_t)
 #ifdef PROFILE
       CALL wclock_off (ng, iADM, 24, __LINE__, MyFile)
 #endif
@@ -79,30 +91,30 @@
       END SUBROUTINE ad_t3dmix2
 !
 !***********************************************************************
-      SUBROUTINE ad_t3dmix2_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            nrhs, nstp, nnew,                     &
+      SUBROUTINE ad_t3dmix2_s_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              IminS, ImaxS, JminS, JmaxS,         &
+     &                              nrhs, nstp, nnew,                   &
 #ifdef MASKING
-     &                            umask, vmask,                         &
+     &                              umask, vmask,                       &
 #endif
 #ifdef WET_DRY_NOT_YET
-     &                            umask_wet, vmask_wet,                 &
+     &                              umask_wet, vmask_wet,               &
 #endif
-     &                            Hz, ad_Hz,                            &
-     &                            pmon_u, pnom_v, pm, pn,               &
+     &                              Hz, ad_Hz,                          &
+     &                              pmon_u, pnom_v, pm, pn,             &
 #ifdef DIFF_3DCOEF
-     &                            diff3d_r,                             &
+     &                              diff3d_r,                           &
 #else
-     &                            diff2,                                &
+     &                              diff2,                              &
 #endif
 #ifdef TS_MIX_CLIMA
-     &                            tclm,                                 &
+     &                              tclm,                               &
 #endif
 #ifdef DIAGNOSTICS_TS
-!!   &                            DiaTwrk,                              &
+!!   &                              DiaTwrk,                            &
 #endif
-     &                            t, ad_t)
+     &                              t, ad_t)
 !***********************************************************************
 !
       USE mod_param
@@ -213,13 +225,13 @@
 #ifdef DIAGNOSTICS_TS
 !!            DiaTwrk(i,j,k,itrc,iThdif)=cff
 #endif
-!>            tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)+tl_cff
-!>
+!^            tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)+tl_cff
+!^
               ad_cff=ad_cff+ad_t(i,j,k,nnew,itrc)
-!>            tl_cff=dt(ng)*pm(i,j)*pn(i,j)*                            &
-!>   &                      (tl_FX(i+1,j)-tl_FX(i,j)+                   &
-!>   &                       tl_FE(i,j+1)-tl_FE(i,j))
-!>
+!^            tl_cff=dt(ng)*pm(i,j)*pn(i,j)*                            &
+!^   &                      (tl_FX(i+1,j)-tl_FX(i,j)+                   &
+!^   &                       tl_FE(i,j+1)-tl_FE(i,j))
+!^
               adfac=dt(ng)*pm(i,j)*pn(i,j)*ad_cff
               ad_FX(i  ,j)=ad_FX(i  ,j)-adfac
               ad_FX(i+1,j)=ad_FX(i+1,j)+adfac
@@ -244,23 +256,23 @@
               FE(i,j)=FE(i,j)*vmask_wet(i,j)
 #endif
 #ifdef MASKING
-!>            tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
-!>
+!^            tl_FE(i,j)=tl_FE(i,j)*vmask(i,j)
+!^
               ad_FE(i,j)=ad_FE(i,j)*vmask(i,j)
 #endif
 #if defined TS_MIX_STABILITY
-!>            tl_FE(i,j)=cff*                                           &
-!>   &                   ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*                &
-!>   &                    (0.75_r8*(t(i,j  ,k,nrhs,itrc)-               &
-!>   &                              t(i,j-1,k,nrhs,itrc))+              &
-!>   &                     0.25_r8*(t(i,j  ,k,nstp,itrc)-               &
-!>   &                              t(i,j-1,k,nstp,itrc)))+             &
-!>   &                    (Hz(i,j,k)+Hz(i,j-1,k))*                      &
-!>   &                    (0.75_r8*(tl_t(i,j  ,k,nrhs,itrc)-            &
-!>   &                              tl_t(i,j-1,k,nrhs,itrc))+           &
-!>   &                     0.25_r8*(tl_t(i,j  ,k,nstp,itrc)-            &
-!>   &                              tl_t(i,j-1,k,nstp,itrc))))
-!>
+!^            tl_FE(i,j)=cff*                                           &
+!^   &                   ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*                &
+!^   &                    (0.75_r8*(t(i,j  ,k,nrhs,itrc)-               &
+!^   &                              t(i,j-1,k,nrhs,itrc))+              &
+!^   &                     0.25_r8*(t(i,j  ,k,nstp,itrc)-               &
+!^   &                              t(i,j-1,k,nstp,itrc)))+             &
+!^   &                    (Hz(i,j,k)+Hz(i,j-1,k))*                      &
+!^   &                    (0.75_r8*(tl_t(i,j  ,k,nrhs,itrc)-            &
+!^   &                              tl_t(i,j-1,k,nrhs,itrc))+           &
+!^   &                     0.25_r8*(tl_t(i,j  ,k,nstp,itrc)-            &
+!^   &                              tl_t(i,j-1,k,nstp,itrc))))
+!^
               adfac=cff*ad_FE(i,j)
               adfac1=adfac*(0.75_r8*(t(i,j  ,k,nrhs,itrc)-              &
      &                               t(i,j-1,k,nrhs,itrc))+             &
@@ -278,16 +290,16 @@
               ad_FE(i,j)=0.0_r8
 #elif defined TS_MIX_CLIMA
               IF (LtracerCLM(itrc,ng)) THEN
-!>              tl_FE(i,j)=cff*                                         &
-!>   &                     ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*              &
-!>   &                      ((t(i,j  ,k,nrhs,itrc)-                     &
-!>   &                        tclm(i,j  ,k,itrc))-                      &
-!>   &                       (t(i,j-1,k,nrhs,itrc)-                     &
-!>   &                        tclm(i,j-1,k,itrc)))+                     &
-!>   &                      (Hz(i,j,k)+Hz(i,j-1,k))*                    &
-!>   &                      (tl_t(i,j  ,k,nrhs,itrc)-                   &
-!>   &                       tl_t(i,j-1,k,nrhs,itrc)))
-!>
+!^              tl_FE(i,j)=cff*                                         &
+!^   &                     ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*              &
+!^   &                      ((t(i,j  ,k,nrhs,itrc)-                     &
+!^   &                        tclm(i,j  ,k,itrc))-                      &
+!^   &                       (t(i,j-1,k,nrhs,itrc)-                     &
+!^   &                        tclm(i,j-1,k,itrc)))+                     &
+!^   &                      (Hz(i,j,k)+Hz(i,j-1,k))*                    &
+!^   &                      (tl_t(i,j  ,k,nrhs,itrc)-                   &
+!^   &                       tl_t(i,j-1,k,nrhs,itrc)))
+!^
                 adfac=cff*ad_FE(i,j)
                 adfac1=adfac*((t(i,j  ,k,nrhs,itrc)-                    &
      &                         tclm(i,j  ,k,itrc))-                     &
@@ -300,14 +312,14 @@
                 ad_t(i,j  ,k,nrhs,itrc)=ad_t(i,j  ,k,nrhs,itrc)+adfac2
                 ad_FE(i,j)=0.0_r8
               ELSE
-!>              tl_FE(i,j)=cff*                                         &
-!>   &                     ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*              &
-!>   &                      (t(i,j  ,k,nrhs,itrc)-                      &
-!>   &                       t(i,j-1,k,nrhs,itrc))+                     &
-!>   &                      (Hz(i,j,k)+Hz(i,j-1,k))*                    &
-!>   &                      (tl_t(i,j  ,k,nrhs,itrc)-                   &
-!>   &                       tl_t(i,j-1,k,nrhs,itrc)))
-!>
+!^              tl_FE(i,j)=cff*                                         &
+!^   &                     ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*              &
+!^   &                      (t(i,j  ,k,nrhs,itrc)-                      &
+!^   &                       t(i,j-1,k,nrhs,itrc))+                     &
+!^   &                      (Hz(i,j,k)+Hz(i,j-1,k))*                    &
+!^   &                      (tl_t(i,j  ,k,nrhs,itrc)-                   &
+!^   &                       tl_t(i,j-1,k,nrhs,itrc)))
+!^
                 adfac=cff*ad_FE(i,j)
                 adfac1=adfac*(t(i,j,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))
                 adfac2=adfac*(Hz(i,j,k)+Hz(i,j-1,k))
@@ -318,14 +330,14 @@
                 ad_FE(i,j)=0.0_r8
               END IF
 #else
-!>            tl_FE(i,j)=cff*                                           &
-!>   &                   ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*                &
-!>   &                    (t(i,j  ,k,nrhs,itrc)-                        &
-!>   &                     t(i,j-1,k,nrhs,itrc))+                       &
-!>   &                    (Hz(i,j,k)+Hz(i,j-1,k))*                      &
-!>   &                    (tl_t(i,j  ,k,nrhs,itrc)-                     &
-!>   &                     tl_t(i,j-1,k,nrhs,itrc)))
-!>
+!^            tl_FE(i,j)=cff*                                           &
+!^   &                   ((tl_Hz(i,j,k)+tl_Hz(i,j-1,k))*                &
+!^   &                    (t(i,j  ,k,nrhs,itrc)-                        &
+!^   &                     t(i,j-1,k,nrhs,itrc))+                       &
+!^   &                    (Hz(i,j,k)+Hz(i,j-1,k))*                      &
+!^   &                    (tl_t(i,j  ,k,nrhs,itrc)-                     &
+!^   &                     tl_t(i,j-1,k,nrhs,itrc)))
+!^
               adfac=cff*ad_FE(i,j)
               adfac1=adfac*(t(i,j,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))
               adfac2=adfac*(Hz(i,j,k)+Hz(i,j-1,k))
@@ -350,23 +362,23 @@
               FX(i,j)=FX(i,j)*umask_wet(i,j)
 #endif
 #ifdef MASKING
-!>            tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
-!>
+!^            tl_FX(i,j)=tl_FX(i,j)*umask(i,j)
+!^
               ad_FX(i,j)=ad_FX(i,j)*umask(i,j)
 #endif
 #if defined TS_MIX_STABILITY
-!>            tl_FX(i,j)=cff*                                           &
-!>   &                   ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*                &
-!>   &                    (0.75_r8*(t(i  ,j,k,nrhs,itrc)-               &
-!>   &                              t(i-1,j,k,nrhs,itrc))+              &
-!>   &                     0.25_r8*(t(i  ,j,k,nstp,itrc)-               &
-!>   &                              t(i-1,j,k,nstp,itrc)))+             &
-!>   &                    (Hz(i,j,k)+Hz(i-1,j,k))*                      &
-!>   &                    (0.75_r8*(tl_t(i  ,j,k,nrhs,itrc)-            &
-!>   &                              tl_t(i-1,j,k,nrhs,itrc))+           &
-!>   &                     0.25_r8*(tl_t(i  ,j,k,nstp,itrc)-            &
-!>   &                              tl_t(i-1,j,k,nstp,itrc))))
-!>
+!^            tl_FX(i,j)=cff*                                           &
+!^   &                   ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*                &
+!^   &                    (0.75_r8*(t(i  ,j,k,nrhs,itrc)-               &
+!^   &                              t(i-1,j,k,nrhs,itrc))+              &
+!^   &                     0.25_r8*(t(i  ,j,k,nstp,itrc)-               &
+!^   &                              t(i-1,j,k,nstp,itrc)))+             &
+!^   &                    (Hz(i,j,k)+Hz(i-1,j,k))*                      &
+!^   &                    (0.75_r8*(tl_t(i  ,j,k,nrhs,itrc)-            &
+!^   &                              tl_t(i-1,j,k,nrhs,itrc))+           &
+!^   &                     0.25_r8*(tl_t(i  ,j,k,nstp,itrc)-            &
+!^   &                              tl_t(i-1,j,k,nstp,itrc))))
+!^
               adfac=cff*ad_FX(i,j)
               adfac1=adfac*(0.75_r8*(t(i  ,j,k,nrhs,itrc)-              &
      &                               t(i-1,j,k,nrhs,itrc))+             &
@@ -384,16 +396,16 @@
               ad_FX(i,j)=0.0_r8
 #elif defined TS_MIX_CLIMA
               IF (LtracerCLM(itrc,ng)) THEN
-!>              tl_FX(i,j)=cff*                                         &
-!>   &                     ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*              &
-!>   &                      ((t(i  ,j,k,nrhs,itrc)-                     &
-!>   &                        tclm(i  ,j,k,itrc))-                      &
-!>   &                       (t(i-1,j,k,nrhs,itrc)-                     &
-!>   &                        tclm(i-1,j,k,itrc)))+                     &
-!>   &                      (Hz(i,j,k)+Hz(i-1,j,k))*                    &
-!>   &                      (tl_t(i  ,j,k,nrhs,itrc)-                   &
-!>   &                       tl_t(i-1,j,k,nrhs,itrc)))
-!>
+!^              tl_FX(i,j)=cff*                                         &
+!^   &                     ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*              &
+!^   &                      ((t(i  ,j,k,nrhs,itrc)-                     &
+!^   &                        tclm(i  ,j,k,itrc))-                      &
+!^   &                       (t(i-1,j,k,nrhs,itrc)-                     &
+!^   &                        tclm(i-1,j,k,itrc)))+                     &
+!^   &                      (Hz(i,j,k)+Hz(i-1,j,k))*                    &
+!^   &                      (tl_t(i  ,j,k,nrhs,itrc)-                   &
+!^   &                       tl_t(i-1,j,k,nrhs,itrc)))
+!^
                 adfac=cff*ad_FX(i,j)
                 adfac1=adfac*((t(i  ,j,k,nrhs,itrc)-                    &
      &                         tclm(i  ,j,k,itrc))-                     &
@@ -406,14 +418,14 @@
                 ad_t(i  ,j,k,nrhs,itrc)=ad_t(i  ,j,k,nrhs,itrc)+adfac2
                 ad_FX(i,j)=0.0_r8
               ELSE
-!>              tl_FX(i,j)=cff*                                         &
-!>   &                     ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*              &
-!>   &                      (t(i  ,j,k,nrhs,itrc)-                      &
-!>   &                       t(i-1,j,k,nrhs,itrc))+                     &
-!>   &                      (Hz(i,j,k)+Hz(i-1,j,k))*                    &
-!>   &                      (tl_t(i  ,j,k,nrhs,itrc)-                   &
-!>   &                       tl_t(i-1,j,k,nrhs,itrc)))
-!>
+!^              tl_FX(i,j)=cff*                                         &
+!^   &                     ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*              &
+!^   &                      (t(i  ,j,k,nrhs,itrc)-                      &
+!^   &                       t(i-1,j,k,nrhs,itrc))+                     &
+!^   &                      (Hz(i,j,k)+Hz(i-1,j,k))*                    &
+!^   &                      (tl_t(i  ,j,k,nrhs,itrc)-                   &
+!^   &                       tl_t(i-1,j,k,nrhs,itrc)))
+!^
                 adfac=cff*ad_FX(i,j)
                 adfac1=adfac*(t(i,j,k,nrhs,itrc)-t(i-1,j,k,nrhs,itrc))
                 adfac2=adfac*(Hz(i,j,k)+Hz(i-1,j,k))
@@ -424,14 +436,14 @@
                 ad_FX(i,j)=0.0_r8
               END IF
 #else
-!>            tl_FX(i,j)=cff*                                           &
-!>   &                   ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*                &
-!>   &                    (t(i  ,j,k,nrhs,itrc)-                        &
-!>   &                     t(i-1,j,k,nrhs,itrc))+                       &
-!>   &                    (Hz(i,j,k)+Hz(i-1,j,k))*                      &
-!>   &                    (tl_t(i  ,j,k,nrhs,itrc)-                     &
-!>   &                     tl_t(i-1,j,k,nrhs,itrc)))
-!>
+!^            tl_FX(i,j)=cff*                                           &
+!^   &                   ((tl_Hz(i,j,k)+tl_Hz(i-1,j,k))*                &
+!^   &                    (t(i  ,j,k,nrhs,itrc)-                        &
+!^   &                     t(i-1,j,k,nrhs,itrc))+                       &
+!^   &                    (Hz(i,j,k)+Hz(i-1,j,k))*                      &
+!^   &                    (tl_t(i  ,j,k,nrhs,itrc)-                     &
+!^   &                     tl_t(i-1,j,k,nrhs,itrc)))
+!^
               adfac=cff*ad_FX(i,j)
               adfac1=adfac*(t(i,j,k,nrhs,itrc)-t(i-1,j,k,nrhs,itrc))
               adfac2=adfac*(Hz(i,j,k)+Hz(i-1,j,k))
@@ -447,4 +459,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE ad_t3dmix2_tile
+      END SUBROUTINE ad_t3dmix2_s_tile
+
+      END MODULE ad_t3dmix2_mod

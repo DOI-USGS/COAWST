@@ -1,8 +1,9 @@
       SUBROUTINE ana_drag (ng, tile, model)
 !
-!! svn $Id: ana_drag.h 1054 2021-03-06 19:47:12Z arango $
+!! git $Id$
+!! svn $Id: ana_drag.h 1151 2023-02-09 03:08:53Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -98,7 +99,6 @@
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
-      USE stats_mod, ONLY : stats_2dfld
 !
 !  Imported variable declarations.
 !
@@ -134,28 +134,11 @@
 !
 !  Local variable declarations.
 !
-      logical, save :: first = .TRUE.
-!
       integer :: i, j
 !
       real(r8) :: cff
-!
-      TYPE (T_STATS), save :: Stats
 
 #include "set_bounds.h"
-!
-!-----------------------------------------------------------------------
-!  Initialize field statistics structure.
-!-----------------------------------------------------------------------
-!
-      IF (first) THEN
-        first=.FALSE.
-        Stats % count=0.0_r8
-        Stats % min=Large
-        Stats % max=-Large
-        Stats % avg=0.0_r8
-        Stats % rms=0.0_r8
-      END IF
 !
 !-----------------------------------------------------------------------
 #if defined UV_LOGDRAG
@@ -188,32 +171,6 @@
 # endif
 #else
       ana_drag.h: no values provided for either ZoBot, rdrag, or rdrag2
-#endif
-!
-!  Report statistics.
-!
-#if defined UV_LOGDRAG
-      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats,                  &
-     &                  LBi, UBi, LBj, UBj, ZoBot)
-      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-        WRITE (stdout,10) 'time invariant, bottom roughness '//         &
-     &                    'length scale: ZoBot',                        &
-     &                    ng, Stats%min, Stats%max
-      END IF
-#elif defined UV_LDRAG
-      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats,                  &
-     &                  LBi, UBi, LBj, UBj, rdrag)
-      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-        WRITE (stdout,10) 'linear bottom drag coefficient: rdrag',      &
-     &                    ng, Stats%min, Stats%max
-      END IF
-#elif defined UV_QDRAG
-      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats,                  &
-     &                  LBi, UBi, LBj, UBj, rdrag2)
-      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-        WRITE (stdout,10) 'quadratic bottom drag coefficient: rdrag2',  &
-     &                    ng, Stats%min, Stats%max
-      END IF
 #endif
 !
 !  Exchange boundary data.
@@ -256,10 +213,6 @@
         END DO
       END DO
 #endif
-!
-  10  FORMAT (3x,' ANA_DRAG    - ',a,/,19x,                             &
-     &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
-     &                         ' Max = ',1p,e15.8,0p,')')
 !
       RETURN
       END SUBROUTINE ana_drag_tile

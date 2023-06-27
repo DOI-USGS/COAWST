@@ -2,9 +2,10 @@
 #if defined NONLINEAR && !defined SOLVE3D
       SUBROUTINE main2d (RunInterval)
 !
-!svn $Id: main2d.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: main2d.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -34,6 +35,9 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
+# ifdef TIDE_GENERATING_FORCES
+      USE equilibrium_tide_mod, ONLY : equilibrium_tide
+# endif
 # if defined NLM_OUTER                || \
      defined RBL4DVAR                 || \
      defined RBL4DVAR_ANA_SENSITIVITY || \
@@ -62,9 +66,6 @@
 # endif
 # ifdef WEC_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
-# endif
-# ifdef BULK_FLUXES2D
-      USE bulk_flux_mod, ONLY : bulk_flux
 # endif
 # ifdef AVERAGES
       USE set_avg_mod,          ONLY : set_avg
@@ -100,7 +101,7 @@
      &  __FILE__
 !
 !=======================================================================
-!  Time-step vertically integrated equations.
+!  Time-step nonlinear vertically integrated equations.
 !=======================================================================
 !
 !  Time-step the 3D kernel for the specified time interval (seconds),
@@ -117,9 +118,9 @@
 !  grid application (NestLayers = 1).
 !
         nl=0
-#ifdef NESTING
+# ifdef NESTING
         TwoWayInterval(1:Ngrids)=0.0_r8
-#endif
+# endif
 !
         NEST_LAYER : DO WHILE (DoNestLayer)
 !
@@ -142,10 +143,7 @@
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              iic(ng)=iic(ng)+1
-              time(ng)=time(ng)+dt(ng)
               tdays(ng)=time(ng)*sec2day
-              CALL time_string (time(ng), time_code(ng))
               IF (step_counter(ng).eq.Rsteps) Time_Step=.FALSE.
             END DO
 
@@ -255,14 +253,13 @@
               ng=GridNumber(ig,nl)
               DO tile=first_tile(ng),last_tile(ng),+1     ! irreversible
 # ifdef AVERAGES
-#  ifdef FILTERED
-                CALL set_filter (ng, tile)
-#  else
                 CALL set_avg (ng, tile)
-#  endif
 # endif
 # ifdef DIAGNOSTICS
                 CALL set_diags (ng, tile)
+# endif
+# ifdef TIDE_GENERATING_FORCES
+                CALL equilibrium_tide (ng, tile, iNLM)
 # endif
                 CALL diag (ng, tile)
 # ifdef TLM_CHECK
@@ -372,9 +369,6 @@
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
               DO tile=first_tile(ng),last_tile(ng),+1
-# ifdef BULK_FLUXES2D
-                CALL bulk_flux (ng, tile)
-# endif
                 CALL set_vbc (ng, tile)
 # if defined SSH_TIDES || defined UV_TIDES
                 CALL set_tides (ng, tile)
@@ -444,7 +438,6 @@
 !  free-surface and momentum components.
 !-----------------------------------------------------------------------
 !
-# ifndef OFFLINE_FLOATS
 !  Set time indices for predictor step. The PREDICTOR_2D_STEP switch
 !  it is assumed to be false before the first time-step.
 !
@@ -594,7 +587,6 @@
               END IF
             END DO
 # endif
-# endif
 
 # ifdef FLOATS
 !
@@ -630,13 +622,25 @@
               END IF
             END DO
 # endif
+!
+!-----------------------------------------------------------------------
+!  Advance time index and time clock.
+!-----------------------------------------------------------------------
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              iic(ng)=iic(ng)+1
+              time(ng)=time(ng)+dt(ng)
+              step_counter(ng)=step_counter(ng)-1
+              CALL time_string (time(ng), time_code(ng))
+            END DO
 
           END DO STEP_LOOP
 
         END DO NEST_LAYER
 
       END DO KERNEL_LOOP
-
+!
       RETURN
       END SUBROUTINE main2d
 #else

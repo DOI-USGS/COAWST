@@ -1,6 +1,7 @@
-# svn $Id: CMakeLists.txt 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: CMakeLists.txt 1151 2023-02-09 03:08:53Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -45,9 +46,11 @@ list( APPEND _files
       ROMS/Utility/def_station.F
       ROMS/Utility/def_tides.F
       ROMS/Utility/def_var.F
+      ROMS/Utility/destroy.F
       ROMS/Utility/distribute.F
       ROMS/Utility/dotproduct.F
       ROMS/Utility/edit_multifile.F
+      ROMS/Utility/equilibrium_tide.F
       ROMS/Utility/erf.F
       ROMS/Utility/extract_obs.F
       ROMS/Utility/extract_sta.F
@@ -62,6 +65,7 @@ list( APPEND _files
       ROMS/Utility/get_grid.F
       ROMS/Utility/get_gst.F
       ROMS/Utility/get_hash.F
+      ROMS/Utility/get_metadata.F
       ROMS/Utility/get_ngfld.F
       ROMS/Utility/get_ngfldr.F
       ROMS/Utility/get_nudgcoef.F
@@ -132,6 +136,7 @@ list( APPEND _files
       ROMS/Utility/set_masks.F
       ROMS/Utility/set_ngfld.F
       ROMS/Utility/set_ngfldr.F
+      ROMS/Utility/set_pio.F
       ROMS/Utility/set_scoord.F
       ROMS/Utility/set_weights.F
       ROMS/Utility/shapiro.F
@@ -152,6 +157,7 @@ list( APPEND _files
       ROMS/Utility/sum_grad.F
       ROMS/Utility/sum_imp.F
       ROMS/Utility/tadv.F
+      ROMS/Utility/tides_date.F
       ROMS/Utility/time_corr.F
       ROMS/Utility/timers.F
       ROMS/Utility/uv_rotate.F
@@ -176,6 +182,7 @@ list( APPEND _files
       ROMS/Utility/wrt_state.F
       ROMS/Utility/wrt_station.F
       ROMS/Utility/wrt_tides.F
+      ROMS/Utility/yaml_parser.F
       ROMS/Utility/zeta_balance.F
 )
 

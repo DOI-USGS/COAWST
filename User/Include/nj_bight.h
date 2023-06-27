@@ -1,7 +1,8 @@
 /*
-** svn $Id: nj_bight.h 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: nj_bight.h 1151 2023-02-09 03:08:53Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2023 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -110,7 +111,7 @@
 #endif
 
 #define ANA_SRFLUX
-#define ALBEDO_CLOUD
+#define ALBEDO
 #define ANA_SMFLUX
 #define ANA_SSFLUX
 #define ANA_BSFLUX

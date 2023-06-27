@@ -2,9 +2,10 @@
 #ifdef NONLINEAR
       SUBROUTINE set_data (ng, tile)
 !
-!svn $Id: set_data.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: set_data.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -65,9 +66,6 @@
       USE bndwaveuv_mod
 # endif
 
-# if defined TRC_PSOURCE
-      USE mod_trc_sources
-# endif
 !
 # ifdef ANALYTICAL
       USE analytical_mod
@@ -87,13 +85,6 @@
 #  endif
 # endif
       USE strings_mod,     ONLY : FoundError
-# if defined OFFLINE
-      USE mod_stepping
-      USE exchange_2d_mod
-#  ifdef SOLVE3D
-      USE exchange_3d_mod
-#  endif
-# endif
 !
       implicit none
 !
@@ -165,25 +156,11 @@
 !
         DO itrc=1,NT(ng)
           IF (LtracerSrc(itrc,ng)) THEN
-#    ifdef ONE_TRACER_SOURCE
-            CALL set_ngfld (ng, iNLM, idRtrc(itrc), 1, 1, 1,            &
-     &                      1, 1, 1,                                    &
-     &                      SOURCES(ng) % TsrcG(:,itrc),                &
-     &                      SOURCES(ng) % Tsrc(itrc),                   &
-     &                      update)
-#    elif defined TWO_D_TRACER_SOURCE
-            CALL set_ngfld (ng, iNLM, idRtrc(itrc), 1, Nsrc(ng), 1,     &
-     &                      1, Nsrc(ng), 1,                             &
-     &                      SOURCES(ng) % TsrcG(:,:,itrc),              &
-     &                      SOURCES(ng) % Tsrc(:,itrc),                 &
-     &                      update)
-#    else
             CALL set_ngfld (ng, iNLM, idRtrc(itrc), 1, Nsrc(ng), N(ng), &
      &                      1, Nsrc(ng), N(ng),                         &
      &                      SOURCES(ng) % TsrcG(:,:,:,itrc),            &
      &                      SOURCES(ng) % Tsrc(:,:,itrc),               &
      &                      update)
-#    endif
             IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
@@ -351,7 +328,7 @@
       END IF
 #  endif
 
-#  if (defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM \
+#  if (defined BULK_FLUXES || defined ECOSIM \
        || defined SPECTRAL_LIGHT)
 !
 !  Set surface winds (m/s).
@@ -431,32 +408,6 @@
      &                       FORCES(ng)%rainG,                          &
      &                       FORCES(ng)%rain,                           &
      &                       update)
-        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-#   endif
-#   ifdef SNOWFALL
-#    ifdef ANA_SNOW
-      CALL ana_snow (ng, tile, iNLM)
-#    elif (defined FRC_COUPLING && defined TIME_INTERP) || \
-         !defined FRC_COUPLING
-      CALL set_2dfld_tile (ng, tile, iNLM, idsnow,                      &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%snowG,                            &
-     &                     FORCES(ng)%snow,                             &
-     &                     update)
-        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-#    endif
-#   endif
-!
-!-----------------------------------------------------------------------
-! Fresh water runoff (kg/m2/s)
-!-----------------------------------------------------------------------
-!
-#   ifdef RUNOFF
-      CALL set_2dfld_tile (ng, tile, iNLM, idRunoff,                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%runoffG,                          &
-     &                     FORCES(ng)%runoff,                           &
-     &                     update)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #   endif
       END IF
@@ -614,7 +565,7 @@
 #  endif
 # endif
 
-#  if !defined BULK_FLUXES && !defined BULK_FLUXES2D
+# ifndef BULK_FLUXES
 !
 !  Set kinematic surface momentum flux (m2/s2).
 !
@@ -801,24 +752,6 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #   endif
 #  endif
-# endif
-
-# if defined SSSFLX && defined SOLVE3D
-      CALL set_2dfld_tile (ng, tile, iNLM, idSSSf,                      &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%sssflxG,                          &
-     &                     FORCES(ng)%sssflx,                           &
-     &                     update)
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# endif
-
-# if defined FASTICE_CLIMATOLOGY && defined SOLVE3D
-      CALL set_2dfld_tile (ng, tile, iNLM, idFastIce,                   &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%fastice_clmG,                     &
-     &                     FORCES(ng)%fastice_clm,                      &
-     &                     update)
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 
 # if defined SOLVE3D && (defined ECOSIM || defined SPECTRAL_LIGHT)
@@ -1311,27 +1244,6 @@
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
-# if defined OFFLINE
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            OCEAN(ng)%zeta(i,j,1) = CLIMA(ng)%ssh(i,j)
-            OCEAN(ng)%zeta(i,j,2) = CLIMA(ng)%ssh(i,j)
-          END DO
-        END DO
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-          DO i=1,2
-            CALL exchange_r2d_tile (ng, tile,                           &
-     &                      LBi, UBi, LBj, UBj, OCEAN(ng)%zeta(:,:,i))
-          END DO
-        END IF
-#  ifdef DISTRIBUTE
-        CALL mp_exchange3d (ng, tile, iNLM, 1,                          &
-     &                      LBi, UBi, LBj, UBj, 1, 2,                   &
-     &                      NghostPoints,                               &
-     &                      EWperiodic(ng), NSperiodic(ng),             &
-     &                      OCEAN(ng)%zeta)
-#  endif
-# endif
       END IF
 !
 !  Set 2D momentum components climatology (m/s).
@@ -1353,31 +1265,6 @@
      &                       CLIMA(ng)%vbarclm,                         &
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-# endif
-# if defined OFFLINE
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            OCEAN(ng)%ubar(i,j,1) = CLIMA(ng)%ubarclm(i,j)
-            OCEAN(ng)%ubar(i,j,2) = CLIMA(ng)%ubarclm(i,j)
-            OCEAN(ng)%vbar(i,j,1) = CLIMA(ng)%vbarclm(i,j)
-            OCEAN(ng)%vbar(i,j,2) = CLIMA(ng)%vbarclm(i,j)
-          ENDDO
-        ENDDO
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-          DO i=1,2
-            CALL exchange_u2d_tile (ng, tile,                           &
-     &                       LBi, UBi, LBj, UBj, OCEAN(ng)%ubar(:,:,i))
-            CALL exchange_v2d_tile (ng, tile,                           &
-     &                       LBi, UBi, LBj, UBj, OCEAN(ng)%vbar(:,:,i))
-          END DO
-        END IF
-#  ifdef DISTRIBUTE
-        CALL mp_exchange3d (ng, tile, iNLM, 2,                          &
-     &                      LBi, UBi, LBj, UBj, 1, 2,                   &
-     &                      NghostPoints,                               &
-     &                      EWperiodic(ng), NSperiodic(ng),             &
-     &                      OCEAN(ng)%ubar, OCEAN(ng)%vbar)
-#  endif
 # endif
       END IF
 
@@ -1403,36 +1290,6 @@
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
-#  if defined OFFLINE
-        DO k=1,N(ng)
-          DO j=Jstr,Jend
-            DO i=Istr,Iend
-              OCEAN(ng)%u(i,j,k,nnew(ng)) = CLIMA(ng)%uclm(i,j,k)
-              OCEAN(ng)%v(i,j,k,nnew(ng)) = CLIMA(ng)%vclm(i,j,k)
-            END DO
-          END DO
-        END DO
-
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-          DO i=1,2
-            CALL exchange_u3d_tile (ng, tile,                           &
-     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-     &                            OCEAN(ng)%u(:,:,:,i))
-            CALL exchange_v3d_tile (ng, tile,                           &
-     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
-     &                            OCEAN(ng)%v(:,:,:,i))
-          END DO
-        END IF
-#   ifdef DISTRIBUTE
-        DO i=1,2
-          CALL mp_exchange3d (ng, tile, iNLM, 2,                        &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        NghostPoints,                             &
-     &                        EWperiodic(ng), NSperiodic(ng),           &
-     &                        OCEAN(ng)%u(:,:,:,i),OCEAN(ng)%v(:,:,:,i))
-      END DO
-#   endif
-#  endif
       END IF
 !
 !  Set tracer variables climatology.
@@ -1454,76 +1311,6 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
-#  endif
-#  if defined OFFLINE
-      DO itrc=1,NAT
-        DO k=1,N(ng)
-          DO j=Jstr,Jend
-            DO i=Istr,Iend
-              OCEAN(ng)%t(i,j,k,nnew(ng),itrc) =                        &
-     &                  CLIMA(ng)%tclm(i,j,k,itrc)
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDDO
-      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-        DO itrc=1,NAT
-          DO i=1,2
-            CALL exchange_r3d_tile (ng, tile,                           &
-     &                              LBi, UBi, LBj, UBj, 1, N(ng),       &
-     &                              OCEAN(ng)%t(:,:,:,i,itrc))
-          END DO
-        END DO
-      END IF
-#   ifdef DISTRIBUTE
-      DO itrc=1,NAT
-        DO i=1,2
-          CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        NghostPoints,                             &
-     &                        EWperiodic(ng), NSperiodic(ng),           &
-     &                        OCEAN(ng)%t(:,:,:,i,itrc))
-        END DO
-      END DO
-#   endif
-#  endif
-
-#  if defined SOLVE3D && defined AKTCLIMATOLOGY
-!
-!-----------------------------------------------------------------------
-!  Set vertical diffusion climatology.
-!-----------------------------------------------------------------------
-!
-#   ifdef ANA_AKTCLIMA
-      CALL ana_aktclima (ng, tile, iNLM)
-#   else
-      CALL set_3dfld_tile (ng, tile, iNLM, idAclm,                      &
-     &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       CLIMA(ng)%AclmG,                           &
-     &                       CLIMA(ng)%Aclm,                            &
-     &                       update)
-#   endif
-#   if defined OFFLINE
-      DO k=0,N(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            MIXING(ng)%Akt(i,j,k,2) = CLIMA(ng)%Aclm(i,j,k)
-          ENDDO
-        ENDDO
-      ENDDO
-      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-        CALL exchange_w3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-     &                          MIXING(ng)%Akt(:,:,:,2))
-      END IF
-#    ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    MIXING(ng)%Akt(:,:,:,2))
-#    endif
-#   endif
 #  endif
 # endif
 

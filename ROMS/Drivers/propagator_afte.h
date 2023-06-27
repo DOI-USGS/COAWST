@@ -1,11 +1,12 @@
-      SUBROUTINE propagator (RunInterval, state, ad_state)
+      MODULE propagator_mod
 !
-!svn $Id: propagator_afte.h 1054 2021-03-06 19:47:12Z arango $
-!************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!git $Id$
+!svn $Id: propagator_afte.h 1151 2023-02-09 03:08:53Z arango $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!***********************************************************************
+!=======================================================================
 !                                                                      !
 !  Adjoint Finite Time Eigenvalues Propagator:                         !
 !                                                                      !
@@ -21,6 +22,19 @@
 !       analysis system based on the tangent linear and adjoint of a   !
 !       regional ocean model, Ocean Modelling, 7, 227-258.             !
 !                                                                      !
+!=======================================================================
+!
+      USE mod_kinds
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: propagator_afte
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE propagator_afte (RunInterval, state, ad_state)
 !***********************************************************************
 !
       USE mod_param
@@ -33,6 +47,7 @@
       USE mod_scalars
       USE mod_stepping
 !
+      USE close_io_mod,   ONLY : close_inp
       USE dotproduct_mod, ONLY : ad_statenorm
       USE packing_mod,    ONLY : ad_unpack, ad_pack
 #ifdef SOLVE3D
@@ -248,4 +263,6 @@
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')')
 !
       RETURN
-      END SUBROUTINE propagator
+      END SUBROUTINE propagator_afte
+
+      END MODULE propagator_mod

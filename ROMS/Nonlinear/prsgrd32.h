@@ -1,11 +1,12 @@
-      SUBROUTINE prsgrd (ng, tile)
+      MODULE prsgrd_mod
 !
-!svn $Id: prsgrd32.h 1054 2021-03-06 19:47:12Z arango $
-!***********************************************************************
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!git $Id$
+!svn $Id: prsgrd32.h 1151 2023-02-09 03:08:53Z arango $
+!=======================================================================
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
-!****************************************** Alexander F. Shchepetkin ***
+!========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine evaluates the nonlinear  baroclinic,  hydrostatic   !
 !  pressure gradient term using a  nonconservative  Density-Jacobian   !
@@ -27,6 +28,17 @@
 !      model with non-aligned vertical coordinate, JGR, 108,           !
 !      1-34.                                                           !
 !                                                                      !
+!=======================================================================
+!
+      implicit none
+!
+      PRIVATE
+      PUBLIC  :: prsgrd
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE prsgrd (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -39,9 +51,6 @@
       USE mod_grid
       USE mod_ocean
       USE mod_stepping
-#ifdef POT_TIDES
-      USE mod_tides
-#endif
 !
 !  Imported variable declarations.
 !
@@ -57,46 +66,40 @@
 #ifdef PROFILE
       CALL wclock_on (ng, iNLM, 23, __LINE__, MyFile)
 #endif
-      CALL prsgrd_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  IminS, ImaxS, JminS, JmaxS,                     &
-     &                  nrhs(ng),                                       &
+      CALL prsgrd32_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    nrhs(ng),                                     &
 #ifdef MASKING
-     &                  GRID(ng) % umask,                               &
-     &                  GRID(ng) % vmask,                               &
+     &                    GRID(ng) % umask,                             &
+     &                    GRID(ng) % vmask,                             &
 #endif
 #ifdef WET_DRY
-     &                  GRID(ng) % umask_wet,                           &
-     &                  GRID(ng) % vmask_wet,                           &
+     &                    GRID(ng)%umask_wet,                           &
+     &                    GRID(ng)%vmask_wet,                           &
 #endif
-     &                  GRID(ng) % om_v,                                &
-     &                  GRID(ng) % on_u,                                &
-     &                  GRID(ng) % Hz,                                  &
-     &                  GRID(ng) % z_r,                                 &
-     &                  GRID(ng) % z_w,                                 &
-#ifdef ICESHELF
-     &                  GRID(ng) % zice,                                &
-#endif
-     &                  OCEAN(ng) % rho,                                &
+     &                    GRID(ng) % om_v,                              &
+     &                    GRID(ng) % on_u,                              &
+     &                    GRID(ng) % Hz,                                &
+     &                    GRID(ng) % z_r,                               &
+     &                    GRID(ng) % z_w,                               &
+     &                    OCEAN(ng) % rho,                              &
 #ifdef TIDE_GENERATING_FORCES
-     &                  OCEAN(ng) % eq_tide,                            &
+     &                    OCEAN(ng) % eq_tide,                          &
 #endif
 #ifdef WEC_VF
-     &                  OCEAN(ng) % zetat,                              &
+     &                    OCEAN(ng) % zetat,                            &
 #endif
 
 #ifdef ATM_PRESS
-     &                  FORCES(ng) % Pair,                              &
-#endif
-#ifdef POT_TIDES
-     &                  TIDES(ng) % Ptide,                              &
+     &                    FORCES(ng) % Pair,                            &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                  DIAGS(ng) % DiaRU,                              &
-     &                  DIAGS(ng) % DiaRV,                              &
+     &                    DIAGS(ng) % DiaRU,                            &
+     &                    DIAGS(ng) % DiaRV,                            &
 #endif
-     &                  OCEAN(ng) % ru,                                 &
-     &                  OCEAN(ng) % rv)
+     &                    OCEAN(ng) % ru,                               &
+     &                    OCEAN(ng) % rv)
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 23, __LINE__, MyFile)
 #endif
@@ -105,38 +108,32 @@
       END SUBROUTINE prsgrd
 !
 !***********************************************************************
-      SUBROUTINE prsgrd_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        IminS, ImaxS, JminS, JmaxS,               &
-     &                        nrhs,                                     &
+      SUBROUTINE prsgrd32_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          nrhs,                                   &
 #ifdef MASKING
-     &                        umask, vmask,                             &
+     &                          umask, vmask,                           &
 #endif
 #ifdef WET_DRY
-     &                        umask_wet, vmask_wet,                     &
+     &                          umask_wet, vmask_wet,                   &
 #endif
-     &                        om_v, on_u,                               &
-     &                        Hz, z_r, z_w,                             &
-# ifdef ICESHELF
-     &                        zice,                                     &
-# endif
-     &                        rho,                                      &
+     &                          om_v, on_u,                             &
+     &                          Hz, z_r, z_w,                           &
+     &                          rho,                                    &
 #ifdef TIDE_GENERATING_FORCES
-     &                        eq_tide,                                  &
+     &                          eq_tide,                                &
 #endif
 #ifdef WEC_VF
-     &                        zetat,                                    &
+     &                          zetat,                                  &
 #endif
 #ifdef ATM_PRESS
-     &                        Pair,                                     &
-#endif
-#ifdef POT_TIDES
-     &                        Ptide,                                    &
+     &                          Pair,                                   &
 #endif
 #ifdef DIAGNOSTICS_UV
-     &                        DiaRU, DiaRV,                             &
+     &                          DiaRU, DiaRV,                           &
 #endif
-     &                        ru, rv)
+     &                          ru, rv)
 !***********************************************************************
 !
       USE mod_param
@@ -163,10 +160,6 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-# ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:,LBj:)
-# endif
-
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
 # ifdef TIDE_GENERATING_FORCES
       real(r8), intent(in) :: eq_tide(LBi:,LBj:)
@@ -176,9 +169,6 @@
 # endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
-# endif
-# ifdef POT_TIDES
-      real(r8), intent(in) :: Ptide(LBi:,LBj:)
 # endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
@@ -200,9 +190,6 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-# ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
 # ifdef TIDE_GENERATING_FORCES
       real(r8), intent(in) :: eq_tide(LBi:UBi,LBj:UBj)
@@ -212,9 +199,6 @@
 # endif
 # ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
-# endif
-# ifdef POT_TIDES
-      real(r8), intent(in) :: Ptide(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
@@ -231,9 +215,6 @@
       real(r8), parameter :: OneFifth = 0.2_r8
       real(r8), parameter :: OneTwelfth = 1.0_r8/12.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
-#ifdef ICESHELF
-      real(r8), parameter :: drhodz = 0.00478_r8
-#endif
 
       real(r8) :: GRho, GRho0,  HalfGRho
       real(r8) :: cff, cff1, cff2
@@ -253,7 +234,7 @@
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-!  Preliminary step (same for XI- and ETA-components:
+!  Preliminary step (same for XI- and ETA-components):
 !-----------------------------------------------------------------------
 !
       GRho=g/rho0
@@ -263,6 +244,8 @@
       OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
       fac=100.0_r8/rho0
 #endif
+!
+!  Compute kinematic pressure: P/rho0 (m2/s2).
 !
       DO j=JstrV-1,Jend
         DO k=1,N(ng)-1
@@ -292,14 +275,7 @@
           cff1=1.0_r8/(z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
-#ifdef ICESHELF
-          P(i,j,N(ng))=GRho0*(z_w(i,j,N(ng))-zice(i,j))-                &
-     &                 GRho*(rho(i,j,N(ng))+0.5_r8*drhodz*zice(i,j))*   &
-     &                 zice(i,j)+                                       &
-     &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
-     &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
-#else
-          P(i,j,N(ng))=GRho0*z_w(i,j,N(ng))+                            &
+          P(i,j,N(ng))=g*z_w(i,j,N(ng))+                                &
 #ifdef WEC_VF
      &                 zetat(i,j)+                                      &
 #endif
@@ -308,7 +284,6 @@
 #endif
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
-#endif
 #ifdef TIDE_GENERATING_FORCES
           P(i,j,N(ng))=P(i,j,N(ng))-g*eq_tide(i,j)
 #endif
@@ -460,4 +435,6 @@
       END DO
 !
       RETURN
-      END SUBROUTINE prsgrd_tile
+      END SUBROUTINE prsgrd32_tile
+
+      END MODULE prsgrd_mod

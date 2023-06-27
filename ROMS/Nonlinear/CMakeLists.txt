@@ -1,6 +1,7 @@
-# svn $Id: CMakeLists.txt 1054 2021-03-06 19:47:12Z arango $
+# git $Id$
+# svn $Id: CMakeLists.txt 1151 2023-02-09 03:08:53Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
-# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2023 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -50,7 +51,6 @@ list( APPEND _files
       ROMS/Nonlinear/output.F
       ROMS/Nonlinear/pre_step3d.F
       ROMS/Nonlinear/prsgrd.F
-      ROMS/Nonlinear/radiation_stress.F
       ROMS/Nonlinear/rho_eos.F
       ROMS/Nonlinear/rhs3d.F
       ROMS/Nonlinear/set_avg.F

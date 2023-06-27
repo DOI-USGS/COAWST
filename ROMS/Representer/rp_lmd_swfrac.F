@@ -8,9 +8,10 @@
      &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               Zscale, Z, tl_Z, tl_swdk)
 !
-!svn $Id: rp_lmd_swfrac.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: rp_lmd_swfrac.F 1151 2023-02-09 03:08:53Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2023 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -94,9 +95,9 @@
 # ifdef TL_IOMS
      &            cff2*(1.0_r8-Z(i,j)*fac2(i))
 # endif
-!>        swdk(i,j)=cff1*fac3(i)+                                       &
-!>   &              cff2*(1.0_r8-fac3(i))
-!>
+!^        swdk(i,j)=cff1*fac3(i)+                                       &
+!^   &              cff2*(1.0_r8-fac3(i))
+!^
           tl_swdk(i,j)=tl_cff1*fac3(i)+                                 &
      &                 tl_cff2*(1.0_r8-fac3(i))
         END DO
