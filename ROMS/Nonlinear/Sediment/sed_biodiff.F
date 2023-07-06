@@ -118,7 +118,7 @@
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
@@ -321,6 +321,11 @@
 !
 !   ...make working copies 
               DO k=1,Nbed
+!IF ((i.eq.3).and.(j.eq.3).and.(k.eq.1).and.(ised.eq.iboxy)) THEN
+!write(6,*) "Db", Db(k)
+!write(6,*) "Biodiff sd conc 5",bed(i,j,k,ised)/bed(i,j,k,ithck)/        &
+!     &                         bed(i,j,k,iporo)
+!ENDIF
                 cc(k) = bed(i,j,k,ised)/bed(i,j,k,ithck)/               &
      &                  bed(i,j,k,iporo)
                 dd(k)= d(k)
@@ -345,12 +350,18 @@
 !   ...solution stored in cc; copy out
               DO k = 1,Nbed
                 bed(i,j,k,ised)=cc(k)*bed(i,j,k,ithck)*bed(i,j,k,iporo)
+!IF ((i.eq.3).and.(j.eq.3).and.(k.eq.1).and.(ised.eq.iboxy)) THEN
+!write(6,*) "Db", Db(k)
+!write(6,*) "Biodiff sd conc 6",bed(i,j,k,ised)/bed(i,j,k,ithck)/        &
+!     &                         bed(i,j,k,iporo)
+!ENDIF
               ENDDO
             ENDDO
 
 # endif
 ! Recompute bed masses
             DO k=1,Nbed
+!             write(*,*) i,j,k,(bed_frac(i,j,k,ised),ised=1,NST)
 !            debugging: ensure fracs add up to 1
               cff3 = 0.0_r8
               DO ised=1,NST

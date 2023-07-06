@@ -27,6 +27,7 @@
 !  step2d_vveg    Momentum term for 2d y direction                     !
 #ifdef VEG_FLEX
 !  bend           Bending for each vegetation                          !
+!  plant_hght_flex Effective plant height modified                     !
 !  Lveg           Effective blade length                               ! 
 # endif
 # ifdef VEG_FLEX
@@ -96,6 +97,7 @@
 # endif 
 # ifdef VEG_FLEX 
         real(r8), pointer :: bend(:,:,:)
+        real(r8), pointer :: plant_hght_flex(:,:)
 # endif         
 # ifdef VEG_TURB
         real(r8), pointer :: tke_veg(:,:,:)
@@ -195,6 +197,7 @@
       allocate ( VEG(ng) % Lveg(LBi:UBi,LBj:UBj,N(ng)) )
 #  ifdef VEG_FLEX
       allocate ( VEG(ng) % bend(LBi:UBi,LBj:UBj,NVEG) )
+      allocate ( VEG(ng) % plant_hght_flex(LBi:UBi,LBj:UBj) )
 #  endif
 #  ifdef VEG_HMIXING
       allocate ( VEG(ng) % visc2d_r_veg(LBi:UBi,LBj:UBj) )
@@ -374,6 +377,11 @@
             DO i=Imin,Imax
               VEG(ng) % bend(i,j,iveg) = IniVal
             END DO 
+          END DO 
+        END DO 
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            VEG(ng) % plant_hght_flex(i,j) = IniVal
           END DO 
         END DO 
 #  endif 

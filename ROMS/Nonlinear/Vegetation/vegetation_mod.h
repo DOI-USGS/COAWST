@@ -62,6 +62,9 @@
 !  ipdwbm         Id to output below ground biomass                    !
 !  idWdvg         Id to output wave dissipation from vegetation        !
 !  idCdvg         Id to output spectral Cd from waves vegetation       !
+!  idvgls         Id to output length scale change due to veg.         !
+!  idvtke         Id to output tke change due to veg.                  !
+!  idhgtf         Id to output height change due to flex.              !
 !                                                                      !
 !  Marsh wave induced erosion Output:                                  !
 !  ==========================                                          !
@@ -90,9 +93,15 @@
       integer :: phght, pdens, pdiam, pthck
       integer :: ipdens, iphght, ipdiam, ipthck
 #endif
+#if defined VEG_TURB  && defined VEG_TURB_WRITEHIS  
+      integer :: idvgls, idvtke
+#endif
 !
 #ifdef VEG_STREAMING 
       integer :: idWdvg, idCdvg
+#endif 
+#ifdef VEG_FLEX
+      integer :: idhgtf
 #endif 
 #if defined VEG_DRAG || defined VEG_BIOMASS  
       integer, allocatable :: idvprp(:)

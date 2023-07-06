@@ -612,7 +612,7 @@
 !                     DISSRF and DISWCP added)
 !     40.61, Sep. 06: NMOVAR increased by 1 (quantity DISMUD added)
 !     40.61, Sep. 06: NMOVAR increased by 1 (quantity DISVEG added)
-!TSK  40.61, Sep. 06: NMOVAR increased by 1 (quantity DICDVG added)
+!TSK   40.61, Sep. 06: NMOVAR increased by 1 (quantity DICDVG added)
 !     40.64, Apr. 07: NMOVAR increased by 2 (quantities QP and BFI added)
 !     40.85, Aug. 08: NMOVAR increased by 10 (quantities GENE, GENW, REDI, REDQ, REDT,
 !                                             PROPA, PROPX, PROPT, PROPS and RADS added)
@@ -732,8 +732,6 @@
 !  (78) [  'HICE']
 #ifdef SWAN_MODEL
 !  (79) ['DIRBOT']
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
@@ -812,8 +810,6 @@
 !  (78) ['  hice']
 #ifdef SWAN_MODEL
 !  (79) ['Dirbot']
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -892,8 +888,6 @@
 !  (78) [                            'ice thickness']
 #ifdef SWAN_MODEL
 !  (79) [            'Average bottom wave direction']
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -972,8 +966,6 @@
 !  (78) [     'm']
 #ifdef SWAN_MODEL
 !  (79) [CALCULAT] =UDI
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1109,8 +1101,6 @@
 !  (78)  [  1]   hice
 #ifdef SWAN_MODEL
 !  (79)  [  2]   DirBot
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1187,8 +1177,6 @@
 !  (78)  [    -9.] hice
 #ifdef SWAN_MODEL
 !  (79)  [  -999.] DirBot
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1265,8 +1253,6 @@
 !  (78)  [     0.] hice
 #ifdef SWAN_MODEL
 !  (79)  [     0.] DirBot
-!  (80)  [     0.] Veg
-!  (81)  [     0.] Spectrum_stokes
 #endif
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1343,8 +1329,6 @@
 !  (78)  [     0.] hice
 #ifdef SWAN_MODEL
 !  (79)  [     0.] DirBot
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1421,8 +1405,6 @@
 !  (78)  [    10.] hice
 #ifdef SWAN_MODEL
 !  (79)  [   360.] DirBot
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1499,8 +1481,6 @@
 !  (78)  [   100.] hice
 #ifdef SWAN_MODEL
 !  (79)  [   360.] DirBot
-!  (80) ['']
-!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
@@ -2008,7 +1988,7 @@
 ! JDISS  [  2] total dissipation within array COMPDA
 ! JDPSAV [  1] saved depth (for setup) within array COMPDA
 ! JDP1   [  7] old depth within array COMPDA
-! JDP2   [  9] new depth within array COMPDA - TSK
+! Tsk JDP2   [  9] new depth within array COMPDA
 ! JDP3   [ 15] last read depth within array COMPDA
 ! JDSXB  [  1] bottom friction dissipation within array COMPDA
 !              set by command TABLE/BLOCK
@@ -2177,7 +2157,8 @@
       INTEGER             JDSXS
       INTEGER             JDSXW
       INTEGER             JDSXM
-      INTEGER             JDSXV,       JDSXC,       JDSXT
+      INTEGER             JDSXV,       JDSXC,       JDSKC,       JDQQQ  
+      INTEGER             JDSXT
       INTEGER             JGSXW,       JGENR
       INTEGER             JRSXQ,       JRSXT,       JREDS,       JRADS
       INTEGER             JTSXG,       JTSXT,       JTSXS,       JTRAN
@@ -2486,6 +2467,11 @@
 ! IVEG   [     0] indicates vegetation dissipation term:
 !                 =0; no dissipation due to vegetation
 !                 =1; dissipation due to vegetation according to Dalrymple (1984)
+!                 =2; dissipation due to vegetation according to Jacobsen et al. (2019)
+!                 =3; dissipation due to veg-COAWST according to
+!                 Dalrymple (1984)
+!                 =4; dissipation due to veg-COAWST(1984) according to
+!                 Jacobsen et al. (2019) 
 ! ITURBV [     0] indicates if turbulent viscosity is activated           40.35
 !                 =0; not activated                                       40.35
 !                 =1; activated                                           40.35

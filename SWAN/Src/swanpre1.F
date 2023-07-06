@@ -356,6 +356,7 @@
       TYPE VEGPT                                                          40.55
         INTEGER              :: N                                         40.55
         REAL                 :: H, D, C, Y                                40.55
+!        REAL                 :: C, Y                                      40.55
         TYPE(VEGPT), POINTER :: NEXTV                                     40.55
       END TYPE VEGPT                                                      40.55
 
@@ -1530,7 +1531,7 @@
           PSNAME = 'NPHTGRID'                                             40.55
 #ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
-          VARNPL = .TRUE.                                                   40.55
+          VARNPH = .TRUE.                                                   40.55
           IF (JNPHT2.LE.1) THEN                                             40.55
             MCMVAR = MCMVAR + 2                                             40.55
             JNPHT2 = MCMVAR - 1                                             40.55
@@ -2774,12 +2775,14 @@
 !
 ! ==========================================
 !
-!   VEGEtation   < [height]  [diamtr]  [nstems]  [drag] >
+!   VEGEtation   < [iveg] [height]  [diamtr]  [nstems]  [drag] >
 !
 ! ==========================================
 !
       IF (KEYWIS ('VEGE')) THEN
-        IVEG  = 1
+!        IVEG  = 1
+!        -        IVEG  = 1
+        CALL ININTG ('IVEG', IVEG, 'STA', 1)                        
         ILMAX = 0
         FRSTV%H = 0.
         FRSTV%D = 0.
@@ -2838,12 +2841,13 @@
 !
 ! ==========================================
 !
-!   VEGCtation   < [height]  [diamtr]  [nstems]  [drag] >
+!   VEGCtation   < [iveg]  [height]  [diamtr]  [nstems]  [drag] >
 !
 ! ==========================================
 !
       IF (KEYWIS ('VEGC')) THEN
-        IVEG  = 2
+!        IVEG  = 3
+        CALL ININTG ('IVEG', IVEG, 'STA', 1)                        
         ILMAX = 0
         FRSTV%H = 0.
         FRSTV%D = 0.

@@ -3219,7 +3219,7 @@
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
      &  COMPDA(1,JNPLA2)    ,COMPDA(1,JNPHT2)                         ,   40.59 40.35
      &  COMPDA(1,JNPDA2)    ,COMPDA(1,JNPTK2)                         ,   40.59 40.35
-     &  COMPDA(1,JDSXC)     ,                                             40.59 
+     &  COMPDA(1,JDSXC)     ,COMPDA(1,JDSKC)     ,COMPDA(1,JDQQQ)     ,
      &  COMPDA(1,JTURB2)    ,COMPDA(1,JMUDL2)                         ,   40.59 40.35 40.55
      &  COMPDA(1,JAICE2)    ,COMPDA(1,JHICE2)    ,                        41.75
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO              ,   40.41 40.03
@@ -3366,6 +3366,7 @@
      &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXV)                        ,          40.35 
+!     &                  COMPDA(1,JDSXV)    ,COMPDA(1,JDSXC)    ,          40.35 40.67 40.61
      &                  COMPDA(1,JDSXT)    ,COMPDA(1,JDSXM)    ,          40.35 40.67 40.61
      &                  COMPDA(1,JDSXI)    ,                              41.75
      &                  COMPDA(1,JDSXL)    ,                              40.88
@@ -3672,6 +3673,15 @@
       IF (IVEG.EQ.1) THEN                                                 40.55
          WRITE(PRINTF,7006)                                               40.55
  7006    FORMAT(' Vegetation due to Dalrymple (1984)')                    40.55
+      ELSEIF (IVEG.EQ.2) THEN                                             41.77
+         WRITE(PRINTF,7009)                                               41.77
+ 7009    FORMAT(' Vegetation due to Jacobsen et al. (2019)')              41.77
+      ELSEIF (IVEG.EQ.3) THEN                                             41.77
+         WRITE(PRINTF,7010)                                               41.77
+ 7010    FORMAT(' Vegetation-COAWST due to Dalrymple (1984)')             41.77
+      ELSEIF (IVEG.EQ.4) THEN                                             41.77
+         WRITE(PRINTF,7011)                                               41.77
+ 7011    FORMAT(' Vegetation-COAWST due to Jacobsen et al.(2019)')        41.77
       ELSE                                                                40.55
          WRITE (PRINTF, *) 'Vegetation is off'                            40.55
       ENDIF                                                               40.55
@@ -6612,7 +6622,7 @@
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
      &                     NPLA2      ,NPHT2                  ,           40.59 40.35 40.55
      &                     NPDA2      ,NPTK2                  ,           40.59 40.35 40.55
-     &                     CDVEG_COAWST                       ,           40.59  
+     &                     CDVEG_COAWST, KC_COAWST, Q_COAWST  ,           40.59  
      &                     TURBV2     ,MUDL2                  ,           40.59 40.35 40.55
      &                     AICE2      ,HICE2                  ,           41.75
      &                     URSELL     ,ANYBIN     ,REFLSO     ,           40.41 40.03
@@ -6895,7 +6905,9 @@
 !   If SVEG is on (IVEG == 1 ) then,
 !     Call SVEG  to compute the source term due to vegetation
 !      dissipation according to Dalrymple (1984)
-!   If SVEG_COAWST is on (IVEG == 2 ) then,
+!   If SVEG is on (IVEG == 2 ) then,
+!      dissipation according to Jacobsen et al. (2019)
+!   If SVEG_COAWST is on (IVEG == 3 ) then,
 !     Call SVEG_COAWST spatially varying veg to compute the source 
 !      term due to vegetation
 !      dissipation according to Dalrymple (1984)
@@ -7026,7 +7038,7 @@
       REAL  :: MUDL2(MCGRD)                                               40.59
       REAL, INTENT(IN)  :: AICE2(MCGRD)                                   41.75
       REAL, INTENT(IN)  :: HICE2(MCGRD)                                   41.75
-      REAL  :: CDVEG_COAWST(MCGRD)                                        41.75
+      REAL  :: CDVEG_COAWST(MCGRD), KC_COAWST(MCGRD), Q_COAWST(MCGRD)     41.75
       REAL  :: REFLSO(MDC,MSC)                                            40.41
       REAL  :: URMSTOP(MCGRD)                                             40.88
 !
@@ -7104,29 +7116,34 @@
 !TIMG      CALL SWTSTO(138)                                                    40.59
 !
 !TIMG      CALL SWTSTA(139)                                                    40.55
-      IF ( IVEG.EQ.1 ) THEN                                               40.55
+      IF ( IVEG.EQ.1.OR.IVEG.EQ.2 ) THEN                                  40.55
 !
-!     *** wave-vegetation interactions ***                                40.55
-!
+!        *** wave-vegetation interactions ***                             40.55
+!        iveg=1
 !        *** energy dissipation according to Dalrymple (1984)             40.55
+!        iveg=2
+!        *** energy dissipation according to JACOBSEN (2019)              40.55
 !
          CALL SVEG (DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,                 40.58 40.55
-     &              KMESPC ,PLVEGT                      ,                 40.58 40.55
+     &              KWAVE  ,KMESPC   ,PLVEGT ,                            41.77 40.58 40.55
      &              IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1    ,                 40.55
      &              NPLA2  )                                              40.67 40.61 40.55
       END IF                                                              40.55
-      IF ( IVEG.EQ.2 ) THEN                                               40.55
+      IF ( IVEG.EQ.3.OR.IVEG.EQ.4 ) THEN                                  40.55
 !
 !     *** wave-vegetation interactions ***                                40.55
-!
+!         with spatially varying veg and spectral Cd
+!        iveg=3
 !        *** energy dissipation according to Dalrymple (1984)             40.55
+!        iveg=4
+!        *** energy dissipation according to JACOBSEN (2019)              40.55
 !
          CALL SVEG_COAWST (DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,          40.58 40.55
-     &              KMESPC ,PLVEGT                             ,          40.58 40.55
+     &              KWAVE,  KMESPC   ,PLVEGT                   ,          40.58 40.55
      &              IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1           ,          40.55
-     &              ABRBOT ,KWAVE                              ,          40.55
+     &              ABRBOT                                     ,          40.55
      &              NPLA2  ,NPHT2    ,NPDA2  ,NPTK2            ,          40.67 40.61 40.55
-     &              CDVEG_COAWST)
+     &              CDVEG_COAWST, KC_COAWST, Q_COAWST)
       END IF                                                              40.55
 !TIMG      CALL SWTSTO(139)                                                    40.55
 !

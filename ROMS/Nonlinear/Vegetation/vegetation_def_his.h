@@ -37,6 +37,70 @@
         END IF
       END DO
 #endif
+#ifdef VEG_FLEX
+!
+!  Define flexible height variable.
+!
+        IF (Hout(idhgtf,ng)) THEN 
+          Vinfo( 1)=Vname(1,idhgtf)
+          Vinfo( 2)=Vname(2,idhgtf)
+          Vinfo( 3)=Vname(3,idhgtf)
+          Vinfo(14)=Vname(4,idhgtf)
+!         Vinfo(16)=Vname(1,idhgtf)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idhgtf,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idhgtf),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+        END IF
+#endif 
+#if defined VEG_TURB && defined VEG_TURB_WRITEHIS
+!
+!  Define turbulent kinetic energy due to veg.
+!
+        IF (Hout(idvtke,ng)) THEN
+          Vinfo( 1)=Vname(1,idvtke)
+          Vinfo( 2)=Vname(2,idvtke)
+          Vinfo( 3)=Vname(3,idvtke)
+          Vinfo(14)=Vname(4,idvtke)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idvtke,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idvtke),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define length scale change due to veg.
+!
+        IF (Hout(idvgls,ng)) THEN
+          Vinfo( 1)=Vname(1,idvgls)
+          Vinfo( 2)=Vname(2,idvgls)
+          Vinfo( 3)=Vname(3,idvgls)
+          Vinfo(14)=Vname(4,idvgls)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idvgls,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idvgls),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+       ENDIF 
+#endif
+!
 #if defined VEG_STREAMING
 !
 !  Define wave dissipation due to vegetation.

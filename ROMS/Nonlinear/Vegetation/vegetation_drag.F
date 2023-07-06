@@ -61,6 +61,7 @@
      &                        VEG(ng) % plant,                          &
 # ifdef VEG_FLEX
      &                        VEG(ng) % bend,                           &
+     &                        VEG(ng) % plant_hght_flex,                &
 # endif
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT
      &                        VEG(ng) % marsh_mask,                     &
@@ -89,6 +90,7 @@
      &                              plant,                              &
 # ifdef VEG_FLEX
      &                              bend,                               &
+     &                              plant_hght_flex,                    &
 # endif
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT
      &                              marsh_mask,                         &
@@ -103,6 +105,7 @@
       USE mod_scalars
       USE mod_vegetation
       USE mod_vegarr
+      USE bc_2d_mod, ONLY: bc_r2d_tile
       USE bc_3d_mod, ONLY: bc_r3d_tile
       USE exchange_2d_mod
       USE exchange_3d_mod
@@ -125,6 +128,7 @@
       real(r8), intent(inout) :: plant(LBi:,LBj:,:,:)
 #  ifdef VEG_FLEX
       real(r8), intent(inout) :: bend(LBi:,LBj:,:)
+      real(r8), intent(inout) :: plant_hght_flex(LBi:,LBj:)
 #  endif
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT
       real(r8), intent(inout) :: marsh_mask(LBi:,LBj:)
@@ -143,6 +147,7 @@
       real(r8), intent(inout) :: plant(LBi:UBi,LBj:UBj,NVEG,NVEGP)
 #  ifdef VEG_FLEX
       real(r8), intent(inout) :: bend(LBi:UBi,LBj:UBj,N(ng),NVEG)
+      real(r8), intent(inout) :: plant_hght_flex(LBi:UBi,LBj:UBj)
 #  endif
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
       real(r8), intent(inout) :: marsh_mask(LBi:UBi,LBj:UBj)
@@ -191,7 +196,7 @@
 !  to zero. The value of 0.75 is arbitrary limitation assigment
 !  (same as for bottom stress).
 !
-      cff=0.75_r8/dt(ng)
+      cff=0.25_r8/dt(ng)
 # endif
 !
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
@@ -267,9 +272,10 @@
               cflex=1.0_r8-((1.0_r8-0.9_r8*cff6)/(cff5))
               cflex=MIN(cflex, 1.0_r8)
 !
-! Effective blade length
+! Effective blade length and save it
 !
               plant_height_eff=cflex*plant(i,j,iveg,phght)
+              plant_hght_flex(i,j)=plant_height_eff
 !
 ! Blade bending angle
 !
@@ -391,12 +397,22 @@
      &                          rv_veg(:,:,:))
       END IF
 !
-#  if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+#  if defined MARSH_RETREAT
       DO ivpr=1,NVEGP
         CALL bc_r3d_tile (ng, tile,                                     &
      &                          LBi, UBi, LBj, UBj, 1, NVEG,            &
      &                          plant(:,:,:,ivpr))
       END DO
+#  endif 
+#  if defined VEG_FLEX 
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                          LBi, UBi, LBj, UBj,                     &
+                                plant_hght_flex)
+      CALL mp_exchange2d (ng, tile, iNLM,  1,                           &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    plant_hght_flex)
 #  endif
 !
 # ifdef DISTRIBUTE
@@ -414,7 +430,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ru_veg, rv_veg)
 ! 
-#  if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+#  if defined MARSH_RETREAT || defined VEG_FLEX
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, NVEG, 1, NVEGP,        &
      &                    NghostPoints,                                 &
