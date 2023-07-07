@@ -261,9 +261,6 @@
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
       REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
       REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
-#ifdef SPECTRUM_STOKES
-      REAL, ALLOCATABLE :: KSS(:), USS(:), VSS(:)                         
-#endif
       REAL              :: KNUM(MSC), CG(MSC), NE(MSC), NED(MSC)          40.31
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
       TYPE(ORQDAT), POINTER :: CORQ                                       40.31
@@ -404,11 +401,6 @@
 !         assign memory to array ACLOC (contains spectrum for one output point)
 !
           ALLOCATE(ACLOC(MDC*MSC))                                        40.31
-#ifdef SPECTRUM_STOKES
-          ALLOCATE(KSS(MIP*MSC))                                          
-          ALLOCATE(USS(MIP*MSC))
-          ALLOCATE(VSS(MIP*MSC))
-#endif
 !
 !         call SWOEXA to compute quantities for which spectrum is needed
 !         (except wave-induced force)
@@ -421,14 +413,7 @@
      &                 KNUM                ,CG                  ,         40.31 30.90
      &                 SPCDIR              ,NE                  ,         40.31 30.90
      &                 NED                 ,KGRPNT              ,         40.31 30.90
-     &                 COMPDA(1,JDP2)      ,CROSS                         40.86
-#ifdef SPECTRUM_STOKES
-     &                                                          ,
-     &                 KSS(1)                                   ,
-     &                 USS(1)                                   ,
-     &                 VSS(1)                                   
-#endif
-     &                                                          )
+     &                 COMPDA(1,JDP2)      ,CROSS               )         40.86
 !
 !         call SWOEXF to compute wave-driven force on regular grid
 !
@@ -445,9 +430,6 @@
      &                                                             )
 !
           DEALLOCATE(ACLOC)                                               40.31
-#ifdef SPECTRUM_STOKES
-          DEALLOCATE(KSS,USS,VSS)
-#endif
         ENDIF
 !
         IF (ITEST.GE.100 ) THEN
@@ -935,7 +917,7 @@
                                          ! output point and computational 40.86
                                          ! grid point                     40.86
 !
-      INTEGER :: Numcouple, IVTYP, ic
+      INTEGER :: Numcouple, IVTYP
       INTEGER, ALLOCATABLE :: CplType(:)
       INTEGER, ALLOCATABLE :: OQI(:)
       REAL*8, ALLOCATABLE :: OQR(:)
@@ -944,9 +926,6 @@
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
       REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
       REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
-#ifdef SPECTRUM_STOKES
-      REAL, ALLOCATABLE :: KSS(:), USS(:), VSS(:)
-#endif
       REAL              :: KNUM(MSC), CG(MSC), NE(MSC), NED(MSC)          40.31
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
       TYPE(ORQDAT), POINTER :: CORQ                                       40.31
@@ -960,49 +939,27 @@
 
       Numcouple=14
 #if defined VEGETATION && defined VEG_SWAN_COUPLING 
-      Numcouple=Numcouple+2
-#endif
-#if defined SPECTRUM_STOKES
-      Numcouple=Numcouple+1
+!      Numcouple=15
+      Numcouple=16
 #endif 
       ALLOCATE (Cpltype(Numcouple))
-      ic=1
-      Cpltype(ic)=54                      ! DISBOT  SWOEXD
-      ic=ic+1
-      Cpltype(ic)=55                      ! DISSURF SWOEXD
-      ic=ic+1
-      Cpltype(ic)=56                      ! DISWCAP SWOEXD
-      ic=ic+1
-      Cpltype(ic)=50                      ! TMBOT   SWOEXD
-      ic=ic+1
-      Cpltype(ic)=6                       ! UBOT    SWOEXD
-      ic=ic+1
-      Cpltype(ic)=8                       ! QB      SWOEXD
-      ic=ic+1
-      Cpltype(ic)=10                      ! HSIGN   SWOEXA
-      ic=ic+1
-      Cpltype(ic)=12                      ! RTP     SWOEXA
-      ic=ic+1
-      Cpltype(ic)=13                      ! DIR     SWOEXA
-      ic=ic+1
-      Cpltype(ic)=14                     ! PDI     SWOEXA
-      ic=ic+1
-      Cpltype(ic)=17                     ! WLEN    SWOEXA
-      ic=ic+1
-      Cpltype(ic)=71                     ! WLENP   SWOEXA
-      ic=ic+1
-      Cpltype(ic)=16                     ! WDSPR   SWOEXA
-      ic=ic+1
-      Cpltype(ic)=58                     ! WQP     SWOEXA
+      Cpltype(1)=54                      ! DISBOT  SWOEXD
+      Cpltype(2)=55                      ! DISSURF SWOEXD
+      Cpltype(3)=56                      ! DISWCAP SWOEXD
+      Cpltype(4)=50                      ! TMBOT   SWOEXD
+      Cpltype(5)=6                       ! UBOT    SWOEXD
+      Cpltype(6)=8                       ! QB      SWOEXD
+      Cpltype(7)=10                      ! HSIGN   SWOEXA
+      Cpltype(8)=12                      ! RTP     SWOEXA
+      Cpltype(9)=13                      ! DIR     SWOEXA
+      Cpltype(10)=14                     ! PDI     SWOEXA
+      Cpltype(11)=17                     ! WLEN    SWOEXA
+      Cpltype(12)=71                     ! WLENP   SWOEXA
+      Cpltype(13)=16                     ! WDSPR   SWOEXA
+      Cpltype(14)=58                     ! WQP     SWOEXA
 #if defined VEGETATION && defined VEG_SWAN_COUPLING 
-      ic=ic+1
-      Cpltype(ic)=57                     ! DISVEG  SWOEXD         
-      ic=ic+1
-      Cpltype(ic)=80                     ! DICDVG  SWOEXD         
-#endif 
-#if defined SPECTRUM_STOKES
-      ic=ic+1
-      Cpltype(ic)=81                     ! SSPEC SWOEXA
+      Cpltype(15)=57                     ! DISVEG  SWOEXD         
+      Cpltype(16)=80                     ! DICDVG  SWOEXD         
 #endif 
 !
       ALLOCATE (OQI(4))
@@ -1053,12 +1010,7 @@
 !       assign memory to array VOQ (contains output quantities for all
 !                                   output points)
         ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
-#ifdef SPECTRUM_STOKES
-!       assign memory to array KSS, USS, VSS
-        ALLOCATE(KSS(MIP*MSC))
-        ALLOCATE(USS(MIP*MSC))
-        ALLOCATE(VSS(MIP*MSC))
-#endif
+!       VOQ = 0.
 !
 !       assign memory to array CROSS (indicates crossing of obstacles     40.86
 !                                     in between output and grid points)  40.86
@@ -1108,14 +1060,7 @@
      &                 KNUM                ,CG                  ,         40.31 30.90
      &                 SPCDIR              ,NE                  ,         40.31 30.90
      &                 NED                 ,KGRPNT              ,         40.31 30.90
-     &                 COMPDA(1,JDP2)      ,CROSS                         40.86
-#ifdef SPECTRUM_STOKES
-     &                                                          ,
-     &                 KSS(1)                                   ,
-     &                 USS(1)                                   ,
-     &                 VSS(1)                                   
-#endif
-     &                                                          )
+     &                 COMPDA(1,JDP2)      ,CROSS               )         40.86
 !
           DEALLOCATE(ACLOC)                                               40.31
         ENDIF
@@ -1124,15 +1069,9 @@
 
 !       Couple to ocean model
         CALL WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
-#ifdef SPECTRUM_STOKES
-     &                         KSS(1), USS(1), VSS(1),
-#endif
      &                         IVTYPE, COMPDA, Numcouple, ng, io)
         IF (STPNOW()) RETURN
         DEALLOCATE(VOQ,CROSS,IONOD)
-#ifdef SPECTRUM_STOKES
-        DEALLOCATE(KSS,USS,VSS)
-#endif
   70  CONTINUE
 !
 !     Termination of output
@@ -1388,9 +1327,6 @@
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
       REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
       REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
-#ifdef SPECTRUM_STOKES
-      REAL, ALLOCATABLE :: KSS(:), USS(:), VSS(:)
-#endif
       REAL              :: KNUM(MSC), CG(MSC), NE(MSC), NED(MSC)          40.31
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
       TYPE(ORQDAT), POINTER :: CORQ                                       40.31
@@ -1471,11 +1407,7 @@
 !       assign memory to array VOQ (contains output quantities for all
 !                                   output points)
         ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
-#ifdef SPECTRUM_STOKES
-       ALLOCATE(KSS(MIP*MSC))
-       ALLOCATE(USS(MIP*MSC))
-       ALLOCATE(VSS(MIP*MSC))
-#endif
+!       VOQ = 0.
 !
 !       assign memory to array CROSS (indicates crossing of obstacles     40.86
 !                                     in between output and grid points)  40.86
@@ -1525,19 +1457,10 @@
      &                 KNUM                ,CG                  ,         40.31 30.90
      &                 SPCDIR              ,NE                  ,         40.31 30.90
      &                 NED                 ,KGRPNT              ,         40.31 30.90
-     &                 COMPDA(1,JDP2)      ,CROSS                         40.86
-#ifdef SPECTRUM_STOKES
-     &                 KSS(1)                                   ,
-     &                 USS(1)                                   ,
-     &                 VSS(1)                                   
-#endif
-     &                                                          )
+     &                 COMPDA(1,JDP2)      ,CROSS               )         40.86
 !
           DEALLOCATE(ACLOC)                                               40.31
         ENDIF
-#ifdef SPECTRUM_STOKES
-        DEALLOCATE(KSS,USS,VSS)
-#endif
 !
   68    CONTINUE                                                          40.31
 
@@ -1834,18 +1757,6 @@
            ENDIF                                                          41.62
          ENDIF                                                            41.62
 !
-!        for spectrum based Stokes drift estimate
-!
-#if defined SPECTRUM_STOKES
-         IF (IVTYPE.EQ.81) THEN
-           IF (.NOT.OQPROC(81)) THEN
-             NVOQP = NVOQP + 1
-             VOQR(81) = NVOQP
-             OQPROC(81) = .TRUE.
-           ENDIF
-         ENDIF
-#endif
-!
 !        for some quantities compute action densities
 !
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
@@ -1862,10 +1773,6 @@
      &       IVTYPE.EQ.32 .OR. IVTYPE.EQ.33 .OR. IVTYPE.EQ.42 .OR.
      &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59 .OR. IVTYPE.EQ.71      )      41.15 40.64 40.41 40.00
      &   BKC = 2
-
-#ifdef SPECTRUM_STOKES
-         IF (IVTYPE.EQ.81) BKC =2 
-#endif
 !
          IF (IVTYPE.EQ.11 .AND. ICUR.GT.0) BKC = 2                        20.36
          IF (BKC.GT.0) THEN
@@ -3032,6 +2939,48 @@
         ELSE
           DO IP = 1, MIP                                                  31.02
             VOQ(IP,VOQR(80))  = OVEXCV(80)                                31.02
+          ENDDO                                                           31.02
+        ENDIF
+      ENDIF
+!
+!     Keulegan Carpenter number 
+!
+      IF (OQPROC(81)) THEN                                               40.61
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 81,
+     &  VOQR(81), JDSKC
+        IF (JDSKC.GT.1) THEN                                              40.65
+           IF (OPTG.NE.5) THEN                                            40.80
+             CALL SWIPOL(COMPDA(1,JDSKC),OVEXCV(81), XC, YC, MIP, CROSS,  40.86
+     &                    VOQ(1,VOQR(81)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                           40.80
+              CALL SwanInterpolateOutput ( VOQ(1, VOQR(81)), VOQ(1,1),    40.80
+     &                                     VOQ(1,2), COMPDA(1,JDSKC),     40.80
+     &                                     MIP, KVERT, OVEXCV(81) )       40.80
+          ENDIF                                                           40.80
+        ELSE
+          DO IP = 1, MIP                                                  31.02
+            VOQ(IP,VOQR(81))  = OVEXCV(81)                                31.02
+          ENDDO                                                           31.02
+        ENDIF
+      ENDIF
+!
+!      Q  
+!
+      IF (OQPROC(82)) THEN                                               40.61
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 82,
+     &  VOQR(82), JDQQQ
+        IF (JDQQQ.GT.1) THEN                                              40.65
+           IF (OPTG.NE.5) THEN                                            40.80
+             CALL SWIPOL(COMPDA(1,JDQQQ),OVEXCV(82), XC, YC, MIP, CROSS,  40.86
+     &                    VOQ(1,VOQR(82)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                           40.80
+              CALL SwanInterpolateOutput ( VOQ(1, VOQR(82)), VOQ(1,1),    40.80
+     &                                     VOQ(1,2), COMPDA(1,JDQQQ),     40.80
+     &                                     MIP, KVERT, OVEXCV(82) )       40.80
+          ENDIF                                                           40.80
+        ELSE
+          DO IP = 1, MIP                                                  31.02
+            VOQ(IP,VOQR(82))  = OVEXCV(82)                                31.02
           ENDDO                                                           31.02
         ENDIF
       ENDIF
@@ -4223,15 +4172,7 @@
      &                   WK         ,CG         ,
      &                   SPCDIR     ,NE         ,
      &                   NED        ,KGRPNT     ,
-     &                   DEPXY      ,CROSS                                40.86 30.50
-#ifdef SPECTRUM_STOKES
-     &                                          ,
-     &                   KSS                    ,
-     &                   USS                    ,
-     &                   VSS
-#endif
-     &                                          )
-     
+     &                   DEPXY      ,CROSS      )                         40.86 30.50
 !                                                                      *
 !***********************************************************************
 !
@@ -4387,11 +4328,7 @@
 !
 ! 13. Source text
 !
-#ifdef SPECTRUM_STOKES
-      PARAMETER  (NVOTP=94)
-#else
-      PARAMETER  (NVOTP=93)                                               41.15 40.64 40.51 40.41 40.00
-#endif
+      PARAMETER  (NVOTP=93)                                               41.62 41.15 40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -4404,12 +4341,6 @@
 !
       INTEGER    NP             ,DIMXPT                                   41.62
       REAL       UABS           ,UDIR                                     41.62
-#ifdef SPECTRUM_STOKES
-      REAL       ETOTX, ETOTY, ETOTXM1, ETOTYM1
-      REAL       USS(MIP,MSC)
-      REAL       VSS(MIP,MSC)
-      REAL       KSS(MIP,MSC)
-#endif
       REAL, ALLOCATABLE :: XPT(:,:)                                       41.62
 !
       REAL, ALLOCATABLE :: FLUX(:,:,:), FLOC(:,:)
@@ -4418,7 +4349,6 @@
       LOGICAL :: EXCPT     ! if true value in point is undefined          40.86
       SAVE IENT, IVOTP
       DATA IENT /0/
-#ifdef SPECTRUM_STOKES
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
      &            100, 101, 102, 103, 104, 105, 106, 107, 108, 109,       41.62
      &            110, 111, 112, 113, 114, 115, 116, 117, 118, 119,       41.62
@@ -4427,18 +4357,7 @@
      &            140, 141, 142, 143, 144, 145, 146, 147, 148, 149,       41.62
      &            150, 151, 152, 153, 154, 155, 156, 157, 158, 159,       41.62
      &            160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171,  41.62
-     &            42, 43, 44, 47, 48, 53, 58, 59, 71, 81/                     41.15 40.64 40.51 40.41 40.00
-#else
-      DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            100, 101, 102, 103, 104, 105, 106, 107, 108, 109,       41.62
-     &            110, 111, 112, 113, 114, 115, 116, 117, 118, 119,       41.62
-     &            120, 121, 122, 123, 124, 125, 126, 127, 128, 129,       41.62
-     &            130, 131, 132, 133, 134, 135, 136, 137, 138, 139,       41.62
-     &            140, 141, 142, 143, 144, 145, 146, 147, 148, 149,       41.62
-     &            150, 151, 152, 153, 154, 155, 156, 157, 158, 159,       41.62
-     &            160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171,  41.62
-     &            42, 43, 44, 47, 48, 53, 58, 59, 71/                     41.15 40.64 40.51 40.41 40.00
-#endif
+     &            42, 43, 44, 47, 48, 53, 58, 59, 71 /                    41.15 40.64 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     in case of transport of energy, compute the energy flux in all grid points
@@ -5798,38 +5717,6 @@
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
         ENDIF
-#ifdef SPECTRUM_STOKES
-!
-!       Stokes drift spectrum in shallow water
-!
-        IVTYPE = 81
-        IF (OQPROC(IVTYPE)) THEN
-           ETOTXM1 = 0.
-           ETOTYM1 = 0.
-           DO IS = 2, MSC
-              ETOTX = 0.
-              ETOTY = 0.
-              DO ID = 1, MDC
-                 EADX  = ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
-                 EADY  = ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
-                 ETOTX = ETOTX + EADX
-                 ETOTY = ETOTY + EADY   
-              ENDDO
-              DS = SPCSIG(IS) - SPCSIG(IS-1)
-              USS(IP,IS-1) = DS*(WK(IS)*ETOTX*SPCSIG(IS)**2.0
-     &                     + WK(IS-1)*ETOTXM1*SPCSIG(IS-1)**2.0)
-              VSS(IP,IS-1) = DS*(WK(IS)*ETOTY*SPCSIG(IS)**2.0
-     &                     + WK(IS-1)*ETOTYM1*SPCSIG(IS-1)**2.0)
-              ETOTXM1 = ETOTX
-              ETOTYM1 = ETOTY
-              KSS(IP,IS-1) = 0.5*(WK(IS)+WK(IS-1))
-           END DO
-
-           USS(IP,MSC) = 2.0*WK(MSC)*ETOTX*SPCSIG(MSC)**3.0
-           VSS(IP,MSC) = 2.0*WK(MSC)*ETOTY*SPCSIG(MSC)**3.0
-           KSS(IP,MSC) = WK(MSC)
-        ENDIF
-#endif
 !
 !       partitioning output according to Hanson and Phillips (2001)
 !
@@ -5921,16 +5808,6 @@
           ENDIF
  730    CONTINUE
 !
-#ifdef SPECTRUM_STK
-        IF (IVTYPE.EQ.80) THEN
-          DO IS = 1, MSC
-             USS(IP,IS) = OVEXCV(IVTYPE)
-             VSS(IP,IS) = OVEXCV(IVTYPE)
-             KSS(IP,IS) = OVEXCV(IVTYPE)
-          END DO
-        ENDIF
-#endif
-! 
  800  CONTINUE
 !
       IF (ALLOCATED(FLUX)) DEALLOCATE(FLUX)

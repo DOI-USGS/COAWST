@@ -42,13 +42,37 @@
       END DO
 # endif
 !
+# ifdef VEG_FLEX 
+!
+!  Write out height modification due to flexibility.
+!
+      IF (Hout(idhgtf,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idhgtf), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     VEG(ng)%plant_hght_flex)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idhgtf)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif 
+!
 # ifdef VEG_STREAMING
 !
 !  Write out wave dissipation due to vegetation
 !
       IF (Hout(idWdvg,ng)) THEN
-        scale=rho0                          ! W m /kg to W/m2
-!       scale=1.0_r8
+        scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg), &
      &                     HIS(ng)%Rindex, gtype,                       &
@@ -69,7 +93,7 @@
 !
 !  Write out spectral Cd due to vegetation.
 !
-      IF (Hout(idCdvg,ng)) THEN
+      IF (Hout(idCdvg,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idCdvg), &
@@ -80,7 +104,7 @@
 # endif
      &                     VEG(ng)%Cdwave_veg)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idCdvg)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -89,7 +113,56 @@
         END IF
       END IF
 # endif
+# if defined VEG_TURB && defined VEG_TURB_WRITEHIS 
 !
+!  Write out turbulent kinetic energy modification due to veg.
+!
+      IF (Hout(idvtke,ng)) THEN
+        scale=1.0_dp
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idvtke), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask_full,                       &
+#  endif
+     &                     VEG(ng) % tke_veg(:,:,:),                    &
+     &                     SetFillVal = .FALSE.)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idvtke)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out turbulent length scale field due to veg. 
+!
+      IF (Hout(idvgls,ng)) THEN
+        scale=1.0_dp
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idvgls), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask_full,                       &
+#  endif
+     &                     VEG(ng) % gls_veg(:,:,:),                    &
+     &                     SetFillVal = .FALSE.)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idvgls)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+# endif 
+! 
 # ifdef MARSH_DYNAMICS
 !
 !  Write out masking for marsh cells.
@@ -216,9 +289,9 @@
           RETURN
         END IF
       END IF
-#  endif
+#  endif 
 !
-#  if  defined MARSH_VERT_GROWTH
+#  if  defined MARSH_VERT_GROWTH 
 !
 !  Write mean high high water over a given frequency.
 !
@@ -332,5 +405,5 @@
           RETURN
         END IF
       END IF
-#  endif
-# endif
+#  endif  
+# endif  

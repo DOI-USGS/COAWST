@@ -34,12 +34,23 @@
 !                idvprp(pbgbm)=varid
 !#endif
 #endif 
+#if defined VEG_TURB && defined VEG_TURB_WRITEHIS
+            CASE ('idvtke')
+              idvtke=varid
+            CASE ('idvgls')
+              idvgls=varid
+#endif
 #if defined VEG_STREAMING 
             CASE ('idWdvg')
               idWdvg=varid
             CASE ('idCdvg')
               idCdvg=varid
 #endif 
+#if defined VEG_FLEX
+            CASE ('idhgtf')
+              idhgtf=varid
+#endif 
+	       
 ! 
 #if defined MARSH_DYNAMICS
             CASE ('idTims')

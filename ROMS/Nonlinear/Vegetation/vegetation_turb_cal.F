@@ -99,6 +99,13 @@
       USE mod_vegetation 
       USE mod_vegarr
       USE vegetation_drag_mod
+      USE exchange_3d_mod, ONLY : exchange_w3d_tile
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange3d
+# endif
+
+
+!      USE tkebc_mod, ONLY : tkebc_tile
 !
 !  Imported variable declarations.
 !
@@ -251,7 +258,36 @@
           END DO
         END DO 
       END DO VEG_LOOP
+
+# if defined VEG_TURB && defined VEG_TURB_WRITEHIS 
 !
+!-----------------------------------------------------------------------
+!  Set lateral boundary conditions.
+!-----------------------------------------------------------------------
+!
+!      CALL tkebc_tile (ng, tile,                                        &
+!     &                 LBi, UBi, LBj, UBj, N(ng),                       &
+!     &                 IminS, ImaxS, JminS, JmaxS,                      &
+!     &                 nnew, nstp,                                      &
+!     &                 gls_veg, tke_veg)
+
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          tke_veg(:,:,:))
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          gls_veg(:,:,:))
+      END IF
+
+#  ifdef DISTRIBUTE
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    tke_veg(:,:,:),    gls_veg(:,:,:))
+#  endif 
+# endif               
       RETURN
       END SUBROUTINE vegetation_turb_tile
 #endif

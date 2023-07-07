@@ -63,9 +63,9 @@
      &                   GRID(ng) % rmask_wet,                          &
 # endif
 # ifdef SEDBIO_COUP
-     &                   GRID(ng) % Hz,                                 &
+     &                  GRID(ng) % Hz,                                  &
 #  ifdef DIAGNOSTICS_BIO
-     &                   DIAGS(ng) % DiaBio2d,                          &
+     &                  DIAGS(ng) % DiaBio2d,                           &
 #   ifdef WET_DRY
      &                   GRID(ng) % rmask_full,                         &
 #   endif
@@ -216,7 +216,7 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #  ifdef SUSPLOAD
@@ -330,6 +330,9 @@ minlayer_thick(ng) = newlayer_thick(ng)
       DO i=Istr,Iend
 #  ifdef SEDBIO_COUP
          ndep_thck_tot(i,j)=0.0_r8
+!IF ((i.eq.3).and.(j.eq.3)) THEN
+!write(6,*),"sd conc 0",bed(i,j,1,iboxy)/bed(i,j,1,ithck)/bed(i,j,1,iporo)
+!ENDIF  
 #  endif
          SED_LOOP: DO ised=1,NST  
             dep_mass(i,ised)=0.0_r8
@@ -874,6 +877,12 @@ minlayer_thick(ng) = newlayer_thick(ng)
              cff2=MIN(1.0_r8,MAX(0.0_r8,Hz(i,j,1)/                      &
      &            (Hz(i,j,1)+MAX(bed(i,j,1,ithck)*bed(i,j,1,iporo),     &
      &            0.0_r8))))
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*),"w.c.conc 1",t(i,j,1,nnew,iwc)/Hz(i,j,1)
+!write(6,*),"sd conc 1",bed(i,j,1,ised)/bed(i,j,1,ithck)/bed(i,j,1,iporo)
+!write(6,*),"flux",cff1*cff2-t(i,j,1,nnew,iwc)
+!write(6,*),"DiaBio2d 0",DiaBio2d(i,j,idf)
+!ENDIF 
 #   if defined DIAGNOSTICS_BIO
              DiaBio2d(i,j,idf)=DiaBio2d(i,j,idf) +                      &
 #    ifdef WET_DRY
@@ -883,6 +892,12 @@ minlayer_thick(ng) = newlayer_thick(ng)
 #   endif
              t(i,j,1,nnew,iwc)=cff1*cff2
              bed(i,j,1,ised)=cff1*(1.0_r8-cff2)
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*),"w.c.conc 2",t(i,j,1,nnew,iwc)/Hz(i,j,1)
+!write(6,*),"sd conc 2",bed(i,j,1,ised)/bed(i,j,1,ithck)/bed(i,j,1,iporo)
+!write(6,*),"flux",cff1*cff2-t(i,j,1,nnew,iwc)
+!write(6,*),"DiaBio2d 2",DiaBio2d(i,j,idf)
+!ENDIF 
 #  else
 !            cff1=dC/dz in mmol/m3/m
 !            cff2=diffusive flux out of seabed in mmol/m2
@@ -902,6 +917,9 @@ minlayer_thick(ng) = newlayer_thick(ng)
              cff4=(t(i,j,1,nnew,iwc)+bed(i,j,1,ised))                   &
      &            *(bed(i,j,1,ithck)*bed(i,j,1,iporo)                   &
      &            /MAX(eps,Hz(i,j,1)+bed(i,j,1,ithck)*bed(i,j,1,iporo)))
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*),"DiaBio2d 0",DiaBio2d(i,j,idf)
+!ENDIF 
 #   if defined DIAGNOSTICS_BIO
              DiaBio2d(i,j,idf)=DiaBio2d(i,j,idf) +                      &
 #    ifdef WET_DRY
@@ -909,12 +927,25 @@ minlayer_thick(ng) = newlayer_thick(ng)
 #    endif
      &            cff2
 #   endif
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*),"w.c.conc 1",t(i,j,1,nnew,iwc)/Hz(i,j,1)
+!write(6,*),"sd conc 1",bed(i,j,1,ised)/bed(i,j,1,ithck)/bed(i,j,1,iporo)
+!write(6,*) "dC/dz",cff1
+!write(6,*),"flux",cff2
+!write(6,*),"DiaBio2d 1",DiaBio2d(i,j,idf)
+!ENDIF 
              t(i,j,1,nnew,iwc)=t(i,j,1,nnew,iwc) + cff2
              bed(i,j,1,ised)=bed(i,j,1,ised) - cff2
              IF ( ((cff2.gt.eps).and.(t(i,j,1,nnew,iwc).gt.cff3)).or.   &
      &       ((cff2.lt.(eps*-1.0_r8)).and.(bed(i,j,1,ised).gt.cff4)))   &
      &       THEN
 !            diffusion exceeded equilibrium
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*) "diffusion exceeded equilibrium"
+!write(6,*),"w.c. conc",cff3/Hz(i,j,1)
+!write(6,*),"seab conc",cff4/(bed(i,j,1,ithck)*bed(i,j,1,iporo))
+!write(6,*),"flux",cff3-t(i,j,1,nnew,iwc)
+!ENDIF
 #   if defined DIAGNOSTICS_BIO
                 DiaBio2d(i,j,idf)=DiaBio2d(i,j,idf) +                   &
 #    ifdef WET_DRY
@@ -925,6 +956,12 @@ minlayer_thick(ng) = newlayer_thick(ng)
                 t(i,j,1,nnew,iwc)=cff3
                 bed(i,j,1,ised)=cff4
              ENDIF
+!IF ((i.eq.3).and.(j.eq.3).and.(ised.eq.iboxy)) THEN
+!write(6,*),"DiaBio2d 2",DiaBio2d(i,j,idf)
+!write(6,*),"w.c.conc 2",t(i,j,1,nnew,iOxyg)/Hz(i,j,1)
+!write(6,*),"sd conc 2",bed(i,j,1,iboxy)/bed(i,j,1,ithck)/bed(i,j,1,iporo)
+!ENDIF
+
 #  endif
           END DO
         END DO

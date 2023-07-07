@@ -1385,7 +1385,7 @@
         CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
         CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
         IF (MyRank.eq.0) THEN
-          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDENS (indv/m-2): ',   &
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDENS(stms/m2): ',    &
      &                      range(1),range(2)
         END IF
 #  endif

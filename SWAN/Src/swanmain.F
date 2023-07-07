@@ -2880,8 +2880,10 @@
       JNPDA3= 41                                                          40.55
       JNPTK2= 42                                                          40.55
       JNPTK3= 43                                                          40.55
-      JDSXC = 44                                                          40.55
-      MCMVAR = 44
+      JDSXC=  44                                                          40.55
+      JDSKC=  45                                                          40.55
+      JDQQQ=  46                                                          40.55
+      MCMVAR = 46
       LADDS = .TRUE.
 #else
       MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
@@ -2940,6 +2942,8 @@
       JDSXW  = 1                                                          40.65 40.61
       JDSXV  = 1                                                          40.65 40.61
       JDSXC  = 1                                                          40.65 40.61
+      JDSKC  = 1                                                          40.65 40.61
+      JDQQQ  = 1                                                          40.65 40.61
 #endif
       JDSXM  = 1                                                          40.65 40.61
       JDSXT  = 1                                                          40.35
@@ -3710,6 +3714,30 @@
       OVHEXP(IVTYPE) = 1.
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 81
+      OVKEYW(IVTYPE) = 'DIKC'                                             40.61
+      OVSNAM(IVTYPE) = 'dikc'                                             40.85
+      OVLNAM(IVTYPE) = 'Kuelgan Carpenter number (veg)'
+      OVUNIT(IVTYPE) = ''
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 82
+      OVKEYW(IVTYPE) = 'DICQ '                                             40.61
+      OVSNAM(IVTYPE) = 'dicq'                                              40.85
+      OVLNAM(IVTYPE) = 'Q number'
+      OVUNIT(IVTYPE) = ''
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
       IVTYPE = 58                                                         40.64
       OVKEYW(IVTYPE) = 'QP'
       OVSNAM(IVTYPE) = 'Qp'
@@ -3974,24 +4002,6 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 360.
       OVEXCV(IVTYPE) = -999.
-
-!      As a note, 80 is listed earlier with Veg.
-!      IVTYPE = 80
-!      OVKEYW(IVTYPE) = 'DICD'                                             40.61
-!      ......
-#endif
-#if defined SWAN_MODEL && defined SPECTRUM_STOKES
-      IVTYPE = 81
-      OVKEYW(IVTYPE) = 'SSPEC'
-      OVSNAM(IVTYPE) = 'SSpec'
-      OVLNAM(IVTYPE) = 'Spectrum of Stokes drift'
-      OVUNIT(IVTYPE) = 'm2/s'
-      OVSVTY(IVTYPE) = 3
-      OVLLIM(IVTYPE) = -100.
-      OVULIM(IVTYPE) = 100.
-      OVLEXP(IVTYPE) = -2.
-      OVHEXP(IVTYPE) = 2.
-      OVEXCV(IVTYPE) = 0.
 #endif
 !
       IVTYPE = 100                                                        41.62
@@ -6422,6 +6432,8 @@
 !     initialize CDVEG_COAWST
       DO INDX = 1, MCGRD                                                  32.02
         COMPDA(INDX,JDSXC) =  0.                                          32.02
+        COMPDA(INDX,JDSKC) =  0.                                          32.02
+        COMPDA(INDX,JDQQQ) =  0.                                          32.02
       END DO 
 !
 !     --- initialize GAMBR and RESPL                                      41.38

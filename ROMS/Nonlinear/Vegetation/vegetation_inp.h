@@ -266,6 +266,31 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idvprp(pthck),:))
 #endif                                         
+#if defined VEG_TURB && defined VEG_TURB_WRITEHIS 
+            CASE ('Hout(idvtke)')
+              IF (idvtke.eq.0) THEN
+                IF (Master) WRITE (out,30) 'idvtke'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idvtke,:))
+            CASE ('Hout(idvgls)')
+              IF (idvgls.eq.0) THEN
+                IF (Master) WRITE (out,30) 'idvgls'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idvgls,:))
+#endif
+#if defined VEG_FLEX 
+            CASE ('Hout(idhgtf)')
+              IF (idhgtf.eq.0) THEN
+                IF (Master) WRITE (out,30) 'idhgtf'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idhgtf,:))
+#endif
 #ifdef VEG_STREAMING
             CASE ('Hout(idWdvg)')
               IF ((idWdvg).eq.0) THEN

@@ -553,7 +553,7 @@
 !****************************************************************
 !
       SUBROUTINE SVEG ( DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,
-     &                  KMESPC ,PLVEGT   ,
+     &                  KWAVE  ,KMESPC   ,PLVEGT ,
      &                  IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1    ,
      &                  NPLA2  )
 !
@@ -668,6 +668,69 @@
 !
 !     and is linearized by means of the Picard iteration
 !
+!     IVEG = 2
+!     Jacobsen et al. (2019) published a frequency-dependent
+!     dissipation model for waves propagating over a canopy
+!
+!     The dissipation per frequency is
+!
+!                              ----------
+!                              | 2 mu,0
+!     dv_spectral =   2 F Su   | -------
+!                              |   pi
+!                             \|
+!
+!     where
+!
+!     F = 1/2 * rho * alpha^3 * Cd * bv * Nv
+!
+!     The velocity spectrum Su is associated with the
+!     water surface spectral distribution Sn, as given by
+!
+!                                 2
+!               w * cosh k(h+z)
+!     Su =  (  ----------------- )   * Sn
+!                   sinh kh
+!
+!     where
+!
+!     dv_spectral =   dissipation per frequency and layer [kg^2/ms]
+!     F           =   canopy factor                        [kg/m^4]
+!     Su          =   velocity spectrum                     [m^2/s]
+!     mu,0        =   first moment velocity spectrum      [m^2/s^2]
+!     rho         =   water density                        [kg/m^3]
+!     Nv          =   vegetation density                [stems/m^2]
+!     bv          =   stem thickness                            [m]
+!     Cd          =   drag coefficient vegetation               [-]
+!     alpha = 1   =   velocity reduction factor by canopies     [-]
+!     w           =   radian frequency (per component)        [1/s]
+!     k           =   wave number (per component)             [1/m]
+!     z           =   elevation of still water level            [m]
+!                     (z = 0 at water surface)
+!     h           =   water depth                               [m]
+!     Sn          =   variance density spectrum             [m^2*s]
+!
+!     The depth-integrated and frequency-dependent dissipation is then
+!
+!
+!                   -h + ah
+!                   |\
+!                   |
+!     Sveg  =   -   |      dv_spectral dz / rho / g
+!                   |
+!                  \|
+!                   -h
+!
+!     where
+!
+!     ah =  canopy height (under water)                         [m]
+!
+!     The vertical integration is approximated using the Simpson's rule.
+!     A minimum number of integration points would be needed to reduce
+!     the error of the approximation; 21 points appeared to be sufficient
+!
+!     Note: current effects are not included in Jacobsen et al. (2019)
+
 !
 !  4. Argument variables
 !
@@ -680,6 +743,7 @@
 !     ISSTOP      maximum counter of wave component in frequency
 !                 space that is propagated
 !     KMESPC      mean average wavenumber according to the WAM-formulation
+!     KWAVE       wave number
 !     NPLA2       number of plants per square meter (depth-averaged)
 !     PLVEGT      array containing the vegetation source term for test-output
 !     SMEBRK      mean frequency according to first order moment
@@ -687,10 +751,19 @@
       INTEGER ISSTOP, IDCMIN(MSC), IDCMAX(MSC)
       REAL    DEP2(MCGRD)          ,
      &        IMATDA(MDC,MSC)      ,
+     &        KWAVE(MSC,MICMAX)    ,
      &        DISSC1(MDC,MSC,MDISP),
      &        PLVEGT(MDC,MSC,NPTST),
      &        NPLA2 (MCGRD)
       REAL    ETOT, SMEBRK, KMESPC
+!
+!  5. Parameter variables
+!
+!     ALFU        (orbital) velocity reduction factor by canopies
+!     NIP         total number of subintervals used by Simpson's rule
+!
+      INTEGER, PARAMETER :: NIP  = 20
+      REAL   , PARAMETER :: ALFU = 1.
 !
 !  6. Local variables
 !
@@ -698,27 +771,37 @@
 !     B     :     auxiliary variable
 !     C     :     auxiliary variable
 !     D     :     auxiliary variable
+!     DCIP  :     frequency-dependent dissipation for each integration point
+!     DZ    :     interval for vertical integration
+!     EKZ   :     exponential of k(h+z)
+!     FDD   :     factor with orbital velocity to determine Su from Sn
 !     ID    :     counter of the spectral direction
 !     IDDUM :     counter
 !     IENT  :     number of entries
 !     IK    :     counter
 !     IL    :     counter
 !     IS    :     counter of relative frequency band
+!     KC    :     wavenumber times canopy layer height
 !     KD    :     wavenumber times water depth
 !     KVEGH :     wavenumber times plant height
+!     KZ    :     wavenumber times z
 !     LAYPRT:     part of layer below water level
+!     MU    :     first order moment of velocity spectrum
 !     SINHK :     sinh(kh)
 !     SLAYH :     total sum of layer thicknesses
 !     SLAYH1:     sum of layer thicknesses below water level
-!     SLAYH2:     sum of layer thicknesses below water level
-!     SVEG1 :     layer-independent dissipation factor
 !     SVEG2 :     total sum of dissipation factor over layers
 !     SVEGET:     source term containing dissipation due to vegetation
 !                 to be stored in the array IMATDA
+!     ZDH   :     vertical point z between -depth to 0 or - value water clearance in water column
+!     ZH    :     cumulative layer thickness for velocities, bottom up
+!                 (z+d between 0 and vegetation height or depth value in water column)
 !
       INTEGER ID, IDDUM, IENT, IK, IL, IS
       REAL    A, B, C, D, KD, KVEGH, LAYPRT, SINHK, SLAYH,
-     &        SLAYH1, SLAYH2, SVEG1, SVEG2, SVEGET
+     &        SLAYH1, SLAYH2, SVEG1, SVEG2
+      REAL    DZ, EKZ, KC, KZ, MU, ZDH, ZH
+      REAL    DCIP(0:NIP,MSC), FDD(MSC), SVEGET(MSC)
 !
 !  9. Subroutines calling
 !
@@ -756,61 +839,69 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SVEG')
 
-!     --- compute layer-independent vegetation dissipation factor
-
-      KD    = KMESPC * DEP2(KCGRD(1))
-      IF ( KD.GT.10. ) RETURN
-      C     = 3.*KMESPC*(COSH(KD))**3
-      SVEG1 = SQRT(2./PI) * GRAV**2 * (KMESPC/SMEBRK)**3 * SQRT(ETOT)/ C
-      IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
-
 !     --- compute dissipation factor for each layer and summed up
 
       SLAYH = 0.
       DO IL = 1, ILMAX
          SLAYH = SLAYH + LAYH(IL)
       ENDDO
+      IF ( IVEG.EQ.1 ) THEN
+!     --- Suzuki et al. (2011)
+!     --- compute layer-independent vegetation dissipation factor
+         KD    = KMESPC * DEP2(KCGRD(1))
+         IF ( KD.GT.10. ) RETURN
+         C     = 3.*KMESPC*(COSH(KD))**3
+         SVEG1 = SQRT(2./PI)*GRAV**2 * (KMESPC/SMEBRK)**3 * SQRT(ETOT)/C
+         IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
 
-      KVEGH = 0.
-      C     = 0.
-      D     = 0.
-      SVEG2 = 0.
+         KVEGH = 0.
+         C     = 0.
+         D     = 0.
+         SVEG2 = 0.
 
-      IF ( DEP2(KCGRD(1)).GT.SLAYH ) THEN
+         IF ( DEP2(KCGRD(1)).GT.SLAYH ) THEN
 
-         DO IL = 1, ILMAX
-            KVEGH = KVEGH + KMESPC * LAYH(IL)
-            SINHK = SINH(KVEGH)
-            A     = C
-            B     = D
-            C     = SINHK**3
-            D     = 3.*SINHK
-            A     = C - A
-            B     = D - B
-            SVEG2 = SVEG2 + VEGDRL(IL)*VEGDIL(IL)*VEGNSL(IL)*(A + B)
-         END DO
+            DO IL = 1, ILMAX
+               KVEGH = KVEGH + KMESPC * LAYH(IL)
+               SINHK = SINH(KVEGH)
+               A     = C
+               B     = D
+               A     = C - A
+               B     = D - B
+               SVEG2 = SVEG2 + VEGDRL(IL)*VEGDIL(IL)*VEGNSL(IL)*(A + B)
+            END DO
 
-      ELSE IF ( DEP2(KCGRD(1)).LT.LAYH(1) ) THEN
+         ELSE IF ( DEP2(KCGRD(1)).LT.LAYH(1) ) THEN
 
-         SINHK = SINH(KD)
-         A     = SINHK**3
-         B     = 3.*SINHK
-         SVEG2 = VEGDRL(1)*VEGDIL(1)*VEGNSL(1)*(A + B)
+            SINHK = SINH(KD)
+            A     = SINHK**3
+            B     = 3.*SINHK
+            SVEG2 = VEGDRL(1)*VEGDIL(1)*VEGNSL(1)*(A + B)
 
-      ELSE
+         ELSE
 
-         SLAYH1 = 0.
-         SLAYH2 = 0.
-         LAYPRT = 0.
-         VGLOOP : DO IL = 1, ILMAX
-            SLAYH1 = SLAYH1 + LAYH(IL)
-            IF (DEP2(KCGRD(1)).LE.SLAYH1) THEN
-               DO IK = 1, IL-1
-                  SLAYH2 = SLAYH2 + LAYH(IK)
-               END DO
-               LAYPRT = DEP2(KCGRD(1)) - SLAYH2
-               DO IK = 1, IL-1
-                  KVEGH = KVEGH + KMESPC * LAYH(IK)
+            SLAYH1 = 0.
+            SLAYH2 = 0.
+            LAYPRT = 0.
+            VGLOOP : DO IL = 1, ILMAX
+               SLAYH1 = SLAYH1 + LAYH(IL)
+               IF (DEP2(KCGRD(1)).LE.SLAYH1) THEN
+                  DO IK = 1, IL-1
+                     SLAYH2 = SLAYH2 + LAYH(IK)
+                  END DO
+                  LAYPRT = DEP2(KCGRD(1)) - SLAYH2
+                  DO IK = 1, IL-1
+                    KVEGH = KVEGH + KMESPC * LAYH(IK)
+                    SINHK = SINH(KVEGH)
+                    A     = C
+                    B     = D
+                    C     = SINHK**3
+                    D     = 3.*SINHK
+                    A     = C - A
+                    B     = D - B
+                    SVEG2 = SVEG2+VEGDRL(IK)*VEGDIL(IK)*VEGNSL(IK)*(A+B)
+                  END DO
+                  KVEGH = KVEGH + KMESPC * LAYPRT
                   SINHK = SINH(KVEGH)
                   A     = C
                   B     = D
@@ -818,44 +909,106 @@
                   D     = 3.*SINHK
                   A     = C - A
                   B     = D - B
-                  SVEG2 = SVEG2+VEGDRL(IK)*VEGDIL(IK)*VEGNSL(IK)*(A + B)
+                  SVEG2 = SVEG2 + VEGDRL(IL)*VEGDIL(IL)*VEGNSL(IL)*(A+B)
+                  EXIT VGLOOP
+               END IF
+            END DO VGLOOP
+
+         END IF
+
+!        --- compute total dissipation
+
+         SVEGET(1:MSC) = SVEG1 * SVEG2
+
+      ELSE IF ( IVEG.EQ.2 ) THEN
+
+!     --- Jacobsen et al. (2019)
+!     --- compute layer- and frequency-independent canopy dissipation factor
+
+         SVEG1 = SQRT(2./PI)*(1/GRAV) * ALFU**3 *
+     &                                 VEGDRL(1) * VEGDIL(1) * VEGNSL(1)
+         IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
+
+!        --- determine integration interval (submerged vegetation is assumed)
+
+         DZ = MIN( SLAYH, DEP2(KCGRD(1)) ) / REAL(NIP)
+
+!        --- integration from bottom to surface using Simpson's rule
+
+         DO IK = 0, NIP
+
+            ZH  = DZ * REAL(IK)
+            ZDH = ZH - DEP2(KCGRD(1))
+
+            MU = 0.
+
+            DO IS = 1, ISSTOP
+
+               KD = KWAVE(IS,1) * DEP2(KCGRD(1))
+               KC = KWAVE(IS,1) * ZH
+               KZ = KWAVE(IS,1) * ZDH
+
+               IF ( KD.LT.20. ) THEN
+                  ! for all wave-water regimes
+                  FDD(IS) = ( SPCSIG(IS) * COSH(KC)/SINH(KD) )**2      
+                 ! coshk/sinhk should be smaller than 1 but for large kd numbers, almost 1
+               ELSE
+                  !option A: deep water orbital velocity
+                  EKZ     = EXP(KZ)                         ! argument of exp is negative
+                  FDD(IS) = ( SPCSIG(IS) * EKZ )**2
+                  !option B: very small energy in very high frequencies, neglect its dissipation
+                  !FDD(IS) = 0.
+               END IF
+
+!              --- compute first order moment
+
+               DO ID = 1, MDC
+                 MU = MU + FDD(IS) * SPCSIG(IS)**2 * AC2(ID,IS,KCGRD(1))
+                 ! based on velocity spectrum Su
                END DO
-               KVEGH = KVEGH + KMESPC * LAYPRT
-               SINHK = SINH(KVEGH)
-               A     = C
-               B     = D
-               C     = SINHK**3
-               D     = 3.*SINHK
-               A     = C - A
-               B     = D - B
-               SVEG2 = SVEG2 + VEGDRL(IL)*VEGDIL(IL)*VEGNSL(IL)*(A + B)
-               EXIT VGLOOP
+
+            END DO
+
+!           --- integrate Su in frequencies and directions
+
+            MU = MU * DDIR * FRINTF
+
+!           --- determine weight coefficient for integration based on Simpson's rule
+
+            IF ( IK.EQ.0 .OR. IK.EQ.NIP ) THEN
+               C = 1. / 3.
+            ELSE IF ( MOD(IK,2).EQ.0 ) THEN
+               C = 2. / 3.
+            ELSE
+               C = 4. / 3.
             END IF
-         END DO VGLOOP
+!           --- compute frequency-distributed dissipation per integration point
+            DO IS = 1, ISSTOP
+               DCIP(IK,IS) = C * FDD(IS) * SQRT(MU)
+            END DO
+         END DO
+
+         ! --- compute dissipation per frequency
+
+         SVEGET = SVEG1 * SUM(DCIP,1) * DZ
 
       END IF
-
-!     --- compute total dissipation
-
-      SVEGET = SVEG1 * SVEG2
 !
 !     *** test output ***
 !
       IF (TESTFL .AND. ITEST.GE.60) THEN
-         WRITE (PRTEST, 110) IVEG, KCGRD(1), DEP2(KCGRD(1)), SVEGET
+         WRITE (PRTEST, 110) IVEG, KCGRD(1), DEP2(KCGRD(1)), SVEGET(1)
  110     FORMAT (' SVEG :IVEG INDX DEP VEGFAC:', 2I5, 2E12.4)
       END IF
 
       DO IS = 1, ISSTOP
          DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
-
 !           *** store the results in the array IMATDA ***
 !           *** if testfl store results in array for isoline plot ***
-
-            IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET
-            IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET
-            DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET
+            IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET(IS)
+            IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET(IS)
+            DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET(IS)
          END DO
       END DO
 
@@ -865,11 +1018,11 @@
 !****************************************************************
 !
       SUBROUTINE SVEG_COAWST ( DEP2   ,IMATDA   ,ETOT ,SMEBRK,
-     &                  KMESPC ,PLVEGT                       ,
+     &                  KWAVE  ,KMESPC   ,PLVEGT             ,
      &                  IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1     ,
-     &                  ABRBOT ,KWAVE                        ,
+     &                  ABRBOT                               ,
      &                  NPLA2  ,NPHT2    ,NPDA2  ,NPTK2      ,
-     &                  CDVEG_COAWST )
+     &                  CDVEG_COAWST, KC_COAWST, Q_COAWST )
 !
 !****************************************************************
 !
@@ -923,10 +1076,17 @@
 !     40.55, May. 05: implementation of vegetation dissipation formula
 !     40.61, Sep. 06: introduce DISVEG variable for output purposes
 !     40.58, Nov. 08: some modifications and corrections
+!     41.77, Feb. 20: adding Jacobsen vegetation formulation
+!
+!     This routine has been modified for COAWST model 
+!     by Tarandeep Kalra, Nic Jeffress, Jim Hench, Neil Ganju and
+!     John Warner (2021). Cite Nic's future paper. 
 !
 !  2. Purpose
 !
 !     Computation of the source term due to vegetation dissipation
+!     that can account for spatially varying veg. with one vertical
+!     layer and spectral Cd (drag coefficient). 
 !
 !  3. Method
 !
@@ -936,6 +1096,7 @@
 !     waves. Vegetation characteristics that are used as input are
 !     drag coefficient, vegetation height, plant density and diameter.
 !
+!     IVEG=3, COAWST modification to account for spatially varying veg.
 !     The formula used in SWAN is due to Dalrymple (1984)
 !     (see Mendez and Losada, 2004):
 !
@@ -983,6 +1144,68 @@
 !
 !     and is linearized by means of the Picard iteration
 !
+!     IVEG=4, COAWST modification to account for spatially varying veg.
+!     Jacobsen et al. (2019) published a frequency-dependent
+!     dissipation model for waves propagating over a canopy
+!
+!     The dissipation per frequency is
+!
+!                              ----------
+!                              | 2 mu,0
+!     dv_spectral =   2 F Su   | -------
+!                              |   pi
+!                             \|
+!
+!     where
+!
+!     F = 1/2 * rho * alpha^3 * Cd * bv * Nv
+!
+!     The velocity spectrum Su is associated with the
+!     water surface spectral distribution Sn, as given by
+!
+!                                 2
+!               w * cosh k(h+z)
+!     Su =  (  ----------------- )   * Sn
+!                   sinh kh
+!
+!     where
+!
+!     dv_spectral =   dissipation per frequency and layer [kg^2/ms]
+!     F           =   canopy factor                        [kg/m^4]
+!     Su          =   velocity spectrum                     [m^2/s]
+!     mu,0        =   first moment velocity spectrum      [m^2/s^2]
+!     rho         =   water density                        [kg/m^3]
+!     Nv          =   vegetation density                [stems/m^2]
+!     bv          =   stem thickness                            [m]
+!     Cd          =   drag coefficient vegetation               [-]
+!     alpha = 1   =   velocity reduction factor by canopies     [-]
+!     w           =   radian frequency (per component)        [1/s]
+!     k           =   wave number (per component)             [1/m]
+!     z           =   elevation of still water level            [m]
+!                     (z = 0 at water surface)
+!     h           =   water depth                               [m]
+!     Sn          =   variance density spectrum             [m^2*s]
+!
+!     The depth-integrated and frequency-dependent dissipation is then
+!
+!
+!                   -h + ah
+!                   |\
+!                   |
+!     Sveg  =   -   |      dv_spectral dz / rho / g
+!                   |
+!                  \|
+!                   -h
+!
+!     where
+!
+!     ah =  canopy height (under water)                         [m]
+!
+!     The vertical integration is approximated using the Simpson's rule.
+!     A minimum number of integration points would be needed to reduce
+!     the error of the approximation; 21 points appeared to be sufficient
+!
+!     Note: current effects are not included in Jacobsen et al. (2019)
 !
 !  4. Argument variables
 !
@@ -1012,8 +1235,18 @@
      &        KWAVE(MSC,MICMAX)    ,
      &        NPLA2 (MCGRD), NPHT2 (MCGRD), 
      &        NPDA2 (MCGRD), NPTK2 (MCGRD), 
-     &        CDVEG_COAWST(MCGRD)
+     &        CDVEG_COAWST(MCGRD),
+     &        KC_COAWST(MCGRD), 
+     &        Q_COAWST(MCGRD)
       REAL    ETOT, SMEBRK, KMESPC, ABRBOT
+!
+!  5. Parameter variables
+!
+!     ALFU        (orbital) velocity reduction factor by canopies
+!     NIP         total number of subintervals used by Simpson's rule
+!
+      INTEGER, PARAMETER :: NIP  = 20
+      REAL   , PARAMETER :: ALFU = 1.
 !
 !  6. Local variables
 !
@@ -1021,34 +1254,43 @@
 !     B     :     auxiliary variable
 !     C     :     auxiliary variable
 !     D     :     auxiliary variable
+!     DCIP  :     frequency-dependent dissipation for each integration point
+!     DZ    :     interval for vertical integration
+!     EKZ   :     exponential of k(h+z)
+!     FDD   :     factor with orbital velocity to determine Su from Sn
 !     ID    :     counter of the spectral direction
 !     IDDUM :     counter
 !     IENT  :     number of entries
 !     IK    :     counter
 !     IL    :     counter
 !     IS    :     counter of relative frequency band
+!     KC    :     wavenumber times canopy layer height
 !     KD    :     wavenumber times water depth
 !     KVEGH :     wavenumber times plant height
+!     KZ    :     wavenumber times z
 !     LAYPRT:     part of layer below water level
+!     MU    :     first order moment of velocity spectrum
 !     SINHK :     sinh(kh)
 !     SLAYH :     total sum of layer thicknesses
 !     SLAYH1:     sum of layer thicknesses below water level
-!     SLAYH2:     sum of layer thicknesses below water level
-!     SVEG1 :     layer-independent dissipation factor
 !     SVEG2 :     total sum of dissipation factor over layers
 !     SVEGET:     source term containing dissipation due to vegetation
 !                 to be stored in the array IMATDA
+!     ZDH   :     vertical point z between -depth to 0 or - value water clearance in water column
+!     ZH    :     cumulative layer thickness for velocities, bottom up
+!                 (z+d between 0 and vegetation height or depth value in water column)
 !
       INTEGER ID, IDDUM, IENT, IK, IL, IS
       REAL    A, B, C, D, KD, KVEGH, LAYPRT, SINHK, SLAYH,
-     &        SLAYH1, SLAYH2, SVEG1, SVEG2, SVEGET
+     &        SLAYH1, SLAYH2, SVEG1, SVEG2
       REAL    VEGDIL_LOC, VEGTHK_LOC, VEGHGT_LOC 
       REAL    LBYWE 
+      REAL    DZ, EKZ, KC, KZ, MU, ZDH, ZH
       REAL    CAUCHY_NUM, KC_NUM, REY_NUM
       REAL    CFF1, CFF2, CFF3, LAYH_RAT 
       REAL    ALP, ORBVEL, SMA, Q, VEGDRL_CAL  
       REAL    SVEGDR
-!      REAL    CDVEG_COAWST(MCGRD)
+      REAL    DCIP(0:NIP,MSC), FDD(MSC), SVEGET(MSC)
 !
 ! Viscosity of water
 !       
@@ -1061,29 +1303,8 @@
 !
 ! 12. Structure
 !
-!     Vegetation parameters are given per layer thickness, so for
-!     each layer the contribution to wave damping is calculated
-!
-!     This routine checks in which layer the water level is present
-!
-!            -----------
-!                        ILMAX
-!            -----------
-!              _ d       2
-!            --|--------
-!              |         1
-!            --|--------
-!
-!     d     = waterdepth
-!     ILMAX = number of layers in grid point
-!
-!     Subsequently, the vegetation parameters up to the layer where the
-!     water level is in, are used to calculate dissipation for each layer
-!
-!     Thereafter, the contributions to disspation are summed up
-!
-!     With this summation the total dissipation due to vertical varying
-!     vegetation is calculated
+!     Vegetation properties are assumed to be in 1 vertical layer
+!     for COAWST-Veg routine. 
 !
 ! 13. Source text
 !
@@ -1091,87 +1312,100 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SVEG')
 
-!     --- compute layer-independent vegetation dissipation factor
+! --- compute layer-independent vegetation dissipation factor
 
 !   The current logic only works if there is 1 vertical layer. 
-! Tsk KD is KDMEAN 
-      KD     = KMESPC * DEP2(KCGRD(1))
+!   Use local arrays to save spatially varying vegetation properties.
+!   First calculate drag coeff. based on KC and Reynolds number 
+!
       VEGDIL_LOC = NPDA2(KCGRD(1))
       VEGTHK_LOC = NPTK2(KCGRD(1))
       VEGHGT_LOC = NPHT2(KCGRD(1))
- 
-      IF ( KD.GT.10. ) RETURN
-      C     = 3.*KMESPC*(COSH(KD))**3
-      SVEG1 = SQRT(2./PI) * GRAV**2 * (KMESPC/SMEBRK)**3 * SQRT(ETOT)/ C
+      SLAYH      = VEGHGT_LOC
 
-      IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
-!
-!     --- compute dissipation factor for each layer and summed up
-!
-      SLAYH = 0.
-      DO IL = 1, ILMAX
-!
-!     --- Modify the veg height that is spatially varying. 
-!
-        SLAYH   = SLAYH + LAYH(IL)
-      ENDDO
-!
-      SLAYH  =VEGHGT_LOC
-
-      KVEGH = 0.
-      C     = 0.
-      D     = 0.
-      SVEG2 = 0.
-!
-! If total veg height < depth of water, all the vertical layers 
-! of veg are fully submerged. 
-! 
       IF ( DEP2(KCGRD(1)).GT.SLAYH ) THEN
+#     ifdef VEG_FLEX_SWAN 
 !
-!           iffective blade length from Luhar and Nepf 2016.
+!       Effective blade length from Luhar and Nepf 2016.
 !          
-            ALP        = SLAYH/DEP2(KCGRD(1))
-            ORBVEL     = ( SQRT(2*ETOT)*SMEBRK*COSH(KD*ALP)/SINH(KD) )
+        ALP        = SLAYH/DEP2(KCGRD(1))
+        ORBVEL     = ( SQRT(2*ETOT)*SMEBRK*COSH(KD*ALP)/SINH(KD) )
 !
 ! Second moment of area. 
 !           
-            SMA        = VEGDIL_LOC*VEGTHK_LOC**(3./12.) 
-            CFF1       = RHO*VEGDIL_LOC*(ORBVEL**2.)*(SLAYH**3.)
+        SMA        = VEGDIL_LOC*VEGTHK_LOC**(3./12.) 
+        CFF1       = RHO*VEGDIL_LOC*(ORBVEL**2.)*(SLAYH**3.)
 !            
 !  Avoid division by zero later. 
 !    
-            CFF2       = MAX( (VEGYML(1)*SMA) , MIN_EPS)
+        CFF2       = MAX( (VEGYML(1)*SMA) , MIN_EPS)
 !
 ! Cauchy number. 
 !
-            CAUCHY_NUM = MIN(CFF1/CFF2, MAX_EPS)
+        CAUCHY_NUM = MIN(CFF1/CFF2, MAX_EPS)
 ! 
-            LAYH_RAT   = SLAYH/MIN(ABRBOT, MAX_EPS)
-            CFF3       = MIN( ( 0.7*(CAUCHY_NUM*LAYH_RAT)**(-0.21) ),  
+        LAYH_RAT   = SLAYH/MIN(ABRBOT, MAX_EPS)
+        CFF3       = MIN( ( 0.7*(CAUCHY_NUM*LAYH_RAT)**(-0.21) ),  
      &                               MAX_EPS  )
-            CFF3       = MIN(CFF3,1.0) ! to avoid NaN when Cauchy is zero 
+        CFF3       = MIN(CFF3,1.0) ! to avoid NaN when Cauchy is zero 
+#       else
+        CFF3       = 1.0
+#       endif 
 !
 ! Keulegan Carpenter number. 
 !
-            KC_NUM   = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/ 
+        KC_NUM   = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/ 
      &                   SINH(KD) )*(2.*pi/SMEBRK)/VEGDIL_LOC
-            KC_NUM   = MIN(KC_NUM, MAX_EPS)
+        KC_NUM   = MIN(KC_NUM, MAX_EPS)
 !
 ! Compute Reynolds number.
 !
-            REY_NUM  = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/
+        REY_NUM  = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/
      &                   SINH(KD) )*VEGDIL_LOC/NU  
-            REY_NUM   = MIN(REY_NUM, MAX_EPS)
+        REY_NUM   = MIN(REY_NUM, MAX_EPS)
 
-            IF    ( VEGDRL(1).eq.1. ) THEN 
-                    VEGDRL_CAL   = 1.
-            ELSEIF( VEGDRL(1).eq.2. ) THEN        
+        IF    ( VEGDRL(1).eq.1. ) THEN 
+           VEGDRL_CAL   = 1.
+        ELSEIF( VEGDRL(1).eq.2. ) THEN        
+           Q            = MIN(KC_NUM/(ALP**0.76), MAX_EPS)
+           VEGDRL_CAL   = MIN(EXP(-0.0138*Q)/(Q**0.3),MAX_EPS)
+        ENDIF 
+      ELSE IF ( DEP2(KCGRD(1)).LT.SLAYH ) THEN
+        IF    ( VEGDRL(1).eq.1. ) THEN 
+           VEGDRL_CAL   = 1.
+        ELSEIF( VEGDRL(1).eq.2. ) THEN        
+           VEGDRL_CAL   = 1.95
+        ENDIF 
+      END IF 
+!
+!     --- store values for output, compute drag coefficient in vegetation
+!
+        SVEGDR = VEGDRL_CAL
+        CDVEG_COAWST(KCGRD(1))=MIN(SVEGDR, MAX_EPS)
+        Q_COAWST(KCGRD(1))=Q
+        KC_COAWST(KCGRD(1))=KC_NUM
 !            
 ! Suzuki et al 2012 (actually Mendez and Losada 2004)- almost identical to B&H2009 below
 !  
-                    Q            = MIN(KC_NUM/(ALP**0.76), MAX_EPS)
-                    VEGDRL_CAL   = MIN(EXP(-0.0138*Q)/(Q**0.3),MAX_EPS)
-            ENDIF 
+      IF ( IVEG.EQ.3 ) THEN
+        KD     = KMESPC * DEP2(KCGRD(1))
+ 
+        IF ( KD.GT.10. ) RETURN
+        C     = 3.*KMESPC*(COSH(KD))**3
+        SVEG1 = SQRT(2./PI) * GRAV**2 * (KMESPC/SMEBRK)**3*SQRT(ETOT)/C
+
+        IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
+
+        SLAYH  =VEGHGT_LOC
+
+        KVEGH = 0.
+        C     = 0.
+        D     = 0.
+        SVEG2 = 0.
+!
+! If total veg height < depth of water, all of the veg
+! are fully submerged. 
+        IF ( DEP2(KCGRD(1)).GT.SLAYH ) THEN
              
             KVEGH = KVEGH + KMESPC * SLAYH * CFF3 
             SINHK = SINH(KVEGH)
@@ -1185,27 +1419,96 @@
 !
 ! If veg height > depth. 
 !
-      ELSE IF ( DEP2(KCGRD(1)).LT.SLAYH ) THEN
-         VEGDRL_CAL=1.95
+        ELSE IF ( DEP2(KCGRD(1)).LT.SLAYH ) THEN
 !
-         SINHK = SINH(KD)
-         A     = SINHK**3
-         B     = 3.*SINHK
-         SVEG2 = VEGDRL_CAL*VEGDIL_LOC*(A + B)
+            SINHK = SINH(KD)
+            A     = SINHK**3
+            B     = 3.*SINHK
+            SVEG2 = VEGDRL_CAL*VEGDIL_LOC*(A + B)
+        END IF
+!        
+!        --- compute total dissipation
+!
+        SVEGET(1:MSC) = SVEG1 * SVEG2
 
+      ELSE IF ( IVEG.EQ.4 ) THEN
+!
+!     --- Jacobsen et al. (2019)
+!
+         SVEG1 = SQRT(2./PI)*(1/GRAV) * ALFU**3 *
+     &                        VEGDRL_CAL * VEGDIL_LOC 
+         IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
+
+!        --- determine integration interval (submerged vegetation is assumed)
+
+         DZ = MIN( SLAYH, DEP2(KCGRD(1)) ) / REAL(NIP)
+
+!        --- integration from bottom to surface using Simpson's rule
+
+         DO IK = 0, NIP
+
+            ZH  = DZ * REAL(IK)
+            ZDH = ZH - DEP2(KCGRD(1))
+
+            MU = 0.
+
+            DO IS = 1, ISSTOP
+
+               KD = KWAVE(IS,1) * DEP2(KCGRD(1))
+               KC = KWAVE(IS,1) * ZH
+               KZ = KWAVE(IS,1) * ZDH
+
+               IF ( KD.LT.20. ) THEN
+                  ! for all wave-water regimes
+                  FDD(IS) = ( SPCSIG(IS) * COSH(KC)/SINH(KD) )**2
+                 ! coshk/sinhk should be smaller than 1 but for large kd numbers, almost 1
+               ELSE
+                  !option A: deep water orbital velocity
+                  EKZ     = EXP(KZ)                         ! argument of exp is negative
+                  FDD(IS) = ( SPCSIG(IS) * EKZ )**2
+                  !option B: very small energy in very high frequencies, neglect its dissipation
+                  !FDD(IS) = 0.
+               END IF
+
+!              --- compute first order moment
+
+               DO ID = 1, MDC
+                 MU = MU + FDD(IS) * SPCSIG(IS)**2 * AC2(ID,IS,KCGRD(1))
+                 ! based on velocity spectrum Su
+               END DO
+
+            END DO
+
+!           --- integrate Su in frequencies and directions
+
+            MU = MU * DDIR * FRINTF
+
+!           --- determine weight coefficient for integration based on Simpson's rule
+
+            IF ( IK.EQ.0 .OR. IK.EQ.NIP ) THEN
+               C = 1. / 3.
+            ELSE IF ( MOD(IK,2).EQ.0 ) THEN
+               C = 2. / 3.
+            ELSE
+               C = 4. / 3.
+            END IF
+
+!           --- compute frequency-distributed dissipation per integration point
+
+            DO IS = 1, ISSTOP
+               DCIP(IK,IS) = C * FDD(IS) * SQRT(MU)
+            END DO
+         END DO
+!
+! --- compute dissipation per frequency
+!
+         SVEGET = SVEG1 * SUM(DCIP,1) * DZ
       END IF
-
-!     --- compute total dissipation
-
-      SVEGET = SVEG1 * SVEG2
-!     --- compute drag coefficient in vegetation
-      SVEGDR = VEGDRL_CAL
-      CDVEG_COAWST(KCGRD(1))=MIN(SVEGDR, MAX_EPS)
 !
 !     *** test output ***
 !
       IF (TESTFL .AND. ITEST.GE.60) THEN
-         WRITE (PRTEST, 110) IVEG, KCGRD(1), DEP2(KCGRD(1)), SVEGET
+         WRITE (PRTEST, 110) IVEG, KCGRD(1), DEP2(KCGRD(1)), SVEGET(1)
  110     FORMAT (' SVEG :IVEG INDX DEP VEGFAC:', 2I5, 2E12.4)
       END IF
 
@@ -1216,10 +1519,10 @@
 !           *** store the results in the array IMATDA ***
 !           *** if testfl store results in array for isoline plot ***
 
-            IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET
-            IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET
-            DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET
-!           DISSC1(ID,IS,9) = DISSC1(ID,IS,9) + SVEGDR 
+            IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET(IS) 
+            IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET(IS)
+            DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET(IS)
+!            DISSC1(ID,IS,9) = DISSC1(ID,IS,9) + SVEGDR 
          END DO
       END DO
 
