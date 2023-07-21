@@ -12,8 +12,10 @@ fprintf(fid,'& **   COPY THESE LINES TO SWAN INPUT FILE   ********\n');
 fprintf(fid,'& TPAR Boundary files  ******************************\n');
 fprintf(fid,'BOUND SHAPESPEC JONSWAP MEAN DSPR DEGREES\n');
 for bd=1:specsize
-   fprintf(fid,'BOUNDSPEC SEGMENT XY '); 
-   fprintf(fid,'%3.4f %3.4f %3.4f %3.4f ',specpts(bd,1:4));
+%   fprintf(fid,'BOUNDSPEC SEGMENT XY '); 
+%   fprintf(fid,'%3.4f %3.4f %3.4f %3.4f ',specpts(bd,1:4));
+   fprintf(fid,'BOUNDSPEC SEGMENT IJ '); 
+   fprintf(fid,'%4i %4i %4i %4i ',specpts(bd,5:8));
    fprintf(fid,'VARIABLE FILE 0 ''../forcings/TPAR');
    pg=num2str(length(num2str(bd)));
    eval(['fprintf(fid,''%',pg,'g'',bd);']);
