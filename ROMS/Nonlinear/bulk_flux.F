@@ -913,7 +913,11 @@
           stflux(i,j,isalt)=stflux(i,j,isalt)*rmask(i,j)
 #   endif
 #   ifdef WET_DRY
+#    if !defined EMINUSP_SHIMA
+!    Evap is masked on the dry cells above.
+!    We do not want rain to be masked on dry cells.
           stflux(i,j,isalt)=stflux(i,j,isalt)*rmask_wet(i,j)
+#    endif
 #   endif
 #  endif
 # endif

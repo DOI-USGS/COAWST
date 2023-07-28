@@ -51,6 +51,9 @@
 # if defined SEDIMENT && defined SED_MORPH
       USE mod_sedbed
 # endif
+# ifdef EMINUSP_SHIMA
+      USE mod_forces
+# endif
      USE mod_stepping
 !
 !  Imported variable declarations.
@@ -71,6 +74,9 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
+# ifdef EMINUSP_SHIMA
+     &                    FORCES(ng) % stflux,                          &
+# endif
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
      &                    GRID(ng) % umask,                             &
@@ -125,6 +131,9 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
+# ifdef EMINUSP_SHIMA
+     &                          stflux,                                 &
+# endif
 # ifdef MASKING
      &                          rmask, umask, vmask,                    &
 # endif
@@ -186,6 +195,9 @@
       integer, intent(in) :: nrhs, nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
+#  ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:,LBj:,:)
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
@@ -239,6 +251,9 @@
 
 # else
 
+#  ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -1246,6 +1261,22 @@
             END DO
           END IF
 # endif
+# ifdef EMINUSP_SHIMA
+!  If MPDATA augment the intermediate tracer, Ta, with the 
+!  tracer divergence. For other advection schemes the change is 
+!  applied after the vertical advection is completed - similar to Lwsrc.
+!  Use 1/N to distribute the EminuisP flox in each water column layer.
+          cff1=dt(ng)/N(ng)
+          IF (Vadvection(itrc,ng)%MPDATA) THEN
+            DO k=1,N(ng)
+              DO i=IstrUm2,Iendp2i
+                cff=cff1*stflux(i,j,isalt)
+                cff3=t(i,j,k,3,itrc)
+                Ta(i,j,k,itrc)=Ta(i,j,k,itrc)-cff*cff3
+              END DO
+            END DO
+          END IF
+# endif
 !
 !  If MPDATA, time-step vertical advection for intermediate diffusive
 !  tracer, Ta (Tunits).
@@ -1547,6 +1578,30 @@
                   cff3=cff3*oHz(i,j,k)
 # endif
                   cff=cff1*(bed_thick(i,j,nstp)-bed_thick(i,j,3))
+                  t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-                &
+     &                               cff*cff3
+                END DO
+              END DO
+            END DO
+          END IF
+        END DO
+# endif
+# ifdef EMINUSP_SHIMA
+!  If not MPDATA, we add tracer mass to compensate for the
+!  added volume to keep the receiving cell concentration unchanged.
+!  Use 1/N to distribute the bed change in each water column layer.
+        cff1=dt(ng)/N(ng)
+        DO itrc=1,NT(ng)
+          IF (.not.((Hadvection(itrc,ng)%MPDATA).and.                   &
+     &              (Vadvection(itrc,ng)%MPDATA))) THEN
+            DO j=Jstr,Jend 
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  cff3=t(i,j,k,3,itrc)
+# ifdef SPLINES_VDIFF
+                  cff3=cff3*oHz(i,j,k)
+# endif
+                  cff=cff1*stflux(i,j,isalt)
                   t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-                &
      &                               cff*cff3
                 END DO

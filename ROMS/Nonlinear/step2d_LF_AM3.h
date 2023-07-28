@@ -65,6 +65,9 @@
 #ifdef SOLVE3D
      &                  nstp(ng), nnew(ng),                             &
 #endif
+#ifdef EMINUSP_SHIMA
+     &                  FORCES(ng) % stflux,                            &
+#endif
 #ifdef MASKING
      &                  GRID(ng) % pmask,       GRID(ng) % rmask,       &
      &                  GRID(ng) % umask,       GRID(ng) % vmask,       &
@@ -182,6 +185,9 @@
      &                        krhs, kstp, knew,                         &
 #ifdef SOLVE3D
      &                        nstp, nnew,                               &
+#endif
+#ifdef EMINUSP_SHIMA
+     &                        stflux,                                   &
 #endif
 #ifdef MASKING
      &                        pmask, rmask, umask, vmask,               &
@@ -301,6 +307,9 @@
 #endif
 !
 #ifdef ASSUMED_SHAPE
+# ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:,LBj:,:)
+# endif
 # ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:,LBj:)
       real(r8), intent(in) :: rmask(LBi:,LBj:)
@@ -444,6 +453,9 @@
 
 #else
 
+# ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
+# endif
 # ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -1080,20 +1092,29 @@
           END IF
         END DO
       END IF
-# if defined SEDIMENT && defined SED_MORPH
+#ifdef EMINUSP_SHIMA
+!     stflux is positive out of the domain.
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          zeta(i,j,knew)=zeta(i,j,knew)-                                &
+     &                       stflux(i,j,isalt)*dtfast(ng)
+        END DO
+      END DO
+#endif
+#if defined SEDIMENT && defined SED_MORPH
 !
 !  Scale the bed change with the fast time stepping. The
 !  half is becasue we do pred + cor. The ndtfast/nfast is
 !  becasue we do nfast steps to here.
 !
-        fac=0.5_r8*dtfast(ng)*ndtfast(ng)/(nfast(ng)*dt(ng))
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            cff=fac*(bed_thick(i,j,nstp)-bed_thick(i,j,nnew))
-            h(i,j)=h(i,j)-cff
+      fac=0.5_r8*dtfast(ng)*ndtfast(ng)/(nfast(ng)*dt(ng))
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          cff=fac*(bed_thick(i,j,nstp)-bed_thick(i,j,nnew))
+          h(i,j)=h(i,j)-cff
         END DO
       END DO
-# endif
+#endif
 !
 !  Set free-surface lateral boundary conditions.
 !

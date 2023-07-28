@@ -40,6 +40,9 @@
       USE mod_sedbed
       USE mod_stepping
 # endif
+# ifdef EMINUSP_SHIMA
+      USE mod_forces
+# endif
 !
 !  Imported variable declarations.
 !
@@ -62,6 +65,10 @@
      &                 nstp(ng), nnew(ng),                              &
      &                 GRID(ng) % omn,                                  &
      &                 SEDBED(ng) % bed_thick,                          &
+# endif
+# ifdef EMINUSP_SHIMA
+     &                 FORCES(ng) % stflux,                             &
+     &                 GRID(ng) % omn,                                  &
 # endif
      &                 GRID(ng) % Huon,                                 &
      &                 GRID(ng) % Hvom,                                 &
@@ -91,6 +98,10 @@
 # if defined SEDIMENT && defined SED_MORPH
      &                       nstp, nnew,                                &
      &                       omn, bed_thick,                            &
+# endif
+# ifdef EMINUSP_SHIMA
+     &                       stflux,                                    &
+     &                       omn,                                       &
 # endif
      &                       Huon, Hvom,                                &
 # if defined OMEGA_IMPLICIT
@@ -129,6 +140,10 @@
       real(r8), intent(in) :: omn(LBi:,LBj:)
       real(r8), intent(in) :: bed_thick(LBi:,LBj:,:)
 #  endif
+#  ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:,LBj:,:)
+      real(r8), intent(in) :: omn(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: Huon(LBi:,LBj:,:)
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
 # if defined OMEGA_IMPLICIT
@@ -149,6 +164,10 @@
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bed_thick(LBi:UBi,LBj:UBj,3)
+#  endif
+#  ifdef EMINUSP_SHIMA
+      real(r8), intent(in) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
+      real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
@@ -172,6 +191,9 @@
 # if (defined SEDIMENT && defined SED_MORPH)
       real(r8) :: fac
 # endif
+#  ifdef EMINUSP_SHIMA
+      real(r8) :: fac2
+#  endif
       real(r8) :: cff
       real(r8), dimension(IminS:ImaxS) :: wrk
 # if defined OMEGA_IMPLICIT
@@ -201,6 +223,7 @@
 !  the LwSrc point source approach.
 !
       fac=1.0_r8/(dt(ng)*N(ng))
+      fac2=1.0_r8/N(ng)
 # endif
 # if defined OMEGA_IMPLICIT
       cmnx_ratio=amin/amax
@@ -219,6 +242,9 @@
             W(i,j,k)=W(i,j,k-1)-                                        &
 # if defined SEDIMENT && defined SED_MORPH
      &               wrk(i)-                                            &
+# endif
+# ifdef EMINUSP_SHIMA
+     &                stflux(i,j,isalt)*omn(i,j)*fac2-                  &
 # endif
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
@@ -260,6 +286,9 @@
                   W(ii,jj,k)=W(ii,jj,k-1)-                              &
 # if defined SEDIMENT && defined SED_MORPH
      &                       cff-                                       &
+# endif
+# ifdef EMINUSP_SHIMA
+     &                       stflux(ii,jj,isalt)*omn(ii,jj)*fac2-       &
 # endif
      &                       (Huon(ii+1,jj,k)-Huon(ii,jj,k)+            &
      &                        Hvom(ii,jj+1,k)-Hvom(ii,jj,k))+           &
