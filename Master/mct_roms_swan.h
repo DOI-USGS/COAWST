@@ -439,7 +439,7 @@
         cid=cid+cad
       END DO
 #endif
-#  if defined WAVE_SPECTRUM
+#  if defined WAVE_PARTITION
 !
       to_add=':HsPT01'
       cad=LEN_TRIM(to_add)
@@ -2136,7 +2136,7 @@
      &                    range(1),range(2)
       END IF
 #endif
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
 !
 !  HsPT01 Wave height of partition 01 (m).
 !
@@ -2504,7 +2504,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%spec_us,FORCES(ng)%spec_vs)
 # endif
-# ifdef WAVE_SPECTRUM
+# ifdef WAVE_PARTITION
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

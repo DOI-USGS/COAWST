@@ -3619,7 +3619,7 @@
         END IF
 
 #endif
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
 !
 !  Define HsPT01 Wave height of partition 01 (m).
 !
@@ -4486,7 +4486,7 @@
             HIS(ng)%Vid(idWpbt)=var_id(i)
 #endif
 
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHs01))) THEN
             got_var(idHs01)=.TRUE.
             HIS(ng)%Vid(idHs01)=var_id(i)
@@ -5455,7 +5455,7 @@
           RETURN
         END IF
 #endif
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
         IF (.not.got_var(idHs01)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idHs01)),          &
      &                                  TRIM(ncname)

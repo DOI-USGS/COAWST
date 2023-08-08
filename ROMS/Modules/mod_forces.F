@@ -331,7 +331,7 @@
           real(r8), pointer :: spec_vs(:,:,:)
 #endif
 
-#if defined WAVE_SPECTRUM
+#if defined WAVE_PARTITION
           real(r8), pointer :: HsPt01(:,:)
           real(r8), pointer :: HsPt02(:,:)
           real(r8), pointer :: TpPt01(:,:)
@@ -766,7 +766,7 @@
       Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
 #endif
 
-#if defined WAVE_SPECTRUM
+#if defined WAVE_PARTITION
       allocate ( FORCES(ng) % HsPt01(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % HsPt02(LBi:UBi,LBj:UBj) )
@@ -1336,7 +1336,7 @@
      &                 __LINE__, 'FORCES(ng)%spec_vs')) RETURN
 # endif
 
-# ifdef WAVE_SPECTRUM
+# ifdef WAVE_PARTITION
       IF (.not.destroy(ng, FORCES(ng)%HsPt01, MyFile,                   &
      &                 __LINE__, 'FORCES(ng)%HsPt01')) RETURN
       IF (.not.destroy(ng, FORCES(ng)%HsPt02, MyFile,                   &
@@ -1927,7 +1927,7 @@
             END DO
 #endif
 
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
             FORCES(ng) % HsPt01(i,j) = IniVal
             FORCES(ng) % HsPt02(i,j) = IniVal
             FORCES(ng) % TpPt01(i,j) = IniVal

@@ -583,7 +583,7 @@
         cid=cid+cad  
       END DO
 #  endif
-#  if defined WAVE_SPECTRUM
+#  if defined WAVE_PARTITION
 !
       to_add=':HsPT01'
       cad=LEN_TRIM(to_add)
@@ -1082,7 +1082,7 @@
      &                             SCODE,avdata)
         END DO
 # endif
-# if defined WAVE_SPECTRUM
+# if defined WAVE_PARTITION
       ELSE IF (IVTYPE.eq.100) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "HsPT01",avdata)

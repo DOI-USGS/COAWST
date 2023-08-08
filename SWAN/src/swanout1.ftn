@@ -996,7 +996,7 @@
 #if defined SPECTRUM_STOKES
       Numcouple=Numcouple+1
 #endif
-#if defined WAVE_SPECTRUM
+#if defined WAVE_PARTITION
       Numcouple=Numcouple+4
 #endif
       ALLOCATE (Cpltype(Numcouple))
@@ -1039,7 +1039,7 @@
       ic=ic+1
       Cpltype(ic)=202                    ! SSPEC SWOEXA
 #endif
-#if defined WAVE_SPECTRUM
+#if defined WAVE_PARTITION
       ic=ic+1
       Cpltype(ic)=100                    ! HsPT0X SWOEXA Wave height of partitions
       ic=ic+1

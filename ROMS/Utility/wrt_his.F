@@ -3850,7 +3850,7 @@
         END IF
       END IF
 #endif
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
 !
 !  Write out HsPT01 Wave height of partition 01 (m).
 !

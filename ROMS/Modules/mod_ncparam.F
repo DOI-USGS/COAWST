@@ -1845,7 +1845,7 @@
                 idIinw(idIbrak)=varid
 # endif
 #endif
-#ifdef WAVE_SPECTRUM
+#ifdef WAVE_PARTITION
           CASE ('idHs01')
             idHs01=varid
           CASE ('idHs02')
