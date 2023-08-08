@@ -3619,6 +3619,160 @@
         END IF
 
 #endif
+#ifdef WAVE_SPECTRUM
+!
+!  Define HsPT01 Wave height of partition 01 (m).
+!
+!       IF (Hout(idHs01,ng)) THEN
+          Vinfo( 1)=Vname(1,idHs01)
+          Vinfo( 2)=Vname(2,idHs01)
+          Vinfo( 3)=Vname(3,idHs01)
+          Vinfo(14)=Vname(4,idHs01)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idHs01)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idHs01,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idHs01),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define HsPT02 Wave height of partition 02 (m).
+!
+!       IF (Hout(idHs02,ng)) THEN
+          Vinfo( 1)=Vname(1,idHs02)
+          Vinfo( 2)=Vname(2,idHs02)
+          Vinfo( 3)=Vname(3,idHs02)
+          Vinfo(14)=Vname(4,idHs02)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idHs02)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idHs02,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idHs02),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define TpPT01 Relative peak period of partition 01 (s).
+!
+!       IF (Hout(idTp01,ng)) THEN
+          Vinfo( 1)=Vname(1,idTp01)
+          Vinfo( 2)=Vname(2,idTp01)
+          Vinfo( 3)=Vname(3,idTp01)
+          Vinfo(14)=Vname(4,idTp01)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idTp01)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idTp01,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTp01),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define TpPT02 Relative peak period of partition 02 (s).
+!
+!       IF (Hout(idTp02,ng)) THEN
+          Vinfo( 1)=Vname(1,idTp02)
+          Vinfo( 2)=Vname(2,idTp02)
+          Vinfo( 3)=Vname(3,idTp02)
+          Vinfo(14)=Vname(4,idTp02)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idTp02)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idTp02,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTp02),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define WlPT01 Average wave length of partition 01 (m).
+!
+!       IF (Hout(idWl01,ng)) THEN
+          Vinfo( 1)=Vname(1,idWl01)
+          Vinfo( 2)=Vname(2,idWl01)
+          Vinfo( 3)=Vname(3,idWl01)
+          Vinfo(14)=Vname(4,idWl01)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWl01)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWl01,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWl01),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define WlPT02 Average wave length of partition 02 (m).
+!
+!       IF (Hout(idWl02,ng)) THEN
+          Vinfo( 1)=Vname(1,idWl02)
+          Vinfo( 2)=Vname(2,idWl02)
+          Vinfo( 3)=Vname(3,idWl02)
+          Vinfo(14)=Vname(4,idWl02)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWl02)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWl02,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWl02),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define DrPT01 Average wave direction of partition 01 (deg).
+!
+!       IF (Hout(idDr01,ng)) THEN
+          Vinfo( 1)=Vname(1,idDr01)
+          Vinfo( 2)=Vname(2,idDr01)
+          Vinfo( 3)=Vname(3,idDr01)
+          Vinfo(14)=Vname(4,idDr01)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idDr01)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idDr01,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idDr01),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+!
+!  Define DrPT02 Average wave direction of partition 02 (deg).
+!
+!       IF (Hout(idDr02,ng)) THEN
+          Vinfo( 1)=Vname(1,idDr02)
+          Vinfo( 2)=Vname(2,idDr02)
+          Vinfo( 3)=Vname(3,idDr02)
+          Vinfo(14)=Vname(4,idDr02)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idDr02)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idDr02,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idDr02),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!       END IF
+#endif
 #if defined BBL_MODEL || defined WAVES_OCEAN || \
     defined SED_BEDLOAD_VANDERA
 !
@@ -4330,6 +4484,33 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWpbt))) THEN
             got_var(idWpbt)=.TRUE.
             HIS(ng)%Vid(idWpbt)=var_id(i)
+#endif
+
+#ifdef WAVE_SPECTRUM
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHs01))) THEN
+            got_var(idHs01)=.TRUE.
+            HIS(ng)%Vid(idHs01)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHs02))) THEN
+            got_var(idHs02)=.TRUE.
+            HIS(ng)%Vid(idHs02)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTp01))) THEN
+            got_var(idTp01)=.TRUE.
+            HIS(ng)%Vid(idTp01)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTp02))) THEN
+            got_var(idTp02)=.TRUE.
+            HIS(ng)%Vid(idTp02)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWl01))) THEN
+            got_var(idWl01)=.TRUE.
+            HIS(ng)%Vid(idWl01)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWl02))) THEN
+            got_var(idWl02)=.TRUE.
+            HIS(ng)%Vid(idWl02)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idDr01))) THEN
+            got_var(idDr01)=.TRUE.
+            HIS(ng)%Vid(idDr01)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idDr02))) THEN
+            got_var(idDr02)=.TRUE.
+            HIS(ng)%Vid(idDr02)=var_id(i)
 #endif
 #if defined BBL_MODEL || defined WAVES_OCEAN || \
     defined SED_BEDLOAD_VANDERA
@@ -5269,6 +5450,56 @@
 #ifdef WAVES_BOT_PERIOD
         IF (.not.got_var(idWpbt).and.Hout(idWpbt,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWpbt)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef WAVE_SPECTRUM
+        IF (.not.got_var(idHs01)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idHs01)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idHs02)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idHs02)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idTp01)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idTp01)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idTp02)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idTp02)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWl01)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWl01)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWl02)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWl02)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idDr01)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idDr01)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idDr02)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idDr02)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

@@ -1910,6 +1910,77 @@
   'w3dvar'
   1.0d0
 
+'HsPT01'                                           ! Output
+  'Wave height of partition 01'
+  'meter'                                          ! [m]
+  'HsPT01, scalar, series'
+  'ocean_time'
+  'idHs01'
+  'r2dvar'
+  1.0d0
+
+'HsPT02'                                           ! Output
+  'Wave height of partition 02'
+  'meter'                                          ! [m]
+  'HsPT02, scalar, series'
+  'ocean_time'
+  'idHs02'
+  'r2dvar'
+  1.0d0
+
+'TpPT01'                                           ! Output
+  'Relative peak period of partition 01'
+  'second'                                         ! [s]
+  'TpPT01, scalar, series'
+  'ocean_time'
+  'idTp01'
+  'r2dvar'
+  1.0d0
+
+'TpPT02'                                           ! Output
+  'Relative peak period of partition 02'
+  'second'                                         ! [s]
+  'TpPT02, scalar, series'
+  'ocean_time'
+  'idTp02'
+  'r2dvar'
+  1.0d0
+
+'WlPT01'                                           ! Output
+  'Average wave length of partition 01'
+  'meter'                                          ! [m]
+  'WlPT01, scalar, series'
+  'ocean_time'
+  'idWl01'
+  'r2dvar'
+  1.0d0
+
+'WlPT02'                                           ! Output
+  'Average wave length of partition 02'
+  'meter'                                          ! [m]
+  'WlPT02, scalar, series'
+  'ocean_time'
+  'idWl02'
+  'r2dvar'
+  1.0d0
+
+'DrPT01'                                           ! Output
+  'Average wave direction of partition 01'
+  'deg'                                            ! [deg]
+  'DrPT01, scalar, series'
+  'ocean_time'
+  'idDr01'
+  'r2dvar'
+  1.0d0
+
+'DrPT02'                                           ! Output
+  'Average wave direction of partition 02'
+  'deg'                                            ! [deg]
+  'DrPT02, scalar, series'
+  'ocean_time'
+  'idDr02'
+  'r2dvar'
+  1.0d0
 !
 !------------------------------------------------------------------------------
 !  Tidal forcing variables.

@@ -425,6 +425,14 @@
       integer  :: id2dRV        ! 2D relative vorticity
       integer  :: id3dPV        ! 3D potential vorticity
       integer  :: id3dRV        ! 3D relative vorticity
+      integer  :: idHs01        ! Wave height of partition 01
+      integer  :: idHs02        ! Wave height of partition 02
+      integer  :: idTp01        ! Wave peak period of partition 01
+      integer  :: idTp02        ! Wave peak period of partition 02
+      integer  :: idWl01        ! Wave avg length of partition 01
+      integer  :: idWl02        ! Wave avg length of partition 02
+      integer  :: idDr01        ! Wave avg dir of partition 01
+      integer  :: idDr02        ! Wave avg dir of partition 02
 !
 !  Last used variable ID counter.
 !
@@ -1836,6 +1844,24 @@
               CASE ('idIinw(idIbrak)')
                 idIinw(idIbrak)=varid
 # endif
+#endif
+#ifdef WAVE_SPECTRUM
+          CASE ('idHs01')
+            idHs01=varid
+          CASE ('idHs02')
+            idHs02=varid
+          CASE ('idTp01')
+            idTp01=varid
+          CASE ('idTp02')
+            idTp02=varid
+          CASE ('idWl01')
+            idWl01=varid
+          CASE ('idWl02')
+            idWl02=varid
+          CASE ('idDr01')
+            idDr01=varid
+          CASE ('idDr02')
+            idDr02=varid
 #endif
 #ifdef UV_DRAG_GRID
           CASE ('idragL')

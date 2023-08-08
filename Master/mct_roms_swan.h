@@ -439,7 +439,48 @@
         cid=cid+cad
       END DO
 #endif
-
+#  if defined WAVE_SPECTRUM
+!
+      to_add=':HsPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HsPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TpPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TpPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WlPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WlPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#  endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -508,13 +549,6 @@
       cid=cid+cad
 !
       to_add=':VEGTHCK'
-      cad=LEN_TRIM(to_add)
-      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
-      cid=cid+cad
-#endif
-#ifdef ICE_MODEL
-!
-      to_add=':SEAICE'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -1022,21 +1056,6 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGTHCK",  &
-     &                           A, Asize)
-#endif
-#ifdef ICE_MODEL
-!
-!  sea ice.
-!
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-          A(ij)=0.0_r8
-        ! A(ij)=MAX(ICE(ng)%sfw(i,j,1) ! NEED TO PROVIDE CORRECT VAR
-        END DO
-      END DO
-      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "SEAICE",   &
      &                           A, Asize)
 #endif
 !
@@ -2117,6 +2136,240 @@
      &                    range(1),range(2)
       END IF
 #endif
+#ifdef WAVE_SPECTRUM
+!
+!  HsPT01 Wave height of partition 01 (m).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "HsPT01",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%HsPT01(i,j)=cff
+          ELSE
+            FORCES(ng)%HsPT01(i,j)=FORCES(ng)%HsPT01(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max HsPt01  (m):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  HsPT02 Wave height of partition 02 (m).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "HsPT02",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%HsPT02(i,j)=cff
+          ELSE
+            FORCES(ng)%HsPT02(i,j)=FORCES(ng)%HsPT02(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max HsPt02  (m):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  TpPT01 Relative peak period of partition 01 (s).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TpPT01",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%TpPT01(i,j)=cff
+          ELSE
+            FORCES(ng)%TpPT01(i,j)=FORCES(ng)%TpPT01(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max TpPt01  (s):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  TpPT02 Relative peak period of partition 02 (s).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TpPT02",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%TpPT02(i,j)=cff
+          ELSE
+            FORCES(ng)%TpPT02(i,j)=FORCES(ng)%TpPT02(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max TpPt02  (s):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  WlPT01 Average wave length of partition 01 (m).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WlPT01",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%WlPT01(i,j)=cff
+          ELSE
+            FORCES(ng)%WlPT01(i,j)=FORCES(ng)%WlPT01(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WlPt01  (m):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  WlPT02 Average wave length of partition 02 (m).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WlPT02",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%WlPT02(i,j)=cff
+          ELSE
+            FORCES(ng)%WlPT02(i,j)=FORCES(ng)%WlPT02(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WlPt02  (m):     ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  DrPT01 Average wave direction of partition 01 (deg).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrPT01",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%DrPT01(i,j)=cff
+          ELSE
+            FORCES(ng)%DrPT01(i,j)=FORCES(ng)%DrPT01(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DrPt01  (deg):   ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  DrPT02 Average wave direction of partition 02 (deg).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrPT02",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%DrPT02(i,j)=cff
+          ELSE
+            FORCES(ng)%DrPT02(i,j)=FORCES(ng)%DrPT02(i,j)+              &
+     &                             cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DrPt02  (deg):   ',        &
+     &                    range(1),range(2)
+      END IF
+#endif
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 !
@@ -2250,6 +2503,28 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%spec_us,FORCES(ng)%spec_vs)
+# endif
+# ifdef WAVE_SPECTRUM
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%HsPt01, FORCES(ng)%HsPt02)
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%TpPt01, FORCES(ng)%TpPt02)
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%WlPt01, FORCES(ng)%WlPt02)
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%DrPt01, FORCES(ng)%DrPt02)
 # endif
 #endif
 !

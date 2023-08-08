@@ -534,7 +534,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+#  if defined VEGETATION && defined VEG_SWAN_COUPLING \
       && defined VEG_STREAMING
       to_add=':DISVEG'
       cad=LEN_TRIM(to_add)
@@ -545,8 +545,8 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#endif
-#ifdef SPECTRUM_STOKES
+#  endif
+#  ifdef SPECTRUM_STOKES
       DO IZ=1,MSC
         IF (IZ.LT.10) THEN
          WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
@@ -582,7 +582,49 @@
         write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
         cid=cid+cad  
       END DO
-#endif  
+#  endif
+#  if defined WAVE_SPECTRUM
+!
+      to_add=':HsPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':HsPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TpPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TpPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WlPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WlPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#  endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -627,7 +669,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#if defined VEGETATION && defined VEG_SWAN_COUPLING
+#  if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
       cad=LEN_TRIM(to_add)
@@ -645,13 +687,6 @@
       cid=cid+cad
 !
       to_add=':VEGTHCK'
-      cad=LEN_TRIM(to_add)
-      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
-      cid=cid+cad
-#endif
-#  ifdef ICE_MODEL
-!
-      to_add=':SEAICE'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -819,7 +854,7 @@
 !  Imported variable declarations.
 !
       integer :: MIP, IRQ, nvoqp, Numcouple, ng, io
-      integer :: VOQR(NMOVAR), IVTYPE, IP, IPI, IX, IY
+      integer :: VOQR(NMOVAR), IVTYPE, IP, IPI, IX, IY, IPT
 
       real :: COMPDA(MCGRD,MCMVAR)
       real :: VOQ(MIP,NVOQP)
@@ -1045,6 +1080,52 @@
 
           CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
      &                             SCODE,avdata)
+        END DO
+# endif
+# if defined WAVE_SPECTRUM
+      ELSE IF (IVTYPE.eq.100) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "HsPT01",avdata)
+        DO IPT = 1, 1 !NOSWLL
+  !       this is for 101
+          DO IP=1,gsmsize
+            avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE+IPT)),m8 )
+          END DO
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                               "HsPT02",avdata)
+        END DO
+      ELSE IF (IVTYPE.eq.110) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "TpPT01",avdata)
+        DO IPT = 1, 1 !NOSWLL
+  !       this is for 111
+          DO IP=1,gsmsize
+            avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE+IPT)),m8 )
+          END DO
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                               "TpPT02",avdata)
+        END DO
+      ELSE IF (IVTYPE.eq.120) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "WlPT01",avdata)
+        DO IPT = 1, 1 !NOSWLL
+  !       this is for 121
+          DO IP=1,gsmsize
+            avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE+IPT)),m8 )
+          END DO
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                               "WlPT02",avdata)
+        END DO
+      ELSE IF (IVTYPE.eq.130) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DrPT01",avdata)
+        DO IPT = 1, 1 !NOSWLL
+  !       this is for 131
+          DO IP=1,gsmsize
+            avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE+IPT)),m8 )
+          END DO
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                               "DrPT02",avdata)
         END DO
 # endif
       END IF
@@ -1438,10 +1519,6 @@
         idvtk=IP
 #  endif
 !
-#  ifdef ICE_MODEL
-        IP=IP+1
-        idice=IP
-#  endif
 # endif
         NUMTRANSFER=IP
 !
@@ -1682,34 +1759,6 @@
         CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoSWAN Min/Max VEGTHCK  ( m ): ',       &
-     &                      range(1),range(2)
-        END IF
-#  endif
-#  ifdef ICE_MODEL
-!
-!  sea ice fraction.
-!
-        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
-     &                            "SEAICE",avdata,gsmsize)
-        range(1)= Large
-        range(2)=-Large
-        IP=0
-        DO IY=Jstr,Jend
-          DO IX=Istr,Iend
-            IP=IP+1
-            INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,idice)=avdata(IP)
-            range(1)=MIN(range(1),REAL(avdata(IP)))
-            range(2)=MAX(range(2),REAL(avdata(IP)))
-          END DO
-          IF (KREPTX.EQ.1) THEN
-            IP=IP+1
-          END IF
-        END DO
-        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
-        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
-        IF (MyRank.eq.0) THEN
-          write(SCREEN,40) 'ROMStoSWAN Min/Max DEPTH   (-):     ',      &
      &                      range(1),range(2)
         END IF
 #  endif

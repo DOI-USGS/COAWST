@@ -965,11 +965,12 @@
                                          ! output point and computational 40.86
                                          ! grid point                     40.86
 !
-      INTEGER :: Numcouple, IVTYP, ic
+      INTEGER :: Numcouple, ic
+      INTEGER, ALLOCATABLE :: IVTYP(:)
       INTEGER, ALLOCATABLE :: CplType(:)
       INTEGER, ALLOCATABLE :: OQI(:)
       REAL*8, ALLOCATABLE :: OQR(:)
-!      LOGICAL, ALLOCATABLE :: OQPROC(:)
+!     LOGICAL, ALLOCATABLE :: OQPROC(:)
 
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
       REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
@@ -989,31 +990,35 @@
       CALL STRACE (IENT, 'SWOUTP')
 
       Numcouple=14
-#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
       Numcouple=Numcouple+2
 #endif
 #if defined SPECTRUM_STOKES
       Numcouple=Numcouple+1
-#endif 
+#endif
+#if defined WAVE_SPECTRUM
+      Numcouple=Numcouple+4
+#endif
       ALLOCATE (Cpltype(Numcouple))
+!
       ic=1
-      Cpltype(ic)=54                      ! DISBOT  SWOEXD
+      Cpltype(ic)=54                     ! DISBOT  SWOEXD
       ic=ic+1
-      Cpltype(ic)=55                      ! DISSURF SWOEXD
+      Cpltype(ic)=55                     ! DISSURF SWOEXD
       ic=ic+1
-      Cpltype(ic)=56                      ! DISWCAP SWOEXD
+      Cpltype(ic)=56                     ! DISWCAP SWOEXD
       ic=ic+1
-      Cpltype(ic)=50                      ! TMBOT   SWOEXD
+      Cpltype(ic)=50                     ! TMBOT   SWOEXD
       ic=ic+1
-      Cpltype(ic)=6                       ! UBOT    SWOEXD
+      Cpltype(ic)=6                      ! UBOT    SWOEXD
       ic=ic+1
-      Cpltype(ic)=8                       ! QB      SWOEXD
+      Cpltype(ic)=8                      ! QB      SWOEXD
       ic=ic+1
-      Cpltype(ic)=10                      ! HSIGN   SWOEXA
+      Cpltype(ic)=10                     ! HSIGN   SWOEXA
       ic=ic+1
-      Cpltype(ic)=12                      ! RTP     SWOEXA
+      Cpltype(ic)=12                     ! RTP     SWOEXA
       ic=ic+1
-      Cpltype(ic)=13                      ! DIR     SWOEXA
+      Cpltype(ic)=13                     ! DIR     SWOEXA
       ic=ic+1
       Cpltype(ic)=14                     ! PDI     SWOEXA
       ic=ic+1
@@ -1024,20 +1029,30 @@
       Cpltype(ic)=16                     ! WDSPR   SWOEXA
       ic=ic+1
       Cpltype(ic)=58                     ! WQP     SWOEXA
-#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
       ic=ic+1
       Cpltype(ic)=57                     ! DISVEG  SWOEXD         
       ic=ic+1
       Cpltype(ic)=201                    ! DICDVG  SWOEXD         
-#endif 
+#endif
 #if defined SPECTRUM_STOKES
       ic=ic+1
       Cpltype(ic)=202                    ! SSPEC SWOEXA
-#endif 
+#endif
+#if defined WAVE_SPECTRUM
+      ic=ic+1
+      Cpltype(ic)=100                    ! HsPT0X SWOEXA Wave height of partitions
+      ic=ic+1
+      Cpltype(ic)=110                    ! TpPT0X SWOEXA Relative peak period of partitions
+      ic=ic+1
+      Cpltype(ic)=120                    ! WlPT0X SWOEXA Average wave length of partitions
+      ic=ic+1
+      Cpltype(ic)=130                    ! DrPT0X SWOEXA Average wave direction of partitions
+#endif
 !
       ALLOCATE (OQI(4))
       OQI(1) = 0
-      OQI(3) = 1
+!     OQI(3) = 1
       OQI(4) = 4
 
       ALLOCATE (OQR(2))
@@ -1058,7 +1073,48 @@
         OQI(2) = IRQ
         BKC   = 0
         NVOQP = 0
-        IVTYP = Cpltype(IRQ)
+!
+        IF (Cpltype(IRQ).eq.100) THEN
+          ALLOCATE (IVTYP(6))
+          OQI(3) = 6
+          IVTYP(1) = 100
+          IVTYP(2) = 101
+          IVTYP(3) = 102
+          IVTYP(4) = 103
+          IVTYP(5) = 104
+          IVTYP(6) = 105
+        ELSE IF (Cpltype(IRQ).eq.110) THEN
+          ALLOCATE (IVTYP(6))
+          OQI(3) = 6
+          IVTYP(1) = 110
+          IVTYP(2) = 111
+          IVTYP(3) = 112
+          IVTYP(4) = 113
+          IVTYP(5) = 114
+          IVTYP(6) = 115
+        ELSE IF (Cpltype(IRQ).eq.120) THEN
+          ALLOCATE (IVTYP(6))
+          OQI(3) = 6
+          IVTYP(1) = 120
+          IVTYP(2) = 121
+          IVTYP(3) = 122
+          IVTYP(4) = 123
+          IVTYP(5) = 124
+          IVTYP(6) = 125
+        ELSE IF (Cpltype(IRQ).eq.130) THEN
+          ALLOCATE (IVTYP(6))
+          OQI(3) = 6
+          IVTYP(1) = 130
+          IVTYP(2) = 131
+          IVTYP(3) = 132
+          IVTYP(4) = 133
+          IVTYP(5) = 134
+          IVTYP(6) = 135
+        ELSE
+          ALLOCATE (IVTYP(1))
+          OQI(3) = 1
+          IVTYP = Cpltype(IRQ)
+        END IF
 !
 !       call SWORDC to analyse output request encoded in array OUTREQ
 !       NVOQP (number of output quantities)
@@ -1162,6 +1218,7 @@
 #ifdef SPECTRUM_STOKES
         DEALLOCATE(KSS,USS,VSS)
 #endif
+        DEALLOCATE(IVTYP)
   70  CONTINUE
 !
 !     Termination of output

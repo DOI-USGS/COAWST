@@ -191,9 +191,9 @@
 # if (defined SEDIMENT && defined SED_MORPH)
       real(r8) :: fac
 # endif
-#  ifdef EMINUSP_SHIMA
+# ifdef EMINUSP_SHIMA
       real(r8) :: fac2
-#  endif
+# endif
       real(r8) :: cff
       real(r8), dimension(IminS:ImaxS) :: wrk
 # if defined OMEGA_IMPLICIT
@@ -223,6 +223,8 @@
 !  the LwSrc point source approach.
 !
       fac=1.0_r8/(dt(ng)*N(ng))
+# endif
+# ifdef EMINUSP_SHIMA
       fac2=1.0_r8/N(ng)
 # endif
 # if defined OMEGA_IMPLICIT

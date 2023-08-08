@@ -19,6 +19,7 @@
 #define MCT_LIB
 
 #define SWAN_SINGLESPEC
+#define WAVE_SPECTRUM
 
 #define UV_VIS2
 #define MIX_S_UV

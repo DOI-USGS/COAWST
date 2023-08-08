@@ -331,6 +331,17 @@
           real(r8), pointer :: spec_vs(:,:,:)
 #endif
 
+#if defined WAVE_SPECTRUM
+          real(r8), pointer :: HsPt01(:,:)
+          real(r8), pointer :: HsPt02(:,:)
+          real(r8), pointer :: TpPt01(:,:)
+          real(r8), pointer :: TpPt02(:,:)
+          real(r8), pointer :: WlPt01(:,:)
+          real(r8), pointer :: WlPt02(:,:)
+          real(r8), pointer :: DrPt01(:,:)
+          real(r8), pointer :: DrPt02(:,:)
+#endif
+
 #ifdef SOLVE3D
 
 # ifdef SHORTWAVE
@@ -753,6 +764,25 @@
       Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
       allocate ( FORCES(ng) % spec_vs(LBi:UBi,LBj:UBj,MSCs) )
       Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
+#endif
+
+#if defined WAVE_SPECTRUM
+      allocate ( FORCES(ng) % HsPt01(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % HsPt02(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % TpPt01(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % TpPt02(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % WlPt01(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % WlPt02(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % DrPt01(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % DrPt02(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
 #ifdef SOLVE3D
@@ -1304,6 +1334,25 @@
      &                 __LINE__, 'FORCES(ng)%spec_us')) RETURN
       IF (.not.destroy(ng, FORCES(ng)%spec_vs, MyFile,                  &
      &                 __LINE__, 'FORCES(ng)%spec_vs')) RETURN
+# endif
+
+# ifdef WAVE_SPECTRUM
+      IF (.not.destroy(ng, FORCES(ng)%HsPt01, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%HsPt01')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%HsPt02, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%HsPt02')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%TpPt01, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%TpPt01')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%TpPt02, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%TpPt02')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%WlPt01, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%WlPt01')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%WlPt02, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%WlPt02')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%DrPt01, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%DrPt01')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%DrPt02, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%DrPt02')) RETURN
 # endif
 
 # ifdef SOLVE3D
@@ -1876,6 +1925,17 @@
               FORCES(ng) % spec_us(i,j,k) = IniVal
               FORCES(ng) % spec_vs(i,j,k) = IniVal
             END DO
+#endif
+
+#ifdef WAVE_SPECTRUM
+            FORCES(ng) % HsPt01(i,j) = IniVal
+            FORCES(ng) % HsPt02(i,j) = IniVal
+            FORCES(ng) % TpPt01(i,j) = IniVal
+            FORCES(ng) % TpPt02(i,j) = IniVal
+            FORCES(ng) % WlPt01(i,j) = IniVal
+            FORCES(ng) % WlPt02(i,j) = IniVal
+            FORCES(ng) % DrPt01(i,j) = IniVal
+            FORCES(ng) % DrPt02(i,j) = IniVal
 #endif
 
 #ifdef SOLVE3D
