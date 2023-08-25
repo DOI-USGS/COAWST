@@ -2351,9 +2351,12 @@ CONTAINS
       !
 400   CONTINUE
 #if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
-      !          jcw bottom of wavemd calling the coupler
+      ! jcw bottom of wavemd calling the coupler
       IF (ITIME.gt.0) THEN
         CALL COAWST_CPL (ITIME)
+# if defined W3_WAVES_OCEAN
+        CALL W3ULEV ( VA, VA )
+# endif
       END IF
 #endif
       !

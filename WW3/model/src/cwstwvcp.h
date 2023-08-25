@@ -1558,7 +1558,8 @@
       USE W3SERVMD
       USE W3IDATMD
       USE MCT_COUPLER_PARAMS
-      USE W3WDATMD, ONLY: WLV
+!     USE W3WDATMD, ONLY: WLV
+      USE W3IDATMD, ONLY: WLEV
       USE W3ADATMD, ONLY: CX, CY
 !
       implicit none
@@ -1708,16 +1709,18 @@
         CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
      &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
 !
-!  Scatter to array WLV.
+!  Scatter to array WLEV.
 !
        DO i=1,NSEA
          IX     = MAPSF(i,1)
          IY     = MAPSF(i,2)
          IP=(IY-1)*NX+IX
          IF (io.eq.1) THEN
-           WLV(i)=RCV_BUF(IP)
+!          WLV(i)=RCV_BUF(IP)
+           WLEV(IX,IY)=RCV_BUF(IP)
          ELSE
-           WLV(i)=WLV(i)+RCV_BUF(IP)
+!          WLV(i)=WLV(i)+RCV_BUF(IP)
+           WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
          END IF
        END DO
 !
