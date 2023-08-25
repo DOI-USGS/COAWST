@@ -25,7 +25,11 @@ if (length(ii)<2)
 else
 %jcw 9/12/2015 - dont use avg to replace, use closest point
  [X,Y]=meshgrid([1:jm],[1:im]);
- a(jj)=griddata(X(ii),Y(ii),a(ii),X(jj),Y(jj),'nearest');
+ try
+   a(jj)=griddata(X(ii),Y(ii),a(ii),X(jj),Y(jj),'nearest');
+ catch
+   a(jj)=0;
+ end
 end
 b=a;                %% define a working arrey
 
