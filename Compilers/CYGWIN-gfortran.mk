@@ -154,7 +154,6 @@ endif
 
 ifdef USE_SWAN
            FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
-           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/CMakeFiles/swan.exe.dir/swanmain.f.o
            LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
 endif
 ifdef USE_NETCDF4

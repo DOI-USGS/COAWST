@@ -103,8 +103,10 @@ endif()
 
 # build executable
 if( NOT TARGET ${EXE} )
-  set( swanmain ${SRC}/swanmain.${EXTF} )
-  add_executable( ${EXE} ${swanmain} )
+# set( swanmain ${SRC}/swanmain.${EXTF} )
+# add_executable( ${EXE} ${swanmain} )
+  set( swanmain2 ${SRC}/swanmain2.${EXTF} )
+  add_executable( ${EXE} ${swanmain2} )
   target_link_libraries( ${EXE} swan${VERSION} ${MPI_Fortran_LIBRARIES} )
 endif()
 

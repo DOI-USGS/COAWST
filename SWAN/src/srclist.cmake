@@ -81,4 +81,5 @@ ${SRC}/swan_iounits.${EXTF}
 ${SRC}/waves_control.${EXTF}
 ${SRC}/waves_coupler.${EXTF}
 ${SRC}/mod_swan_kinds.${EXTF}
+${SRC}/swanmain.${EXTF}
 )
