@@ -168,10 +168,29 @@
 !  here we look for MSCs for SPECTUM_STOKES
 !  such as CIRCLE 36 0.04 1.0 20
 !
-          indx2=INDEX(aline,'CIRCLE')
+          indx2=INDEX(aline,'CIR')
           IF(indx2.ge.1) THEN
-            aline=aline(indx2+6:LEN(aline))
+            aline=aline(indx2+3:LEN(aline))
             aline=ADJUSTL(aline)
+!
+            indx2=INDEX(aline,'C')
+            IF(indx2.ge.1) THEN
+              aline=aline(indx2+1:LEN(aline))
+              aline=ADJUSTL(aline)
+            END IF
+!
+            indx2=INDEX(aline,'L')
+            IF(indx2.ge.1) THEN
+              aline=aline(indx2+1:LEN(aline))
+              aline=ADJUSTL(aline)
+            END IF
+!
+            indx2=INDEX(aline,'E')
+            IF(indx2.ge.1) THEN
+              aline=aline(indx2+1:LEN(aline))
+              aline=ADJUSTL(aline)
+            END IF
+!
             DO i=1,3
               indx=INDEX(aline,blank)
               aline=aline(indx+1:LEN(aline))

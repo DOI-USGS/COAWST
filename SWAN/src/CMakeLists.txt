@@ -107,7 +107,8 @@ if( NOT TARGET ${EXE} )
 # add_executable( ${EXE} ${swanmain} )
   set( swanmain2 ${SRC}/swanmain2.${EXTF} )
   add_executable( ${EXE} ${swanmain2} )
-  target_link_libraries( ${EXE} swan${VERSION} ${MPI_Fortran_LIBRARIES} )
+# target_link_libraries( ${EXE} swan${VERSION} ${MPI_Fortran_LIBRARIES} )
+  target_link_libraries( ${EXE} swan${VERSION} -L$ENV{MCT_LIBDIR} -lmct -lmpeu ${MPI_Fortran_LIBRARIES} )
 endif()
 
 # install the package
