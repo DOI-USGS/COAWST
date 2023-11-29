@@ -17,9 +17,9 @@
 !
       USE mod_coupler_iounits
       USE netcdf
-#ifdef ROMS_MODEL
-      USE mod_iounits
-#endif
+!#ifdef ROMS_MODEL
+!      USE mod_iounits
+!#endif
 !
       implicit none
 !
@@ -31,6 +31,10 @@
       character (len=70), intent(inout) :: nc_name
       character (len=70) :: grp_name
 
+#ifdef ROMS_MODEL
+      integer :: stdout = 6
+      integer :: ioerror = 0
+#endif
       integer, intent(out) :: num_sparse_elems
       integer, dimension(2), intent(inout) :: src_dims,                 &
      &                                        dst_dims

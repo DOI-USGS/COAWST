@@ -154,6 +154,13 @@ endif
 # Library locations, can be overridden by environment variables.
 #--------------------------------------------------------------------------
 
+ifdef USE_SWAN
+           FFLAGS += -assume byterecl
+#          FFLAGS += -frecord-marker=4 -fconvert=big-endian
+           FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
+           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
+endif
+
 ifdef USE_PIO
        PIO_INCDIR ?= /opt/gfortransoft/openmpi/pio/include
        PIO_LIBDIR ?= /opt/gfortransoft/openmpi/pio/lib
@@ -228,12 +235,7 @@ endif
 ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
              LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
-endif
-
-ifdef USE_SWAN
-           FFLAGS += -assume byterecl
-           FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
-           LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
+             LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
 endif
 
 ifdef USE_WW3

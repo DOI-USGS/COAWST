@@ -613,7 +613,11 @@ mct_params:
 	echo "";                                                                                     \
 	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mod_coupler_iounits.F > mod_coupler_iounits.f90; \
 	$(MY_ROMS_SRC)/$(CLEAN) mod_coupler_iounits.f90;                                             \
-	$(FC) -c $(FFLAGS) mod_coupler_iounits.f90;
+	$(FC) -c $(FFLAGS) mod_coupler_iounits.f90;                                                  \
+	echo "";                                                                                     \
+	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/get_sparse_matrix.F > get_sparse_matrix.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) get_sparse_matrix.f90;                                             \
+	$(FC) -c $(FFLAGS) get_sparse_matrix.f90;
 
 #--------------------------------------------------------------------------
 #  Build SWAN.
