@@ -2065,18 +2065,18 @@
           END DO
 # endif
 #endif
-        END DO
 #if defined VEGETATION 
 # if defined VEG_DRAG || defined VEG_BIOMASS 
-        DO i=1,NVEGP
-            IF (TRIM(var_name(i)).eq.                                   &
-     &          TRIM(Vname(1,idvprp(i)))) THEN
-              got_var(idvprp(i))=.TRUE.
-              RST(ng)%Vid(idvprp(i))=var_id(i)
-          END IF
-        END DO
-#  endif
+          DO itrc=1,NVEGP
+            IF (TRIM(var_name(i)).eq.                                &
+     &          TRIM(Vname(1,idvprp(itrc)))) THEN
+              got_var(idvprp(itrc))=.TRUE.
+              RST(ng)%Vid(idvprp(itrc))=var_id(i)
+            END IF
+          END DO
+# endif
 #endif 
+        END DO
 !
 !  Check if initialization variables are available in input NetCDF
 !  file.
@@ -2332,7 +2332,7 @@
 # ifdef VEGETATION 
 #  if defined VEG_DRAG || defined VEG_BIOMASS 
         DO i=1,NVEGP
-          IF (.not.got_var(idvprp(i)).and.Hout(idvprp(i),ng)) THEN
+          IF (.not.got_var(idvprp(i))) THEN
             IF (Master) WRITE (stdout,60) TRIM(Vname(1,idvprp(i))),     &
      &                                    TRIM(ncname)
             exit_flag=3
