@@ -1552,8 +1552,8 @@
             call hilbert(WAVES(ng)%Ampzeta_tot,                         &
      &                   size(WAVES(ng)%Ampzeta_tot))
             DO tidx=1,Insteps
-              cff1=0.5_r8*(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
-              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
+              cff1=(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
+              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
 #   ifdef HSCALE
               cff=cff+cff1
 #   endif
@@ -1585,8 +1585,8 @@
           DO dd=1,ndir
             cff2=SDD(dd)/WAVES(ng)%integ
             DO tidx=1,Insteps
-              cff1=0.5_r8*((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*cff2     
-              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
+              cff1=((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*cff2     
+              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
 #   ifdef HSCALE
               cff=cff+cff1
 #   endif

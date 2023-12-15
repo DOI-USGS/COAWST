@@ -46,8 +46,10 @@ end
 % Call routine to create netcdf grid file and
 % fill it with vars and attributes.
 %
-[LP, MP] = size(s.rho.depth);
-create_roms_netcdf_grid_file(theROMSFile,LP,MP)
+[Lp, Mp] = size(s.rho.depth);
+L = Lp-1;   Lm = L-1;
+M = Mp-1;   Mm = M-1;
+create_roms_netcdf_grid_file(theROMSFile,Lp,Mp)
 
 %now open that file and prep for writing.
 nc=netcdf.open(theROMSFile,'NC_WRITE');
@@ -142,7 +144,7 @@ bathymetry = s.rho.depth;
 if ~isempty(bathymetry)
   netcdf.putVar(nc,v5,min(min(bathymetry)));
   netcdf.putVar(nc,v6,max(max(bathymetry)));
-  netcdf.putVar(nc,v7,[0 0 0],[LP MP 1],bathymetry);
+  netcdf.putVar(nc,v7,[0 0 0],[Lp Mp 1],bathymetry);
   netcdf.putVar(nc,v8,bathymetry);
 end
 
@@ -187,53 +189,123 @@ netcdf.putVar(nc,v27,geogrid_lon(i_u, j_u));
 netcdf.putVar(nc,v28,geogrid_lat(i_v, j_v));
 netcdf.putVar(nc,v29,geogrid_lon(i_v, j_v));
 
-
 % Compute dx, dy, angle.
-if ((s.spherical=='T') || (s.spherical=='t'))
-  lat_u=geogrid_lat(i_u, j_u);
-  lon_u=geogrid_lon(i_u, j_u);
-  [dx,ang]=sw_dist(lat_u(:),lon_u(:),'km');
-
-  dx=[dx(:); dx(end)]*1000;  % km==> m
-  dx=reshape(dx,LP-1,MP);
-  dx=[dx(1,:); dx(1:end-1,:); dx(end-1,:)];
-
-  ang=[ang(:); ang(end)];
-  ang=reshape(ang,LP-1,MP);
-  ang=[ang(1,:); ang(1:end-1,:); ang(end-1,:)];
-  ang=ang*pi/180;
-
-  lat_v=geogrid_lat(i_v, j_v).';
-  lon_v=geogrid_lon(i_v, j_v).';
-  dy=sw_dist(lat_v(:),lon_v(:),'km');
-
-  dy=[dy(:); dy(end)]*1000;   % km ==> m 
-  dy=reshape(dy,MP-1,LP);
-  dy=[dy(1,:); dy(1:end-1,:); dy(end-1,:)];
-  dy=dy.';
-else
-  x_u=grid_x(i_u, j_u);
-  y_u=grid_y(i_u, j_u);
-  %dx=diff(x_u);
-  dx=sqrt((x_u(2:end,:)-x_u(1:end-1,:)).^2+(y_u(2:end,:)-y_u(1:end-1,:)).^2);
-  dx=[dx(1,:); dx; dx(end,:)];
-
-  x_v=grid_x(i_v, j_v);
-  y_v=grid_y(i_v, j_v);
-% dy=diff(y_v);
-  dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
-  dy=[dy(:,1) dy dy(:,end)];
-
-  y_v=grid_y(i_psi, j_psi);
-  y_v=diff(y_v); 
-  x_v=dx(2:end-1,2:end);
-  if (isfield(s,'roms_angle'))
-    ang=s.roms_angle;
+if (0)  
+  if ((s.spherical=='T') || (s.spherical=='t'))
+    lat_u=geogrid_lat(i_u, j_u);
+    lon_u=geogrid_lon(i_u, j_u);
+    [dx,ang]=sw_dist(lat_u(:),lon_u(:),'km');
+  
+    dx=[dx(:); dx(end)]*1000;  % km==> m
+    dx=reshape(dx,LP-1,MP);
+    dx=[dx(1,:); dx(1:end-1,:); dx(end-1,:)];
+  
+    ang=[ang(:); ang(end)];
+    ang=reshape(ang,LP-1,MP);
+    ang=[ang(1,:); ang(1:end-1,:); ang(end-1,:)];
+    ang=ang*pi/180;
+  
+    lat_v=geogrid_lat(i_v, j_v).';
+    lon_v=geogrid_lon(i_v, j_v).';
+    dy=sw_dist(lat_v(:),lon_v(:),'km');
+  
+    dy=[dy(:); dy(end)]*1000;   % km ==> m 
+    dy=reshape(dy,MP-1,LP);
+    dy=[dy(1,:); dy(1:end-1,:); dy(end-1,:)];
+    dy=dy.';
   else
-    ang=angle(x_v+y_v*sqrt(-1));
-    ang=[ang(1,:); ang; ang(end,:)];
-    ang=[ang ang(:,end)];
+    x_r=grid_x(i_rho, j_rho);
+    y_r=grid_y(i_rho, j_rho);
+  %
+    x_u=grid_x(i_u, j_u);
+    y_u=grid_y(i_u, j_u);
+    %dx=diff(x_u);
+    dx=sqrt((x_u(2:end,:)-x_u(1:end-1,:)).^2+(y_u(2:end,:)-y_u(1:end-1,:)).^2);
+    dxl=sqrt((x_r(1,:)-x_u(1,:)).^2+(y_u(1,:)-y_u(1,:)).^2);
+    dxr=sqrt((x_r(LP,:)-x_u(L,:)).^2+(y_u(LP,:)-y_u(L,:)).^2);
+    dx=[dxl; dx; dxr];
+  
+    x_v=grid_x(i_v, j_v);
+    y_v=grid_y(i_v, j_v);
+  % dy=diff(y_v);
+    dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
+    dyl=sqrt((x_r(:,1)-x_u(1,:)).^2+(y_u(1,:)-y_u(1,:)).^2);
+    dyr=sqrt((x_r(LP,:)-x_u(L,:)).^2+(y_u(LP,:)-y_u(L,:)).^2);
+    dy=[dyl dy dyr];
+  
+    y_v=grid_y(i_psi, j_psi);
+    y_v=diff(y_v); 
+    x_v=dx(2:end-1,2:end);
+    if (isfield(s,'roms_angle'))
+      ang=s.roms_angle;
+    else
+      ang=angle(x_v+y_v*sqrt(-1));
+      ang=[ang(1,:); ang; ang(end,:)];
+      ang=[ang ang(:,end)];
+    end
   end
+end
+
+if (1)
+  deg2rad = pi/180.0;  
+%
+  Xr=grid_x(i_rho, j_rho);
+  Yr=grid_y(i_rho, j_rho);
+  Xu=grid_x(i_u, j_u);
+  Yu=grid_y(i_u, j_u);
+  Xv=grid_x(i_v, j_v);
+  Yv=grid_y(i_v, j_v);
+%
+  dx = zeros(size(Xr));
+  dy = zeros(size(Xr));
+  
+  % Compute grid spacing.
+  
+  if ((s.spherical=='T') || (s.spherical=='t'))
+      x=(Xr-mean(Xr(:)))*deg2rad.*cosd(Yr);
+      y=(Yr-mean(Yr(:)))*deg2rad;
+      dx(2:L,1:Mp) = gcircle(Xu(1:Lm,1:Mp), Yu(1:Lm,1:Mp),                ...
+          Xu(2:L ,1:Mp), Yu(2:L ,1:Mp));
+      dx(1  ,1:Mp) = gcircle(Xr(1   ,1:Mp), Yr(1   ,1:Mp),                ...
+          Xu(1   ,1:Mp), Yu(1   ,1:Mp)).*2.0;
+      dx(Lp ,1:Mp) = gcircle(Xr(Lp  ,1:Mp), Yr(Lp  ,1:Mp),                ...
+          Xu(L   ,1:Mp), Yu(L   ,1:Mp)).*2.0;
+  
+      dy(1:Lp,2:M) = gcircle(Xv(1:Lp,1:Mm), Yv(1:Lp,1:Mm),                ...
+          Xv(1:Lp,2:M ), Yv(1:Lp,2:M ));
+      dy(1:Lp,1  ) = gcircle(Xr(1:Lp,1   ), Yr(1:Lp,1   ),                ...
+          Xv(1:Lp,1   ), Yv(1:Lp,1   )).*2.0;
+      dy(1:Lp,Mp ) = gcircle(Xr(1:Lp,Mp  ), Yr(1:Lp,Mp  ),                ...
+          Xv(1:Lp,M   ), Yv(1:Lp,M   )).*2.0;
+  
+      dx = dx .* 1000;       % great circle function computes
+      dy = dy .* 1000;       % distances in kilometers
+  else                                      % Cartesian distance
+      x=Xr;
+      y=Yr;
+      dx(2:L,1:Mp) = sqrt((Xu(2:L ,1:Mp) - Xu(1:Lm,1:Mp)).^2 +            ...
+          (Yu(2:L ,1:Mp) - Yu(1:Lm,1:Mp)).^2);
+      dx(1  ,1:Mp) = sqrt((Xu(1   ,1:Mp) - Xr(1   ,1:Mp)).^2 +            ...
+          (Yu(1   ,1:Mp) - Yr(1   ,1:Mp)).^2).*2.0;
+      dx(Lp ,1:Mp) = sqrt((Xr(Lp  ,1:Mp) - Xu(L   ,1:Mp)).^2 +            ...
+          (Yr(Lp  ,1:Mp) - Yu(L   ,1:Mp)).^2).*2.0;
+  
+      dy(1:Lp,2:M) = sqrt((Xv(1:Lp,2:M ) - Xv(1:Lp,1:Mm)).^2 +            ...
+          (Yv(1:Lp,2:M ) - Yv(1:Lp,1:Mm)).^2);
+      dy(1:Lp,1  ) = sqrt((Xv(1:Lp,1   ) - Xr(1:Lp,1   )).^2 +            ...
+          (Yv(1:Lp,1   ) - Yr(1:Lp,1   )).^2).*2.0;
+      dy(1:Lp,Mp ) = sqrt((Xr(1:Lp,Mp  ) - Xv(1:Lp,M   )).^2 +            ...
+          (Yr(1:Lp,Mp  ) - Yv(1:Lp,M   )).^2).*2.0;
+  end
+%
+%  dx(1,:)=dx(2,:)-(dx(3,:)-dx(2,:));
+%  dx(end,:)=dx(end-1,:)+(dx(end-1,:)-dx(end-2,:));
+%
+  [~,dxdxi]=gradient(x);
+  [~,dydxi]=gradient(y);
+  ang=atan2(dydxi,dxdxi);
+  ang(1,:)=ang(2,:)-(ang(3,:)-ang(2,:));
+  ang(end,:)=ang(end-1,:)+(ang(end-1,:)-ang(end-2,:));
 end
 
 pm=1./dx;
@@ -241,8 +313,8 @@ pn=1./dy;
 netcdf.putVar(nc,v10,pm);
 netcdf.putVar(nc,v11,pn);
 
-dmde = zeros(LP, MP);
-dndx = zeros(LP, MP);
+dmde = zeros(Lp, Mp);
+dndx = zeros(Lp, Mp);
 dmde(:,2:end-1) = 0.5*(dx(:,3:end) - dx(:,1:end-2));
 dmde(:,1)=dmde(:,2);
 dmde(:,end)=dmde(:,end-1);
