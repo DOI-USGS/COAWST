@@ -2,7 +2,7 @@
 %
 %   inputs-     3hour NAM 12km data grib files
 %               3hour NARR 32 km grib files
-%               3hour GFS  0.5 deg grib files
+%               6 hour GFS  0.5 deg grib files
 %               Can combine and interpolates to a common grid.
 %               All data is read thru THREDDs from
 %               https://www.ncei.noaa.gov/thredds/model/model.html
@@ -24,6 +24,8 @@
 % 04Feb2019  - jcwarner update name from nomads_2swan to be ncei_2swan
 %                       use https://www.ncei.noaa.gov ...
 %
+% 22Dec2023 - jcwarner:  allow use of GFS + NAM by adding time averaging of GFS to 3 hr.
+%                        you can use GFS, NARR, NAM, NARR+NAM, or GFS+NAM
 echo off
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,18 +63,20 @@ if (interpto_swan_grid)
   nx=84;
   ny=24;
 elseif (interpto_user_grid)
-% Need to provide lon_rho, lat_rho, and angle_rho.
-% NAM / NARR grids are centered at~ -100 deg lon; GFS = 0:360 lon
+% Provide lon_rho, lat_rho, and angle_rho.
+% NAM / NARR grids are centered near -100 deg lon; GFS = 0:360 lon.
+% Always select global lon values (0-360) for lon_rho.
+% These offsets will allow the mixed use of 
+% NAM-or-NARR, or NAM-NARR + GFS to use 
+% the west longitde convention (-100 for example).
+  if (get_GFS);  offset=0;    end
   if (get_NARR); offset=-360; end
   if (get_NAM);  offset=-360; end
-  if (get_GFS);  offset=0;    end
-%
-% !!! I made this 0.25 for the Sandy test case, you need finer resolution like 0.1  !!!
-%
-  lon_rho=[255:0.25:310]+offset;
-  lat_rho=[ 10:0.25:50 ];  % Create a 0.1 degree lon-lat grid
-  lon_rho=repmat(lon_rho,length(lat_rho),1)';
-  lat_rho=repmat(lat_rho',1,size(lon_rho,1))';
+% Select grid resolution.
+  lon_rho = [255:0.1:310]+offset;      % always use global values in the [0:360]
+  lat_rho = [ 10:0.1:50 ];
+  lon_rho = repmat(lon_rho,size(lat_rho,2),1)';
+  lat_rho = repmat(lat_rho',1,size(lon_rho,1))';
   angle_rho = lon_rho*0;
 else
   disp('pick a grid')
@@ -93,18 +97,18 @@ L=Lp-1;
 M=Mp-1;
 
 % now figure out what year they want
-if ((get_NARR+get_NAM)>0)
+if (get_NARR + get_NAM + get_GFS) > 0
   NAMNARR_time=[namnarr_start:3/24:namnarr_end];
   ntimes=length(NAMNARR_time);
   Time=NAMNARR_time-datenum(1858,11,17,0,0,0);
+  nskip=2;
 end
-if (get_GFS>0)
+if ((get_GFS > 0) && (get_NARR + get_NAM < 1))
+  disp('doing GFS only')
   NAMNARR_time=[namnarr_start:6/24:namnarr_end];
   ntimes=length(NAMNARR_time);
   Time=NAMNARR_time-datenum(1858,11,17,0,0,0);
-end
-if ((get_NARR+get_NAM)>0 && (get_GFS)>0)
-  disp('cant do GFS and NAM/NARR'); return;
+  nskip=1;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
@@ -117,47 +121,97 @@ end
 %
 if (get_GFS)
   disp('going to get GFS grid 4 0.5deg data');
+  C=datevec(time_start);
+  gotF=0;   %this is the F = scattered interp func, only need to call it once
+  for mm = 1:nskip:ntimes
+        
+        dd = datestr(time(mm) + datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
 %
-  for mm=1:ntimes
-    dd=datestr(Time(mm)+datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
-    disp(['getting GFS grid 4 0.5deg data at ',dd]);
-    url = ['https://www.ncei.noaa.gov/thredds/dodsC/gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
-    if (mm==1)
-      x=ncread(url,'lon');
-      y=ncread(url,'lat');
-      [nlon,nlat]=meshgrid(x,y);
+%       this is old
+%       url = ['https://www.ncei.noaa.gov/thredds/dodsC/gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+%       if you go here , you will see these options:
+%       https://www.ncei.noaa.gov/thredds/catalog/model/gfs.html
+%
+        if (C(1)>=2021)
+%         GFS grid 4  file units  2020-2023                   no rad
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files/202312/20231217/gfs_4_20231217_0000_000.grb2
+          url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files/',dd(1:6),'/',dd(1:8),'/gfs_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+%         GFS grid 4  historical file units 2019-2020           yes rad   ??
+%
+%         GFS grid 4 Analysis Set file units 2020-2023      - no Radiations   dont use this one
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files/202311/20231130/gfs_4_20231130_1800_006.grb2
+%         url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfs_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+        else
+%         GFS grid 4 Analysis Set historical file units 2004-2020 - yes radiations, use this one
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/202005/20200515/gfsanl_4_20200515_0600_006.grb2
+          url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+        end
+
+        if (mm==1)
+          x=ncread(url,'lon');
+          y=ncread(url,'lat');
+          [nlon,nlat]=meshgrid(x,y);
+        end
+        nlon=double(nlon); nlat=double(nlat);
+        if (get_NARR + get_NAM)>0 
+          addoff = -offset;
+        else
+          addoff = 0;
+        end
+%
+        if (get_Wind)
+          var=squeeze(ncread(url,'u-component_of_wind_height_above_ground'));
+          var=double(squeeze(var(:,:,1)));
+          var=var.';
+          if gotF == 0
+            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            gotF=1;
+          else
+            F.Values=var(:);
+          end
+          cff=F(double(lon_rho),double(lat_rho));
+          cff(isnan(cff))=0;
+          Uwind_ll=cff;
+      %
+          var=squeeze(ncread(url,'v-component_of_wind_height_above_ground'));
+          var=double(squeeze(var(:,:,1)));
+          var=var.';
+          if gotF == 0
+            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            gotF=1;
+          else
+            F.Values=var(:);
+          end
+          cff=F(double(lon_rho),double(lat_rho));
+          cff(isnan(cff))=0;
+          Vwind_ll=cff;
+      %
+      %   Rotate winds to ROMS or user grid.
+      %
+          cffx=Uwind_ll.*cos(angle_rho)+Vwind_ll.*sin(angle_rho);
+          cffy=Vwind_ll.*cos(angle_rho)-Uwind_ll.*sin(angle_rho);
+          Uwind(:,:,mm)=cffx;
+          Vwind(:,:,mm)=cffy;
+        end
     end
-    nlon=double(nlon); nlat=double(nlat);
-%
-    if (get_Wind)
-      var=squeeze(ncread(url,'u-component_of_wind_height_above_ground'));
-      var=double(squeeze(var(:,:,1)));
-      var=var.';
-      F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-      cff=F(double(lon_rho),double(lat_rho));
-      cff(isnan(cff))=0;
-      Uwind_ll=cff;
-  %
-      var=squeeze(ncread(url,'v-component_of_wind_height_above_ground'));
-      var=double(squeeze(var(:,:,1)));
-      var=var.';
-      F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-      cff=F(double(lon_rho),double(lat_rho));
-      cff(isnan(cff))=0;
-      Vwind_ll=cff;
-  %
-  %   Rotate winds to ROMS or user grid.
-  %
-      cffx=Uwind_ll.*cos(angle_rho)+Vwind_ll.*sin(angle_rho);
-      cffy=Vwind_ll.*cos(angle_rho)-Uwind_ll.*sin(angle_rho);
-      Uwind(:,:,mm)=cffx;
-      Vwind(:,:,mm)=cffy;
+  if (get_NARR + get_NAM) > 0
+% here we need to interp to every other missing data, the 3 hr ones.  3 9 15 21
+    for mm = 2:nskip:ntimes
+      if get_Wind
+        Uwind(:,:,mm) = 0.5*(Uwind(:,:,mm-1)+Uwind(:,:,mm+1));
+        Vwind(:,:,mm) = 0.5*(Vwind(:,:,mm-1)+Vwind(:,:,mm+1));
+      end
     end
   end
   save GFS_data.mat
 end
 if (get_NARR)
   disp('going to get NARR-A grid 221 32km data');
+  gotF=0;   %this is the F = scattered interp func, only need to call it once
 %
   for mm=1:ntimes
     dd=datestr(Time(mm)+datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
@@ -179,7 +233,12 @@ if (get_NARR)
       var=squeeze(ncread(url,'u-component_of_wind_height_above_ground'));
       var=double(squeeze(var(:,:,1)));
       var=var.';
-      F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+      if gotF == 0
+        F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+        gotF=1;
+      else
+        F.Values=var(:);
+      end
       cff=F(double(lon_rho),double(lat_rho));
       cff(isnan(cff))=0;
       Uwind_lamb=cff;
@@ -187,7 +246,12 @@ if (get_NARR)
       var=squeeze(ncread(url,'v-component_of_wind_height_above_ground'));
       var=double(squeeze(var(:,:,1)));
       var=var.';
-      F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+      if gotF == 0
+        F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+        gotF=1;
+      else
+        F.Values=var(:);
+      end
       cff=F(double(lon_rho),double(lat_rho));
       cff(isnan(cff))=0;
       Vwind_lamb=cff;
@@ -223,6 +287,7 @@ end
 %
 if (get_NAM)
   disp('going to get NAM grid 218 12km data');
+  gotF=0;   %this is the F = scattered interp func, only need to call it once
 %
   for mm=1:ntimes
     nstp=mod(mm,8);
@@ -270,7 +335,12 @@ if (get_NAM)
         var=squeeze(ncread(url,'u_wind_height_above_ground'));
         var=double(squeeze(var(:,:,1)));
         var=var.';
-        F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
+        if gotF == 0
+          F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+          gotF=1;
+        else
+          F.Values=var(:);
+        end
         cff=F(lon_rho,lat_rho);
         cff(isnan(cff))=0;
         Uwind_lamb=cff;
@@ -278,7 +348,12 @@ if (get_NAM)
         var=squeeze(ncread(url,'v_wind_height_above_ground'));
         var=double(squeeze(var(:,:,1)));
         var=var.';
-        F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
+        if gotF == 0
+          F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+          gotF=1;
+        else
+          F.Values=var(:);
+        end
         cff=F(lon_rho,lat_rho);
         cff(isnan(cff))=0;
         Vwind_lamb=cff;

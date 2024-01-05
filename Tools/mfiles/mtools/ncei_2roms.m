@@ -2,7 +2,7 @@
 %
 %   input choices-  3hour NAM 12km data grib files
 %                   3hour NARR 32 km grib files
-%                   3hour GFS  0.5 deg grib files
+%                   6hour GFS  0.5 deg grib files
 %                   can combine and interpolate to a common grid
 %                   all data is read thru THREDDs from:
 %                   https://www.ncei.noaa.gov/thredds/model/model.html
@@ -46,8 +46,11 @@
 % 9Nov2017 - chegermiller adds nctoolbox option based on Maitane's edits
 %
 % 2Nov2017 - chegermiller NOTE: for older matlab versions, this still might fail because
-% ncread is looking for http: to indicate an OPeNDAP file. Here, the server
-% is now https:
+% ncread is looking for http: to indicate an OPeNDAP file. Here, the server starts with https:
+%
+% 22Dec2023 - jcwarner:  allow use of GFS + NAM by adding time averaging of GFS to 3 hr.
+%                        you can use GFS, NARR, NAM, NARR+NAM, or GFS+NAM
+%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%  START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -71,13 +74,10 @@ ROMS_force_name = 'romsforc_NARR_Sandy2012.nc';
 time_start = datenum('28-Oct-2012');
 time_end   = datenum('31-Oct-2012');
 
-% (4) Select which data to obtain: NAM, NARR, both NAM+NARR -- or -- GFS.
-get_NARR = 1;  % NARR-A grid 221 32km data, available 1979-2014
-get_NAM  = 0;  % NAM grid 218 12km data
-% --- or ---
-get_GFS  = 0;  % GFS 0.5 degree
-% GFS is 6 hr and NAM/NARR is 3 hr. I dont have time interpolation
-% added in so you have to pick NAM/NARR or GFS.
+% (4) Select which data to obtain: you can use GFS, NARR, NAM, NARR+NAM, or GFS+NAM
+get_NARR = 0;  % NARR-A grid 221 32km data, available 1979-2014  3 hr
+get_NAM  = 1;  % NAM grid 218 12km data   3hr
+get_GFS  = 1;  % GFS 0.5 degree   6hr, avg to 3h if you also selected nam
 
 % (5) Select to interpolate to a roms grid or a user defined grid.
 % Set one of these to a 1, the other to a 0.
@@ -92,13 +92,17 @@ if interpto_roms_grid
   angle_rho = ncread(model_grid,'angle');
 elseif interpto_user_grid
 % Provide lon_rho, lat_rho, and angle_rho.
-% NAM / NARR grids are centered at~ -100 deg lon; GFS = 0:360 lon
+% NAM / NARR grids are centered near -100 deg lon; GFS = 0:360 lon.
+% Always select global lon values (0-360) for lon_rho.
+% These offsets will allow the mixed use of 
+% NAM-or-NARR, or NAM-NARR + GFS to use 
+% the west longitde convention (-100 for example).
+  if (get_GFS);  offset=0;    end
   if (get_NARR); offset=-360; end
   if (get_NAM);  offset=-360; end
-  if (get_GFS);  offset=0;    end
-% You Probably want to make a finer resolution from 0.2 to 0.1.
-  lon_rho = [255:0.2:310]+offset;
-  lat_rho = [ 10:0.2:50 ];
+% Select grid resolution.
+  lon_rho = [255:0.1:310]+offset;      % always use global values in the [0:360]
+  lat_rho = [ 10:0.1:50 ];
   lon_rho = repmat(lon_rho,size(lat_rho,2),1)';
   lat_rho = repmat(lat_rho',1,size(lon_rho,1))';
   angle_rho = lon_rho*0;
@@ -120,18 +124,21 @@ end
 [Lp,Mp] = size(lon_rho);
 
 % determine date range
-if (get_NARR + get_NAM) > 0
+if (get_NARR + get_NAM + get_GFS) > 0
   time = [time_start:3/24:time_end] - datenum(1858,11,17,0,0,0);
   ntimes = length(time);
+  nskip=2;
 end
-if get_GFS > 0
+if ((get_GFS > 0) && (get_NARR + get_NAM < 1))
+  disp('doing GFS only')
   time = [time_start:6/24:time_end] - datenum(1858,11,17,0,0,0);
   ntimes = length(time);
+  nskip=1;
 end
-if (get_NARR + get_NAM) > 0 && get_GFS > 0
-  disp('cant do GFS and NAM/NARR')
-  return
-end
+%if (get_NARR + get_NAM) > 0 && get_GFS > 0
+%  disp('cant do GFS and NAM/NARR')
+%  return
+%end
 
 % create NetCDF file for forcing data
 disp([' ## Creating ' ROMS_force_name '...'])
@@ -329,15 +336,38 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if get_GFS
+    C=datevec(time_start);
     disp('going to get GFS grid 4 0.5deg data')
     gotF=0;   %this is the F = scattered interp func, only need to call it once
-    for mm = 1:ntimes
+    for mm = 1:nskip:ntimes
         
         dd = datestr(time(mm) + datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
+%
+%       this is old
 %       url = ['https://www.ncei.noaa.gov/thredds/dodsC/gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
-        url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+%       if you go here , you will see these options:
+%       https://www.ncei.noaa.gov/thredds/catalog/model/gfs.html
+%
+        if (C(1)>=2021)
+%         GFS grid 4  file units  2020-2023                   no rad
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files/202312/20231217/gfs_4_20231217_0000_000.grb2
+          url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files/',dd(1:6),'/',dd(1:8),'/gfs_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+%         GFS grid 4  historical file units 2019-2020           yes rad   ??
+%
+%         GFS grid 4 Analysis Set file units 2020-2023      - no Radiations   dont use this one
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files/202311/20231130/gfs_4_20231130_1800_006.grb2
+%         url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfs_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+        else
+%         GFS grid 4 Analysis Set historical file units 2004-2020 - yes radiations, use this one
+%         https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/202005/20200515/gfsanl_4_20200515_0600_006.grb2
+          url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%
+        end
 
-        
+     
         disp(['getting GFS grid 4 0.5 deg data at ',dd])
         if use_nctoolbox
             geo = ncgeodataset(url);
@@ -353,38 +383,85 @@ if get_GFS
             [nlon,nlat] = meshgrid(x,y);
             nlon=nlon.'; nlat=nlat.';
         end
-        if get_lwrad && mm == 1
-            % down = double(ncread(url,'Downward_Long-Wave_Rad_Flux')).';
-            % up   = double(ncread(url,'Upward_Long-Wave_Rad_Flux_surface')).';
-            % var  = down-up;
-            % F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-            % cff = F(lon_rho,lat_rho);
-            % cff(isnan(cff)) = 0;
-            % lwrad(:,:,mm) = cff;
+        if (get_NARR + get_NAM)>0 
+          addoff = -offset;
+        else
+          addoff = 0;
+        end
+        if get_lwrad
+            try
+              down = double(ncread(url,'Downward_Long-Wave_Radp_Flux_surface_6_Hour_Average')).';
+            catch
+              down = nlon*0;
+              disp('lwrad down is not available for GFS');
+            end
+            try
+              up   = double(ncread(url,'Upward_Long-Wave_Radp_Flux_surface_6_Hour_Average')).';
+            catch
+              up   = nlon*0;
+              disp('lwrad up is not available for GFS');
+            end
+            var  = down-up;
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
+            cff = F(lon_rho+addoff,lat_rho);
+            cff(isnan(cff)) = 0;
+            lwrad(:,:,mm) = cff;
             
-            % F = scatteredInterpolant(nlon(:),nlat(:),down(:));
-            % cff = F(lon_rho,lat_rho);
-            % cff(isnan(cff)) = 0;
-            % lwrad_down(:,:,mm) = cff;
-            disp('lwrad is not available for GFS');
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),down(:));
+              gotF=1;
+            else
+              F.Values=down(:);
+            end
+            cff = F(lon_rho+addoff,lat_rho);
+            cff(isnan(cff)) = 0;
+            lwrad_down(:,:,mm) = cff;
         end
-        if get_swrad && mm == 1
-            % down = double(ncread(url,'Downward_Short-Wave_Rad_Flux')).';
-            % up   = double(ncread(url,'Upward_Short-Wave_Rad_Flux_surface')).';
-            % var  = down-up;
-            % F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-            % cff = F(lon_rho,lat_rho);
-            % cff(isnan(cff)) = 0;
-            % swrad(:,:,mm) = cff;
-            disp('swrad is not available for GFS');
+        if get_swrad
+            try
+              down = double(ncread(url,'Downward_Short-Wave_Radiation_Flux_surface_6_Hour_Average')).';
+            catch
+              down = nlon*0;
+              disp('swrad down is not available for GFS');
+            end
+            try
+              up   = double(ncread(url,'Upward_Short-Wave_Radiation_Flux_surface_6_Hour_Average')).';
+            catch
+              up   = nlon*0;
+              disp('swrad up is not available for GFS');
+            end
+            var  = down-up;
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
+            cff = F(lon_rho+addoff,lat_rho);
+            cff(isnan(cff)) = 0;
+            swrad(:,:,mm) = cff;
         end
-        if get_rain && mm == 1
-            % var = double(ncread(url,'Precipitation_rate')).';
-            % F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-            % cff = F(lon_rho,lat_rho);
-            % cff(isnan(cff)) = 0;
-            % rain(:,:,mm) = cff;
-            disp('rain is not available for GFS');
+        if get_rain
+            try
+              var = double(ncread(url,'Convective_Precipitation_Rate_surface_6_Hour_Average')).';
+            catch
+              var = nlon*0;
+              disp('rain is not available for GFS');
+            end
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
+            cff = F(lon_rho+addoff,lat_rho);
+            cff(isnan(cff)) = 0;
+            rain(:,:,mm) = cff;
         end
         if get_Tair
             if use_matlab
@@ -396,13 +473,13 @@ if get_GFS
                 var = squeeze(var(1,:,:));
             end 
             var = var - 273.15; % K to degC
-            if mm == 1
+            if gotF == 0
               F = scatteredInterpolant(nlon(:),nlat(:),var(:));
               gotF=1;
             else
               F.Values=var(:);
             end
-            cff = F(lon_rho,lat_rho);
+            cff = F(lon_rho+addoff,lat_rho);
             cff(isnan(cff)) = 0;
             Tair(:,:,mm) = cff;
         end
@@ -419,7 +496,7 @@ if get_GFS
             else
               F.Values=var(:);
             end
-            cff = F(lon_rho,lat_rho);
+            cff = F(lon_rho+addoff,lat_rho);
             cff(isnan(cff)) = 0;
             Pair(:,:,mm) = cff;
         end
@@ -435,7 +512,7 @@ if get_GFS
             else
               F.Values=var(:);
             end
-            cff = F(lon_rho,lat_rho);
+            cff = F(lon_rho+addoff,lat_rho);
             cff(isnan(cff)) = 0;
             Qair(:,:,mm) = cff;
         end
@@ -453,7 +530,7 @@ if get_GFS
             else
               F.Values=var(:);
             end
-            cff = F(lon_rho,lat_rho);
+            cff = F(lon_rho+addoff,lat_rho);
             cff(isnan(cff)) = 0;
             Uwind_ll = cff;
 
@@ -470,7 +547,7 @@ if get_GFS
             else
               F.Values=var(:);
             end
-            cff = F(lon_rho,lat_rho);
+            cff = F(lon_rho+addoff,lat_rho);
             cff(isnan(cff)) = 0;
             Vwind_ll = cff;
             
@@ -485,6 +562,25 @@ if get_GFS
         end
     end
     save GFS_data.mat
+%
+    if (get_NARR + get_NAM) > 0
+%     here we need to interp to every other missing data, the 3 hr ones.  3 9 15 21
+      for mm = 2:nskip:ntimes
+        if get_Tair
+          Tair(:,:,mm) = 0.5*(Tair(:,:,mm-1)+Tair(:,:,mm+1));
+        end
+        if get_Pair
+          Pair(:,:,mm) = 0.5*(Pair(:,:,mm-1)+Pair(:,:,mm+1));
+        end
+        if get_Qair
+          Qair(:,:,mm) = 0.5*(Qair(:,:,mm-1)+Qair(:,:,mm+1));
+        end
+        if get_Wind
+          Uwind(:,:,mm) = 0.5*(Uwind(:,:,mm-1)+Uwind(:,:,mm+1));
+          Vwind(:,:,mm) = 0.5*(Vwind(:,:,mm-1)+Vwind(:,:,mm+1));
+        end
+      end
+    end
 end
 
 if get_NARR
@@ -747,9 +843,9 @@ if get_NAM
                 [nlon,nlat] = m_xy2ll(x/earth_rad,y/earth_rad);
                 
                 % find the indices of the lon_rho lat_rho grid that are inside the NAM
-                % data. we will just use these points from NAM and take the rest from NARR
+                % data. we will just use these points from NAM and take the rest from NARR or GFS
                 
-                disp('computing mask to merge NARR and NAM')
+                disp('computing mask to merge NAM with GFS-or-NARR')
                 mask = zeros(size(lon_rho));
                 X = [nlon(:,1); nlon(end,:)'; nlon(end:-1:1,end); nlon(1,end:-1:1)'];
                 Y = [nlat(:,1); nlat(end,:)'; nlat(end:-1:1,end); nlat(1,end:-1:1)'];

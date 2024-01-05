@@ -566,7 +566,7 @@ R.eta_rho = YrF;
 if ((~isempty(G(dg).x_rho)   && ~isempty(G(dg).y_rho))     ||           ...
     (~isempty(G(dg).lon_rho) && ~isempty(G(dg).lat_rho)))
 
-%  if (~spherical)   %jcw
+  if (~spherical)   %jcw
   if (~isempty(G(dg).x_rho) && ~isempty(G(dg).y_rho))
     if (UseGriddedInterpolant)
       FCr = griddedInterpolant(XrC, YrC, G(dg).x_rho, method);
@@ -579,7 +579,7 @@ if ((~isempty(G(dg).x_rho)   && ~isempty(G(dg).y_rho))     ||           ...
     end
     [Im, Jm] = size(R.x_rho);
   end
-%  end   %jcw
+  end   %jcw
 
   if (spherical && ~isempty(G(dg).lon_rho) && ~isempty(G(dg).lat_rho))
     if (UseGriddedInterpolant)
@@ -609,7 +609,7 @@ R.eta_psi = YpF;
 if ((~isempty(G(dg).x_psi)   && ~isempty(G(dg).y_psi))     ||           ...
     (~isempty(G(dg).lon_psi) && ~isempty(G(dg).lat_psi)))
 
- % if (~spherical)   %jcw
+  if (~spherical)   %jcw
   if (~isempty(G(dg).x_psi) && ~isempty(G(dg).y_psi))
     if (UseGriddedInterpolant)
       FCp = griddedInterpolant(XpC, YpC, G(dg).x_psi, method);
@@ -622,7 +622,7 @@ if ((~isempty(G(dg).x_psi)   && ~isempty(G(dg).y_psi))     ||           ...
     end
     [Im, Jm] = size(R.x_psi);
   end  
- % end      %jcw
+  end      %jcw
 
   if (spherical && ~isempty(G(dg).lon_psi) && ~isempty(G(dg).lat_psi))
     if (UseGriddedInterpolant)
@@ -652,7 +652,7 @@ R.eta_u = YuF;
 if ((~isempty(G(dg).x_u)   && ~isempty(G(dg).y_u))    ||                ...
     (~isempty(G(dg).lon_u) && ~isempty(G(dg).lat_u)))
 
-%  if (~spherical)   %jcw
+  if (~spherical)   %jcw
   if (~isempty(G(dg).x_u) && ~isempty(G(dg).y_u))
     if (UseGriddedInterpolant)
       FCu = griddedInterpolant(XuC, YuC, G(dg).x_u, method);
@@ -665,7 +665,7 @@ if ((~isempty(G(dg).x_u)   && ~isempty(G(dg).y_u))    ||                ...
     end
     [Im, Jm] = size(R.x_u);
   end  
-%  end     %jcw
+  end     %jcw
   
   if (spherical && ~isempty(G(dg).lon_u) && ~isempty(G(dg).lat_u))
     if (UseGriddedInterpolant)
@@ -695,7 +695,7 @@ R.eta_v = YvF;
 if ((~isempty(G(dg).x_v)   && ~isempty(G(dg).y_v))     ||               ...
     (~isempty(G(dg).lon_v) && ~isempty(G(dg).lat_v)))
 
-%  if (~spherical)   %jcw
+  if (~spherical)   %jcw
   if (~isempty(G(dg).x_v) && ~isempty(G(dg).y_v))
     if (UseGriddedInterpolant)
       FCv = griddedInterpolant(XvC, YvC, G(dg).x_v, method);
@@ -708,7 +708,7 @@ if ((~isempty(G(dg).x_v)   && ~isempty(G(dg).y_v))     ||               ...
     end
     [Im, Jm] = size(R.x_v);
   end
- % end    %jcw
+  end    %jcw
 
   if (spherical && ~isempty(G(dg).lon_v) && ~isempty(G(dg).lat_v))
     if (UseGriddedInterpolant)
@@ -2204,11 +2204,14 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_rho  = [];
   R.eta_rho = [];
 
-  R.x_rho   = [];
-  R.y_rho   = [];
+% R.x_rho   = [];
+% R.y_rho   = [];
   if (spherical)
     R.lon_rho = [];
     R.lat_rho = [];
+  else
+    R.x_rho   = [];
+    R.y_rho   = [];
   end
 
   R.Irg_rho = [];
@@ -2217,11 +2220,14 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_psi  = [];
   R.eta_psi = [];
 
-  R.x_psi   = [];
-  R.y_psi   = [];
+% R.x_psi   = [];
+% R.y_psi   = [];
   if (spherical)
     R.lon_psi = [];
     R.lat_psi = [];
+  else
+    R.x_psi   = [];
+    R.y_psi   = [];
   end
 
   R.Irg_psi = [];
@@ -2230,11 +2236,14 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_u  = [];
   R.eta_u = [];
 
-  R.x_u   = [];
-  R.y_u   = [];
+% R.x_u   = [];
+% R.y_u   = [];
   if (spherical)
     R.lon_u = [];
     R.lat_u = [];
+  else
+    R.x_u   = [];
+    R.y_u   = [];
   end
 
   R.Irg_u = [];
@@ -2243,11 +2252,14 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_v  = [];
   R.eta_v = [];
   
-  R.x_v   = [];
-  R.y_v   = [];
+% R.x_v   = [];
+% R.y_v   = [];
   if (spherical)
     R.lon_v = [];
     R.lat_v = [];
+  else
+    R.x_v   = [];
+    R.y_v   = [];
   end
 
   R.Irg_v = [];

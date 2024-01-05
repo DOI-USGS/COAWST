@@ -1,14 +1,15 @@
-function create_roms_forcings(lon,lat,time,fn,varargin)
+function create_roms_forcings(lon,lat,time,init_time,fn,varargin)
 % 
 % Create NetCDF file using native netcdf builtins for bulk fluxes from NAM 3-hourly output  
 % 
 % Usage:
 % create_roms_forcings(lon,lat,time,fn,varargin)
 % 
-% lon: longitude array
-% lat: latitiude array
-% time: time array
-% fn:   file name
+% lon:       longitude array
+% lat:       latitiude array
+% time:      time array
+% init_time: reference time for the start date. for example init_time=datenum(2022,09,20)
+% fn:        file name
 %
 % Accepts any combinations of desired parameter(s):
 % (You must use these specific names on the input line)
@@ -39,6 +40,8 @@ if isempty(nc), return, end
 disp(' ## Defining Global Attributes...')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', ['Created by ' mfilename ' on ' datestr(now)]);
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type', 'bulk fluxes forcing file');
+% creating initial time
+init_tattrib=['days since ', num2str(year(init_time)), '-',num2str(month(init_time)), '-' ,num2str(day(init_time)), ' 00:00:00 UTC'];
 
 % Dimensions:
 disp(' ## Defining Dimensions...')
@@ -58,7 +61,7 @@ disp(' ## Defining Variables, and Attributes...')
 
 tID = netcdf.defVar(nc,'time','double',t_dimID);
 netcdf.putAtt(nc,tID,'long_name','atmospheric forcing time');
-netcdf.putAtt(nc,tID,'units','days');
+netcdf.putAtt(nc,tID,'units',init_tattrib);
 netcdf.putAtt(nc,tID,'field','time, scalar, series');
 
 lonID = netcdf.defVar(nc,'lon','double',[lon_dimID lat_dimID]);
@@ -75,7 +78,7 @@ if sum(strcmpi(varargin,'Uwind'))>0
   wt_dimID = netcdf.defDim(nc,'wind_time',t);
   wtID = netcdf.defVar(nc,'wind_time','double',wt_dimID);
   netcdf.putAtt(nc,wtID,'long_name','wind_time');
-  netcdf.putAtt(nc,wtID,'units','days');
+  netcdf.putAtt(nc,wtID,'units',init_tattrib);
   netcdf.putAtt(nc,wtID,'field','Uwind_time, scalar, series');
 
   UwindID = netcdf.defVar(nc,'Uwind','double',[lon_dimID lat_dimID wt_dimID]);
@@ -91,7 +94,7 @@ if sum(strcmpi(varargin,'Vwind'))>0
     wt_dimID = netcdf.defDim(nc,'wind_time',t);
     wtID = netcdf.defVar(nc,'wind_time','double',wt_dimID);
     netcdf.putAtt(nc,wtID,'long_name','wind_time');
-    netcdf.putAtt(nc,wtID,'units','days');
+    netcdf.putAtt(nc,wtID,'units',init_tattrib);
     netcdf.putAtt(nc,wtID,'field','Vwind_time, scalar, series');
   end
 
@@ -107,7 +110,7 @@ if sum(strcmpi(varargin,'Pair'))>0
   Pat_dimID = netcdf.defDim(nc,'Pair_time',t);
   PatID = netcdf.defVar(nc,'Pair_time','double',Pat_dimID);
   netcdf.putAtt(nc,PatID,'long_name','Pair_time');
-  netcdf.putAtt(nc,PatID,'units','days');
+  netcdf.putAtt(nc,PatID,'units',init_tattrib);
   netcdf.putAtt(nc,PatID,'field','Pair_time, scalar, series');
 
   PairID = netcdf.defVar(nc,'Pair','double',[lon_dimID lat_dimID Pat_dimID]);
@@ -122,7 +125,7 @@ if sum(strcmpi(varargin,'Tair'))>0
   Tat_dimID = netcdf.defDim(nc,'Tair_time',t);
   TatID = netcdf.defVar(nc,'Tair_time','double',Tat_dimID);
   netcdf.putAtt(nc,TatID,'long_name','Tair_time');
-  netcdf.putAtt(nc,TatID,'units','days');
+  netcdf.putAtt(nc,TatID,'units',init_tattrib);
   netcdf.putAtt(nc,TatID,'field','Tair_time, scalar, series');
 
   TairID = netcdf.defVar(nc,'Tair','double',[lon_dimID lat_dimID Tat_dimID]);
@@ -137,7 +140,7 @@ if sum(strcmpi(varargin,'Qair'))>0
   Qat_dimID = netcdf.defDim(nc,'Qair_time',t);
   QatID = netcdf.defVar(nc,'Qair_time','double',Qat_dimID);
   netcdf.putAtt(nc,QatID,'long_name','Qair_time');
-  netcdf.putAtt(nc,QatID,'units','days');
+  netcdf.putAtt(nc,QatID,'units',init_tattrib);
   netcdf.putAtt(nc,QatID,'field','Qair_time, scalar, series');
 
   QairID = netcdf.defVar(nc,'Qair','double',[lon_dimID lat_dimID Qat_dimID]);
@@ -152,7 +155,7 @@ if sum(strcmpi(varargin,'rain'))>0
   rt_dimID = netcdf.defDim(nc,'rain_time',t);
   rtID = netcdf.defVar(nc,'rain_time','double',rt_dimID);
   netcdf.putAtt(nc,rtID,'long_name','rain_time');
-  netcdf.putAtt(nc,rtID,'units','days');
+  netcdf.putAtt(nc,rtID,'units',init_tattrib);
   netcdf.putAtt(nc,rtID,'field','rain_time, scalar, series');
 
   rainID = netcdf.defVar(nc,'rain','double',[lon_dimID lat_dimID rt_dimID]);
@@ -167,7 +170,7 @@ if sum(strcmpi(varargin,'swrad'))>0
   swrt_dimID = netcdf.defDim(nc,'swrad_time',t);
   swrtID = netcdf.defVar(nc,'swrad_time','double',swrt_dimID);
   netcdf.putAtt(nc,swrtID,'long_name','swrad_time');
-  netcdf.putAtt(nc,swrtID,'units','days');
+  netcdf.putAtt(nc,swrtID,'units',init_tattrib);
   netcdf.putAtt(nc,swrtID,'field','swrad_time, scalar, series');
 
   swradID = netcdf.defVar(nc,'swrad','double',[lon_dimID lat_dimID swrt_dimID]);
@@ -184,7 +187,7 @@ if sum(strcmpi(varargin,'lwrad'))>0
   lwrt_dimID = netcdf.defDim(nc,'lwrad_time',t);
   lwrtID = netcdf.defVar(nc,'lwrad_time','double',lwrt_dimID);
   netcdf.putAtt(nc,lwrtID,'long_name','lwrad_time');
-  netcdf.putAtt(nc,lwrtID,'units','days');
+  netcdf.putAtt(nc,lwrtID,'units',init_tattrib);
   netcdf.putAtt(nc,lwrtID,'field','lwrad_time, scalar, series');
 
   lwradID = netcdf.defVar(nc,'lwrad','double',[lon_dimID lat_dimID lwrt_dimID]);
@@ -201,7 +204,7 @@ if sum(strcmpi(varargin,'sustr'))>0
   su_dimID = netcdf.defDim(nc,'sustr_time',t);
   suID = netcdf.defVar(nc,'sustr_time','double',su_dimID);
   netcdf.putAtt(nc,suID,'long_name','sustr_time');
-  netcdf.putAtt(nc,suID,'units','days');
+  netcdf.putAtt(nc,suID,'units',init_tattrib);
   netcdf.putAtt(nc,suID,'field','sustr_time, scalar, series');
 
   sustrID = netcdf.defVar(nc,'sustr','double',[lon_dimID lat_dimID su_dimID]);
@@ -216,7 +219,7 @@ if sum(strcmpi(varargin,'svstr'))>0
   sv_dimID = netcdf.defDim(nc,'svstr_time',t);
   svID = netcdf.defVar(nc,'svstr_time','double',sv_dimID);
   netcdf.putAtt(nc,svID,'long_name','svstr_time');
-  netcdf.putAtt(nc,svID,'units','days');
+  netcdf.putAtt(nc,svID,'units',init_tattrib);
   netcdf.putAtt(nc,svID,'field','svstr_time, scalar, series');
 
   svstrID = netcdf.defVar(nc,'svstr','double',[lon_dimID lat_dimID sv_dimID]);

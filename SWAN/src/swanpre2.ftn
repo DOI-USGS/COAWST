@@ -1798,7 +1798,6 @@
                    MCMVAR = MCMVAR+1                                      !PSD 09/21/2011
                    JDBOT = MCMVAR                                         !PSD 09/21/2011
                    ALOCMP = .TRUE.                                        !PSD 09/21/2011
-                  write(*,*) 'jdbot is ', jdbot
                 ENDIF                                                     
                 IF (IVTYPE.EQ.201 .AND. JDSXC.LE.1) THEN                 
                    MCMVAR = MCMVAR+1                                      

@@ -121,6 +121,7 @@
    Sinp.hc          =hc;           %stretching width used in ROMS
 %
    Gout=get_roms_grid(grid_file,Sinp);
+   Gout=get_roms_grid(Gout,Sinp);
 %
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %
