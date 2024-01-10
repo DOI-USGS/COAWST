@@ -242,10 +242,12 @@ else
           % (Hmmm ... there may still be a catch if there are some very
           % deep depths with NaNs in the data)
           [xa,za] = meshgrid(1:M,[-10000; -abs(zlev); 10]);
+          %[xa,za] = meshgrid(1:M,[-10000; -abs(zlev); 5000]);
           
           data = squeeze(roms_stdlev(l,:,i,:));
           data = [data(1,:); data; data(Nz,:)];
           roms(l,:,i,:) = interp2(xa,za,data,x,z,'spline');
+          %roms(l,:,i,:) = interp2(xa,za,data,x,z);
           
         end
       end
@@ -269,11 +271,13 @@ else
         % (Hmmm ... there may still be a catch if there are some very
         % deep depths with NaNs in the data)
         [xa,za] = meshgrid(1:M,[-10000; -abs(zlev); 10]);
+        %[xa,za] = meshgrid(1:M,[-10000; -abs(zlev); 5000]);
         
         data = squeeze(roms_stdlev(:,i,:));
         data = [data(1,:); data; data(Nz,:)];
         data((isnan(data)==1))=0;
         roms(:,i,:) = interp2(xa,za,data,x,z,'spline');
+        %roms(:,i,:) = interp2(xa,za,data,x,z);
         
       end
   end

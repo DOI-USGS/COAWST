@@ -2701,11 +2701,12 @@
           CALL INREAL ('POWST', PWCAP(9),  'UNC', 0.)                     34.00
           CALL INREAL ('DELTA', PWCAP(10), 'UNC', 0.)                     34.00
           CALL INREAL ('POWK',  PWCAP(11), 'UNC', 0.)                     34.00
-#ifdef SWAN_MODEL
-          JUSTAR = MCMVAR+1                                               30.22
-          JCDRAG = MCMVAR+2                                               30.22
-          MCMVAR = MCMVAR+2                                               30.22
-#endif
+!#ifdef SWAN_MODEL
+!          JUSTAR = MCMVAR+1                                               30.22
+!          JCDRAG = MCMVAR+2                                               30.22
+!          MCMVAR = MCMVAR+2                                               30.22
+!          ALOCMP = .TRUE.                                                 40.97
+!#endif
         ELSE IF ( KEYWIS ('JANS')) THEN
 !         *** whitecapping according to Janssen (1989, 1991) ***
           IWCAP = 2
@@ -3371,7 +3372,12 @@
         ENDIF
         IF (IWIND.NE.4) THEN
            JUSTAR = MCMVAR+1
+# ifdef SWAN_MODEL
+           JCDRAG = MCMVAR+2                                              JCW
+           MCMVAR = MCMVAR+2
+# else
            MCMVAR = MCMVAR+1
+# endif
            ALOCMP = .TRUE.
         ENDIF
         GOTO 100

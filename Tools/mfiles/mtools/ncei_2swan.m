@@ -79,22 +79,24 @@ elseif (interpto_user_grid)
   lat_rho = repmat(lat_rho',1,size(lon_rho,1))';
   angle_rho = lon_rho*0;
 else
-  disp('pick a grid')
+  disp('getting data from file')
 end
 %%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%get some grid info
-if (interpto_swan_grid)
-  grd=textread(model_grid);
-  gridsize=length(grd)/2;
-  zz=grd(1:gridsize);
-  lon_rho=reshape(zz,nx,ny);
-  zz=grd(gridsize+1:end);
-  lat_rho=reshape(zz,nx,ny);
+if (get_NARR + get_NAM + get_GFS) > 0
+  %get some grid info
+  if (interpto_swan_grid)
+    grd=textread(model_grid);
+    gridsize=length(grd)/2;
+    zz=grd(1:gridsize);
+    lon_rho=reshape(zz,nx,ny);
+    zz=grd(gridsize+1:end);
+    lat_rho=reshape(zz,nx,ny);
+  end
+  [Lp,Mp]=size(lon_rho);
+  L=Lp-1;
+  M=Mp-1;
 end
-[Lp,Mp]=size(lon_rho);
-L=Lp-1;
-M=Mp-1;
 
 % now figure out what year they want
 if (get_NARR + get_NAM + get_GFS) > 0
@@ -114,9 +116,11 @@ end
 % 
 % pre allocate some arrays
 %
-if (get_Wind)
-  Uwind=zeros(size(lon_rho,1),size(lon_rho,2),ntimes);
-  Vwind=zeros(size(lon_rho,1),size(lon_rho,2),ntimes);
+if (get_NARR + get_NAM + get_GFS) > 0
+  if (get_Wind)
+    Uwind=zeros(size(lon_rho,1),size(lon_rho,2),ntimes);
+    Vwind=zeros(size(lon_rho,1),size(lon_rho,2),ntimes); 
+  end
 end
 %
 if (get_GFS)
