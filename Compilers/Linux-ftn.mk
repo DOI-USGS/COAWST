@@ -38,8 +38,9 @@
 # First the defaults
 #
                FC := ftn
-           FFLAGS := -e I
-           FFLAGS += -e m
+            FFLAGS :=
+#           FFLAGS := -e I
+#           FFLAGS += -e m
        FIXEDFLAGS := -fixed-form
         FREEFLAGS := -free-form
               CPP := /usr/bin/cpp
@@ -71,7 +72,8 @@ ifdef USE_ROMS
  ifdef USE_DEBUG
            FFLAGS += -G -0
  else
-           FFLAGS += -O 3,aggress
+#          FFLAGS += -O 3,aggress
+           FFLAGS += -O3
  endif
  ifdef SHARED
           LDFLAGS += -Wl,-rpath,$(SCRATCH_DIR)
@@ -191,7 +193,7 @@ endif
 ifdef USE_DEBUG
            FFLAGS += -G 0
 else
-           FFLAGS += -O 3,aggress
+           FFLAGS += -O3 #,aggress
 endif
 
 ifndef USE_SCRIP
