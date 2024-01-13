@@ -104,8 +104,8 @@
           DO j=Jstr,Jend
             bndtot=fac1*WAVES(ng)%bndwave_z(j,tidx1)+                   &
      &             fac2*WAVES(ng)%bndwave_z(j,tidx2)
-            BOUNDARY(ng)%zeta_west(j)=(BOUNDARY(ng)%zeta_west(j)+       &
-     &                                 bndtot)*ramp
+            BOUNDARY(ng)%zeta_west(j)=BOUNDARY(ng)%zeta_west(j)+        &
+     &                                bndtot*ramp
           END DO
         END IF
       END IF
@@ -120,8 +120,8 @@
           DO j=Jstr,Jend
             bndtot=fac1*WAVES(ng)%bndwave_z(j,tidx1)+                   &
      &             fac2*WAVES(ng)%bndwave_z(j,tidx2)
-            BOUNDARY(ng)%zeta_east(j)=(BOUNDARY(ng)%zeta_east(j)+       &
-     &                                 bndtot)*ramp
+            BOUNDARY(ng)%zeta_east(j)=BOUNDARY(ng)%zeta_east(j)+        &
+     &                                bndtot*ramp
           END DO
         END IF
       END IF
@@ -136,8 +136,8 @@
           DO i=Istr,Iend
             bndtot=fac1*WAVES(ng)%bndwave_z(i,tidx1)+                   &
      &             fac2*WAVES(ng)%bndwave_z(i,tidx2)
-            BOUNDARY(ng)%zeta_south(i)=(BOUNDARY(ng)%zeta_south(i)+     &
-     &                                  bndtot)*ramp
+            BOUNDARY(ng)%zeta_south(i)=BOUNDARY(ng)%zeta_south(i)+      &
+     &                                 bndtot*ramp
           END DO
         END IF
       END IF
@@ -152,8 +152,8 @@
           DO i=Istr,Iend
             bndtot=fac1*WAVES(ng)%bndwave_z(i,tidx1)+                   &
      &             fac2*WAVES(ng)%bndwave_z(i,tidx2)
-            BOUNDARY(ng)%zeta_north(i)=(BOUNDARY(ng)%zeta_north(i)+     &
-     &                                  bndtot)*ramp
+            BOUNDARY(ng)%zeta_north(i)=BOUNDARY(ng)%zeta_north(i)+      &
+     &                                 bndtot*ramp
           END DO
         END IF
       END IF

@@ -97,7 +97,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    h=ncread(grid_file,'h');
    hmin=min(h(:));
-   hc=min([hmin,Tcline]);
+   if (Vtransform == 1); hc=min(max(hmin,0.0),Tcline); end
+   if (Vtransform == 2); hc=Tcline; end
    [LP,MP]=size(h);
    L  = LP-1;
    M  = MP-1;

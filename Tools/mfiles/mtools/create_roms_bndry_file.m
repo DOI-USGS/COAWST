@@ -1,44 +1,58 @@
-% function create_roms_netcdf_bndry_file_thredds
+% script create_roms_bndry_file
 %
-% read USEast forecast from thredds and 
-% create bc file.
+% This m file reads a netcdf roms output file
+% and creates a roms netcdf bndry file.
+% Can read a local file, or my COAWST forecast from thredds.
 %
 % LIMITED TO ZETA, UBAR, and VBAR for now  !!!!!!!!!
 %
 % jcw 15Nov2022
 %
-clc;
+%clc;
 echo off
 clear
 
 %1 enter your working dir here
-cd /Users/shimakasaei/Desktop/ROMS/Gridding/Simulation/David
+cd E:\data\models\COAWST_data\training_17jan2024\run_files
 
 %2 enter the file name to be created
-fn='dec22_bc_masked.nc';
+fn='HIan_MadB_bry.nc';
 
-%3 enter the grid to interpolate to (your roms grid)
-grid.name='JB05_grd_masked.nc';
+%3 enter the grid to interpolate data to
+grd_name='HIan_MadB_grd1.nc';
 
-%4 enter number of grid layers you will use
-grid.N=8;
+%4 set the number of vertical layers in the new grid
+Numz=8;
 
-%5 enter start and end dates, the forecast has 2 files for each day.
-tstart=datenum(2022,12,20,0,0,0);%datenum(2021,08,28,23,0,0); %ida  % best to start at hour 0.
-tend=datenum(2022,12,25,0,0,0);%datenum(2021,09,03,0,0,0); %ida    % best to end at hr 0 or hr 12.
-%tend=datenum(2021,09,03,0,0,0);    % best to end at hr 0 or hr 12.
+%5 enter if you are reading a netcdf output or my thredds forcase
+get_roms_output=1;    %set to =1 to read a netcdf file from a previous roms run.
+get_coawst_output=0;  %set to =1 to read my coawst forecast via thredds
 
-%forcing ramp time
-ramp_hours=6;  %hours of ramp at start
+%6 If you set get_roms_output=1, then enter netcdf file from previous run
+roms_out='../Output_roms_swan/HIan_TampaBay_ocean_his.nc';
+%-- or --
+% If you set get_couwst_output=1, then enter start and end dates, the forecast has 2 files for each day.
+tstr=datenum(2022,12,20,0,0,0);  % best to start at hour 0.
+tend=datenum(2022,12,25,0,0,0);    % best to end at hr 0 or hr 12.
+
+%7 forcing ramp time, if desired.  or set = 0 if no ramp needed.
+ramp_hours=0.2;  %hours of ramp at start
 
 %%%%%%%%%%%%%%%%%%%% end of user input here %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%get COAWST grid data
-disp(['getting COAWST grid data at first time step'])
-timey=datestr(tstart,'yyyymmdd');
-eval(['filecoawst=''http://geoport.whoi.edu/thredds/dodsC/vortexfs1/usgs/Projects/COAWST/2021/coawst_us_',timey,'_01.nc''']);
-zt=ncread(filecoawst,'ocean_time')/3600/24+datenum(1858,11,17);
-%                                           you can set a smaller size if you want
+%
+% get parent output file
+%
+if (get_coawst_output)
+  disp(['getting COAWST grid data at first time step'])
+  timey=datestr(tstr,'yyyymmdd');
+  eval(['filecoawst=''http://geoport.whoi.edu/thredds/dodsC/vortexfs1/usgs/Projects/COAWST/',timey(1:4),'/coawst_us_',timey,'_01.nc''']);
+end
+if (get_roms_output)
+  filecoawst=roms_out;
+end
+%
+%get grid data from parent
+%
 lonr_use=ncread(filecoawst,'lon_rho');   Istrr=1; Iendr=size(lonr_use,1);
 latr_use=ncread(filecoawst,'lat_rho');   Jstrr=1; Jendr=size(lonr_use,2);
 lonu_use=ncread(filecoawst,'lon_u');     Istru=1; Iendu=size(lonu_use,1);
@@ -59,15 +73,11 @@ masku_use=ncread(filecoawst,'mask_u');
 maskv_use=ncread(filecoawst,'mask_v');
 angler_use=ncread(filecoawst,'angle');
 %
-s_rho_use=ncread(filecoawst,'s_rho');
-s_rho=ncread('JB05_grd_masked.nc','s_rho');
-%N=8;   %%%%%%%%% Number of layers I guess (shima)
-
-%get user grid
-netcdf_load(grid.name)
+% get user grid
+%
+netcdf_load(grd_name)
 %make fig of grids
 figure
-subplot(121)
   zz=h_use;zz(maskr_use==0)=nan;
   pcolor(lonr_use,latr_use,zz)
   hold on
@@ -76,30 +86,28 @@ subplot(121)
   colormap('jet')
   zoom on
   shading flat
-subplot(122)
-  zz=h_use;zz(maskr_use==0)=nan;
-  pcolor(lonr_use,latr_use,zz)
-  hold on
-  zz=h;zz(mask_rho==0)=nan;
-  pcolor(lon_rho,lat_rho,zz)
-  colormap('jet')
-  zoom on
-  shading flat
-  caxis([0 30])
-  set(gca,'xlim',[-74.4 -73],'ylim',[39.8 41.2])
-
-%first lets go get the data to find out how many time steps
-
+  plot(lon_psi(:,1),lat_psi(:,1),'k')
+  plot(lon_psi(:,end),lat_psi(:,end),'k')
+%
+% Now lets go get the data to find out how many time steps
+%
 timecount=0;
 zcount=0;
 ubcount=0;
 vbcount=0;
-numfiles=ceil(tend-tstart)*2
+if (get_coawst_output)
+  numfiles=ceil(tend-tstart)*2;
+end
+if (get_roms_output)
+  numfiles=1;
+end
 for mm=1:numfiles
-  ct=mod(mm,2); suff=ct*1+(ct-1)*13;
-  toadd=['00',num2str(suff)];toadd=toadd(end-1:end);
-  timey=datestr(tstart+floor((mm-1)/2),'yyyymmdd');
-  eval(['filecoawst=''http://geoport.whoi.edu/thredds/dodsC/vortexfs1/usgs/Projects/COAWST/2021/coawst_us_',timey,'_',toadd,'.nc'''])
+  if (get_coawst_output)
+    ct=mod(mm,2); suff=ct*1+(ct-1)*13;
+    toadd=['00',num2str(suff)];toadd=toadd(end-1:end);
+    timey=datestr(tstart+floor((mm-1)/2),'yyyymmdd');
+    eval(['filecoawst=''http://geoport.whoi.edu/thredds/dodsC/vortexfs1/usgs/Projects/COAWST/2021/coawst_us_',timey,'_',toadd,'.nc'''])
+  end
   zt=ncread(filecoawst,'ocean_time')/3600/24+datenum(1858,11,17);
   existyes=length(zt>0);
   if (existyes)
@@ -111,7 +119,11 @@ for mm=1:numfiles
       ot(timecount)=zt(tidx);
     end
   % zeta
-    disp(['getting COAWST zeta data at ', timey])
+    if (get_coawst_output)
+      disp(['getting COAWST zeta data at ', timey])
+    else
+      disp(['getting zeta data'])
+    end
     zt=ncread(filecoawst,'zeta',[Istrr Jstrr 1],[Iendr-Istrr+1 Jendr-Jstrr+1 Inf]);
     for tidx=1:ntimes
       zcount=zcount+1;
@@ -127,7 +139,11 @@ for mm=1:numfiles
       zeta_east(:,zcount)=Fr(lon_rho(end,:),lat_rho(end,:));
     end
   % ubar and vbar
-    disp(['getting COAWST ubar vbar data at ', timey])
+    if (get_coawst_output)
+      disp(['getting COAWST ubar vbar data at ', timey])
+    else
+      disp(['getting ubar vbar data'])
+    end
     zu=ncread(filecoawst,'ubar',[Istru Jstru 1],[Iendu-Istru+1 Jendu-Jstru+1 Inf]);
     zv=ncread(filecoawst,'vbar',[Istrv Jstrv 1],[Iendv-Istrv+1 Jendv-Jstrv+1 Inf]);
     for tidx=1:ntimes
@@ -178,7 +194,7 @@ save yourdata.mat
 
 %now create the bndry file
 t_clim=length(ot);
-gn.N=grid.N;
+gn.N=Numz;
 gn.lon_rho=lon_rho;
 create_roms_netcdf_bndry_mwUL(fn,gn,t_clim,t_clim)
 

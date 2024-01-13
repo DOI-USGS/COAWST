@@ -109,8 +109,8 @@
      &                           GRID(ng)%h(Istr  ,j)+                  &
      &                           OCEAN(ng)%zeta(Istr  ,j,1)))
             IF (LBC(iwest,isUbar,ng)%acquire) THEN
-              BOUNDARY(ng)%ubar_west(j)=(BOUNDARY(ng)%ubar_west(j)+     &
-     &                                   veltot*cff1)*ramp
+              BOUNDARY(ng)%ubar_west(j)=BOUNDARY(ng)%ubar_west(j)+      &
+     &                                  veltot*cff1*ramp
             END IF
           END DO
         END IF
@@ -130,8 +130,8 @@
      &                           GRID(ng)%h(Iend+1,j)+                  &
      &                           OCEAN(ng)%zeta(Iend+1,j,1)))
             IF (LBC(ieast,isUbar,ng)%acquire) THEN
-              BOUNDARY(ng)%ubar_east(j)=(BOUNDARY(ng)%ubar_east(j)+     &
-     &                                   veltot*cff1)*ramp
+              BOUNDARY(ng)%ubar_east(j)=BOUNDARY(ng)%ubar_east(j)+      &
+     &                                  veltot*cff1*ramp
             END IF
           END DO
         END IF
@@ -151,8 +151,8 @@
      &                           GRID(ng)%h(i,Jstr  )+                  &
      &                           OCEAN(ng)%zeta(i,Jstr  ,1)))
             IF (LBC(isouth,isVbar,ng)%acquire) THEN
-              BOUNDARY(ng)%vbar_south(i)=(BOUNDARY(ng)%vbar_south(i)+   &
-     &                                    veltot*cff1)*ramp
+              BOUNDARY(ng)%vbar_south(i)=BOUNDARY(ng)%vbar_south(i)+    &
+     &                                   veltot*cff1*ramp
             END IF
           END DO
         END IF
@@ -172,8 +172,8 @@
      &                           GRID(ng)%h(i,Jend+1)+                  &
      &                           OCEAN(ng)%zeta(i,Jend+1,1)))
             IF (LBC(inorth,isVbar,ng)%acquire) THEN
-              BOUNDARY(ng)%vbar_north(i)=(BOUNDARY(ng)%vbar_north(i)+   &
-     &                                    veltot*cff1)*ramp
+              BOUNDARY(ng)%vbar_north(i)=BOUNDARY(ng)%vbar_north(i)+    &
+     &                                   veltot*cff1*ramp
             END IF
           END DO
         END IF
