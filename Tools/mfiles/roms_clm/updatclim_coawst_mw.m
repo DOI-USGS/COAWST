@@ -47,6 +47,7 @@ netcdf.close(RN)
 
 %%
 tz_levs=length(clm.z);
+%jcw jan 2024 trouble with bottom lev; tz_levs=tz_levs-1;
 %X=repmat(clm.lon,1,length(clm.lat));
 %Y=repmat(clm.lat,length(clm.lon),1);
 X=clm.lon;
@@ -278,16 +279,23 @@ while tts==1;
         end
         tts=0;
     catch
-        disp(['catch temp Unable to download HYCOM temp data at' datestr(now)]);
+        disp(['catch salt Unable to download HYCOM salt data at' datestr(now)]);
         fid=fopen('coawstlog.txt','a');
-        fprintf(fid,'Unable to download HYCOM temp data at');
+        fprintf(fid,'Unable to download HYCOM salt data at');
         fprintf(fid,datestr(now));
         fprintf(fid,'\n');
     end
 end
 %
 %== Vertical interpolation (t,s,u,v) from standard z-level to s-level
-%
+% jan 2024: in roms_from_stdlev, then hycom nans will be repalced with 0.
+% for salt, lets make this 35.
+for k=1:tz_levs
+  zz=squeeze(clm.salt(k,:,:));
+  zz=replace_nan(zz,35);
+  clm.salt(k,:,:)=zz;
+end
+%isnan(clm.salt)=35;
 salt=roms_from_stdlev_mw(gn.lon_rho,gn.lat_rho,clm.z,clm.salt,gn,'rho',0);
 clm=rmfield(clm,'salt');
 %

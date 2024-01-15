@@ -275,7 +275,7 @@ else
         
         data = squeeze(roms_stdlev(:,i,:));
         data = [data(1,:); data; data(Nz,:)];
-        data((isnan(data)==1))=0;
+        data((isnan(data)==1))=0;            % this was a problem for salt and temp
         roms(:,i,:) = interp2(xa,za,data,x,z,'spline');
         %roms(:,i,:) = interp2(xa,za,data,x,z);
         
