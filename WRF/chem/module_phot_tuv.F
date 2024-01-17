@@ -1,3 +1,4 @@
+! TODO: osipov comment back
 !#define SW_DEBUG
 
    module module_phot_tuv
@@ -187,7 +188,7 @@
    real :: delz_top
    real(kind=8) :: xtime, xhour
    real :: max_tauaer
-   real :: Dobson(2)
+   real :: Dobson(3)
    real :: xsect(nwave)
    real :: wrk(nwave), wrk_lam(nwave)
 !  real :: tlev(kts-1:kte)
@@ -278,7 +279,7 @@
                      ims, ime, jms, jme )
 
 #ifdef SW_DEBUG
-   if( myproc == 6 ) then
+   if( myproc == 209 ) then
      write(*,'(''tuv_drvr: its,jts = '',2i5)') its,jts
      minndx(:) = minloc( zen_angle(its:ite,jts:jte) )
      write(*,'(''tuv_drvr: min zen_angle ndx = '',2i5)') minndx(:)
@@ -390,13 +391,15 @@ lat_loop : &
    do j = jts,jte
 long_loop : &
      do i = its,ite
-#ifdef SW_DEBUG
-      tuv_diags = i == minndx(1) .and. j == minndx(2)
-#endif
        do n = 1,nj
          tuv_prate(:,n) = 0.
        end do
        zenith = zen_angle(i,j)
+
+#ifdef SW_DEBUG
+!     tuv_diags = i == minndx(1) .and. j == minndx(2)
+      tuv_diags = i == minndx(1) .and. j == minndx(2) .and. zenith < 10.  ! osipov, get diags close to local noon
+#endif
 !---------------------------------------------------------------------
 ! if night, skip radiative field calculation
 !---------------------------------------------------------------------
@@ -634,32 +637,51 @@ has_daylight : &
          if( tuv_diags ) then
            Dobson(1) = sum( o3col(ktsm1:ktem1) )/2.687e16
            Dobson(2) = o3col(kte)/2.687e16
-           write(*,'(''tuv_drvr: o3col = '',1p,2g15.8)') Dobson(:)
+           Dobson(3) = sum( o3col(ktsm1:n_tuv_z) )/2.687e16  ! this should be the entire ozone column
+           write(*,'(''tuv_drvr: o3col = '',1p,3g15.8)') Dobson(:)
+           write(*,'(''tuv_drvr: tauaer1..4col = '',1p,4g15.8)') sum(tauaer300(ktsm1:ktem1)), sum(tauaer400(ktsm1:ktem1)), sum(tauaer600(ktsm1:ktem1)), sum(tauaer999(ktsm1:ktem1))
+           write(*,*) 'dtaer col is below'
+           write(*,*) sum(dtaer(ktsm1:ktem1, :), 1)
            open(unit=33,file='wrfchm_inp')
            write(33,*) nlev
            write(33,*) kte
+           write(33,*) n_tuv_z
+           write(33,*) 'tuv_z is below'
            write(33,*) tuv_z(ktsm1:n_tuv_z)
+           write(33,*) 'tlev is below'
            write(33,*) tlev(ktsm1:n_tuv_z)
+           write(33,*) 'o3col is below'
            write(33,*) o3col(ktsm1:n_tuv_z-1)
+           write(33,*) 'so2col is below'
            write(33,*) so2col(ktsm1:n_tuv_z-1)
+           write(33,*) 'no2col is below'
            write(33,*) no2col(ktsm1:n_tuv_z-1)
+           write(33,*) 'dens_air is below'
            write(33,*) dens_air(ktsm1:n_tuv_z)
+           write(33,*) 'aircol is below'
            write(33,*) aircol(ktsm1:n_tuv_z-1)
+           write(33,*) 'dtaer is below'
            do wn = 1,nwave
+             write(33,'(''nwave and wl are ''2F10.2)') wn, wl(wn)
              write(33,*) dtaer(ktsm1:n_tuv_z-1,wn)
            end do
+           write(33,*) 'omaer is below'
            do wn = 1,nwave
              write(33,*) omaer(ktsm1:n_tuv_z-1,wn)
            end do
+           write(33,*) 'gaer is below'
            do wn = 1,nwave
              write(33,*) gaer(ktsm1:n_tuv_z-1,wn)
            end do
+           write(33,*) 'dtcld is below'
            do wn = 1,nwave
              write(33,*) dtcld(ktsm1:n_tuv_z-1,wn)
            end do
+           write(33,*) 'omcld is below'
            do wn = 1,nwave
              write(33,*) omcld(ktsm1:n_tuv_z-1,wn)
            end do
+           write(33,*) 'gcld is below'
            do wn = 1,nwave
              write(33,*) gcld(ktsm1:n_tuv_z-1,wn)
            end do
@@ -669,18 +691,22 @@ has_daylight : &
            close( 33 )
 
            open(unit=33,file='WRF-TUV.flx.out' )
+           write(33,*) 'dir_fld'
            do n = nlambda_start,nwave
              write(33,*) dir_fld(kts:kte,n)
            end do
            write(33,*) ' '
+           write(33,*) 'dwn_fld'
            do n = nlambda_start,nwave
              write(33,*) dwn_fld(kts:kte,n)
            end do
            write(33,*) ' '
+           write(33,*) 'up_fld'
            do n = nlambda_start,nwave
              write(33,*) up_fld(kts:kte,n)
            end do
            write(33,*) ' '
+           write(33,*) 'rad_fld_tpose'
            do n = nlambda_start,nwave
              write(33,*) rad_fld_tpose(kts:kte,n)
            end do
@@ -743,12 +769,12 @@ rate_loop: &
          end do rate_loop
 
 #ifdef SW_DEBUG
-         if( myproc == 6 ) then
+         if( myproc == 209 ) then
            if( tuv_diags ) then
              open(unit=33,file='WRF-TUV.j.out' )
              do n = 1,nj
                select case( n )
-                 case( 2:4,7:10,12:13 )
+                 case( 1:4,7:10,12:13 )  ! case( 2:4,7:10,12:13 )  # osipov
                    do k = kts,kte,5
                      write(33,'(1p,5g15.7)') tuv_prate(k:min(k+4,kte),n)/m2s
                    end do

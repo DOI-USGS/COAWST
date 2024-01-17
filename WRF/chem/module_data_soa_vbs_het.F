@@ -38,7 +38,7 @@ MODULE module_data_soa_vbs_het
 
       INTEGER laerdvc, lnonaerdvc, l1ae, laero, imodes, aspec
 !liqy
-       PARAMETER (laerdvc=46,lnonaerdvc=17+lspcv)
+       PARAMETER (laerdvc=46,lnonaerdvc=18+lspcv)  ! osipov, add aerosol ph
 !liqy-20140912
 !      PARAMETER (laerdvc=39,lnonaerdvc=8+lspcv)
       PARAMETER (l1ae=laerdvc+lnonaerdvc)
@@ -336,6 +336,9 @@ INTEGER, PARAMETER :: vcvbsoa3=70
 INTEGER, PARAMETER :: vcvbsoa4=71
 !liqy-20140912
 !-----------------------------------------------------------------------------
+
+!osipov, aerosol ph
+INTEGER, PARAMETER :: vph=72
 
 ! *** set up species dimension and indices for sedimentation
 !     velocity array VSED
