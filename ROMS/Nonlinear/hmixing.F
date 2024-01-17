@@ -270,6 +270,9 @@
       integer :: i, j, k
 
       real(r8), parameter :: SmagorCoef = 0.1_r8
+# ifdef INWAVE_MODEL
+      real(r8), parameter :: SmagorCoef = 0.5_r8
+#endif
       real(r8), parameter :: PecletCoef = 1.0_r8 / 12.0_r8
 
       real(r8) :: DefRate, cff, clip_diff, clip_scale

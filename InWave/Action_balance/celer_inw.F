@@ -416,13 +416,7 @@
       DO d=2,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
-!            IF (ct_r(i,j,d).LT.0.0_r8.AND.ct_r(i,j,d-1).LT.0.0_r8) THEN
-!              ct(i,j,d)=ct_r(i,j,d)
-!            ELSE IF (ct_r(i,j,d).GE.0.0_r8.AND.ct_r(i,j,d-1).GE.0.0_r8) THEN
-!              ct(i,j,d)=ct_r(i,j,d-1)
-!            ELSE 
-              ct(i,j,d)=0.5_r8*(ct_r(i,j,d-1)+ct_r(i,j,d))
-!            ENDIF
+            ct(i,j,d)=0.5_r8*(ct_r(i,j,d-1)+ct_r(i,j,d))
 #  ifdef MASKING
             ct(i,j,d)=ct(i,j,d)*rmask(i,j)
 #  endif
@@ -438,7 +432,8 @@
           IF (Inwavecircle.eq.1) THEN
             ct(i,j,1)=0.5_r8*(ct_r(i,j,ND)+ct_r(i,j,1))
           ELSE
-            ct(i,j,1)=0.0_r8
+!           ct(i,j,1)=0.0_r8
+            ct(i,j,1)=ct(i,j,2)
           END IF
 #  ifdef MASKING
           ct(i,j,1)=ct(i,j,1)*rmask(i,j)
@@ -446,7 +441,8 @@
 #  ifdef WET_DRY
           ct(i,j,1)=ct(i,j,1)*rmask_wet(i,j)
 #  endif
-          ct(i,j,ND+1)=ct(i,j,1)
+!         ct(i,j,ND+1)=ct(i,j,1)
+          ct(i,j,ND+1)=ct(i,j,ND)
 #  ifdef MASKING
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask(i,j)
 #  endif 

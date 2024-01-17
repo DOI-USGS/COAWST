@@ -278,7 +278,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
         NQCK == 0
      NDEFQCK == 0
       NTSAVG == 1
-        NAVG == 60
+        NAVG == 6000
      NDEFAVG == 0
       NTSDIA == 1
         NDIA == 60
@@ -628,6 +628,7 @@ Hout(idV3Sd) == T       ! v_stokes           3D V-Stokes velocity
 Hout(idW3Sd) == T       ! omega_stokes       3D Omega-Stokes velocity
 Hout(idW3St) == T       ! w_stokes           3D W-Stokes velocity
 Hout(idWamp) == T       ! Hwave              wave height
+Hout(idWam2) == T       ! Hwave2             wave height squared
 Hout(idWlen) == T       ! Lwave              wave length-mean
 Hout(idWlep) == T       ! Lwavep             wave length-peak
 Hout(idWdir) == T       ! Dwave              wave direction-mean
@@ -845,6 +846,7 @@ Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 Aout(idW3Sd) == F       ! omega_stokes       3D Omega-Stokes velocity
 Aout(idW3St) == F       ! w_stokes           3D W-Stokes velocity
 Aout(idWamp) == T       ! Hwave              wave height
+Aout(idWam2) == T       ! Hwave              wave height
 Aout(idWlen) == T       ! Lwave              wave length-mean
 Aout(idWlep) == F       ! Lwavep             wave length-peak
 Aout(idWdir) == T       ! Dwave              wave direction

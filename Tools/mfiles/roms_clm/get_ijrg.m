@@ -11,12 +11,13 @@ function [gn, clm]=get_ijrg(url, modelgrid, theta_s, theta_b, Tcline, N, Vtransf
 % Read ROMS grid info
 %
 disp('getting roms grid dimensions ...');
-Sinp.theta_s     =theta_s;      %surface control parameter
-Sinp.theta_b     =theta_b;      %bottom  control parameter
-Sinp.Tcline      =Tcline;       %surface/bottom stretching width
-Sinp.N           =N;            %number of vertical levels
-Sinp.Vtransform  =Vtransform;   %vertical transformation equation
-Sinp.Vstretching =Vstretching;  %vertical stretching function
+gn=get_roms_grid(modelgrid);
+gn.theta_s     =theta_s;      %surface control parameter
+gn.theta_b     =theta_b;      %bottom  control parameter
+gn.Tcline      =Tcline;       %surface/bottom stretching width
+gn.N           =N;            %number of vertical levels
+gn.Vtransform  =Vtransform;   %vertical transformation equation
+gn.Vstretching =Vstretching;  %vertical stretching function
 if (Vtransform==1)
   h=ncread(modelgrid,'h');
   hmin=min(h(:));
@@ -24,8 +25,8 @@ if (Vtransform==1)
 elseif (Vtransform==2)
   hc=Tcline;
 end
-Sinp.hc          =hc;           %stretching width used in ROMS
-gn=get_roms_grid(modelgrid,Sinp);
+gn.hc          =hc;           %stretching width used in ROMS
+gn=get_roms_grid(gn,gn);
 gn.z_r=shiftdim(gn.z_r,2);
 gn.z_u=shiftdim(gn.z_u,2);
 gn.z_v=shiftdim(gn.z_v,2);

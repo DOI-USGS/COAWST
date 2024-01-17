@@ -522,9 +522,9 @@
             cff3=cff1+cff2
             AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff3
 # if defined DIAGNOSTICS_INWAVE
-              DiaInwrk(i,j,d,iIrate)=AC(i,j,d,nstp)
-              DiaInwrk(i,j,d,iIxadv)=-cff1
-              DiaInwrk(i,j,d,iIyadv)=-cff2
+            DiaInwrk(i,j,d,iIrate)=AC(i,j,d,nstp)
+            DiaInwrk(i,j,d,iIxadv)=-cff1
+            DiaInwrk(i,j,d,iIyadv)=-cff2
 # endif
           END DO
         END DO
