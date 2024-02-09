@@ -221,17 +221,17 @@ if (1)
     y_u=grid_y(i_u, j_u);
     %dx=diff(x_u);
     dx=sqrt((x_u(2:end,:)-x_u(1:end-1,:)).^2+(y_u(2:end,:)-y_u(1:end-1,:)).^2);
-    dxl=sqrt((x_r(1,:)-x_u(1,:)).^2+(y_u(1,:)-y_u(1,:)).^2);
-    dxr=sqrt((x_r(LP,:)-x_u(L,:)).^2+(y_u(LP,:)-y_u(L,:)).^2);
-    dx=[dxl; dx; dxr];
+    dxl=sqrt((x_r(1,:)-x_u(1,:)).^2+(y_r(1,:)-y_u(1,:)).^2);
+    dxr=sqrt((x_r(Lp,:)-x_u(L,:)).^2+(y_r(Lp,:)-y_u(L,:)).^2);
+    dx=[2*dxl; dx; 2*dxr];
   
     x_v=grid_x(i_v, j_v);
     y_v=grid_y(i_v, j_v);
   % dy=diff(y_v);
     dy=sqrt((x_v(:,2:end)-x_v(:,1:end-1)).^2+(y_v(:,2:end)-y_v(:,1:end-1)).^2);
-    dyl=sqrt((x_r(:,1)-x_u(1,:)).^2+(y_u(1,:)-y_u(1,:)).^2);
-    dyr=sqrt((x_r(LP,:)-x_u(L,:)).^2+(y_u(LP,:)-y_u(L,:)).^2);
-    dy=[dyl dy dyr];
+    dyl=sqrt((x_r(:,1)-x_v(:,1)).^2+(y_r(:,1)-y_v(:,1)).^2);
+    dyr=sqrt((x_r(:,Mp)-x_v(:,M)).^2+(y_r(:,Mp)-y_v(:,M)).^2);
+    dy=[2*dyl dy 2*dyr];
   
     y_v=grid_y(i_psi, j_psi);
     y_v=diff(y_v); 
