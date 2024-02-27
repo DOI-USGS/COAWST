@@ -143,6 +143,9 @@
 !     see whether initialisation file exists
 !
       INQUIRE (FILE=INIFIL, EXIST=FILEXI)
+#ifdef SWAN_MODEL
+      FILEXI=.false.
+#endif
       IF (FILEXI) THEN
 !
 !       read initialisation file
@@ -214,7 +217,7 @@
 !       REFERENCE NUMBERS AND NAMES OF STANDARD FILES
 !
 #ifdef SWAN_MODEL
-        INPUTF = 600+ng
+        INPUTF = 60+ng
 #else
         INPUTF = 3
 #endif
@@ -225,7 +228,7 @@
 #ifdef SWAN_MODEL
         WRITE(OUTFIL(6:7),181) ng
  181    FORMAT(I2.2)
-        PRINTF = 500+ng
+        PRINTF = 50+ng
 #else
         PRINTF = 4
 #endif
@@ -322,7 +325,11 @@
       ENDIF
 !
       IUNMIN = 0
+#ifdef SWAN_MODEL
+      FUNLO = 100
+#else
       FUNLO = 21
+#endif
 !/SGI      FUNLO = 103
       FUNHI = IUNMAX
 !

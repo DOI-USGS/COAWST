@@ -2009,6 +2009,9 @@
 !
 !     writing of heading is completed, write time if nonstationary
 !
+#if defined SWAN_SINGLESPEC
+      IF (IONOD(MIP).NE.-999) THEN
+#endif
       IF (NSTATM.EQ.1) THEN
         WRITE (NREF, 202) CHTIME                                          40.00
  202    FORMAT (A18, T41, 'date and time')
@@ -2076,6 +2079,9 @@
           ENDIF
         ENDIF
  290  CONTINUE
+#if defined SWAN_SINGLESPEC
+      ENDIF
+#endif
 !
       RETURN
 ! * end of subroutine SWSPEC *

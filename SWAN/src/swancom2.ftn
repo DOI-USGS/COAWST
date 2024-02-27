@@ -2839,6 +2839,7 @@
 !
       WCIMPL = 0.
       WCCUR  = 0.                                                         41.11
+      C_BJ = 0.
 !
 ! Calculate coefficients
 !

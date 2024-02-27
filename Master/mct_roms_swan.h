@@ -59,8 +59,8 @@
       character (len=520)   :: wostring
       character (len=140)   :: owstring
 #else
-      character (len=120)   :: wostring
-      character (len=120)   :: owstring
+      character (len=180)   :: wostring
+      character (len=180)   :: owstring
 #endif
 
       real(r8) :: cff

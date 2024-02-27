@@ -1075,41 +1075,57 @@
         NVOQP = 0
 !
         IF (Cpltype(IRQ).eq.100) THEN
-          ALLOCATE (IVTYP(6))
-          OQI(3) = 6
+          ALLOCATE (IVTYP(10))
+          OQI(3) = 10
           IVTYP(1) = 100
           IVTYP(2) = 101
           IVTYP(3) = 102
           IVTYP(4) = 103
           IVTYP(5) = 104
           IVTYP(6) = 105
+          IVTYP(7) = 106
+          IVTYP(8) = 107
+          IVTYP(9) = 108
+          IVTYP(10) = 109
         ELSE IF (Cpltype(IRQ).eq.110) THEN
-          ALLOCATE (IVTYP(6))
-          OQI(3) = 6
+          ALLOCATE (IVTYP(10))
+          OQI(3) = 10
           IVTYP(1) = 110
           IVTYP(2) = 111
           IVTYP(3) = 112
           IVTYP(4) = 113
           IVTYP(5) = 114
           IVTYP(6) = 115
+          IVTYP(7) = 116
+          IVTYP(8) = 117
+          IVTYP(9) = 118
+          IVTYP(10) = 119
         ELSE IF (Cpltype(IRQ).eq.120) THEN
-          ALLOCATE (IVTYP(6))
-          OQI(3) = 6
+          ALLOCATE (IVTYP(10))
+          OQI(3) = 10
           IVTYP(1) = 120
           IVTYP(2) = 121
           IVTYP(3) = 122
           IVTYP(4) = 123
           IVTYP(5) = 124
           IVTYP(6) = 125
+          IVTYP(7) = 126
+          IVTYP(8) = 127
+          IVTYP(9) = 128
+          IVTYP(10) = 129
         ELSE IF (Cpltype(IRQ).eq.130) THEN
-          ALLOCATE (IVTYP(6))
-          OQI(3) = 6
+          ALLOCATE (IVTYP(10))
+          OQI(3) = 10
           IVTYP(1) = 130
           IVTYP(2) = 131
           IVTYP(3) = 132
           IVTYP(4) = 133
           IVTYP(5) = 134
           IVTYP(6) = 135
+          IVTYP(7) = 136
+          IVTYP(8) = 137
+          IVTYP(9) = 138
+          IVTYP(10) = 139
         ELSE
           ALLOCATE (IVTYP(1))
           OQI(3) = 1
@@ -1123,7 +1139,7 @@
      &               SNAME, NVOQP, OQPROC, BKC, VOQR, OURQT,
      &               LOGACT)
 !
-        NVOQP=Numcouple
+!       NVOQP=Numcouple
         IVTYPE=Cpltype(IRQ)
 !
 !       call SWODDC to analyse output data; results: STYPE (type of output
