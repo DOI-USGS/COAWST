@@ -156,6 +156,13 @@ ifdef USE_SWAN
            FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
            LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
 endif
+
+ifndef USE_SCRIP
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+             LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
+             LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
+endif
+
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
@@ -198,12 +205,6 @@ endif
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
            FFLAGS += -fopenmp -static-libgcc
-endif
-
-ifndef USE_SCRIP
-             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
-             LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
-             LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
 endif
 
 ifdef USE_WW3
