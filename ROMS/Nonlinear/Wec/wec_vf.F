@@ -192,6 +192,7 @@
 # if defined WAVE_PARTITION
 #  if defined INWAVE_MODEL
         USE mod_inwave_params
+        USE mod_inwave_vars
 #  endif
 #  if defined SWAN_MODEL
         USE mct_coupler_params
@@ -689,8 +690,8 @@
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
 #  if defined INWAVE_MODEL
             cff=1.5_r8*pi-WAVEG(ng)%wd(1)-angler(i,j)
-            wavex=kwc(i,j,1)*COS(cff)
-            wavey=kwc(i,j,1)*SIN(cff)
+            wavex=WAVEP(ng)%kwc(i,j,1)*COS(cff)
+            wavey=WAVEP(ng)%kwc(i,j,1)*SIN(cff)
 #  elif defined SWAN_MODEL
             cff=1.5_r8*pi-FORCES(ng)%DrPT01(i,j)-angler(i,j)
             waven(i,j)=2.0_r8*pi/MAX(FORCES(ng)%WlPT01(i,j),Lwave_min)
@@ -704,8 +705,8 @@
               cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
 #  if defined INWAVE_MODEL
               cff=1.5_r8*pi-WAVEG(ng)%wd(d)-angler(i,j)
-              wavex=kwc(i,j,d)*COS(cff)
-              wavey=kwc(i,j,d)*SIN(cff)
+              wavex=WAVEP(ng)%kwc(i,j,d)*COS(cff)
+              wavey=WAVEP(ng)%kwc(i,j,d)*SIN(cff)
 #  elif defined SWAN_MODEL
               cff=1.5_r8*pi-FORCES(ng)%DrPT02(i,j)-angler(i,j)
               waven(i,j)=2.0_r8*pi/MAX(FORCES(ng)%WlPT02(i,j),Lwave_min)

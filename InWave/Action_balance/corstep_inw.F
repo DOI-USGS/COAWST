@@ -857,6 +857,9 @@
 #  ifdef DIAGNOSTICS_INWAVE
      &                      DIAGS(ng) % DiaInwrk,                       &
 #  endif
+#  if defined WAVE_PARTITION
+     &                      FORCES(ng) % Dissip_break_dir,              &
+#  endif
      &                      FORCES(ng) % Dissip_break,                  &
      &                      FORCES(ng) % Dissip_wcap,                   &
      &                      FORCES(ng) % Lwave,                         &
