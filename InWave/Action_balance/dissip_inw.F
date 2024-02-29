@@ -303,7 +303,7 @@
               cff=disstot(i,j)*cff1
 #  if defined WAVE_PARTITION
               Dissip_break_dir(i,j,d)=MAX(0.0_r8,cff)
-#  endf
+#  endif
               EN(d)=MAX(0.0_r8,EN(d)-cff)
 #  ifdef DIAGNOSTICS_INWAVE
               DiaInwrk(i,j,d,iIbrak)=cff*Tr(i,j,d)*otwopi
