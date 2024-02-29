@@ -119,8 +119,7 @@
 #ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #endif
-
-#ifdef INWAVE_MODEL
+#if defined INWAVE_MODEL || defined WAVE_PARTITION
       integer :: r3degrd(4)
       integer :: u3degrd(4)
       integer :: v3degrd(4)
@@ -241,7 +240,7 @@
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 
-#ifdef INWAVE_MODEL
+#if defined INWAVE_MODEL || defined WAVE_PARTITION
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
                        ND, DimIDs(34))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
@@ -474,7 +473,7 @@
         v3dgrd(4)=DimIDs(12)
 # endif
 #endif
-#ifdef INWAVE_MODEL
+#if defined INWAVE_MODEL || defined WAVE_PARTITION
 !
 !  Define dimension vector for energy wave layer type variables.
 !
@@ -3838,6 +3837,28 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+
+# if defined WAVE_PARTITION
+!
+!  Define wave dissipation due to breaking in dirs.
+!
+        IF (Hout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdid)
+          Vinfo( 2)=Vname(2,idWdid)
+          Vinfo( 3)=Vname(3,idWdid)
+          Vinfo(14)=Vname(4,idWdid)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWdid)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdid,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdid),   &
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+# endif
 !
 !  Define wave dissipation due to white capping.
 !

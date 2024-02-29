@@ -2317,7 +2317,7 @@
 #endif
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN
 !
-!  Define wave dissipation.
+!  Define wave roller dissipation.
 !
         IF (Qout(idWdis,ng)) THEN
           Vinfo( 1)=Vname(1,idWdis)
@@ -5938,7 +5938,7 @@
 # endif
 # if defined TKE_WAVEDISS || defined WAV_COUPLING
 !
-!  Define wave dissipation.
+!  Define wave roller dissipation.
 !
         IF (Qout(idWdis,ng)) THEN
           Vinfo( 1)=Vname(1,idWdis)

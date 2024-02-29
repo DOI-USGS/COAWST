@@ -184,6 +184,14 @@
 !=======================================================================
 !
         USE mod_kinds
+#if defined WAVE_PARTITION
+# if defined INWAVE_MODEL
+        USE mod_inwave_params
+# endif
+# if defined SWAN_MODEL
+        USE mct_coupler_params
+# endif
+#endif
 !
         implicit none
 !
@@ -284,6 +292,9 @@
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
     defined WAVES_DISS || defined WDISS_INWAVE
+# if defined WAVE_PARTITION
+          real(r8), pointer :: Dissip_break_dir(:,:,:)
+# endif
           real(r8), pointer :: Dissip_break(:,:)
           real(r8), pointer :: Dissip_wcap(:,:)
 # ifndef ANA_WWAVE
@@ -700,6 +711,10 @@
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
     defined WAVES_DISS || defined WDISS_INWAVE
+# if defined WAVE_PARTITION
+      allocate ( FORCES(ng) % Dissip_break_dir(LBi:UBi,LBj:UBj,ND) )
+      Dmem(ng)=Dmem(ng)+size2d*ND
+# endif
       allocate ( FORCES(ng) % Dissip_break(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
@@ -1871,6 +1886,11 @@
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
     defined WAVES_DISS || defined WDISS_INWAVE
+# if defined WAVE_PARTITION
+            DO k=1,ND
+              FORCES(ng) % Dissip_break_dir(i,j,k) = IniVal
+            END DO
+# endif
             FORCES(ng) % Dissip_break(i,j) = IniVal
             FORCES(ng) % Dissip_wcap(i,j) = IniVal
 # ifndef ANA_WWAVE

@@ -46,6 +46,8 @@
 !    DimIDs(31) => Number of 2D variables time levels (3)              !
 !    DimIDs(32) => Number of sediment tracers                          !
 !    DimIDs(33) => Number of light spectral bands.                     !
+!    DimIDs(34) => Number of Directional bins from Wave model.         !
+!    DimIDs(36) => Number of Directional bins+1 from Wave model.       !
 !                                                                      !
 !=======================================================================
 !

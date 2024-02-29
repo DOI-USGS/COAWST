@@ -29,9 +29,9 @@
       USE mod_coupling
       USE mod_stepping
       USE mod_forces
-# ifdef DIAGNOSTICS_INWAVE
+#  ifdef DIAGNOSTICS_INWAVE
       USE mod_diags
-# endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -49,23 +49,26 @@
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nstp(ng), nout,                                  &
-# ifdef MASKING
+#  ifdef MASKING
      &                 GRID(ng) % rmask,                                &
-# endif
-# ifdef WET_DRY
+#  endif
+#  ifdef WET_DRY
      &                 GRID(ng) % rmask_wet,                            &
      &                 GRID(ng) % umask_wet,                            &
      &                 GRID(ng) % vmask_wet,                            &
-# endif
-# ifdef DIAGNOSTICS_INWAVE
+#  endif
+#  ifdef DIAGNOSTICS_INWAVE
      &                 DIAGS(ng) % DiaInwrk,                            &
-# endif
+#  endif
+#  if defined WAVE_PARTITION
+     &                 FORCES(ng) % Dissip_break_dir,                   &
+#  endif
      &                 FORCES(ng) % Dissip_break,                       &
      &                 FORCES(ng) % Dissip_wcap,                        &
      &                 FORCES(ng) % Lwave,                              &
-# ifdef WAVES_BOT_PERIOD
+#  ifdef WAVES_BOT_PERIOD
      &                 FORCES(ng) % Pwave_bot,                          &
-# endif
+#  endif
      &                 WAVEP(ng) % h_tot,                               &
      &                 WAVEP(ng) % AC,                                  &
      &                 WAVEP(ng) % Tr,                                  &
@@ -81,21 +84,24 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nstp, nout,                                &
-# ifdef MASKING
+#  ifdef MASKING
      &                       rmask,                                     &
-# endif
-# ifdef WET_DRY
+#  endif
+#  ifdef WET_DRY
      &                       rmask_wet, umask_wet, vmask_wet,           &
-# endif
-# ifdef DIAGNOSTICS_INWAVE
+#  endif
+#  ifdef DIAGNOSTICS_INWAVE
      &                       DiaInwrk,                                  &
-# endif
+#  endif
+#  if defined WAVE_PARTITION
+     &                       Dissip_break_dir,                          &
+#  endif
      &                       Dissip_break,                              &
      &                       Dissip_wcap,                               &
      &                       Lwave,                                     &
-# ifdef WAVES_BOT_PERIOD
+#  ifdef WAVES_BOT_PERIOD
      &                       Pwave_bot,                                 &
-# endif
+#  endif
      &                       h_tot,                                     &
      &                       AC, Tr, kwc)
 !***********************************************************************
@@ -107,11 +113,17 @@
       USE mod_grid
       USE mod_scalars
       USE exchange_2d_mod
-
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #  endif
       USE bc_2d_mod
+#  if defined WAVE_PARTITION
+      USE exchange_3d_mod
+#   ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange3d
+#   endif
+      USE bc_3d_mod
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -131,6 +143,9 @@
 #   endif
 #   ifdef DIAGNOSTICS_INWAVE
       real(r8), intent(inout) :: DiaInwrk(LBi:,LBj:,:,:)
+#   endif
+#   if defined WAVE_PARTITION
+      real(r8), intent(inout) :: Dissip_break_dir(LBi:,LBj:,:)
 #   endif
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
@@ -153,6 +168,9 @@
 #   endif
 #   ifdef DIAGNOSTICS_INWAVE
       real(r8), intent(inout) :: DiaInwrk(LBi:UBi,LBj:UBj,1:ND,NDInw)
+#   endif
+#   if defined WAVE_PARTITION
+      real(r8), intent(inout) :: Dissip_break_dir(LBi:UBi,LBj:UBj,ND)
 #   endif
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
@@ -181,7 +199,8 @@
       real(r8), parameter :: breakg=0.45_r8
       real(r8), parameter :: n_r=15.0_r8
       real(r8), parameter :: EWlim=0.00001_r8
-      real(r8):: EN(ND)
+      real(r8) :: EN(ND)
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: disstot
 
 # include "set_bounds.h"
 
@@ -241,46 +260,50 @@
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
             IF (TRM.gt.0.0001_r8) THEN
-              Dissip_break(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*           &
+              disstot(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*                &
      &                          WAVEG(ng)%dtifac
             ELSE
-              Dissip_break(i,j)=0.0_r8
+              disstot(i,j)=0.0_r8
             END IF
 #  elif defined WDISS_GAMMA
             Hmax_r=breakg*(MAX(h_tot(i,j),0.0_r8))
             Emax_r=0.125_r8*g*rho0*Hmax_r**2.0_r8
             diff=EW-Emax_r
-            Dissip_break(i,j)=MAX(0.0_r8,diff)
+            disstot(i,j)=MAX(0.0_r8,diff)
 #  else
-            Dissip_break(i,j)=0.0_r8
+            disstot(i,j)=0.0_r8
 #  endif
           ELSE
-            Dissip_break(i,j)=0.0_r8
+            disstot(i,j)=0.0_r8
 #  ifdef WDISS_FRIC
             dissfric=0.0_r8
 #  endif
           END IF
 #  ifdef MASKING
-          Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
+          disstot(i,j)=disstot(i,j)*rmask(i,j)
 #   ifdef WDISS_FRIC
           dissfric=dissfric*rmask(i,j)
 #   endif
 #  endif
 #  ifdef WET_DRY
-          Dissip_break(i,j)=Dissip_break(i,j)*rmask_wet(i,j)
+          disstot(i,j)=disstot(i,j)*rmask_wet(i,j)
 #   ifdef WDISS_FRIC
           dissfric=dissfric*rmask_wet(i,j)
 #   endif
 #  endif
+          Dissip_break(i,j)=disstot(i,j)*orho0*fac
 !=======================================================================
-!  Distribute dissipation over directions and recompute Ac
+!  Distribute dissipation over directions and recompute AC
 !=======================================================================
           oEW=1.0_r8/MAX(EW,EWlim)
           DO d=1,ND
 !           IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
             IF ((h_tot(i,j).ge.1.5_r8*Dcrit(ng)).and.(EW.gt.EWlim)) THEN
               cff1=EN(d)*oEW
-              cff=Dissip_break(i,j)*cff1
+              cff=disstot(i,j)*cff1
+#  if defined WAVE_PARTITION
+              Dissip_break_dir(i,j,d)=MAX(0.0_r8,cff)
+#  endf
               EN(d)=MAX(0.0_r8,EN(d)-cff)
 #  ifdef DIAGNOSTICS_INWAVE
               DiaInwrk(i,j,d,iIbrak)=cff*Tr(i,j,d)*otwopi
@@ -294,21 +317,33 @@
 #  endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
             ELSE
+#  if defined WAVE_PARTITION
+              Dissip_break_dir(i,j,d)=0.0_r8
+#  endif
               AC(i,j,d,nout)=0.0_r8
             ENDIF
 #  ifdef MASKING
             AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+#   if defined WAVE_PARTITION
+            Dissip_break_dir(i,j,d)=Dissip_break_dir(i,j,d)*rmask(i,j)
+#   endif
 #  endif
 #  ifdef WET_DRY
             AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
+#   if defined WAVE_PARTITION
+            Dissip_break_dir(i,j,d)=Dissip_break_dir(i,j,d)*            &
+     &                              rmask_wet(i,j)
+#   endif
 #  endif
-# if defined DIAGNOSTICS_INWAVE
+#  if defined DIAGNOSTICS_INWAVE
             DiaInwrk(i,j,d,iIrate)=DiaInwrk(i,j,d,iIrate)-              &
      &                             AC(i,j,d,nout)
-# endif
+#  endif
+#  if defined WAVE_PARTITION
+            Dissip_break_dir(i,j,d)=Dissip_break_dir(i,j,d)*orho0*fac
+#  endif
           ENDDO
           Dissip_wcap(i,j)=0.0_r8
-          Dissip_break(i,j)=Dissip_break(i,j)*orho0*fac
         ENDDO
       ENDDO
 !
@@ -320,12 +355,29 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Dissip_wcap)
+#  if defined WAVE_PARTITION
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+     &                  Dissip_break_dir)
+#  endif
 #  ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    Dissip_break, Dissip_wcap)
+     &                    Dissip_wcap)
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    Dissip_break)
+#   if defined WAVE_PARTITION
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    Dissip_break_dir)
+#   endif
 #  endif
       RETURN
       END SUBROUTINE dissip_inw_tile

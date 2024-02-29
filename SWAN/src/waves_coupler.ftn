@@ -615,12 +615,22 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':DrPT01'
+      to_add=':DrEPT01'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':DrPT02'
+      to_add=':DrNPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrEPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrNPT02'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -899,13 +909,9 @@
       allocate ( avdata(gsmsize),stat=ierr )
       allocate ( DIRE(gsmsize),stat=ierr )
       allocate ( DIRN(gsmsize),stat=ierr )
-      allocate ( DIREP(gsmsize),stat=ierr )
-      allocate ( DIRNP(gsmsize),stat=ierr )
       avdata=0.0_m8
       DIRE=0.0_m8
       DIRN=0.0_m8
-      DIREP=0.0_m8
-      DIRNP=0.0_m8
 !
 !  Ask for points in this tile.
 !
@@ -1003,13 +1009,13 @@
      &                             "DIRN",DIRN)
       ELSE IF (IVTYPE.eq.14) THEN
         DO IP=1,gsmsize
-          DIREP(IP)=1.0*SIN(avdata(IP)*PI/180.0)
-          DIRNP(IP)=1.0*COS(avdata(IP)*PI/180.0)
+          DIRE(IP)=1.0*SIN(avdata(IP)*PI/180.0)
+          DIRN(IP)=1.0*COS(avdata(IP)*PI/180.0)
         END DO
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "DIREP",DIREP)
+     &                             "DIREP",DIRE)
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "DIRNP",DIRNP)
+     &                             "DIRNP",DIRN)
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
@@ -1117,15 +1123,25 @@
      &                               "WlPT02",avdata)
         END DO
       ELSE IF (IVTYPE.eq.130) THEN
+        DO IP=1,gsmsize
+          DIRE(IP)=1.0*SIN(avdata(IP)*PI/180.0)
+          DIRN(IP)=1.0*COS(avdata(IP)*PI/180.0)
+        END DO
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
-     &                             "DrPT01",avdata)
+     &                             "DrEPT01",DIRE)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DrNPT01",DIRN)
         DO IPT = 1, 1 !NOSWLL
   !       this is for 131
           DO IP=1,gsmsize
             avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE+IPT)),m8 )
+            DIRE(IP)=1.0*SIN(avdata(IP)*PI/180.0)
+            DIRN(IP)=1.0*COS(avdata(IP)*PI/180.0)
           END DO
           CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
-     &                               "DrPT02",avdata)
+     &                               "DrEPT02",DIRE)
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                               "DrNPT02",DIRN)
         END DO
 # endif
       END IF
@@ -1158,7 +1174,7 @@
           END IF
 # endif
       END IF
-      deallocate (avdata, points, DIRE, DIRN, DIREP, DIRNP)
+      deallocate (avdata, points, DIRE, DIRN)
 !
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING

@@ -471,12 +471,22 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':DrPT01'
+      to_add=':DrEPT01'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':DrPT02'
+      to_add=':DrNPT01'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrEPT02'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DrNPT02'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -1206,6 +1216,7 @@
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
 !     real(r8), parameter ::  Large = 1.0E+20_r8
+      real(r8), parameter ::  eps = 1.0E-10_r8
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, fac, ramp
@@ -2196,6 +2207,29 @@
      &                    range(1),range(2)
       END IF
 !
+!  Dissip break partitions 01 and 02 (m).
+!
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          cff1=(0.25_r8*FORCES(ng)%HsPT01(i,j))**2
+          cff2=(0.25_r8*FORCES(ng)%Hwave(i,j) )**2
+          cff=MIN(cff1/(cff2+eps),1.0_r8)
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_break_dir(i,j,1)=cff*                     &
+     &                                    FORCES(ng)%Dissip_break(i,j)
+            FORCES(ng)%Dissip_break_dir(i,j,2)=(1.0_r8-cff)*            &
+     &                                    FORCES(ng)%Dissip_break(i,j)
+          ELSE
+            FORCES(ng)%Dissip_break_dir(i,j,1)=                         &
+     &                           FORCES(ng)%Dissip_break_dir(i,j,1)+    &
+     &                           cff*FORCES(ng)%Dissip_break(i,j)
+            FORCES(ng)%Dissip_break_dir(i,j,2)=                         &
+     &                           FORCES(ng)%Dissip_break_dir(i,j,2)+    &
+     &                        (1.0_r8-cff)*FORCES(ng)%Dissip_break(i,j)
+          END IF
+        END DO
+      END DO
+!
 !  TpPT01 Relative peak period of partition 01 (s).
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TpPT01",   &
@@ -2314,15 +2348,18 @@
 !
 !  DrPT01 Average wave direction of partition 01 (deg).
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrPT01",   &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrEPT01",  &
      &                           A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrNPT01",  &
+     &                           A1, Asize)
       range(1)= Large
       range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
+          cff=ATAN2(A(ij),A1(ij))
+          IF (cff.lt.0.0_r8) cff=cff+2.0_r8*pi
           IF (iw.eq.1) THEN
             FORCES(ng)%DrPT01(i,j)=cff
           ELSE
@@ -2343,15 +2380,18 @@
 !
 !  DrPT02 Average wave direction of partition 02 (deg).
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrPT02",   &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrEPT02",  &
      &                           A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DrNPT02",  &
+     &                           A1, Asize)
       range(1)= Large
       range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
+          cff=ATAN2(A(ij),A1(ij))
+          IF (cff.lt.0.0_r8) cff=cff+2.0_r8*pi
           IF (iw.eq.1) THEN
             FORCES(ng)%DrPT02(i,j)=cff
           ELSE
@@ -2437,6 +2477,35 @@
       CALL exchange_r3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,1,MSCs,                &
      &                        FORCES(ng)%spec_vs)
+# endif
+# if defined WAVE_PARTITION
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%HsPT01)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%HsPT02)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%TpPT01)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%TpPT02)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%WlPT01)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%WlPT02)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%DrPT01)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%DrPT02)
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj, 1, 2,                 &
+     &                        FORCES(ng)%Dissip_break_dir)
 # endif
       END IF
 #ifdef DISTRIBUTE
@@ -2525,6 +2594,13 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%DrPt01, FORCES(ng)%DrPt02)
+# endif
+# if defined WAVE_PARTITION
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%Dissip_break_dir)
 # endif
 #endif
 !

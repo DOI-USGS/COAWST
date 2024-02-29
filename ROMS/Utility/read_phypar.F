@@ -293,7 +293,7 @@
                   RETURN
                 END IF
               END DO
-#ifdef INWAVE_MODEL
+#if defined INWAVE_MODEL || defined WAVE_PARTITION
             CASE ('ND')
               Npts=load_i(Nval, Rval, 1, ND)
 !             DO ng=1,Ngrids

@@ -1667,6 +1667,15 @@
   'r2dvar'
   0.00097561                                       !1/rho0
 
+'Dissip_break_dir'                                 ! Input
+  'wave dissipation in dirs due to surface breaking'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_break, scalar, series'
+  'wave_time'
+  'idWdid'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
 'Dissip_wcap'                                      ! Input
   'wave dissipation due to white capping'
   'Watts meter-2'                                  ! [W/m2]

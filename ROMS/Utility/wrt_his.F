@@ -3260,9 +3260,8 @@
           RETURN
         END IF
       END IF
-
-
 #endif
+
 #ifdef VEGETATION
 #include "vegetation_wrt_his.h"
 #endif 
@@ -4102,6 +4101,30 @@
           RETURN
         END IF
       END IF
+# if defined WAVE_PARTITION
+!
+!  Write out wave dissipation due to breaking in dirs.
+!
+      IF (Hout(idWdib,ng)) THEN
+        scale=rho0                          ! W m /kg to W/m2
+        gtype=gfactor*r2dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdid), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_break_dir)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdib)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
 !
 !  Write out wave dissipation due to white capping.
 !

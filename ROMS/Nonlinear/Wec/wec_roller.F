@@ -70,6 +70,9 @@
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
+# if defined WAVE_PARTITION
+     &                            FORCES(ng) % Dissip_break_dir,        &
+# endif
      &                            FORCES(ng) % Dissip_break,            &
 # if defined ROLLER_SVENDSEN || ROLLER_MONO
      &                            FORCES(ng) % Wave_break,              &
@@ -92,6 +95,9 @@
 # endif
      &                                  ubar, vbar, zeta,               &
      &                                  Hwave, Dwave, Lwave,            &
+# if defined WAVE_PARTITION
+     &                                  Dissip_break_dir,               &
+# endif
      &                                  Dissip_break,                   &
 # if defined ROLLER_SVENDSEN || ROLLER_MONO
      &                                  Wave_break,                     &
@@ -107,6 +113,9 @@
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
       USE bc_2d_mod
+# if defined WAVE_PARTITION
+      USE mod_inwave_params
+# endif
 !
 !  Imported variable declarations.
 !
@@ -130,6 +139,9 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#  if defined WAVE_PARTITION
+      real(r8), intent(in) :: Dissip_break_dir(LBi:,LBj:,:)
+#  endif
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
 #  if defined ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:,LBj:)
@@ -152,6 +164,9 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+#  if defined WAVE_PARTITION
+      real(r8), intent(in) :: Dissip_break_dir(LBi:UBi,LBj:UBj,ND)
+#  endif
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
 #  if defined ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:UBi,LBj:UBj)
@@ -279,9 +294,19 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             cff=dt(ng)/REAL(numits,r8)
+#  if defined WAVE_PARTITION
+            rollA(i,j)=rollA(i,j)+cff*osigma(i,j)*                      &
+     &                 (wec_alpha(ng)*Dissip_break_dir(i,j,1)-          &
+     &                 Dissip_roller(i,j))
+            DO k=2,ND
+              rollA(i,j)=rollA(i,j)+cff*osigma(i,j)*                    &
+     &                   (wec_alpha(ng)*Dissip_break_dir(i,j,k))
+            END DO
+#  else
             rollA(i,j)=rollA(i,j)+cff*osigma(i,j)*                      &
      &                 (wec_alpha(ng)*Dissip_break(i,j)-                &
      &                 Dissip_roller(i,j))
+#  endif
           END DO
         END DO
 # endif

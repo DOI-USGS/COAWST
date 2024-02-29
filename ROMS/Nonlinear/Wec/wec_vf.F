@@ -96,6 +96,9 @@
      &                            FORCES(ng) % Hwave,                   &
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
+# if defined WAVE_PARTITION
+     &                            FORCES(ng) % Dissip_break_dir,        &
+# endif
      &                            FORCES(ng) % Dissip_break,            &
 # ifdef WEC_ROLLER
      &                            FORCES(ng) % Dissip_roller,           &
@@ -157,6 +160,9 @@
      &                                  Hz, z_r, z_w,                   &
 # endif
      &                                  Hwave, Dwave, Lwave,            &
+# if defined WAVE_PARTITION
+     &                                  Dissip_break_dir,               &
+# endif
      &                                  Dissip_break,                   &
 # ifdef WEC_ROLLER
      &                                  Dissip_roller,                  &
@@ -183,6 +189,15 @@
 !
       USE mod_param
       USE mod_scalars
+# if defined WAVE_PARTITION
+#  if defined INWAVE_MODEL
+        USE mod_inwave_params
+#  endif
+#  if defined SWAN_MODEL
+        USE mct_coupler_params
+        USE mod_forces
+#  endif
+# endif
 # if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
@@ -233,6 +248,9 @@
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#  if defined WAVE_PARTITION
+      real(r8), intent(in) :: Dissip_break_dir(LBi:,LBj:,:)
+#  endif
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:,LBj:)
@@ -297,6 +315,9 @@
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+#  if defined WAVE_PARTITION
+      real(r8), intent(in) :: Dissip_break_dir(LBi:UBi,LBj:UBj,1:ND)
+#  endif
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
@@ -333,11 +354,11 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, k
+      integer :: i, j, k, d
       real(r8) :: cff, cff1, cff3, cff4, cff5, cff6
       real(r8) :: fac1, RB1, RB2
       real(dp) :: fac2, cff2, vi1, vi2
-      real(r8) :: VF
+      real(r8) :: VF, wavex, wavey
       real(r8), parameter :: eps = 1.0E-8_r8
       real(dp), parameter :: kDmax = 300.0_dp                !5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -663,11 +684,44 @@
             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff2=fac2*gamr(i,j)
             cff3=DCOSH(2.0_dp*pi*cff2)*odiss(i,j)
+# if defined WAVE_PARTITION
+            cff1=Dissip_break_dir(i,j,1)
+            cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
+#  if defined INWAVE_MODEL
+            cff=1.5_r8*pi-WAVEG(ng)%wd(1)-angler(i,j)
+            wavex=kwc(i,j,1)*COS(cff)
+            wavey=kwc(i,j,1)*SIN(cff)
+#  elif defined SWAN_MODEL
+            cff=1.5_r8*pi-FORCES(ng)%DrPT01(i,j)-angler(i,j)
+            waven(i,j)=2.0_r8*pi/MAX(FORCES(ng)%WlPT01(i,j),Lwave_min)
+            wavex=waven(i,j)*COS(cff)
+            wavey=waven(i,j)*SIN(cff)
+#  endif
+            BBXbrk(i,j)=cff3*cff4*wavex
+            BBYbrk(i,j)=cff3*cff4*wavey
+            DO d=2,ND
+              cff1=Dissip_break_dir(i,j,d)
+              cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
+#  if defined INWAVE_MODEL
+              cff=1.5_r8*pi-WAVEG(ng)%wd(d)-angler(i,j)
+              wavex=kwc(i,j,d)*COS(cff)
+              wavey=kwc(i,j,d)*SIN(cff)
+#  elif defined SWAN_MODEL
+              cff=1.5_r8*pi-FORCES(ng)%DrPT02(i,j)-angler(i,j)
+              waven(i,j)=2.0_r8*pi/MAX(FORCES(ng)%WlPT02(i,j),Lwave_min)
+              wavex=waven(i,j)*COS(cff)
+              wavey=waven(i,j)*SIN(cff)
+#  endif
+              BBXbrk(i,j)=BBXbrk(i,j)+cff3*cff4*wavex
+              BBYbrk(i,j)=BBYbrk(i,j)+cff3*cff4*wavey
+            END DO
+# else
 !           cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
             cff1=Dissip_break(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBXbrk(i,j)=cff3*cff4*wavenx(i,j)
             BBYbrk(i,j)=cff3*cff4*waveny(i,j)
+# endif
 # ifdef WEC_ROLLER
             cff5=Dissip_roller(i,j)*osigma(i,j)
             BBXrol(i,j)=cff3*cff5*wavenx(i,j)

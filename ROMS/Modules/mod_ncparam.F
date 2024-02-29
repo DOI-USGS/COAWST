@@ -111,7 +111,7 @@
 !  Maximum number of dimension IDs stored in local array DimIDs used to
 !  defined variable dimensions in output NetCDF files.
 !
-#ifdef INWAVE_MODEL
+#if defined INWAVE_MODEL || defined WAVE_PARTITION
       integer, parameter :: nDimID = 36
 #else
       integer, parameter :: nDimID = 33
@@ -401,6 +401,7 @@
       integer  :: idWbeh        ! WEC Bernoulli head
       integer  :: idWbrk        ! wind-induced wave breaking
       integer  :: idWdib        ! wave dissipation from surface breaking
+      integer  :: idWdid        ! wave dissipation from surface breaking in dirs
       integer  :: idWdif        ! wave dissipation from bottom friction 
       integer  :: idWdip        ! wind-induced peak wave direction
       integer  :: idWdir        ! wind-induced mean wave direction
@@ -1701,6 +1702,8 @@
             idWbrk=varid
           CASE ('idWdib')
             idWdib=varid
+          CASE ('idWdid')
+            idWdid=varid
           CASE ('idWdif')
             idWdif=varid
           CASE ('idWdis')

@@ -106,9 +106,6 @@
       real(m8), dimension(:), pointer :: dtwav
       real(m8), dimension(:), pointer :: dtatm
       real(m8), dimension(:), pointer :: dthyd
-#ifdef SPECTRUM_STOKES
-      integer :: MSCs
-#endif
 !
 !# ifdef MOVE_NESTS
       integer, dimension(:), pointer :: wrf_e_we
@@ -160,6 +157,12 @@
       integer, dimension(:), pointer :: moving_nest_istart
       integer, dimension(:), pointer :: moving_nest_jstart
 # endif
+#ifdef SPECTRUM_STOKES
+      integer :: MSCs
+#endif
+#if defined WAVE_PARTITION
+      integer :: ND
+#endif
 
       CONTAINS
 
