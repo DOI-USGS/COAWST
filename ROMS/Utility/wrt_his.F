@@ -3849,7 +3849,7 @@
         END IF
       END IF
 #endif
-#ifdef WAVE_PARTITION
+#if defined WAVE_PARTITION && !defined INWAVE_MODEL
 !
 !  Write out HsPT01 Wave height of partition 01 (m).
 !

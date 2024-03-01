@@ -3618,7 +3618,7 @@
         END IF
 
 #endif
-#ifdef WAVE_PARTITION
+#if defined WAVE_PARTITION  && !defined INWAVE_MODEL
 !
 !  Define HsPT01 Wave height of partition 01 (m).
 !
@@ -4507,7 +4507,7 @@
             HIS(ng)%Vid(idWpbt)=var_id(i)
 #endif
 
-#ifdef WAVE_PARTITION
+#if defined WAVE_PARTITION  && !defined INWAVE_MODEL
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHs01))) THEN
             got_var(idHs01)=.TRUE.
             HIS(ng)%Vid(idHs01)=var_id(i)
@@ -5476,7 +5476,7 @@
           RETURN
         END IF
 #endif
-#ifdef WAVE_PARTITION
+#if defined WAVE_PARTITION && !defined INWAVE_MODEL
         IF (.not.got_var(idHs01)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idHs01)),          &
      &                                  TRIM(ncname)

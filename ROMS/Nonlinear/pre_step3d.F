@@ -932,7 +932,15 @@
 !
           DO i=Istr,Iend
             FC(i,0)=dt(ng)*btflx(i,j,itrc)
+#  if defined SALINITY && defined EMINUSP_SHIMA
+            IF (itrc.eq.isalt) THEN
+              FC(i,N(ng))=0.0_r8
+            ELSE
+              FC(i,N(ng))=dt(ng)*stflx(i,j,itrc)
+            END IF
+#  else
             FC(i,N(ng))=dt(ng)*stflx(i,j,itrc)
+#  endif
           END DO
 !
 !  Compute new tracer field (m Tunits).

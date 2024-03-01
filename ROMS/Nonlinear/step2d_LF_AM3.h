@@ -1107,7 +1107,7 @@
 !  half is becasue we do pred + cor. The ndtfast/nfast is
 !  becasue we do nfast steps to here.
 !
-      fac=0.5_r8*dtfast(ng)*ndtfast(ng)/(nfast(ng)*dt(ng))
+      fac=0.5_r8/nfast(ng)
       DO j=Jstr,Jend
         DO i=Istr,Iend
           cff=fac*(bed_thick(i,j,nstp)-bed_thick(i,j,nnew))
