@@ -784,7 +784,6 @@
           CALL bc_r3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, 1, ND,                  &
      &                      DIAGS(ng)%DiaInw(:,:,:,idiag))
-        END DO
 #   ifdef DISTRIBUTE
           CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
      &                        LBi, UBi, LBj, UBj, 1, ND,                &
@@ -792,6 +791,7 @@
      &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        DIAGS(ng)%DiaInw(:,:,:,idiag))
 #   endif
+        END DO
 #  endif
 # endif
       END IF

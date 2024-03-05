@@ -30,7 +30,6 @@
       integer  :: idACcy                    ! wave action celerity in eta
       integer  :: idACct                    ! wave action celerity in theta dir
       integer  :: idACbz                    ! wave action bound wave
-      integer  :: NDInw                     ! number of inwave diags
 
 #ifdef DIAGNOSTICS_INWAVE
 !

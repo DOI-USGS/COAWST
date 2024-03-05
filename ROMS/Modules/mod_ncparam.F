@@ -868,6 +868,12 @@
         Dmem(1)=Dmem(1)+REAL(NDM3d,r8)
       END IF
 #endif
+#ifdef DIAGNOSTICS_INWAVE
+      IF (.not.allocated(idIinw)) THEN
+        allocate ( idIinw(NDInw) )
+        Dmem(1)=Dmem(1)+REAL(NDInw,r8)
+      END IF
+#endif
 
       IF (.not.allocated(isTsur)) THEN
         allocate ( isTsur(MT) )
@@ -1834,18 +1840,18 @@
           CASE ('idACbz')
             idACbz=varid
 # ifdef DIAGNOSTICS_INWAVE
-              CASE ('idIinw(idIrate)')
-                idIinw(idIrate)=varid
-              CASE ('idIinw(idIxadv)')
-                idIinw(idIxadv)=varid
-              CASE ('idIinw(idIyadv)')
-                idIinw(idIyadv)=varid
-              CASE ('idIinw(idItadv)')
-                idIinw(idItadv)=varid
-              CASE ('idIinw(idIfric)')
-                idIinw(idIfric)=varid
-              CASE ('idIinw(idIbrak)')
-                idIinw(idIbrak)=varid
+          CASE ('idIinw(idIrate)')
+            idIinw(idIrate)=varid
+          CASE ('idIinw(idIxadv)')
+            idIinw(idIxadv)=varid
+          CASE ('idIinw(idIyadv)')
+            idIinw(idIyadv)=varid
+          CASE ('idIinw(idItadv)')
+            idIinw(idItadv)=varid
+          CASE ('idIinw(idIfric)')
+            idIinw(idIfric)=varid
+          CASE ('idIinw(idIbrak)')
+            idIinw(idIbrak)=varid
 # endif
 #endif
 #ifdef WAVE_PARTITION

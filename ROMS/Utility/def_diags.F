@@ -738,20 +738,12 @@
 !
         DO ivar=1,NDInw
           ifield=idIinw(ivar)
-
-       write(*,*) 'def diags1 ', ivar,ifield
-       write(*,*) 'def diags1.1 ', idIinw(ivar)
-
 !          IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
             WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
-
-       write(*,*) 'def diags2 ', Vinfo(1),Vinfo(2),Vinfo(3)
-
-
 #  if defined WRITE_WATER && defined MASKING
             Vinfo(20)='mask_rho'
 #  endif

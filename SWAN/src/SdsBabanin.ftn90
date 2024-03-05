@@ -516,7 +516,7 @@ CONTAINS
     REAL    THETA ,SIGMA    ,SWINEB, CTW   ,STW   ,COSDIF
     REAL    TEMP2 ,UoverC
     REAL    S_IN(MDC,MSC)
-    REAL    DMAX,AINV
+    REAL    DMAX,AINV,eps
     ! Ktheta is like D(theta), except max value at each freq is unity
     REAL    KTHETA(MSC,MDC)
     REAL    ANAR(MSC),SIGDENS(MSC),SQRTBN(MSC),CINV(MSC)
@@ -537,6 +537,7 @@ CONTAINS
 
     CTW   = COS(THETAW)
     STW   = SIN(THETAW)
+    eps   = 1.0e-8
 
 !   Calculate 1d spectrum E(sigma)
     DO  IS = 1, MSC
@@ -550,7 +551,8 @@ CONTAINS
 
 !   Calculate K(sigma,theta)
     DO  IS = 1, MSC
-       DMAX=-1.0
+!jcw   DMAX=-1.0
+       DMAX=eps
        DO  ID = 1, MDC
           IF(KTHETA(IS,ID).GT.DMAX)DMAX=KTHETA(IS,ID)
        END DO
@@ -573,7 +575,8 @@ CONTAINS
 
 !   Calculate SQRT(Bn(IS))
     DO IS=1,MSC
-       AINV=0.0
+!jcw   AINV=0.0
+       AINV=eps
        DO  ID = 1, MDC
           AINV=AINV+KTHETA(IS,ID)*DDIR
        END DO
