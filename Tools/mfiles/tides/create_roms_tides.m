@@ -91,7 +91,8 @@ IWRITE=1;           % 1 to write output to netcdf, 0 for no output
                      'N2'
                      'K2'
                      'M4'
-                     'M6'];
+                     'M6'
+                     'M6'];    %repeat last one to make a constant offset
       end
       if (osu)
         tides_to_use=['m2  '
@@ -106,12 +107,13 @@ IWRITE=1;           % 1 to write output to netcdf, 0 for no output
                       'mm  '
                       'm4  '
                       'ms4 '
-                      'mn4 '];
+                      'mn4 '
+                      'mn4 '];    %repeat last one to make a constant offset
         periods=[12.420601221208152  12.000000002711209  12.658348243602962 ...
                  11.967234788246559  23.934469655266863  25.819341665032908 ...
                  24.065890161111373  26.868356672318782 327.8589689145072   ...
                 661.3096907770995     6.210300610604076   6.103339299686573 ...
-                  6.269173876477840];
+                  6.269173876477840   100000000.0];
       end
 %%%%% END of USER-MODIFIED SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -429,4 +431,26 @@ if (IWRITE),
 % add the tide date
   add_tide_date (Fname, datenum(g))
 end 
+%
+disp('modifying the last contsit to be = 0.0 flat')
+offset=0.0;  %  change this value to provide a mean offset
+tidx=size(tide_Cangle,3);
+tide_Cangle(:,:,tidx)=tide_Cangle(:,:,tidx)*0;
+tide_Cmax(:,:,tidx)  =tide_Cmax(:,:,tidx)*0;
+tide_Cmin(:,:,tidx)  =tide_Cmin(:,:,tidx)*0;
+tide_Cphase(:,:,tidx)=tide_Cphase(:,:,tidx)*0;
+tide_Ephase(:,:,tidx)=tide_Ephase(:,:,tidx)*0;
+tide_Eamp(:,:,tidx)  =tide_Eamp(:,:,tidx)*0+offset;
+tide_period(tidx)=100000000.0;
+ncwrite(Fname,'tide_period',tide_period);
+ncwrite(Fname,'tide_Ephase',tide_Ephase);
+ncwrite(Fname,'tide_Eamp',tide_Eamp);
+ncwrite(Fname,'tide_Cphase',tide_Cphase);
+ncwrite(Fname,'tide_Cangle',tide_Cangle);
+ncwrite(Fname,'tide_Cmin',tide_Cmin);
+ncwrite(Fname,'tide_Cmax',tide_Cmax);
+
+
+
+
 
