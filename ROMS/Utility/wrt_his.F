@@ -4117,7 +4117,7 @@
      &                     FORCES(ng) % Dissip_break_dir)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idWdib)), HIS(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idWdid)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status

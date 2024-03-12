@@ -3815,9 +3815,9 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
-    defined WDISS_INWAVE
+    defined WDISS_INWAVE   || defined WAVES_DISS 
 !
 !  Define wave dissipation due to breaking.
 !
@@ -4544,11 +4544,15 @@
             got_var(idWdif)=.TRUE.
             HIS(ng)%Vid(idWdif)=var_id(i)
 #endif
-#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
-    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE   || defined WAVES_DISS 
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
             got_var(idWdib)=.TRUE.
             HIS(ng)%Vid(idWdib)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdid))) THEN
+            got_var(idWdid)=.TRUE.
+            HIS(ng)%Vid(idWdid)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
             got_var(idWdiw)=.TRUE.
             HIS(ng)%Vid(idWdiw)=var_id(i)
@@ -4612,9 +4616,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACkc))) THEN
             got_var(idACkc)=.TRUE.
             HIS(ng)%Vid(idACkc)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
-            got_var(idWdib)=.TRUE.
-            HIS(ng)%Vid(idWdib)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdid))) THEN
+            got_var(idWdid)=.TRUE.
+            HIS(ng)%Vid(idWdid)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
             got_var(idWdiw)=.TRUE.
             HIS(ng)%Vid(idWdiw)=var_id(i)
@@ -5202,12 +5206,6 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idWdib).and.Hout(idWdib,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdib)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
         IF (.not.got_var(idWdiw).and.Hout(idWdiw,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiw)),          &
      &                                  TRIM(ncname)
@@ -5543,10 +5541,17 @@
           RETURN
         END IF
 #endif
-#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
-    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE   || defined WAVES_DISS 
         IF (.not.got_var(idWdib).and.Hout(idWdib,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdib)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdid).and.Hout(idWdib,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdid)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
