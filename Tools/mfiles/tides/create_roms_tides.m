@@ -130,7 +130,8 @@ end
 
 [Ntide,ncol]=size(tides_to_use);
 for k=1:Ntide
-  imatch=strmatch(tides_to_use(k,:),names');
+  if (osu);   imatch=strmatch(tides_to_use(k,:),names'); end
+  if (adcirc||adcirc2012);  imatch=strmatch(tides_to_use(k,:),names'); end
   if isempty(imatch),
     disp(['Error: Did not find constituent ' tides_to_use(k,:) ' in .mat file']);
     return
@@ -288,7 +289,7 @@ omega=2*pi.*a.freq(iconst);   %tidal frequencies in radians/hour
 % See T_VUF for more info.
 
 reflat=55;  
-[vv,uu,ff]=t_vuf('nodal',datenum(start_year,start_month,start_day,start_hour,start_min,start_sec),iconst,reflat)
+[vv,uu,ff]=t_vuf('nodal',datenum(start_year,start_month,start_day,start_hour,start_min,start_sec),iconst,reflat);
 %vv and uu are returned in cycles, so * by 360 to get degrees or * by 2 pi to get radians
 
 vv=vv*360;  % convert vv to phase in degrees
@@ -432,23 +433,23 @@ if (IWRITE),
   add_tide_date (Fname, datenum(g))
 end 
 %
-disp('modifying the last contsit to be = 0.0 flat')
-offset=0.0;  %  change this value to provide a mean offset
-tidx=size(tide_Cangle,3);
-tide_Cangle(:,:,tidx)=tide_Cangle(:,:,tidx)*0;
-tide_Cmax(:,:,tidx)  =tide_Cmax(:,:,tidx)*0;
-tide_Cmin(:,:,tidx)  =tide_Cmin(:,:,tidx)*0;
-tide_Cphase(:,:,tidx)=tide_Cphase(:,:,tidx)*0;
-tide_Ephase(:,:,tidx)=tide_Ephase(:,:,tidx)*0;
-tide_Eamp(:,:,tidx)  =tide_Eamp(:,:,tidx)*0+offset;
-tide_period(tidx)=100000000.0;
-ncwrite(Fname,'tide_period',tide_period);
-ncwrite(Fname,'tide_Ephase',tide_Ephase);
-ncwrite(Fname,'tide_Eamp',tide_Eamp);
-ncwrite(Fname,'tide_Cphase',tide_Cphase);
-ncwrite(Fname,'tide_Cangle',tide_Cangle);
-ncwrite(Fname,'tide_Cmin',tide_Cmin);
-ncwrite(Fname,'tide_Cmax',tide_Cmax);
+offset=0.00;  %  change this value to provide a mean offset
+disp(['modifying the last contsit to be = ',num2str(offset)])
+tidx=size(Tide.Cangle,3);
+Tide.Cangle(:,:,tidx)=Tide.Cangle(:,:,tidx)*0;
+Tide.Cmax(:,:,tidx)  =Tide.Cmax(:,:,tidx)*0;
+Tide.Cmin(:,:,tidx)  =Tide.Cmin(:,:,tidx)*0;
+Tide.Cphase(:,:,tidx)=Tide.Cphase(:,:,tidx)*0;
+Tide.Ephase(:,:,tidx)=Tide.Ephase(:,:,tidx)*0;
+Tide.Eamp(:,:,tidx)  =Tide.Eamp(:,:,tidx)*0+offset;
+Tide.period(tidx)=100000000.0;
+ncwrite(Fname,'tide_period',Tide.period);
+ncwrite(Fname,'tide_Ephase',Tide.Ephase);
+ncwrite(Fname,'tide_Eamp',Tide.Eamp);
+ncwrite(Fname,'tide_Cphase',Tide.Cphase);
+ncwrite(Fname,'tide_Cangle',Tide.Cangle);
+ncwrite(Fname,'tide_Cmin',Tide.Cmin);
+ncwrite(Fname,'tide_Cmax',Tide.Cmax);
 
 
 
