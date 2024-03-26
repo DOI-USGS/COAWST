@@ -56,12 +56,9 @@
 #ifdef SPECTRUM_STOKES
       integer               :: IZ
       character (len=5)     :: LSTCODE
-      character (len=520)   :: wostring
-      character (len=140)   :: owstring
-#else
-      character (len=180)   :: wostring
-      character (len=180)   :: owstring
 #endif
+      character (len=1200)   :: wostring
+      character (len=1200)   :: owstring
 
       real(r8) :: cff
 !

@@ -182,13 +182,8 @@
       integer :: cid, cad, MXCGLc
       character (len=70)  :: nc_name
       character (len=20)  :: to_add
-# ifdef SPECTRUM_STOKES
-      character (len=520) :: wostring
-      character (len=140) :: owstring
-# else
-      character (len=180) :: wostring
-      character (len=180) :: owstring
-# endif
+      character (len=1200) :: wostring
+      character (len=1200) :: owstring
 # ifdef SPECTRUM_STOKES
       character (len=5)   :: LSTCODE
       integer             :: IZ
@@ -196,7 +191,7 @@
 
       real :: cff
 
-!      integer, dimension(2) :: src_grid_dims, dst_grid_dims
+!     integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, allocatable :: start(:), length(:)
 !
 !-----------------------------------------------------------------------
