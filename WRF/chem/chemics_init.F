@@ -303,6 +303,10 @@ call wrf_message("**************************************************************
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
          config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
          config_flags%chem_opt /= mozcart_kpp .and. &
+         ! osipov TODO: TUV is not compatible with chem_opt 106, produces too low OH
+         ! To make it work, I've added the tuv.map from Ravan Ahmadov & Jordan Schnell
+         ! config_flags%chem_opt /= radm2sorg_kpp .and. &
+         config_flags%chem_opt /= racm_soa_vbs_het_kpp .and. &
          config_flags%chem_opt /= t1_mozcart_kpp) THEN
        write(message_txt,'(''--- ERROR: chem_opt '',i3,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt
@@ -423,6 +427,12 @@ call wrf_message("**************************************************************
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
       write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
 !     call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      call wrf_error_fatal( trim(message_txt) )
+   endif
+
+   ! osipov check that ddflx & ddlen has correct dim size (chem_opt=106 and such)
+   if ( config_flags%diagnostic_dep .EQ. 1 .AND. config_flags%ne_area .LT. num_chem ) then
+      write(message_txt,'(''ERROR: SORGAM diagnostic_dep 1 requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
       call wrf_error_fatal( trim(message_txt) )
    endif
 
