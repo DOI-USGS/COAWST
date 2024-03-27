@@ -31,11 +31,11 @@
       integer  :: idACct                    ! wave action celerity in theta dir
       integer  :: idACbz                    ! wave action bound wave
 
+      integer  :: NDInw                     ! number of inwave diags
 #ifdef DIAGNOSTICS_INWAVE
 !
 !  InWave diagnostics.
 !
-      integer  :: NDInw                     ! number of inwave diags
       integer  :: iIrate                    ! temporal rate
       integer  :: iIxadv                    ! x advection
       integer  :: iIyadv                    ! y advection
