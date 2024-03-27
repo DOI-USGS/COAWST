@@ -3960,8 +3960,6 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-#endif
-#ifdef ROLLER_RENIERS
 !
 !  Define roller action density.
 !
@@ -4566,8 +4564,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdis))) THEN
             got_var(idWdis)=.TRUE.
             HIS(ng)%Vid(idWdis)=var_id(i)
-#endif
-#ifdef ROLLER_RENIERS
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWrol))) THEN
             got_var(idWrol)=.TRUE.
             HIS(ng)%Vid(idWrol)=var_id(i)
@@ -5578,8 +5574,6 @@
           exit_flag=3
           RETURN
         END IF
-#endif
-#ifdef ROLLER_RENIERS
         IF (.not.got_var(idWrol).and.Hout(idWrol,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWrol)),          &
      &                                  TRIM(ncname)

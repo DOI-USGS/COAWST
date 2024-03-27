@@ -36,6 +36,7 @@
 #define WEC_VF
 #define WDISS_WAVEMOD
 #define UV_KIRBY
+#define ROLLER_RENIERS
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_FSOBC

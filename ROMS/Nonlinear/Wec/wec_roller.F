@@ -114,7 +114,12 @@
 # endif
       USE bc_2d_mod
 # if defined WAVE_PARTITION
+#  if defined INWAVE_MODEL
       USE mod_inwave_params
+#  endif
+#  if defined SWAN_MODEL
+      USE mct_coupler_params
+#  endif
 # endif
 !
 !  Imported variable declarations.

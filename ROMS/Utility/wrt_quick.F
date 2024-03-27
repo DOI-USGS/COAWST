@@ -2361,9 +2361,81 @@
         END IF
       END IF
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
 !
-!  Write out wave dissipation.
+!  Write out wave dissipation due to bottom friction.
+!
+      IF (Qout(idWdif,ng)) THEN
+        scale=rho0                          ! W m /kg to W/m2
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdif), &
+     &                     QCK(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_fric)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdif)), QCK(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE
+!
+!  Write out wave dissipation due to breaking.
+!
+      IF (Qout(idWdib,ng)) THEN
+        scale=rho0                          ! W m /kg to W/m2
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdib), &
+     &                     QCK(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_break)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdib)), QCK(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out wave dissipation due to white capping.
+!
+      IF (Qout(idWdiw,ng)) THEN
+        scale=rho0                          ! W m /kg to W/m2
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdiw), &
+     &                     QCK(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dissip_wcap)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdiw)), QCK(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+#if defined WEC_ROLLER
+!
+!  Write out roller dissipation.
 !
       IF (Qout(idWdis,ng)) THEN
         scale=1.0_dp
@@ -2374,10 +2446,32 @@
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 # endif
-     &                     FORCES(ng) % Dissip_break)
+     &                     FORCES(ng) % Dissip_roller)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdis)), QCK(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out roller wave action density.
+!
+      IF (Qout(idWrol,ng)) THEN
+        scale=1.0_dp
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWrol), &
+     &                     QCK(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % rollA)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWrol)), QCK(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status

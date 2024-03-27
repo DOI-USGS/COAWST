@@ -4063,7 +4063,7 @@
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % rmask,                               &
+     &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Dissip_fric)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
@@ -4195,8 +4195,6 @@
           RETURN
         END IF
       END IF
-#endif
-#if defined WEC_ROLLER
 !
 !  Write out roller wave action density.
 !

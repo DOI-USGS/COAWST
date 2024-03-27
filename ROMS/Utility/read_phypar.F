@@ -1979,9 +1979,9 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idWdif,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
-#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
-    defined WDISS_INWAVE
+    defined WAVES_DISS || defined WDISS_INWAVE
             CASE ('Hout(idWdib)')
               IF (idWdib.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWdib'
@@ -2505,10 +2505,28 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idWorb,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+            CASE ('Qout(idWdif)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdif,1:Ngrids)=Lswitch(1:Ngrids)
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WAVES_DISS || defined WDISS_INWAVE
+            CASE ('Qout(idWdib)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdib,1:Ngrids)=Lswitch(1:Ngrids)
+            CASE ('Qout(idWdiw)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdiw,1:Ngrids)=Lswitch(1:Ngrids)
+#endif
+#if defined WEC_ROLLER
             CASE ('Qout(idWdis)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idWdis,1:Ngrids)=Lswitch(1:Ngrids)
+            CASE ('Qout(idWrol)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWrol,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef SOLVE3D
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
@@ -2844,8 +2862,6 @@
             CASE ('Aout(idWdis)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWdis,1:Ngrids)=Lswitch(1:Ngrids)
-# endif
-# ifdef ROLLER_RENIERS
             CASE ('Aout(idWrol)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWrol,1:Ngrids)=Lswitch(1:Ngrids)
@@ -6202,8 +6218,6 @@
             IF (Hout(idWdis,ng)) WRITE (out,170) Hout(idWdis,ng),       &
      &         'Hout(idWdis)',                                          &
      &         'Write out wave roller dissipation.'
-#endif
-#ifdef ROLLER_RENIERS
             IF (Hout(idWrol,ng)) WRITE (out,170) Hout(idWrol,ng),       &
      &         'Hout(idWrol)',                                          &
      &         'Write out wave roller action density.'
@@ -6557,10 +6571,27 @@
      &         'Qout(idWorb)',                                          &
      &         'Write out wave bottom orbital velocity.'
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+            IF (Qout(idWdif,ng)) WRITE (out,170) Qout(idWdif,ng),       &
+     &         'Qout(idWdif)',                                          &
+     &         'Write out wave dissipation due to bottom friction.'
+#endif
+#if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR
+            IF (Qout(idWdib,ng)) WRITE (out,170) Qout(idWdib,ng),       &
+     &         'Qout(idWdib)',                                          &
+     &         'Write out wave dissipation due to breaking.'
+            IF (Qout(idWdiw,ng)) WRITE (out,170) Qout(idWdiw,ng),       &
+     &         'Qout(idWdiw)',                                          &
+     &         'Write out wave dissipation due to white capping.'
+#endif
+#ifdef WEC_ROLLER
             IF (Qout(idWdis,ng)) WRITE (out,170) Qout(idWdis,ng),       &
      &         'Qout(idWdis)',                                          &
-     &         'Write out wave dissipation.'
+     &         'Write out wave roller dissipation.'
+            IF (Qout(idWrol,ng)) WRITE (out,170) Qout(idWrol,ng),       &
+     &         'Qout(idWrol)',                                          &
+     &         'Write out wave roller action density.'
 #endif
 #if defined SOLVE3D && defined T_PASSIVE
             DO itrc=1,NPT

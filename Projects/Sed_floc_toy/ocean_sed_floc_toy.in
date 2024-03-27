@@ -750,7 +750,11 @@ Qout(idWdip) == F       ! Dwavep             wave direction-peak
 Qout(idWptp) == F       ! Pwave_top          wave surface period
 Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
-Qout(idWdis) == F       ! Wave_dissip        wave dissipation
+Qout(idWdif) == T       ! Dissip_fric        wave dissipation due to bottom friction
+Qout(idWdib) == T       ! Dissip_break       wave dissipation due to breaking
+Qout(idWdiw) == T       ! Dissip_wcap        wave dissipation due to white capping
+Qout(idWdis) == T       ! Dissip_roller      wave roller dissipation
+Qout(idWrol) == T       ! rollA              wave roller action density
 
 Qout(idPair) == F       ! Pair               surface air pressure
 Qout(idTair) == F       ! Tair               surface air temperature
@@ -2812,7 +2816,11 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! Qout(idWptp)   Write out wave surface period.
 ! Qout(idWpbt)   Write out wave bottom period.
 ! Qout(idWorb)   Write out wave bottom orbital velocity.
-! Qout(idWdis)   Write out wave dissipation.
+! Qout(idWdif)   Write out wave dissipation due to bottom friction
+! Qout(idWdib)   Write out wave dissipation due to breaking
+! Qout(idWdiw)   Write out wave dissipation due to white capping
+! Qout(idWdis)   Write out wave roller dissipation
+! Qout(idWrol)   Write out wave roller action density
 !
 ! Qout(idPair)   Write out surface air pressure.
 ! Qout(idTair)   Write out surface air temperature.

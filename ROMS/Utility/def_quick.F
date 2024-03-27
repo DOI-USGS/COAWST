@@ -2315,9 +2315,72 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
 !
-!  Define wave roller dissipation.
+!  Define wave dissipation due to bottom friction.
+!
+        IF (Qout(idWdif,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdif)
+          Vinfo( 2)=Vname(2,idWdif)
+          Vinfo( 3)=Vname(3,idWdif)
+          Vinfo(14)=Vname(4,idWdif)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWdif)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdif,ng),r8)
+          status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdif),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+#endif
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE   || defined WAVES_DISS 
+!
+!  Define wave dissipation due to breaking.
+!
+        IF (Qout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdib)
+          Vinfo( 2)=Vname(2,idWdib)
+          Vinfo( 3)=Vname(3,idWdib)
+          Vinfo(14)=Vname(4,idWdib)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWdib)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdib,ng),r8)
+          status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdib),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define wave dissipation due to white capping.
+!
+        IF (Qout(idWdiw,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdiw)
+          Vinfo( 2)=Vname(2,idWdiw)
+          Vinfo( 3)=Vname(3,idWdiw)
+          Vinfo(14)=Vname(4,idWdiw)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWdiw)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdiw,ng),r8)
+          status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdiw),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+#endif
+#if defined WEC_ROLLER
+!
+!  Define Roller dissipation.
 !
         IF (Qout(idWdis,ng)) THEN
           Vinfo( 1)=Vname(1,idWdis)
@@ -2332,6 +2395,25 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWdis,ng),r8)
           status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdis),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define roller action density.
+!
+        IF (Qout(idWrol,ng)) THEN
+          Vinfo( 1)=Vname(1,idWrol)
+          Vinfo( 2)=Vname(2,idWrol)
+          Vinfo( 3)=Vname(3,idWrol)
+          Vinfo(14)=Vname(4,idWrol)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWrol)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWrol,ng),r8)
+          status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWrol),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
@@ -2687,10 +2769,31 @@
             got_var(idWorb)=.TRUE.
             QCK(ng)%Vid(idWorb)=var_id(i)
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdif))) THEN
+            got_var(idWdif)=.TRUE.
+            QCK(ng)%Vid(idWdif)=var_id(i)
+#endif
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE   || defined WAVES_DISS 
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
+            got_var(idWdib)=.TRUE.
+            QCK(ng)%Vid(idWdib)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdid))) THEN
+            got_var(idWdid)=.TRUE.
+            QCK(ng)%Vid(idWdid)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
+            got_var(idWdiw)=.TRUE.
+            QCK(ng)%Vid(idWdiw)=var_id(i)
+#endif
+#ifdef WEC_ROLLER
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdis))) THEN
             got_var(idWdis)=.TRUE.
             QCK(ng)%Vid(idWdis)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWrol))) THEN
+            got_var(idWrol)=.TRUE.
+            QCK(ng)%Vid(idWrol)=var_id(i)
 #endif
           END IF
 #ifdef SOLVE3D
@@ -3301,9 +3404,45 @@
           RETURN
         END IF
 #endif
-#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
+        IF (.not.got_var(idWdif).and.Qout(idWdif,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdif)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#if defined TKE_WAVEDISS   || defined WAVES_OCEAN || \
+    defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
+    defined WDISS_INWAVE   || defined WAVES_DISS 
+        IF (.not.got_var(idWdib).and.Qout(idWdib,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdib)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdid).and.Qout(idWdib,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdid)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdiw).and.Qout(idWdiw,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiw)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef WEC_ROLLER
         IF (.not.got_var(idWdis).and.Qout(idWdis,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdis)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWrol).and.Qout(idWrol,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWrol)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
