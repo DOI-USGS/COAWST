@@ -155,7 +155,7 @@ endif
 #--------------------------------------------------------------------------
 
 ifdef USE_SWAN
-           FFLAGS += -assume byterecl
+#          FFLAGS += -assume byterecl
 #          FFLAGS += -frecord-marker=4 -fconvert=big-endian
            FFLAGS += -I$(MY_ROOT_DIR)/SWAN/build/mod
            LIBS += $(MY_ROOT_DIR)/SWAN/build/lib/libswan41.45.a
