@@ -135,6 +135,10 @@
 # ifdef EMINUSP
      &                     FORCES(ng) % evap,                           &
 # endif
+# ifdef WAV2OCN_FLUXES
+     &                     FORCES(ng) % Tauocx,                         &
+     &                     FORCES(ng) % Tauocy,                         &
+# endif
      &                     FORCES(ng) % stflux,                         &
      &                     FORCES(ng) % sustr,                          &
      &                     FORCES(ng) % svstr)
@@ -179,6 +183,9 @@
      &                           rain, lhflx, lrflx, shflx, srflx,      &
 # ifdef EMINUSP
      &                           evap,                                  &
+# endif
+# ifdef WAV2OCN_FLUXES
+     &                           Tauocx, Tauocy,                        &
 # endif
      &                           stflux, sustr, svstr)
 !***********************************************************************
@@ -248,6 +255,10 @@
 #  ifdef EMINUSP
       real(r8), intent(out) :: evap(LBi:,LBj:)
 #  endif
+#  ifdef WAV2OCN_FLUXES
+      real(r8), intent(in) :: Tauocx(LBi:,LBj:)
+      real(r8), intent(in) :: Tauocy(LBi:,LBj:)
+#  endif
       real(r8), intent(out) :: sustr(LBi:,LBj:)
       real(r8), intent(out) :: svstr(LBi:,LBj:)
 # else
@@ -300,6 +311,10 @@
 
 #  ifdef EMINUSP
       real(r8), intent(out) :: evap(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WAV2OCN_FLUXES
+      real(r8), intent(in) :: Tauocx(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Tauocy(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(out) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: svstr(LBi:UBi,LBj:UBj)
@@ -839,14 +854,22 @@
 !  Compute wind stress components (N/m2), Tau.
 !
           cff=rhoAir(i)*Cd*Wspeed
+# ifdef WAV2OCN_FLUXES
+          Taux(i,j)=Tauocx(i,j)
+# else
           Taux(i,j)=(cff*Uair(i,j)+Taur*SIGN(1.0_r8,Uair(i,j)))
+# endif
 # ifdef MASKING
           Taux(i,j)=Taux(i,j)*rmask(i,j)
 # endif
 # ifdef WET_DRY
           Taux(i,j)=Taux(i,j)*rmask_wet(i,j)
 # endif
+# ifdef WAV2OCN_FLUXES
+          Tauy(i,j)=Tauocy(i,j)
+# else
           Tauy(i,j)=(cff*Vair(i,j)+Taur*SIGN(1.0_r8,Vair(i,j)))
+# endif
 # ifdef MASKING
           Tauy(i,j)=Tauy(i,j)*rmask(i,j)
 # endif

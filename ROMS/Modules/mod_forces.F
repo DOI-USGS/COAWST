@@ -209,14 +209,18 @@
 !
           real(r8), pointer :: sustr(:,:)
           real(r8), pointer :: svstr(:,:)
-#if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
+#if !defined ANA_SMFLUX  && !defined BULK_FLUXES || \
      defined FORWARD_FLUXES
           real(r8), pointer :: sustrG(:,:,:)
           real(r8), pointer :: svstrG(:,:,:)
 #endif
-#ifdef ATM2OCN_FLUXES
+#if defined ATM2OCN_FLUXES
           real(r8), pointer :: Taux(:,:)
           real(r8), pointer :: Tauy(:,:)
+#endif
+#if defined WAV2OCN_FLUXES
+          real(r8), pointer :: Tauocx(:,:)
+          real(r8), pointer :: Tauocy(:,:)
 #endif
 #ifdef ADJUST_WSTRESS
           real(r8), pointer :: ustr(:,:,:,:)
@@ -225,7 +229,7 @@
           real(r8), pointer :: bustr(:,:)
           real(r8), pointer :: bvstr(:,:)
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-     defined SPECTRAL_LIGHT  || defined AIR_OCEAN
+    defined SPECTRAL_LIGHT || defined AIR_OCEAN
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -599,12 +603,18 @@
 
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
-# ifdef ATM2OCN_FLUXES
+#if defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % Taux(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Tauy(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
-# endif
+#endif
+#if defined WAV2OCN_FLUXES
+      allocate ( FORCES(ng) % Tauocx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % Tauocy(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
 #if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
      defined FORWARD_FLUXES
       allocate ( FORCES(ng) % sustrG(LBi:UBi,LBj:UBj,2) )
@@ -1179,12 +1189,19 @@
      &                 __LINE__, 'FORCES(ng)%svstrG')) RETURN
 # endif
 
-#ifdef ATM2OCN_FLUXES
+# if defined ATM2OCN_FLUXES
       IF (.not.destroy(ng, FORCES(ng)%Taux, MyFile,                     &
      &                 __LINE__, 'FORCES(ng)%Taux')) RETURN
 
       IF (.not.destroy(ng, FORCES(ng)%Tauy, MyFile,                     &
      &                 __LINE__, 'FORCES(ng)%Tauy')) RETURN
+# endif
+
+#if defined WAV2OCN_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%Tauocx, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%Taux')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Tauocy, MyFile,                   &
+     &                 __LINE__, 'FORCES(ng)%Taux')) RETURN
 #endif
 
 # ifdef ADJUST_WSTRESS
@@ -1804,9 +1821,13 @@
 #endif
             FORCES(ng) % sustr(i,j) = IniVal
             FORCES(ng) % svstr(i,j) = IniVal
-#ifdef ATM2OCN_FLUXES
+#if defined ATM2OCN_FLUXES
             FORCES(ng) % Taux(i,j) = IniVal
             FORCES(ng) % Tauy(i,j) = IniVal
+#endif
+#if defined WAV2OCN_FLUXES
+            FORCES(ng) % Tauocx(i,j) = IniVal
+            FORCES(ng) % Tauocy(i,j) = IniVal
 #endif
 #if !defined ANA_SMFLUX     && !defined BULK_FLUXES || \
      defined FORWARD_FLUXES

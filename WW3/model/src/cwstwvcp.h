@@ -565,6 +565,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':TAUOCE'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':TAUOCN'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 #if defined VEGETATION && defined VEG_SWAN_COUPLING \
       && defined VEG_STREAMING
       to_add=':DISVEG'
@@ -773,7 +783,7 @@
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA
       USE W3ADATMD, ONLY: THM, WLM
 !     USE W3ODATMD, ONLY: QB
-      USE W3WDATMD, ONLY: VA
+      USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
 !
       implicit none
@@ -782,7 +792,7 @@
 !  Imported variable declarations.
 !
       integer :: Numcouple, iw, io
-      integer :: IP, IX, IY
+      integer :: IP, ISEA, IX, IY
 !
 !  Local variable declarations.
 !
@@ -1255,6 +1265,70 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "WQP",avdata)
+!-------------------------------------------------------------------
+!  Tauocx:  Stress in east direction
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!  Notice Tauocx and Tauocy are indixed ISEA.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        ISEA=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(ISEA,1)
+        IY     = MAPSF(ISEA,2)
+        IP=(IY-1)*NX+IX
+        cff=RHOAIR(ISEA)*UST(ISEA)*UST(ISEA)
+        SND_BUF(IP)=cff*COS(USTDIR(ISEA))
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                           "TAUOCE",avdata)
+!-------------------------------------------------------------------
+!  Tauocy: Ustar in north direction
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!  Notice Tauocx and Tauocy are indixed ISEA.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        ISEA=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(ISEA,1)
+        IY     = MAPSF(ISEA,2)
+        IP=(IY-1)*NX+IX
+        cff=RHOAIR(ISEA)*UST(ISEA)*UST(ISEA)
+        SND_BUF(IP)=cff*SIN(USTDIR(ISEA))
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                           "TAUOCN",avdata)
 !
 !-----------------------------------------------------------------------
 !  Send wave fields bundle to ocean model, ROMS.

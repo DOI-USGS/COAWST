@@ -1991,8 +1991,10 @@
 #if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
       CALL INIT_WVCP (1)
       CALL INITIALIZE_WAV_ROUTERS
-      ccount=0
-      CALL COAWST_CPL (ccount)
+!
+!     do not do first couple here, wait til end of init in w3wavemd.
+!     ccount=0
+!     CALL COAWST_CPL (ccount)
 #endif
 
 
