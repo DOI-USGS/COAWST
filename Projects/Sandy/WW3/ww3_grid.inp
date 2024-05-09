@@ -472,6 +472,7 @@ $
 $ In the 'Out of the box' test setup we run with sub-grid obstacles
 $ and with continuous ice treatment.
 $
+&FLD1 /
   &MISC CICE0 = 0.25, CICEN = 0.75, FLAGTR = 0 /
   &FLX3 CDMAX = 3.5E-3 , CTYPE = 0 /
 $ &SDB1 BJGAM = 1.26, BJFLAG = .FALSE. /
