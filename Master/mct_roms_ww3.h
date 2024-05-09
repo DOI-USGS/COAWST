@@ -1788,6 +1788,13 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_break)
 # endif
+# ifdef WAV2OCN_FLUXES
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%Tauocx, FORCES(ng)%Tauocy)
+# endif
 # ifdef WAVES_DSPR
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
