@@ -37,6 +37,7 @@
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
+   USE module_aerosols_soa_vbs_het, only: aerosols_soa_vbs_het_init
    USE module_aerosols_sorgam_vbs, only: aerosols_sorgam_vbs_init
    USE module_dep_simple
    USE module_data_gocart_dust
@@ -1857,7 +1858,7 @@ ENDIF ghg_block
         endif
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -1869,8 +1870,37 @@ ENDIF ghg_block
 
 !!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
        ! initialize pointers used by aerosol-cloud-interaction routines
-        call aerosols_soa_vbs_init_aercld_ptrs( &
-           num_chem, is_aerosol, config_flags )
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
+
+!...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kde-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+        endif
+        endif
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
+    CASE (RACM_SOA_VBS_HET_KPP)
+       CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
+
+       call aerosols_soa_vbs_het_init(chem,convfac,z_at_w,                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte, config_flags               )
+
+!!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
+       ! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
 
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then

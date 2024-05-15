@@ -314,7 +314,7 @@
              enddo
           enddo
        enddo
-       call soa_vbs_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &  ! osipov
+       call soa_vbs_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
             alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
             vcsulf_old,vdrog3_vbs,                                   &
@@ -333,7 +333,7 @@
              enddo
           enddo
        enddo
-       call soa_vbs_het_driver ( id,config_flags,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+       call soa_vbs_het_driver ( id,config_flags,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &   ! osipov
             alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
             gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                      &
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &

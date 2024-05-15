@@ -1594,9 +1594,6 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
       logical do_crustal
       real crustal_mobility
 
-!liqy
-      isorop=1
-
 ! *** get water, ammonium  and nitrate content:
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
@@ -6649,7 +6646,7 @@ SUBROUTINE VDVG_2( BLKSIZE, NSPCSDA, NUMCELLS,         &
 END SUBROUTINE VDVG_2
 !------------------------------------------------------------------------------
 
-SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   &
+SUBROUTINE         aerosols_soa_vbs_het_init(chem,convfac,z_at_w,                   &
                    pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                         &
                    chem_in_opt,aer_ic_opt, is_aerosol,                         &
                    ids,ide, jds,jde, kds,kde,                                  &
@@ -6868,7 +6865,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
 !                chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
         else
            call wrf_error_fatal(   &
-                "aerosols_soa_vbs_init: unable to parse aer_ic_opt" )
+                "aerosols_soa_vbs_het_init: unable to parse aer_ic_opt" )
         end if
 
 !... i-mode
@@ -6917,7 +6914,7 @@ SUBROUTINE         aerosols_soa_vbs_init(chem,convfac,z_at_w,                   
       enddo
 
     return
-    END SUBROUTINE aerosols_soa_vbs_init
+    END SUBROUTINE aerosols_soa_vbs_het_init
 
 !
 SUBROUTINE soa_vbs_het_addemiss( config_flags,                                                       &
@@ -7948,7 +7945,7 @@ end subroutine soa_vbs_dust_gocartemis
   ! default is 1 ug s2 m-5 == 1.e-9 kg s2 m-5
   !ch_dust(:,:)=0.8D-9   ! ch_dust is defined here instead of in the chemics_ini.F if with SOA_VBS  -czhao
    ch_dust(:,:)=1.0D-9  ! default 
-  !ch_dust(:,:)=0.65D-9   ! ch_dust is tuned to match MODIS and AERONET measurements over Sahara 
+  !ch_dust(:,:)=0.65D-9   ! ch_dust is tuned to match MODIS and AERONET measurements over Sahara
   !ch_dust(:,:)=1.0D-9*0.36  ! ch_dust is scaled to soa_vbs total dust emission
 
   ! osipov scale default emissions using namelist
