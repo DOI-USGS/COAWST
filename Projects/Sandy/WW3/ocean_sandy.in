@@ -667,6 +667,7 @@ Hout(idUair) == T T     ! Uwind              surface U-wind
 Hout(idVair) == T T     ! Vwind              surface V-wind
 Hout(idUairE) == T T    ! Uwind_eastward     surface U-wind
 Hout(idVairN) == T T    ! Vwind_northward    surface V-wind
+Hout(idaoCd) == T T     ! Vwind              atm-ocn Cd
 
 Hout(idTsur) == T T T T ! shflux, ssflux     surface net heat and salt flux
 Hout(idLhea) == T T     ! latent             latent heat flux
