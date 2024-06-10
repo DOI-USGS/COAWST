@@ -198,6 +198,7 @@
 !
 !  Input/output identification indices.
 !
+      integer  :: idaoCd        ! atm ocn surface Cd
       integer  :: idAice        ! fraction of cell covered by ice
       integer  :: idbath        ! bathymetry
       integer  :: idBgEr        ! Background error at observations
@@ -1652,6 +1653,8 @@
           CASE ('idTbry(inorth,isalt)')
             idTbry(inorth,isalt)=varid
 #endif
+          CASE ('idaoCd')
+            idaoCd=varid
           CASE ('idPwet')
             idPwet=varid
           CASE ('idRwet')

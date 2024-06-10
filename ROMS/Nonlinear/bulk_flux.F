@@ -112,6 +112,7 @@
      &                     FORCES(ng) % Tair,                           &
      &                     FORCES(ng) % Uwind,                          &
      &                     FORCES(ng) % Vwind,                          &
+     &                     FORCES(ng) % Cd,                             &
 # ifdef CLOUDS
      &                     FORCES(ng) % cloud,                          &
 # endif
@@ -164,7 +165,7 @@
 # ifdef WIND_MINUS_CURRENT
      &                           u, v,                                  &
 # endif
-     &                           Hair, Pair, Tair, Uwind, Vwind,        &
+     &                           Hair, Pair, Tair, Uwind, Vwind, Cd,    &
 # ifdef CLOUDS
      &                           cloud,                                 &
 # endif
@@ -229,6 +230,7 @@
       real(r8), intent(in) :: Tair(LBi:,LBj:)
       real(r8), intent(in) :: Uwind(LBi:,LBj:)
       real(r8), intent(in) :: Vwind(LBi:,LBj:)
+      real(r8), intent(inout) :: Cd(LBi:,LBj:)
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:,LBj:)
 #  endif
@@ -285,6 +287,7 @@
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Uwind(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Vwind(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: Cd(LBi:UBi,LBj:UBj)
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
 #  endif
@@ -328,7 +331,7 @@
       real(r8), parameter :: eps = 1.0E-20_r8
       real(r8), parameter :: r3 = 1.0_r8/3.0_r8
 
-      real(r8) :: Bf, Cd, Hl, Hlw, Hscale, Hs, Hsr, IER
+      real(r8) :: Bf, Hl, Hlw, Hscale, Hs, Hsr, IER
       real(r8) :: PairM,  RH, Taur
       real(r8) :: Wspeed, ZQoL, ZToL
 
@@ -619,12 +622,12 @@
           Ch10(i)=0.00115_r8
           Ct10(i)=Ch10(i)/sqrt(Cd10(i))
           ZoT10(i)=10.0_r8/EXP(vonKar/Ct10(i))
-          Cd=(vonKar/LOG(blk_ZW(ng)/Zo10(i)))**2
+          Cd(i,j)=(vonKar/LOG(blk_ZW(ng)/Zo10(i)))**2
 !
 !  Compute Richardson number.
 !
           Ct(i)=vonKar/LOG(blk_ZT(ng)/ZoT10(i))  ! T transfer coefficient
-          CC(i)=vonKar*Ct(i)/Cd
+          CC(i)=vonKar*Ct(i)/Cd(i,j)
           delTc(i)=0.0_r8
 # ifdef COOL_SKIN
           delTc(i)=blk_dter
@@ -801,7 +804,7 @@
 !  Compute transfer coefficients for momentum (Cd).
 !
           Wspeed=SQRT(Wmag(i)*Wmag(i)+Wgus(i)*Wgus(i))
-          Cd=Wstar(i)*Wstar(i)/(Wspeed*Wspeed+eps)
+          Cd(i,j)=Wstar(i)*Wstar(i)/(Wspeed*Wspeed+eps)
 !
 !  Compute turbulent sensible heat flux (W/m2), Hs.
 !
@@ -853,7 +856,7 @@
 !
 !  Compute wind stress components (N/m2), Tau.
 !
-          cff=rhoAir(i)*Cd*Wspeed
+          cff=rhoAir(i)*Cd(i,j)*Wspeed
 # ifdef WAV2OCN_FLUXES
           Taux(i,j)=Tauocx(i,j)
 # else

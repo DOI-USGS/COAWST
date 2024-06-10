@@ -408,6 +408,9 @@
 #  endif
 # endif
 
+# if defined BULK_FLUXES
+          real(r8), pointer :: Cd(:,:)
+# endif
 
 # if defined BULK_FLUXES || defined AIR_OCEAN
           real(r8), pointer :: rain(:,:)
@@ -890,6 +893,11 @@
       allocate ( FORCES(ng) % VwindG(LBi:UBi,LBj:UBj,2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
+# endif
+
+# if defined BULK_FLUXES
+      allocate ( FORCES(ng) % Cd(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined BULK_FLUXES || defined AIR_OCEAN
@@ -1468,6 +1476,11 @@
 #   endif
 #  endif
 
+# if defined BULK_FLUXES
+      IF (.not.destroy(ng, FORCES(ng)%Cd, MyFile,                       &
+     &                 __LINE__, 'FORCES(ng)%Cd')) RETURN
+#  endif
+
 # if defined BULK_FLUXES || defined AIR_OCEAN
       IF (.not.destroy(ng, FORCES(ng)%rain, MyFile,                     &
      &                 __LINE__, 'FORCES(ng)%rain')) RETURN
@@ -2013,6 +2026,9 @@
     defined SPECTRAL_LIGHT || defined AIR_OCEAN
             FORCES(ng) % Uwind(i,j) = IniVal
             FORCES(ng) % Vwind(i,j) = IniVal
+# endif
+# if defined BULK_FLUXES
+            FORCES(ng) % Cd(i,j) = IniVal
 # endif
 # if defined BULK_FLUXES || defined AIR_OCEAN
             FORCES(ng) % rain(i,j) = IniVal

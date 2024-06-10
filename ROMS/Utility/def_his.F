@@ -1768,9 +1768,9 @@
           Vinfo( 3)=Vname(3,idUairE)
           Vinfo(14)=Vname(4,idUairE)
           Vinfo(16)=Vname(1,idtime)
-#if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#endif
+#  endif
           Vinfo(21)=Vname(6,idUairE)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idUairE,ng),r8)
@@ -1787,13 +1787,34 @@
           Vinfo( 3)=Vname(3,idVairN)
           Vinfo(14)=Vname(4,idVairN)
           Vinfo(16)=Vname(1,idtime)
-#if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#endif
+#  endif
           Vinfo(21)=Vname(6,idVairN)
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVairN,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idVairN),  &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+# endif
+# if defined BULK_FLUXES
+!
+!  Define Cd.
+!
+        IF (Hout(idaoCd,ng)) THEN
+          Vinfo( 1)=Vname(1,idaoCd)
+          Vinfo( 2)=Vname(2,idaoCd)
+          Vinfo( 3)=Vname(3,idaoCd)
+          Vinfo(14)=Vname(4,idaoCd)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idaoCd)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idaoCd,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idaoCd),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
@@ -4307,6 +4328,11 @@
             got_var(idVairN)=.TRUE.
             HIS(ng)%Vid(idVairN)=var_id(i)
 # endif
+# if defined BULK_FLUXES || defined ECOSIM
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idaoCd))) THEN
+            got_var(idaoCd)=.TRUE.
+            HIS(ng)%Vid(idaoCd)=var_id(i)
+# endif
 # ifdef BULK_FLUXES
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLhea))) THEN
             got_var(idLhea)=.TRUE.
@@ -5024,6 +5050,14 @@
         END IF
         IF (.not.got_var(idVairN).and.Hout(idVairN,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idVairN)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
+# if defined BULK_FLUXES
+        IF (.not.got_var(idaoCd).and.Hout(idaoCd,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idaoCd)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

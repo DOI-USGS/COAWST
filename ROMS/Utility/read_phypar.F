@@ -2133,6 +2133,16 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idVairN,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
+# if defined BULK_FLUXES
+            CASE ('Hout(idaoCd)')
+              IF (idaoCd.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idaoCd'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idaoCd,1:Ngrids)=Lswitch(1:Ngrids)
+# endif
 #endif
             CASE ('Hout(idTsur)')
               IF (idTsur(itemp).eq.0) THEN
@@ -2269,7 +2279,7 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idMtls,1:Ngrids)=Lswitch(1:Ngrids)
-#if defined SOLVE3D && defined T_PASSIVE
+# if defined SOLVE3D && defined T_PASSIVE
             CASE ('Hout(inert)')
               Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
               DO ng=1,Ngrids
@@ -2278,7 +2288,7 @@
                   Hout(itrc,ng)=Linert(i,ng)
                 END DO
               END DO
-#endif
+# endif
             CASE ('Qout(idUvel)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
@@ -6288,6 +6298,11 @@
             IF (Hout(idVairN,ng)) WRITE (out,170) Hout(idVairN,ng),     &
      &         'Hout(idVairN)',                                         &
      &         'Write out surface Northward V-wind component.'
+# endif
+# if defined BULK_FLUXES
+            IF (Hout(idaoCd,ng)) WRITE (out,170) Hout(idaoCd,ng),       &
+     &         'Hout(idaoCd)',                                          &
+     &         'Write out surface U-wind component.'
 # endif
             IF (Hout(idTsur(itemp),ng)) WRITE (out,170)                 &
      &          Hout(idTsur(itemp),ng), 'Hout(idTsur)',                 &
