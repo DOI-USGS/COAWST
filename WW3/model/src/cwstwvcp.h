@@ -162,6 +162,12 @@
 !***********************************************************************
 !
       USE MCT_COUPLER_PARAMS
+      USE W3GDATMD, ONLY: W3SETG
+      USE WMMDATMD, ONLY: MDST, MDSE
+      USE W3IDATMD, ONLY: W3SETI
+      USE W3ADATMD, ONLY: W3SETA
+      USE W3WDATMD, ONLY: W3SETW, VA
+      USE W3UPDTMD, ONLY: W3ULEV
 !
       IMPLICIT NONE
 !
@@ -177,6 +183,10 @@
 !         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL W3SETW ( iw, MDSE, MDST )
             CALL WAV2OCN_COUPLING (iw, io)
           ELSE
             GOTO 40
@@ -192,7 +202,12 @@
 !         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAVFOCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
-             CALL WAVFOCN_COUPLING (iw, io)
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL WAVFOCN_COUPLING (iw, io)
+            CALL W3SETW ( iw, MDSE, MDST )
+            CALL W3ULEV (VA, VA )
           ELSE
             GOTO 50
           END IF
@@ -1633,7 +1648,7 @@
       USE W3IDATMD
       USE MCT_COUPLER_PARAMS
 !     USE W3WDATMD, ONLY: WLV
-      USE W3IDATMD, ONLY: WLEV
+!     USE W3IDATMD, ONLY: WLEV
       USE W3ADATMD, ONLY: CX, CY
 !
       implicit none
@@ -1790,10 +1805,8 @@
          IY     = MAPSF(i,2)
          IP=(IY-1)*NX+IX
          IF (io.eq.1) THEN
-!          WLV(i)=RCV_BUF(IP)
            WLEV(IX,IY)=RCV_BUF(IP)
          ELSE
-!          WLV(i)=WLV(i)+RCV_BUF(IP)
            WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
          END IF
        END DO

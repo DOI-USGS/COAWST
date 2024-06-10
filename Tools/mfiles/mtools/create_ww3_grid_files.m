@@ -91,22 +91,26 @@ fclose(fid);
 %
 ww3_mask=ones(LP,MP);
 %
-% now make boudaries = 3
+% now make boudaries = 2
 %
-ww3_mask(:,1)=3;
-ww3_mask(:,end)=3;
-ww3_mask(1,:)=3;
-ww3_mask(end,:)=3;
-% For Inlet test use the next line.
-%ww3_mask(2:end-1,end-1)=2;  %impose BC at 1 grid cell in along north edge
+ww3_mask(:,1)=2;
+ww3_mask(:,end)=2;
+ww3_mask(1,:)=2;
+ww3_mask(end,:)=2;
 %
 % now remove land and set these points as 0
 %
-zz=find(mask_rho==0);
-ww3_mask(zz)=0;
-zz=find(h<(min_depth));
-ww3_mask(zz)=0;
-
+for index1 = 2:MP-1;
+    for index2 = 2:LP-1;
+        if (mask_rho(index2,index1)==0)
+          ww3_mask(index2,index1)=0;
+        end
+        if (h(index2,index1)<min_depth)
+%          ww3_mask(index2,index1)=0;
+        end
+    end
+end
+%
 % now write this out
 %
 fid = fopen(ww3_mask_file,'w');

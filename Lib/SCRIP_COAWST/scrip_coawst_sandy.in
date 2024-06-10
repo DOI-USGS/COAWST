@@ -50,6 +50,11 @@ WW3_YCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_ycoord.dat',
 WW3_BATH(1)='../../Projects/Sandy/WW3/ww3_sandy_bathy.bot',
 WW3_NUMX(1)=87,
 WW3_NUMY(1)=65,
+WW3_XCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_xcoord.dat',
+WW3_YCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_ycoord.dat',
+WW3_BATH(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_bathy.bot',
+WW3_NUMX(2)=116,
+WW3_NUMY(2)=86,
 
 ! 6) Enter the name of the WRF input grid(s). If the grid is a 
 !    moving child nest then enter that grid name as 'moving'.

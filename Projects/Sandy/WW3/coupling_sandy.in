@@ -60,6 +60,7 @@
 !   WAV_name = Projects/Sandy/swan_sandy.in \
 !              Projects/Sandy/swan_sandy_ref3.in         ! wave model
    WAV_name = ww3_grid.inp
+!  WAV_name = Projects/Sandy/WW3/ww3_multi.inp
    OCN_name = Projects/Sandy/WW3/ocean_sandy.in             ! ocean model
    HYD_name = hydro.namelist                            ! hydro model
 
@@ -77,6 +78,8 @@
 !  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
    SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
 !  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
+
+!   SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_2ww3_2roms.nc
 
 !
 !  GLOSSARY:

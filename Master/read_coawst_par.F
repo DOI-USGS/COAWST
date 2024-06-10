@@ -152,8 +152,8 @@
 # endif
 # ifdef WW3_MODEL
             ELSE IF (TRIM(KeyWord).eq.'WAV_name') THEN
+              tempname=TRIM(ADJUSTL(Cval(Nval)))
               IF (Nval.eq.1) THEN
-!               call get_numswan_grids(tempname)
                 call allocate_ww3_iounits
               END IF
               Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))

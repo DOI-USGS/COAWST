@@ -195,6 +195,10 @@ CONTAINS
     USE WMMDATMD, ONLY: IMPROC, MDSO, MDSS, MDST, MDSE, NMPSCR,     &
          NMPERR, ETIME, FLLSTL, FLLSTR, FLLSTI,      &
          INPMAP, IDINP, IFLSTI, IFLSTL, IFLSTR
+#ifdef W3_COAWST_MODEL
+    USE CWSTWVCP
+    USE MCT_COUPLER_PARAMS
+#endif
     !/
     IMPLICIT NONE
     !/
@@ -389,6 +393,27 @@ CONTAINS
         ! Data input and time stamp settings for forcing input from
         ! CPL are handled in wmesmfmd.ftn:GetImport
         !
+        ! JCW we come here for wlev and currents and winds if coupled.
+#ifdef W3_WAVES_OCEAN
+        IF (J.EQ.1) THEN
+          TFN(1,J)=ETIME(1)
+          TFN(2,J)=ETIME(2)
+          CALL TICK21(TFN(:,J),REAL(TI_OCN2WAV))
+        ELSEIF (J.EQ.2) THEN
+           TFN(1,J)=ETIME(1)
+           TFN(2,J)=ETIME(2)
+           CALL TICK21(TFN(:,J),REAL(TI_OCN2WAV))
+        END IF
+#endif
+#ifdef W3_AIR_WAVES
+        IF (J.EQ.3) THEN
+          TFN(1,J)=ETIME(1)
+          TFN(2,J)=ETIME(2)
+          CALL TICK21(TFN(:,J),REAL(TI_ATM2WAV))
+        END IF
+#endif
+
+
 #ifdef W3_T
         IF ( INPMAP(IMOD,J) .EQ. -999 ) THEN
           ! *** Forcing input from CPL & defined on native grid ***

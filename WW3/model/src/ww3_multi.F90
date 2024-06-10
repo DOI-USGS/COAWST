@@ -11,7 +11,11 @@
 !>  (uncoupled).
 !>
 !> @author H. L. Tolman @date 29-May-2009
-PROGRAM W3MLTI
+#ifdef W3_COAWST_MODEL
+      SUBROUTINE WW3_init_multi (MyCOMM)
+#else
+      PROGRAM W3MLTI
+#endif
   !/
   !/                  +-----------------------------------+
   !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -92,6 +96,10 @@ PROGRAM W3MLTI
   USE WMMDATMD, ONLY: MDSI, MDSO, MDSS, MDST, MDSE, &
        NMPROC, IMPROC, NMPSCR, NRGRD, ETIME
   !/
+#ifdef W3_COAWST_MODEL
+  USE CWSTWVCP
+  USE MCT_COUPLER_PARAMS
+#endif
   IMPLICIT NONE
   !
 #ifdef W3_MPI
@@ -111,6 +119,10 @@ PROGRAM W3MLTI
 #ifdef W3_OMPH
   INTEGER              :: THRLEV
 #endif
+#ifdef W3_COAWST_MODEL
+  INTEGER              :: COAWSTED, ccount
+  INTEGER              :: MyCOMM
+#endif
   !/
   !/ ------------------------------------------------------------------- /
   ! 0.  Initialization necessary for driver
@@ -118,6 +130,10 @@ PROGRAM W3MLTI
   !
   ! 0.b MPI environment: Here, we use MPI_COMM_WORLD
   !
+#ifdef W3_COAWST_MODEL
+  COAWSTED=1
+  IF (COAWSTED.EQ.0) THEN
+#endif
 #ifdef W3_OMPH
   FLHYBR = .TRUE.
   ! For hybrid MPI-OpenMP specify required thread level:
@@ -133,6 +149,14 @@ PROGRAM W3MLTI
 #endif
 #ifdef W3_MPI
   MPI_COMM = MPI_COMM_WORLD
+  CALL MPI_COMM_SIZE ( MPI_COMM, NMPROC, IERR_MPI )
+  CALL MPI_COMM_RANK ( MPI_COMM, IMPROC, IERR_MPI )
+  IMPROC = IMPROC + 1
+#endif
+#ifdef W3_COAWST_MODEL
+  END IF
+  MPI_COMM = MyCOMM
+  WAV_COMM_WORLD = MyCOMM
   CALL MPI_COMM_SIZE ( MPI_COMM, NMPROC, IERR_MPI )
   CALL MPI_COMM_RANK ( MPI_COMM, IMPROC, IERR_MPI )
   IMPROC = IMPROC + 1
@@ -197,9 +221,18 @@ PROGRAM W3MLTI
   !
   IF ( IMPROC .EQ. NMPSCR ) WRITE (*,999)
   !
+#ifdef W3_COAWST_MODEL
+      IF (COAWSTED.EQ.0) THEN
+#endif
 #ifdef W3_MPI
   CALL MPI_BARRIER ( MPI_COMM, IERR_MPI )
   CALL MPI_FINALIZE  ( IERR_MPI )
+#endif
+#ifdef W3_COAWST_MODEL
+      END IF
+#endif
+#if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
+      CALL FINALIZE_WAV_COUPLING(1)
 #endif
   !
   ! Formats
@@ -218,4 +251,8 @@ PROGRAM W3MLTI
   !/
   !/ End of W3MLTI ----------------------------------------------------- /
   !/
+#ifdef W3_COAWST_MODEL
+END SUBROUTINE WW3_init_multi
+#else
 END PROGRAM W3MLTI
+#endif

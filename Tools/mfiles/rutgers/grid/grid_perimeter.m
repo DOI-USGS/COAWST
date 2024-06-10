@@ -154,28 +154,32 @@ for ng=1:S.Ngrids,
   Attributes = nc_getatt(G(ng).grid_name);
 
   index = strcmp({Attributes.Name},'parent_Imin');
-  if (any(index)),
+% if (any(index)),      jcw
+  if (any(index) && ng>1 ),
     S.grid(ng).parent_Imin = Attributes(index).Value;
   else
     S.grid(ng).parent_Imin = spval;
   end
 
   index = strcmp({Attributes.Name},'parent_Imax');
-  if (any(index)),
+% if (any(index)),
+  if (any(index) && ng>1 ),
     S.grid(ng).parent_Imax = Attributes(index).Value;
   else
     S.grid(ng).parent_Imax = spval;
   end
 
   index = strcmp({Attributes.Name},'parent_Jmin');
-  if (any(index)),
+% if (any(index)),
+  if (any(index) && ng>1 ),
     S.grid(ng).parent_Jmin = Attributes(index).Value;
   else
     S.grid(ng).parent_Jmin = spval;
   end
 
   index = strcmp({Attributes.Name},'parent_Jmax');
-  if (any(index)),
+% if (any(index)),
+  if (any(index) && ng>1 ),
     S.grid(ng).parent_Jmax = Attributes(index).Value;
   else
     S.grid(ng).parent_Jmax = spval;

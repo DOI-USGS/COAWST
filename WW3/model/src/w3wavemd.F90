@@ -493,6 +493,10 @@ CONTAINS
 #ifdef W3_TIMINGS
     USE W3PARALL, only : PRINT_MY_TIME
 #endif
+#ifdef W3_COAWST_MODEL
+  USE CWSTWVCP
+  USE MCT_COUPLER_PARAMS
+#endif
     !
 #ifdef W3_MPI
     INCLUDE "mpif.h"
@@ -2352,12 +2356,14 @@ CONTAINS
 400   CONTINUE
 #if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
       ! jcw bottom of wavemd calling the coupler
-!      IF (ITIME.gt.0) THEN    do not limit to t>0, need to get first step here also.
+      !  IMOD is the grid number
+      IF (Nwav_grids.eq.1) THEN
         CALL COAWST_CPL (ITIME)
-# if defined W3_WAVES_OCEAN
-        CALL W3ULEV ( VA, VA )
-# endif
-!      END IF
+      ELSE
+        IF (IMOD.eq.Nwav_grids) THEN
+          CALL COAWST_CPL (ITIME-2)
+        END IF
+      END IF
 #endif
       !
       ! 4.  Perform output to file if requested ---------------------------- /

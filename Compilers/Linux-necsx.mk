@@ -211,6 +211,7 @@ endif
 
 ifdef USE_WW3
              LIBS += WW3/build/model/src/CMakeFiles/ww3_shel.dir/ww3_shel.F90.o
+             LIBS += WW3/build/model/src/CMakeFiles/ww3_multi.dir/ww3_multi.F90.o
              LIBS += WW3/build/lib/libww3.a
 endif
 

@@ -258,6 +258,9 @@
 !     Read WW3 input file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+#  ifdef NESTING
+      call get_numww3_grids (Wname(1))
+#  else
       iw=1
       OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
      &      ERR=110)
@@ -270,7 +273,7 @@
      &        /,a80)
  130  CONTINUE
 !
-!  set number of WW3 grids to = 1 for now.
+!  set number of WW3 grids to = 1 for non-nesting.
 !
       Nwav_grids=1
       allocate (dtwav(Nwav_grids))
@@ -324,6 +327,7 @@
       RETURN
  140  CLOSE (inp)
 !
+#  endif
 # endif
 # ifdef WRF_COUPLING
 !

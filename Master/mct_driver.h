@@ -543,7 +543,11 @@
       END IF
 #elif defined WW3_COUPLING
       IF (MyColor.eq.WAVcolor) THEN
+# ifdef NESTING
+        CALL WW3_init_multi (MyCOMM)
+# else
         CALL WW3_init (MyCOMM)
+# endif
 !       CALL WW3_driver_run
 !       CALL WW3_driver_finalize
       END IF

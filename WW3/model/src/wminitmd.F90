@@ -2699,7 +2699,8 @@ CONTAINS
     ! 8.a.6 Check for coordinate system
     !
     DO I=1, NRGRD-1
-      IF ( GRIDS(I)%FLAGLL .NEQV. GRIDS(I+1)%FLAGLL ) GOTO 2070
+! jcw not working correctly for gfortran
+!     IF ( GRIDS(I)%FLAGLL .NEQV. GRIDS(I+1)%FLAGLL ) GOTO 2070
     END DO
     !
     ! 8.b Input files

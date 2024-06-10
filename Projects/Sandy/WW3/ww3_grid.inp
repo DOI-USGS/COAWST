@@ -331,6 +331,7 @@ $                           SETUP_APPLY_WLV  : Compute wave setup (experimental)
 $                           SOLVERTHR_SETUP  : Solver threshold for setup computations
 $                           CRIT_DEP_SETUP  : Critical depths for setup computations
 $
+$  & UNST, UGOBCAUTO = T, EXPFSN = T /
 $ SMC grid propagation    : Namelist PSMC and default values
 $                           CFLTM  : Maximum CFL no. for propagation, 0.7
 $                           DTIME  : Swell age for diffusion term (s), 0.0
@@ -472,7 +473,7 @@ $
 $ In the 'Out of the box' test setup we run with sub-grid obstacles
 $ and with continuous ice treatment.
 $
-&FLD1 /
+  &FLD1 /
   &MISC CICE0 = 0.25, CICEN = 0.75, FLAGTR = 0 /
   &FLX3 CDMAX = 3.5E-3 , CTYPE = 0 /
 $ &SDB1 BJGAM = 1.26, BJFLAG = .FALSE. /
@@ -589,12 +590,21 @@ $ ------------------------------------------------------------------------
 $ Example for rectilinear grid with spherical (lon/lat) coordinate system.
 $ Note that for Cartesian coordinates the unit is meters (NOT km).
 $
-     'CURV'  T  'NONE'
-      87     65
-      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_xcoord.dat'
-      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ycoord.dat'
-      -1.0  -1.0  40 -1. 1 1 '(....)' 'NAME' 'ww3_sandy_bathy.bot'
+    'CURV'  T  'NONE'
+     87     65
+     40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_xcoord.dat'
+     40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ycoord.dat'
+     -1.0  -1.0  40 -1. 1 1 '(....)' 'NAME' 'ww3_sandy_bathy.bot'
+$     'CURV'  T  'NONE'
+$      116    86
+$      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ref3_xcoord.dat'
+$      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ref3_ycoord.dat'
+$      -1.0  -1.0  40 -1. 1 1 '(....)' 'NAME' 'ww3_sandy_ref3_bathy.bot'
 $
+$     'UNST'  T  'NONE'
+$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'Sandy_roms_grid.msh'
+$     'UNST'  T  'NONE'
+$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'Sandy_roms_grid_ref3.msh'
 $ ------------------------------------------------------------------------
 $ Example for curvilinear grid with spherical (lon/lat) coordinate system.
 $ Same spatial grid as preceding rectilinear example.
@@ -705,6 +715,9 @@ $    if FROM = 'PART', then segmented data is read from below, else
 $    the data is read from file as with the other inputs (as INTEGER)
 $
    40 1 1 '(....)' 'NAME' 'ww3_sandy_mapsta.inp'
+$   40 1 1 '(....)' 'NAME' 'ww3_sandy_ref3_mapsta.inp'
+$  for unstr
+$   10 1 1 '(....)' 'PART' 'mapsta.inp'
 $
 $ Read the status map from file ( FROM != PART ) --------------------- $
 $
