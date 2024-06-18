@@ -1519,9 +1519,9 @@
           ij=ij+1
           cff=A(ij)
           IF (iw.eq.1) THEN
-            taue(i,j)=cff
+            FORCES(ng)%Tauocx(i,j)=cff
           ELSE
-            taue(i,j)=taue(i,j)+cff
+            FORCES(ng)%Tauocx(i,j)=FORCES(ng)%Tauocx(i,j)+cff
           END IF
           range(1)=MIN(range(1),cff)
           range(2)=MAX(range(2),cff)
@@ -1547,9 +1547,9 @@
           ij=ij+1
           cff=A(ij)
           IF (iw.eq.1) THEN
-            taun(i,j)=cff
+            FORCES(ng)%Tauocy(i,j)=cff
           ELSE
-            taun(i,j)=taun(i,j)+cff
+            FORCES(ng)%Tauocy(i,j)=FORCES(ng)%Tauocy(i,j)+cff
           END IF
           range(1)=MIN(range(1),cff)
           range(2)=MAX(range(2),cff)
@@ -1568,19 +1568,12 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          cff1=taue(i,j)*GRID(ng)%CosAngler(i,j)+       &
-     &         taun(i,j)*GRID(ng)%SinAngler(i,j)
-          cff2=taun(i,j)*GRID(ng)%CosAngler(i,j)-       &
-     &         taue(i,j)*GRID(ng)%SinAngler(i,j)
+          cff1=FORCES(ng)%Tauocx(i,j)*GRID(ng)%CosAngler(i,j)+       &
+     &         FORCES(ng)%Tauocy(i,j)*GRID(ng)%SinAngler(i,j)
+          cff2=FORCES(ng)%Tauocy(i,j)*GRID(ng)%CosAngler(i,j)-       &
+     &         FORCES(ng)%Tauocx(i,j)*GRID(ng)%SinAngler(i,j)
           FORCES(ng)%Tauocx(i,j)=cff1
           FORCES(ng)%Tauocy(i,j)=cff2
-        END DO
-      END DO
-# else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          FORCES(ng)%Tauocx(i,j)=taue(i,j)
-          FORCES(ng)%Tauocy(i,j)=taun(i,j)
         END DO
       END DO
 # endif

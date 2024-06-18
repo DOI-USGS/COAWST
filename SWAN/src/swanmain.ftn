@@ -1185,7 +1185,7 @@
          ENDIF                                                            41.95
       ENDDO                                                               41.95
 
-      DO IUNIT=1,HIOPEN                                                   34.01
+      DO IUNIT=100,HIOPEN                                                 34.01
          INQUIRE ( UNIT=IUNIT, OPENED=LOPEN, NAME=FILENM )                41.79 34.01
          IF (LOPEN.AND.IUNIT.NE.PRINTF.AND.
      &       FILENM.NE.'CONOUT$'.AND.FILENM.NE.'CONIN$') CLOSE(IUNIT)     41.79 40.30

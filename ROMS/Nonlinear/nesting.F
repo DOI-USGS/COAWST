@@ -3175,8 +3175,11 @@
 !  is done at the bottom of main3d, we need to use the newest time
 !  index, I think.
 !
-!!    Tindex=nstp(ngc)  ! HGA: Why this index is stable? newest is nosy
+#ifdef JCW_TFLUXINDX
+      Tindex=nstp(ngc)  ! HGA: Why this index is stable? newest is nosy
+#else
       Tindex=nnew(ngc)
+#endif
 !
 !=======================================================================
 !  Compute vertically integrated horizontal advective tracer flux for

@@ -146,8 +146,6 @@
       read(aline,*) Nwav_grids
       allocate (dtwav(Nwav_grids))
 !
-      write(*,*) 'ww3 numgrids is ', Nwav_grids
-!
  240  CLOSE (inp)
 !
 !
@@ -180,17 +178,6 @@
            NBI, NFBPO, GNAME, FNAME0, FNAME1, FNAME2, FNAME3,    &
            FNAME4, FNAME5, FNAME6, FNAMEP, FNAMEG,               &
            FNAMEF, FNAMEI
-
-        if (myrank.eq.0) then
-       write(*,*) 'fnamef is ', IDTST, VERTST, NX, NY, NSEA, MTH, MK
-       write(*,*) 'nbi ', NBI
-       write(*,*) 'nfbpo ',  NFBPO
-       write(*,*) 'gname ', GNAME
-       write(*,*) 'fname0 1 2 3 ', FNAME0, FNAME1, FNAME2, FNAME3
-       write(*,*) 'fname4 5 6 p g ', FNAME4, FNAME5, FNAME6, FNAMEP, FNAMEG
-       write(*,*) 'fname f', FNAMEF
-       write(*,*) 'fname i',FNAMEI
-         end if
       !
 
       ALLOCATE (NBO(0:NFBPO), NBO2(0:NFBPO)) 
@@ -198,14 +185,8 @@
            (NBO(I),I=0,NFBPO), (NBO2(I),I=0,NFBPO)
       DEALLOCATE (NBO, NBO2) 
 
-
       READ (inp,END=801,ERR=802,IOSTAT=IERR)                      &
            GTYPE, FLAGLL, ICLOSE
-        if (myrank.eq.0) then
-       write(*,*) 'gtype is ', GTYPE
-       write(*,*) 'flagll is ', flagll
-       write(*,*) 'iclose is ', iclose
-         end if
 
       SELECT CASE ( GTYPE )
       CASE ( RLGTYPE )
@@ -279,23 +260,7 @@
       ALLOCATE ( MAPTMP(NY,NX), MAPFS(NY,NX), MAPSF(NSEA,3) )
       READ (inp,END=801,ERR=802,IOSTAT=IERR)   &
      &            ZB, MAPTMP, MAPFS, MAPSF, TRFLAG
-
-        if (myrank.eq.0) then
-!        write(*,*) 'zb is ', zb
-!        write(*,*) 'zb done read '
-        endif
-
-        if (myrank.eq.0) then
-!        write(*,*) 'maptmp is ', maptmp
-!        write(*,*) 'mapfs is ', mapfs
-!        write(*,*) 'mapsf is ', mapsf
-        endif
-
-
       DEALLOCATE ( ZB, MAPTMP, MAPFS, MAPSF )
-
-
-       write(*,*) 'trfalg is ', TRFLAG
 
       IF ( TRFLAG .NE. 0 ) THEN
          ALLOCATE ( TRNX(NY,NX), TRNY(NY,NX) )
@@ -310,10 +275,6 @@
          DEALLOCATE ( TRNX, TRNY )
       END IF
 
-        if (myrank.eq.0) then
-        write(*,*) 'wrote trnxs trnys '
-        endif
-
       ALLOCATE ( CLATS(0:NSEA), CLATIS(0:NSEA), CTHG0S(0:NSEA) )
 
       READ (inp,END=801,ERR=802,IOSTAT=IERR)                       &
@@ -326,13 +287,6 @@
      &      AAIRCMIN, AAIRGB
 
       DEALLOCATE ( CLATS, CLATIS, CTHG0S )
-
-        write(*,*) 'DTCFL is ', DTCFL
-        write(*,*) 'DTCFLI is ', DTCFLI
-        write(*,*) 'DTMAX is ', DTMAX
-        write(*,*) 'DTMIN is ', DTMIN
-        write(*,*) 'DMIN is ', DMIN
-        write(*,*) 'CTMAX is ', CTMAX
 
 !  assign dtwav
         dtwav(num)=DTCFL
