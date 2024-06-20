@@ -752,6 +752,7 @@ CONTAINS
     FLG2   = .FALSE.
     LPRT   = .FALSE.
     IPRT   = 0
+    ODAT   = 0
     !
     ! ... Fixed and recycleable unit numbers.
     !

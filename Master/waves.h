@@ -66,7 +66,7 @@
 #elif defined WW3_MODEL
       IF (exit_flag.eq.NoError) THEN
 # ifdef NESTING
-	CALL WW3_init_multi (MPI_COMM_WORLD)
+        CALL WW3_init_multi (MPI_COMM_WORLD)
 # else
         CALL WW3_init (MPI_COMM_WORLD)
 # endif
