@@ -1036,6 +1036,9 @@
 #ifdef UV_KIRBY
       USE mod_coupling
 #endif
+#ifdef WAV2OCN_FLUXES
+      USE bc_2d_mod
+#endif
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
       USE exchange_2d_mod, ONLY : exchange_u2d_tile
@@ -1673,6 +1676,88 @@
       IF (Myrank.eq.MyMaster) THEN
         write(stdout,40) 'WW3toROMS Min/Max DISVEG  (Wm-2):  ',         &
      &                    range(1),range(2)
+      END IF
+#endif
+#ifdef WAV2OCN_FLUXES
+!
+!  Apply gradient bc;s for the TAUOCE and TAUOCN
+!
+!      CALL bc_r2d_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj,                             &
+!     &                  FORCES(ng)%Tauocx)
+!      CALL bc_r2d_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj,                             &
+!     &                  FORCES(ng)%Tauocy)
+!!
+!
+!
+!-----------------------------------------------------------------------
+!  East-West gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            FORCES(ng)%Tauocx(Iend+1,j)=FORCES(ng)%Tauocx(Iend,j)
+            FORCES(ng)%Tauocy(Iend+1,j)=FORCES(ng)%Tauocy(Iend,j)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            FORCES(ng)%Tauocx(Istr-1,j)=FORCES(ng)%Tauocx(Istr,j)
+            FORCES(ng)%Tauocy(Istr-1,j)=FORCES(ng)%Tauocy(Istr,j)
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  North-South gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            FORCES(ng)%Tauocx(i,Jend+1)=FORCES(ng)%Tauocx(i,Jend)
+            FORCES(ng)%Tauocy(i,Jend+1)=FORCES(ng)%Tauocy(i,Jend)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            FORCES(ng)%Tauocx(i,Jstr-1)=FORCES(ng)%Tauocx(i,Jstr)
+            FORCES(ng)%Tauocy(i,Jstr-1)=FORCES(ng)%Tauocy(i,Jstr)
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Boundary corners.
+!-----------------------------------------------------------------------
+!
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          FORCES(ng)%Tauocx(Istr-1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocx(Istr,Jstr-1)+     &
+     &                             FORCES(ng)%Tauocx(Istr-1,Jstr  ))
+          FORCES(ng)%Tauocy(Istr-1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocy(Istr,Jstr-1)+     &
+     &                             FORCES(ng)%Tauocy(Istr-1,Jstr  ))
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          FORCES(ng)%Tauocx(Iend+1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocx(Iend  ,Jstr-1)+ &
+     &                             FORCES(ng)%Tauocx(Iend+1,Jstr  ))
+          FORCES(ng)%Tauocy(Iend+1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocy(Iend  ,Jstr-1)+ &
+     &                             FORCES(ng)%Tauocy(Iend+1,Jstr  ))
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          FORCES(ng)%Tauocx(Istr-1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocx(Istr-1,Jend  )+  &
+     &                           FORCES(ng)%Tauocx(Istr  ,Jend+1))
+          FORCES(ng)%Tauocy(Istr-1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocy(Istr-1,Jend  )+  &
+     &                           FORCES(ng)%Tauocy(Istr  ,Jend+1))
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          FORCES(ng)%Tauocx(Iend+1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocx(Iend+1,Jend  )+ &
+     &                           FORCES(ng)%Tauocx(Iend  ,Jend+1))
+          FORCES(ng)%Tauocy(Iend+1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocy(Iend+1,Jend  )+ &
+     &                           FORCES(ng)%Tauocy(Iend  ,Jend+1))
+        END IF
       END IF
 #endif
 !

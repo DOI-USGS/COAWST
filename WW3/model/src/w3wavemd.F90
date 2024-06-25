@@ -2361,7 +2361,7 @@ CONTAINS
         CALL COAWST_CPL (ITIME)
       ELSE
         IF (IMOD.eq.Nwav_grids) THEN
-          CALL COAWST_CPL (ITIME-2)
+          CALL COAWST_CPL (ITIME-1)
         END IF
       END IF
 #endif

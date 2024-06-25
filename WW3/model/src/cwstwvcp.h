@@ -181,7 +181,8 @@
         DO io=1,Nocn_grids
           run_couple=1
 !         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAV2OCN(Nwav_grids,1)).ne.0) run_couple=0
+!         IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
@@ -200,13 +201,14 @@
         DO io=1,Nocn_grids
           run_couple=1
 !         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAVFOCN(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAVFOCN(Nwav_grids,1)).ne.0) run_couple=0
+!         IF (MOD(first, nWAVFOCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
             CALL W3SETA ( iw, MDSE, MDST )
-            CALL WAVFOCN_COUPLING (iw, io)
             CALL W3SETW ( iw, MDSE, MDST )
+            CALL WAVFOCN_COUPLING (iw, io)
             CALL W3ULEV (VA, VA )
           ELSE
             GOTO 50
@@ -1751,9 +1753,9 @@
           SND_BUF(i)=REAL(avdata(IP))
         END DO
         CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MIN, WAV_COMM_WORLD, MyError)
         CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MAX, WAV_COMM_WORLD, MyError)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoWW3 Min/Max DEPTH   (m):     ',       &
      &                      cffmin, cffmax
@@ -1785,9 +1787,9 @@
           SND_BUF(i)=REAL(avdata(IP))
         END DO
         CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MIN, WAV_COMM_WORLD, MyError)
         CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MAX, WAV_COMM_WORLD, MyError)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoWW3 Min/Max WLEV    (m):     ',       &
      &                      cffmin, cffmax
@@ -1826,9 +1828,9 @@
           SND_BUF(i)=REAL(avdata(IP))
         END DO
         CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MIN, WAV_COMM_WORLD, MyError)
         CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MAX, WAV_COMM_WORLD, MyError)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoWW3 Min/Max VELX    (ms-1):     ',    &
      &                      cffmin, cffmax
@@ -1867,9 +1869,9 @@
           SND_BUF(i)=REAL(avdata(IP))
         END DO
         CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MIN, WAV_COMM_WORLD, MyError)
         CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MAX, WAV_COMM_WORLD, MyError)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoWW3 Min/Max VELY    (ms-1):     ',    &
      &                      cffmin, cffmax
@@ -1908,9 +1910,9 @@
           SND_BUF(i)=REAL(avdata(IP))
         END DO
         CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MIN, WAV_COMM_WORLD, MyError)
         CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
+                           MPI_MAX, WAV_COMM_WORLD, MyError)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoWW3 Min/Max BottZ0  (m):     ',       &
      &                      cffmin, cffmax
@@ -2067,9 +2069,9 @@
         SND_BUF(i)=REAL(avdata(IP))
       END DO
       CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,                 &
-                         MPI_SUM, WAV_COMM_WORLD, MyError)
+                         MPI_MIN, WAV_COMM_WORLD, MyError)
       CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,                 &
-                         MPI_SUM, WAV_COMM_WORLD, MyError)
+                         MPI_MAX, WAV_COMM_WORLD, MyError)
       IF (MyRank.eq.0) THEN
         write(SCREEN,40) 'WRFtoWW3 Min/Max U10     (ms-1):     ',       &
      &                      cffmin, cffmax
@@ -2111,9 +2113,9 @@
        SND_BUF(i)=REAL(avdata(IP))
       END DO
       CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,                 &
-                         MPI_SUM, WAV_COMM_WORLD, MyError)
+                         MPI_MIN, WAV_COMM_WORLD, MyError)
       CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,                 &
-                         MPI_SUM, WAV_COMM_WORLD, MyError)
+                         MPI_MAX, WAV_COMM_WORLD, MyError)
       IF (MyRank.eq.0) THEN
         write(SCREEN,40) 'WRFtoWW3 Min/Max V10     (ms-1):     ',       &
      &                    cffmin, cffmax
