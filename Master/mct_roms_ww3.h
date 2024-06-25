@@ -1566,16 +1566,18 @@
 !
 !  Rotate gridded stresses to curvilinear grid.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          cff1=FORCES(ng)%Tauocx(i,j)*GRID(ng)%CosAngler(i,j)+       &
-     &         FORCES(ng)%Tauocy(i,j)*GRID(ng)%SinAngler(i,j)
-          cff2=FORCES(ng)%Tauocy(i,j)*GRID(ng)%CosAngler(i,j)-       &
-     &         FORCES(ng)%Tauocx(i,j)*GRID(ng)%SinAngler(i,j)
-          FORCES(ng)%Tauocx(i,j)=cff1
-          FORCES(ng)%Tauocy(i,j)=cff2
+      IF (iw.eq.Nwav_grids) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            cff1=FORCES(ng)%Tauocx(i,j)*GRID(ng)%CosAngler(i,j)+       &
+     &           FORCES(ng)%Tauocy(i,j)*GRID(ng)%SinAngler(i,j)
+            cff2=FORCES(ng)%Tauocy(i,j)*GRID(ng)%CosAngler(i,j)-       &
+     &           FORCES(ng)%Tauocx(i,j)*GRID(ng)%SinAngler(i,j)
+            FORCES(ng)%Tauocx(i,j)=cff1
+            FORCES(ng)%Tauocy(i,j)=cff2
+          END DO
         END DO
-      END DO
+      END IF
 # endif
 #endif
 #ifdef WAVES_DSPR
