@@ -481,6 +481,16 @@ wave_loop: &
           if( tauaer300(k) > thresh .and. tauaer999(k) > thresh ) then
             ang = log(tauaer300(k)/tauaer999(k))/log(0.999/0.3)
             dtaer(k,wn) = tauaer400(k)*(0.4/(wc(wn)*1.e-3))**ang
+            ! TODO: osipov do the clean up
+!           #ifdef SW_DEBUG
+!               if( tuv_diags ) then
+!               print *, 'TUV debug tauaer'  ! osipov
+!               print *, tauaer300(k), tauaer400(k), tauaer600(k), tauaer999(k)
+!               print *, 'TUV debug and dtaer'  ! osipov
+!               print *, ang, dtaer(k,wn)
+!               print *, 'TUV debug dtaer -ae, dtaer l0=600'  ! osipov
+!               print *,  tauaer400(k)*((wc(wn)*1.e-3)/0.4)**ang, tauaer600(k)*(600./wc(wn))**ang
+!           #endif
 !-----------------------------------------------------------------------------
 ! ssa - use linear interpolation/extrapolation
 !-----------------------------------------------------------------------------

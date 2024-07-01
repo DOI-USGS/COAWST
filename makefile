@@ -735,7 +735,7 @@ ifdef USE_WRF
 	cd $(WRF_DIR); ls;                                        \
 	echo " "; echo " ";                                       \
 	echo "Compiling wrf";                                     \
-	./compile em_real;                                        \
+	./compile -j 32 em_real;                                        \
 	echo "";                                                  \
 	echo "-------- Finished compiling WRF ------------"
  ifndef USE_ROMS

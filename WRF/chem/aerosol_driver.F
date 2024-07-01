@@ -16,6 +16,7 @@
                vdrog3, vdrog3_vbs,brch_ratio,dgnum,dgnumwet,wetdens_ap,    &
                del_h2so4_gasprod,dvmrdt_sv13d,dvmrcwdt_sv13d,              &
                is_CAMMGMP_used,                                            &!BSINGH:01/31/2013: Added is_CAMMGMP_used for cam_mam_aerchem_driver
+               ph,                                                         &  ! osipov, ph
                ph_aer01, ph_aer02, ph_aer03, ph_aer04,                     &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
@@ -142,7 +143,9 @@
          INTENT(INOUT ) ::                                          &
            gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                   &
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
-           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,brch_ratio
+           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,brch_ratio, &
+           ph  ! osipov, aerosol ph
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, ntot_amode_cam_mam ), &
          INTENT(INOUT ) ::                                   &
@@ -330,12 +333,12 @@
              enddo
           enddo
        enddo
-       call soa_vbs_het_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+       call soa_vbs_het_driver ( id,config_flags,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &   ! osipov
             alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
             gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                      &
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
             vcsulf_old,vdrog3_vbs,                                   &
-            config_flags%kemit,brch_ratio,                           &
+            config_flags%kemit,brch_ratio,ph,                        &  ! osipov, ph
             config_flags%do_isorropia,                               &
             config_flags%do_n2o5het,                                 &
             ids,ide, jds,jde, kds,kde,                               &
