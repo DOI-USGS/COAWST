@@ -6674,18 +6674,19 @@
       DO INDX = 1, MCGRD                                                  32.02
         COMPDA(INDX,JDSXC) =  0.                                          32.02
       END DO 
+#endif
 !
 !     --- initialize GAMBR and RESPL                                      41.38
       IF (ISURF.EQ.6) THEN
          COMPDA(:,JGAMMA) = PSURF( 2)
          COMPDA(:,JRESPL) = PSURF(13)*COMPDA(:,JDP2)
       ENDIF
+#ifdef SWAN_MODEL
 !     --- initialize DIRBOT    !PSD 09/21/2011
       IF (JDBOT.GT.1) COMPDA(:,JDBOT) = 0.
-#else
+#endif
 !     --- initialize GAMBR                                                41.97 41.96
       IF (ISURF.EQ.6.OR.ISURF.EQ.7) COMPDA(:,JGAMMA) = PSURF(2)
-#endif
 !
       RETURN
 ! * end of subroutine SWRBC *
@@ -7949,12 +7950,18 @@
       ENDIF                                                               40.08
 !
 !     Here the various problems with quadruplets are checked
+!     The combination of quadruplets and sectors is an error
+!     in the calculation of quadruplets when the SECTOR option is
+!     used in the CGRID command. This error should be corrected
+!     in the future
 !
       IF (ICUR.NE.0 .AND. (IQUAD.EQ.1 .OR. IQUAD.EQ.2)) THEN
          CALL MSGERR(0,'In presence of a current it is recommended to')
          CALL MSGERR(0,'update quadruplets per iteration instead of')
          CALL MSGERR(0,'per sweep. This will, however, increase the')
          CALL MSGERR(0,'amount of internal memory with a factor 2.')
+!jcw
+         IQUAD = 3                                                        41.55
       ENDIF
 !
       IF (IWIND.EQ.3 .OR. IWIND.EQ.4
