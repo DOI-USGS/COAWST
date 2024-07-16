@@ -157,12 +157,12 @@
       integer, dimension(:), pointer :: moving_nest_istart
       integer, dimension(:), pointer :: moving_nest_jstart
 # endif
-#ifdef SPECTRUM_STOKES
+# if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
       integer :: MSCs
-#endif
-#if defined WAVE_PARTITION
+# endif
+# if defined WAVE_PARTITION
       integer :: ND
-#endif
+# endif
 
       CONTAINS
 

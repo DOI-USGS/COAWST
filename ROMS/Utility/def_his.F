@@ -119,7 +119,8 @@
 #ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #endif
-#if defined INWAVE_MODEL || defined WAVE_PARTITION
+#if defined INWAVE_MODEL || defined WAVE_PARTITION || \
+    defined UV_BANIHASHEMI
       integer :: r3degrd(4)
       integer :: u3degrd(4)
       integer :: v3degrd(4)
@@ -241,11 +242,18 @@
 #endif
 
 #if defined INWAVE_MODEL || defined WAVE_PARTITION
-        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'ND',            &
                        ND, DimIDs(34))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'NDp1',           &
+
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'NDp1',          &
                        ND+1, DimIDs(36))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#endif
+
+#if defined UV_BANIHASHEMI
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'MSCs',          &
+                       MSCs, DimIDs(34))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 
@@ -473,7 +481,8 @@
         v3dgrd(4)=DimIDs(12)
 # endif
 #endif
-#if defined INWAVE_MODEL || defined WAVE_PARTITION
+#if defined INWAVE_MODEL || defined WAVE_PARTITION || \
+    defined UV_BANIHASHEMI
 !
 !  Define dimension vector for energy wave layer type variables.
 !
@@ -2647,6 +2656,46 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+
+# elif defined UV_BANIHASHEMI
+!
+!  Define coupling U-current given by Banihashemi (2017).
+!
+        IF (Hout(idUwav,ng)) THEN
+          Vinfo( 1)=Vname(1,idUwav)
+          Vinfo( 2)=Vname(2,idUwav)
+          Vinfo( 3)=Vname(3,idUwav)
+          Vinfo(14)=Vname(4,idUwav)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idUWav)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUwav,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idUwav),   &
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define coupling V-current given by Banihashemi (2017).
+!
+        IF (Hout(idVwav,ng)) THEN
+          Vinfo( 1)=Vname(1,idVwav)
+          Vinfo( 2)=Vname(2,idVwav)
+          Vinfo( 3)=Vname(3,idVwav)
+          Vinfo(14)=Vname(4,idVwav)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idVWav)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVwav,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idVWav),   &
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
 # endif
 #endif
 #ifdef SOLVE3D
@@ -4377,7 +4426,7 @@
             got_var(idVbms)=.TRUE.
             HIS(ng)%Vid(idVbms)=var_id(i)
 #ifdef SOLVE3D
-# ifdef UV_KIRBY
+# if defined UV_KIRBY  || defined UV_BANIHASHEMI
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUwav))) THEN
             got_var(idUwav)=.TRUE.
             HIS(ng)%Vid(idUwav)=var_id(i)
@@ -5249,7 +5298,7 @@
           RETURN
         END IF
 # endif
-# ifdef UV_KIRBY
+# if defined UV_KIRBY  || defined UV_BANIHASHEMI
         IF (.not.got_var(idUwav).and.Hout(idUwav,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idUwav)),          &
      &                                  TRIM(ncname)
@@ -5803,7 +5852,7 @@
 # ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 # endif
-# ifdef INWAVE_MODEL
+# if defined INWAVE_MODEL ||defined UV_BANIHASHEMI
       integer :: r3degrd(4)
       integer :: u3degrd(4)
       integer :: v3degrd(4)
@@ -6160,7 +6209,7 @@
         v3dgrd(4)=DimIDs(12)
 #  endif
 # endif
-# ifdef INWAVE_MODEL
+# if defined INWAVE_MODEL  || defined UV_BANIHASHEMI
 !
 !  Define dimension vector for energy wave layer type variables.
 !

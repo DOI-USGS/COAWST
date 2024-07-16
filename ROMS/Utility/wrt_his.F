@@ -4356,7 +4356,7 @@
       END IF
 #endif
 #ifdef SOLVE3D
-# ifdef UV_KIRBY
+# if defined UV_KIRBY
 !
 !  Write out coupling current velocity (x component).
 !
@@ -4392,6 +4392,52 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % vwave)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idVwav)), HIS(ng)%Rindex
+
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# elif defined UV_BANIHASHEMI
+!
+!  Write out coupling current velocity (x component).
+!
+      IF (Hout(idUwav,ng)) THEN
+        scale=1.0_dp
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idUwav), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, MSCs, scale,          &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#  endif
+     &                     OCEAN(ng) % uwavek)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idUwav)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out coupling current velocity (y component).
+!
+      IF (Hout(idVwav,ng)) THEN
+        scale=1.0_dp
+        gtype=gfactor*r2dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idVwav), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, MSCs, scale,          &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#  endif
+     &                     OCEAN(ng) % vwavek)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVwav)), HIS(ng)%Rindex

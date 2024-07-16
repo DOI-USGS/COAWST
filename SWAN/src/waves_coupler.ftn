@@ -184,11 +184,13 @@
       character (len=20)  :: to_add
       character (len=1200) :: wostring
       character (len=1200) :: owstring
-# ifdef SPECTRUM_STOKES
-      character (len=5)   :: LSTCODE
       integer             :: IZ
+# if defined SPECTRUM_STOKES
+      character (len=5)   :: LSTCODE
 # endif
-
+# if defined UV_BANIHASHEMI
+      character (len=7)   :: LUVCODE
+# endif
       real :: cff
 
 !     integer, dimension(2) :: src_grid_dims, dst_grid_dims
@@ -660,6 +662,31 @@
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+#if defined UV_BANIHASHEMI
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELX0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELX",IZ
+        END IF
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+!
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELY0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELY",IZ
+        END IF
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+#else
       to_add=':VELX'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -669,6 +696,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+#endif
 !
       to_add=':ZO'
       cad=LEN_TRIM(to_add)
@@ -1412,7 +1440,12 @@
       integer :: idveg, idvht, idvda, idvtk
       integer :: idruf, idice
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-
+#if defined UV_BANIHASHEMI
+      character (len=6) :: SCODE
+      integer :: IZ
+      integer, dimension(MSC) :: idvkx
+      integer, dimension(MSC) :: idvky
+#endif
       real :: cff, cff2
       real, parameter ::  Large = 1.0E+20
       real, dimension(2) :: range
@@ -1510,11 +1543,21 @@
         IP=IP+1
         idwlv=IP
 !
+#if defined UV_BANIHASHEMI
+        DO IZ=1,MSC
+          IP=IP+1
+          idvkx(IZ)=IP
+        END DO
+        DO IZ=1,MSC
+          IP=IP+1
+          idvky(IZ)=IP
+        END DO
+#else
         IP=IP+1
         idvlx=IP
-!
         IP=IP+1
         idvly=IP
+#endif
 !
         IP=IP+1
         idruf=IP
@@ -1589,6 +1632,69 @@
           write(SCREEN,40) 'ROMStoSWAN Min/Max WLEV    (m):     ',      &
      &                      range(1),range(2)
         END IF
+#if defined UV_BANIHASHEMI
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A5,I1)") "VELX0",IZ
+          ELSE
+            WRITE(SCODE,"(A4,I2)") "VELX", IZ
+          END IF
+          CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,          &
+     &                               SCODE,avdata,gsmsize)
+          range(1)= Large
+          range(2)=-Large
+          IP=0
+          DO IY=Jstr,Jend
+            DO IX=Istr,Iend
+              IP=IP+1
+              INDXG=(IY-1)*MXC+IX
+              TEMPMCT(INDXG,idvkx(IZ))=avdata(IP)
+              range(1)=MIN(range(1),REAL(avdata(IP)))
+              range(2)=MAX(range(2),REAL(avdata(IP)))
+            END DO
+            IF (KREPTX.EQ.1) THEN
+              IP=IP+1
+            END IF
+          END DO
+          CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+          CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+          IF (MyRank.eq.0) THEN
+            write(SCREEN,40) 'ROMStoSWAN Min/Max VELX    (ms-1):  ',    &
+     &                        range(1),range(2)
+          END IF
+        END DO
+!
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A5,I1)") "VELY0",IZ
+          ELSE
+            WRITE(SCODE,"(A4,I2)") "VELY", IZ
+          END IF
+          CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,          &
+     &                               SCODE,avdata,gsmsize)
+          range(1)= Large
+          range(2)=-Large
+          IP=0
+          DO IY=Jstr,Jend
+            DO IX=Istr,Iend
+              IP=IP+1
+              INDXG=(IY-1)*MXC+IX
+              TEMPMCT(INDXG,idvky(IZ))=avdata(IP)
+              range(1)=MIN(range(1),REAL(avdata(IP)))
+              range(2)=MAX(range(2),REAL(avdata(IP)))
+            END DO
+            IF (KREPTX.EQ.1) THEN
+              IP=IP+1
+            END IF
+          END DO
+          CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+          CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+          IF (MyRank.eq.0) THEN
+            write(SCREEN,40) 'ROMStoSWAN Min/Max VELY    (ms-1):  ',    &
+     &                        range(1),range(2)
+          END IF
+        END DO
+#else
 !
 !  Depth-integrated u-velocity.
 !
@@ -1641,6 +1747,7 @@
           write(SCREEN,40) 'ROMStoSWAN Min/Max VELY    (ms-1):  ',      &
      &                      range(1),range(2)
         END IF
+#endif
 !
 !  Bottom roughness.
 !
@@ -2046,8 +2153,12 @@
                   COMPDA(INDX,JBOTLV)=TEMPMCT(IP,iddep)
 #  endif
                   COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
+#  if defined UV_BANIHASHEMI
+
+#  else
                   COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
+#  endif
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING 
                   COMPDA(INDX,JNPLA2)=TEMPMCT(IP,idveg)
                   COMPDA(INDX,JNPHT2)=TEMPMCT(IP,idvht)

@@ -173,6 +173,9 @@
 # ifdef UV_KIRBY
           real(r8), pointer :: uwave(:,:)
           real(r8), pointer :: vwave(:,:)
+# elif defined UV_BANIHASHEMI
+          real(r8), pointer :: uwavek(:,:,:)
+          real(r8), pointer :: vwavek(:,:,:)
 # endif
 # if (defined BIO_FENNEL || defined ESTUARYBGC ||      \
       defined BIO_UMAINE) && defined CARBON
@@ -555,8 +558,12 @@
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( OCEAN(ng) % vwave(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+# elif defined UV_BANIHASHEMI
+      allocate ( OCEAN(ng) % uwavek(LBi:UBi,LBj:UBj,MSCs) )
+      Dmem(ng)=Dmem(ng)+REAL(MSCs,r8)*size2d
+      allocate ( OCEAN(ng) % vwavek(LBi:UBi,LBj:UBj,MSCs) )
+      Dmem(ng)=Dmem(ng)+REAL(MSCs,r8)*size2d
 # endif
-
 # if (defined BIO_FENNEL || defined ESTUARYBGC ||           \
       defined BIO_UMAINE) && defined CARBON
       allocate ( OCEAN(ng) % pH(LBi:UBi,LBj:UBj) )
@@ -1682,10 +1689,15 @@
 #ifdef UV_KIRBY
             OCEAN(ng) % uwave(i,j) = IniVal
             OCEAN(ng) % vwave(i,j) = IniVal
+#elif defined UV_BANIHASHEMI
+            DO k=1,MSCs
+              OCEAN(ng) % uwavek(i,j,k) = IniVal
+              OCEAN(ng) % vwavek(i,j,k) = IniVal
+            END DO
 #endif
-# ifdef RED_TIDE
+#ifdef RED_TIDE
             OCEAN(ng) % CystIni(i,j) = IniVal
-# endif
+#endif
           END DO
 #ifdef SOLVE3D
           DO k=1,N(ng)

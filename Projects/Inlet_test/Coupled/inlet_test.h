@@ -18,9 +18,6 @@
 #define SWAN_MODEL
 #define MCT_LIB
 
-#define SWAN_SINGLESPEC
-#define WAVE_PARTITION
-
 #define UV_VIS2
 #define MIX_S_UV
 #define MASKING
@@ -30,13 +27,17 @@
 #define SPLINES_VDIFF
 #define SPLINES_VVISC
 #define OMEGA_IMPLICIT
-
 #define SOLVE3D
+
 #undef  WEC_MELLOR
 #define WEC_VF
 #define WDISS_WAVEMOD
 #define UV_KIRBY
+#undef  UV_BANIHASHEMI
+#define SWAN_SINGLESPEC
+#undef  WAVE_PARTITION
 #define ROLLER_RENIERS
+
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_FSOBC

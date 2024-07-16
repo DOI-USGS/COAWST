@@ -53,9 +53,12 @@
 !      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
       character (len=20)    :: to_add
-#ifdef SPECTRUM_STOKES
       integer               :: IZ
+#if defined SPECTRUM_STOKES
       character (len=5)     :: LSTCODE
+#endif
+#if defined UV_BANIHASHEMI
+      character (len=7)     :: LUVCODE
 #endif
       character (len=1200)   :: wostring
       character (len=1200)   :: owstring
@@ -398,11 +401,11 @@
 #endif
 #ifdef SPECTRUM_STOKES
       DO IZ=1,MSCs
-         IF (IZ.LT.10) THEN
-           WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
-         ELSE
-           WRITE(LSTCODE,"(A3,I2)") ":KS",IZ
-         END IF
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":KS",IZ
+        END IF
 
         to_add=LSTCODE
         cad=LEN_TRIM(to_add)
@@ -411,11 +414,11 @@
       END DO
 
       DO IZ=1,MSCs
-         IF (IZ.LT.10) THEN
-           WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
-         ELSE
-           WRITE(LSTCODE,"(A3,I2)") ":US",IZ
-         END IF
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":US",IZ
+        END IF
 
         to_add=LSTCODE
         cad=LEN_TRIM(to_add)
@@ -424,11 +427,11 @@
       END DO
 
       DO IZ=1,MSCs
-         IF (IZ.LT.10) THEN
-           WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
-         ELSE
-           WRITE(LSTCODE,"(A3,I2)") ":VS",IZ
-         END IF
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":VS",IZ
+        END IF
 
         to_add=LSTCODE
         cad=LEN_TRIM(to_add)
@@ -524,6 +527,33 @@
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+#if defined UV_BANIHASHEMI
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELX0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELX",IZ
+        END IF
+
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+!
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELY0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELY",IZ
+        END IF
+
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+#else
       to_add=':VELX'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -533,6 +563,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+#endif
 !
       to_add=':ZO'
       cad=LEN_TRIM(to_add)
@@ -699,6 +730,7 @@
       USE mod_iounits
       USE mod_sedbed
       USE mod_sediment
+      USE banihashemi_mod
 #ifdef UV_KIRBY
       USE mod_coupling
 #endif
@@ -737,10 +769,13 @@
       real(r8) :: cff, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ubar_rho
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vbar_rho
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v2wav
 
       real(r8), pointer :: A(:)
+#if defined UV_BANIHASHEMI
+      character (len=6) :: SCODE
+#endif
 #ifdef MCT_INTERP_OC2WV
       integer, pointer :: indices(:)
 #endif
@@ -814,12 +849,21 @@
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "WLEV",     &
      &                           A, Asize)
 !
+!  U and V -velocities at RHO-points.
+!
+#if defined UV_BANIHASHEMI
+      CALL banihashemi (ng, tile)
+#else
+!
 !  U-velocity at RHO-points.
 !
       DO j=JstrR,JendR
         DO i=Istr,Iend
-#ifdef SOLVE3D
-# ifdef UV_KIRBY
+# ifdef UV_CONST
+          u2wav(i,j)=0.0_r8
+# else
+#  ifdef SOLVE3D
+#   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
@@ -841,43 +885,45 @@
             cff1=cff1+cff4*u_cff
             cff3=cff3+cff4
           END DO
-          ubar_rho(i,j)=cff1/cff3
-# else
-          ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+          &
-     &                          OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+          u2wav(i,j)=cff1/cff3
+#   else
+          u2wav(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+             &
+     &                       OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+#   endif
+#  else
+          u2wav(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+                &
+     &                       OCEAN(ng)%ubar(i+1,j,KOUT))
+#  endif
 # endif
-#else
-          ubar_rho(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+             &
-     &                          OCEAN(ng)%ubar(i+1,j,KOUT))
-#endif
         END DO
       END DO
       IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         DO j=JstrR,JendR
-          ubar_rho(IstrR,j)=ubar_rho(IstrR+1,j)
+          u2wav(IstrR,j)=u2wav(IstrR+1,j)
         END DO
       END IF
       IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         DO j=JstrR,JendR
-          ubar_rho(IendR,j)=ubar_rho(IendR-1,j)
+          u2wav(IendR,j)=u2wav(IendR-1,j)
         END DO
       END IF
-#ifdef SOLVE3D
 # ifdef UV_KIRBY
         DO j=JstrR,JendR
           DO i=IstrR,IendR
-             OCEAN(ng)%uwave(i,j)=ubar_rho(i,j)
+             OCEAN(ng)%uwave(i,j)=u2wav(i,j)
           ENDDO
         ENDDO
 # endif
-#endif
 !
 !  V-velocity at RHO-points.
 !
       DO j=Jstr,Jend
         DO i=IstrR,IendR
-#ifdef SOLVE3D
-# ifdef UV_KIRBY
+# ifdef UV_CONST
+          v2wav(i,j)=0.0_r8
+# else
+#  ifdef SOLVE3D
+#   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
@@ -899,55 +945,106 @@
              cff1=cff1+cff4*v_cff
              cff3=cff3+cff4
           END DO
-          vbar_rho(i,j)=cff1/cff3
-# else
-          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+          &
-     &                          OCEAN(ng)%v(i,j+1,N(ng),NOUT))
-# endif
-#else
-          vbar_rho(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+             &
-     &                          OCEAN(ng)%vbar(i,j+1,KOUT))
-#endif
+          v2wav(i,j)=cff1/cff3
+#   else
+          v2wav(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+             &
+     &                       OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+#   endif
+#  else
+          v2wav(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+                &
+     &                       OCEAN(ng)%vbar(i,j+1,KOUT))
+#  endif
         END DO
       END DO
+# endif
       IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         DO i=IstrR,IendR
-          vbar_rho(i,JendR)=vbar_rho(i,JendR-1)
+          v2wav(i,JendR)=v2wav(i,JendR-1)
         END DO
       END IF
       IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         DO i=IstrR,IendR
-          vbar_rho(i,JstrR)=vbar_rho(i,JstrR+1)
+          v2wav(i,JstrR)=v2wav(i,JstrR+1)
         END DO
       END IF
-#ifdef SOLVE3D
 # ifdef UV_KIRBY
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          OCEAN(ng)%vwave(i,j)=vbar_rho(i,j)
+          OCEAN(ng)%vwave(i,j)=v2wav(i,j)
         ENDDO
       ENDDO
 # endif
 #endif
 !
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-#ifdef UV_CONST
-          A(ij)=0.0_r8
-#else
+!  Now we want to load into Attrvect.  Pick Kirby or Banihashemi.
+!
+#if defined UV_BANIHASHEMI
+      DO k=1,MSCs
+        ij=0
+        IF (k.lt.10) THEN
+          WRITE(SCODE,"(A5,I1)") "VELX0",k
+        ELSE
+          WRITE(SCODE,"(A4,I2)") "VELX", k
+        END IF
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
 # ifdef CURVGRID
 !
 ! Rotate velocity to be East positive.
 !
-          cff1=ubar_rho(i,j)*GRID(ng)%CosAngler(i,j)-                   &
-     &         vbar_rho(i,j)*GRID(ng)%SinAngler(i,j)
+            cff1=OCEAN(ng)%uwavek(i,j,k)*GRID(ng)%CosAngler(i,j)-       &
+     &           OCEAN(ng)%vwavek(i,j,k)*GRID(ng)%SinAngler(i,j)
 # else
-          cff1=ubar_rho(i,j)
+            cff1=OCEAN(ng)%uwavek(i,j,k)
+# endif
+            A(ij)=cff1
+          END DO
+        END DO
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, SCODE,    &
+     &                             A, Asize)
+      END DO
+!
+      DO k=1,MSCs
+        ij=0
+        IF (k.lt.10) THEN
+          WRITE(SCODE,"(A5,I1)") "VELY0",k
+        ELSE
+          WRITE(SCODE,"(A4,I2)") "VELY", k
+        END IF
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+# ifdef CURVGRID
+!
+! Rotate velocity to be North positive.
+!
+            cff1=OCEAN(ng)%uwavek(i,j,k)*GRID(ng)%SinAngler(i,j)+       &
+     &           OCEAN(ng)%vwavek(i,j,k)*GRID(ng)%CosAngler(i,j)
+# else
+            cff1=OCEAN(ng)%vwavek(i,j,k)
+# endif
+            A(ij)=cff1
+          END DO
+        END DO
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, SCODE,    &
+     &                             A, Asize)
+      END DO
+#else
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+# ifdef CURVGRID
+!
+! Rotate velocity to be East positive.
+!
+          cff1=OCEAN(ng)%uwave(i,j)*GRID(ng)%CosAngler(i,j)-            &
+     &         OCEAN(ng)%vwave(i,j)*GRID(ng)%SinAngler(i,j)
+# else
+          cff1=OCEAN(ng)%uwave(i,j)
 # endif
           A(ij)=cff1
-#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELX",     &
@@ -957,24 +1054,21 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-#ifdef UV_CONST
-          A(ij)=0.0_r8
-#else
 # ifdef CURVGRID
 !
 ! Rotate velocity to be North positive.
 !
-          cff1=ubar_rho(i,j)*GRID(ng)%SinAngler(i,j)+                   &
-     &         vbar_rho(i,j)*GRID(ng)%CosAngler(i,j)
+          cff1=OCEAN(ng)%uwave(i,j)*GRID(ng)%SinAngler(i,j)+            &
+     &         OCEAN(ng)%vwave(i,j)*GRID(ng)%CosAngler(i,j)
 # else
-          cff1=vbar_rho(i,j)
+          cff1=OCEAN(ng)%vwave(i,j)
 # endif
           A(ij)=cff1
-#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VELY",     &
      &                           A, Asize)
+#endif
 !
 !  bottom roughness.
 !
@@ -1219,8 +1313,6 @@
       real(r8) :: cff, fac, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ubar_rho
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vbar_rho
       real(r8), dimension(2) :: range
 
       real(r8), pointer :: A(:)

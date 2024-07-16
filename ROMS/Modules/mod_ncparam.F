@@ -111,7 +111,8 @@
 !  Maximum number of dimension IDs stored in local array DimIDs used to
 !  defined variable dimensions in output NetCDF files.
 !
-#if defined INWAVE_MODEL || defined WAVE_PARTITION
+#if defined INWAVE_MODEL || defined WAVE_PARTITION || \
+    defined UV_BANIHASHEMI
       integer, parameter :: nDimID = 36
 #else
       integer, parameter :: nDimID = 33

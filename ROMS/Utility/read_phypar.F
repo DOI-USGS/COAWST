@@ -1951,7 +1951,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idWbrk,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
-#if defined UV_KIRBY
+#if defined UV_KIRBY || defined UV_BANIHASHEMI
             CASE ('Hout(idUwav)')
               IF (idUwav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUwav'
@@ -2884,7 +2884,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWvqp,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
-# ifdef UV_KIRBY
+# ifdef UV_KIRBY || defined UV_BANIHASHEMI
             CASE ('Aout(idUwav)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idUwav,1:Ngrids)=Lswitch(1:Ngrids)
@@ -6240,7 +6240,7 @@
      &         'Hout(idWvqp)',                                          &
      &         'Write out wave spectrum peakedness.'
 #endif
-#ifdef UV_KIRBY
+#ifdef UV_KIRBY || defined UV_BANIHASHEMI
             IF (Hout(idUwav,ng)) WRITE (out,170) Hout(idUwav,ng),       &
      &         'Hout(idUwav)',                                          &
      &         'Wave-avg surface u-velocity.'
