@@ -775,8 +775,7 @@ C$OMP END PARALLEL
             if (got_weight.eq.0) then
               num_links_map1  = num_links_map1 + 1
               if (num_links_map1 > max_links_map1)                      &
-     &          call resize_remap_vars(1,max_links_map1-num_links_map1)
-!    &          call resize_remap_vars(1,resize_increment)
+     &          call resize_remap_vars(1,resize_increment)
               grid1_add_map1(num_links_map1) = add1
               grid2_add_map1(num_links_map1) = add2
               wts_map1    (:,num_links_map1) = Arecvw2d(1:num_wts,nlink)

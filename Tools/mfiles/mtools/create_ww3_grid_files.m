@@ -130,8 +130,9 @@ fclose(fid);
 %  here we create the unstructured mesh
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (0)
-  lat_rho=lat_rho+0.00001;
+if (1)
+  lat_rho=lat_rho+0.00001*rand(1);
+  lon_rho=lon_rho+0.00001*rand(1);
 end
 
 %
