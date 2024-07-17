@@ -3687,7 +3687,8 @@
      &                            GRID(rg)%pm,                          &
      &                            GRID(rg)%pn,                          &
 #  ifdef MASKING
-     &                            GRID(dg)%rmask_full,                  &
+!jcw &                            GRID(dg)%rmask_full,                  &
+     &                            GRID(dg)%rmask,                       &
      &                            GRID(rg)%rmask,                       &
 #  endif
      &                            OCEAN(dg)%t(:,:,:,Dindex3d,itrc),     &
