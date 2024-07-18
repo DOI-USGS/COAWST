@@ -31,6 +31,9 @@ ww3_mask_file='ww3_sandy_mapsta.inp';
 % 6) Enter name of WW3 unstructured msh file to be created:
 ww3_msh_file='ww3_sandy_grid.msh';
 
+% 7) If nesting, enter ww grid number order (ie the parent is grid 1, first child = 2)
+ww3_grdnum=1;
+
 %%%%%%%%%%%%%%%%%%    END OF USER INPUT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % 1) Start by getting roms grid. For this test we will create a WW3 grid that is the 
@@ -130,9 +133,9 @@ fclose(fid);
 %  here we create the unstructured mesh
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (1)
-  lat_rho=lat_rho+0.00001*rand(1);
-  lon_rho=lon_rho+0.00001*rand(1);
+if (mod(ww3_grdnum,2)==0)
+  lat_rho=lat_rho+0.000012;
+  lon_rho=lon_rho+0.000012;
 end
 
 %
@@ -141,7 +144,7 @@ end
 xs=1;xe=size(h,1);
 ys=1;ye=size(h,2);
 h=h(xs:xe,ys:ye);
-h(mask_rho(xs:xe,ys:ye)==0)=0;
+h=h.*mask_rho(xs:xe,ys:ye);
 lon_rho=lon_rho(xs:xe,ys:ye);
 lat_rho=lat_rho(xs:xe,ys:ye);
 [LP, MP]=size(h);
@@ -177,7 +180,7 @@ nodesx=x_full_grid(:);
 nodesy=y_full_grid(:);
 nodesh=h(:);
 for mm=1:Numnodes
-  fprintf(fid,'%d  %f  %f  %f\n',[mm nodesx(mm) nodesy(mm) h(mm)]);
+  fprintf(fid,'%d  %13.8f  %13.8f  %13.8f\n',[mm nodesx(mm) nodesy(mm) h(mm)]);
 end
 fprintf(fid,'%6s\n','$EndNodes');
 
@@ -255,51 +258,4 @@ end
 %
 fprintf(fid,'%6s\n','$EndElements');
 fclose(fid)
-
-
-
-%%%%%%%%%%%
-% example here
-%
-% $MeshFormat
-% 2 0 8
-% $EndMeshFormat
-% $Nodes
-% 8639
-% 1  -87.4999338083   30.2829507916     0.0000000000
-% 2  -87.4999324079   30.2668530854     7.4275088310
-% 3  -87.4999308308   30.2481519873     9.3883380890
-% 4  -87.4999291947   30.2280422425    12.7037878036
-% ...
-% 8636  -90.4291892729   30.1571185245     0.0000000000
-% 8637  -90.4285705858   30.1436015971     0.4048240483
-% 8638  -89.4482000000   30.0026000000     0.0676150768
-% 8639  -89.7497900000   30.1078600000     0.0476770701
-% $EndNodes
-% $Elements
-% 16245
-% 1  15  2  0  0  1
-% 2  15  2  0  0  2
-% 3  15  2  0  0  3
-% 4  15  2  0  0  4
-% ...
-% 
-% 126  15  2  0  0  126
-% 127  15  2  0  0  127
-% 128  2  3  0  1  0  1  128  2
-% 129  2  3  0  2  0  129  2  128
-% 130  2  3  0  3  0  3  2  129
-% 131  2  3  0  4  0  130  3  129
-% 132  2  3  0  5  0  3  130  131
-% 133  2  3  0  6  0  131  4  3
-% 134  2  3  0  7  0  131  132  4
-% 135  2  3  0  8  0  4  132  5
-% 
-% 16243  2  3  0  16116  0  8638  7330  7299
-% 16244  2  3  0  16117  0  7909  7934  8639
-% 16245  2  3  0  16118  0  7886  7909  8639
-% $EndElements
-% 
-% 
-
 
