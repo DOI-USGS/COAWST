@@ -1621,8 +1621,8 @@ CONTAINS
 #ifdef W3_MPI
         ITAG   = HGSTGE(J,IMOD)%ISEND(I,5) + IT0
         IF ( ITAG .GT. MTAG2 ) THEN
-          WRITE (MDSE,1001)
-          CALL EXTCDE (1001)
+!jcw      WRITE (MDSE,1001)
+!jcw      CALL EXTCDE (1001)
         END IF
 #endif
         !

@@ -133,9 +133,11 @@ fclose(fid);
 %  here we create the unstructured mesh
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% add small offset to every other grid so WW3 scrip can determine
+% over lap regions.
 if (mod(ww3_grdnum,2)==0)
-  lat_rho=lat_rho+0.000012;
   lon_rho=lon_rho+0.000012;
+  lat_rho=lat_rho+0.000012;
 end
 
 %
