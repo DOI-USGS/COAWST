@@ -34,7 +34,8 @@ function create_roms_forcings(lon,lat,time,init_time,fn,varargin)
 % jcwarner      06/2012 modified to use the variables, not the indices
 %
 
-nc=netcdf.create(fn,'clobber');
+%nc=netcdf.create(fn,'clobber');
+nc=netcdf.create(fn,bitor(0,4096));   %JBZ update for NC4 files, equivalent to 'clobber' + 'NETCDF4'
 if isempty(nc), return, end
 
 disp(' ## Defining Global Attributes...')

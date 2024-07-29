@@ -118,6 +118,8 @@ lou=ncread(parent_grid,'lon_u');
 lau=ncread(parent_grid,'lat_u');
 lov=ncread(parent_grid,'lon_v');
 lav=ncread(parent_grid,'lat_v');
+lop=ncread(parent_grid,'lon_psi');
+lap=ncread(parent_grid,'lat_psi');
 mar=double(ncread(parent_grid,'mask_rho'));
 mau=double(ncread(parent_grid,'mask_u'));
 mav=double(ncread(parent_grid,'mask_v'));
@@ -127,7 +129,7 @@ mav(mav==0)=nan;
 
 display('Initializing zeta')
 zt=ncread(parent_ini,'zeta');
-if (size(zt)>2)
+if (ndims(zt)>2)
   zt=squeeze(zt(:,:,init_indx));
 end
 zt=double(zt.*mar);
@@ -147,7 +149,7 @@ clear zt
 
 display('Initializing ubar and vbar')
 ub=ncread(parent_ini,'ubar');
-if (size(ub)>2)
+if (ndims(ub)>2)
   ub=squeeze(ub(:,:,init_indx));
 end
 ub=double(ub.*mau);
@@ -158,7 +160,7 @@ ubar=maplev(ubar);
 clear ub
 
 vb=ncread(parent_ini,'vbar');
-if (size(vb)>2)
+if (ndims(vb)>2)
   vb=squeeze(vb(:,:,init_indx));
 end
 vb=double(vb.*mav);
@@ -170,7 +172,7 @@ clear vb
 
 display('Initializing u')
 ub=ncread(parent_ini,'u');
-if (size(ub)>3)
+if (ndims(ub)>3)
   ub=squeeze(ub(:,:,:,init_indx));
 end
 ub=double(ub);
@@ -187,7 +189,7 @@ clear ub; clear ub2;
 
 display('Initializing v')
 vb=ncread(parent_ini,'v');
-if (size(vb)>3)
+if (ndims(vb)>3)
   vb=squeeze(vb(:,:,:,init_indx));
 end
 vb=double(vb);
@@ -204,7 +206,7 @@ clear vb
 
 display('Initializing salt')
 sa=ncread(parent_ini,'salt');
-if (size(sa)>3)
+if (ndims(sa)>3)
   sa=squeeze(sa(:,:,:,init_indx));
 end
 sa=double(sa);
@@ -221,7 +223,7 @@ clear sa; clear sa2;
 
 display('Initializing temp')
 te=ncread(parent_ini,'temp');
-if (size(te)>3)
+if (ndims(te)>3)
   te=squeeze(te(:,:,:,init_indx));
 end
 te=double(te);
@@ -236,6 +238,43 @@ for k=1:N
   temp(:,:,k)=maplev(squeeze(temp(:,:,k)));
 end
 clear te; clear te2;
+
+do_wetdry=0;
+if (1)
+display('Initializing wet dry mask')
+try
+  zt=double(ncread(parent_ini,'wetdry_mask_rho'));
+  if (ndims(zt)>2)
+    zt=squeeze(zt(:,:,init_indx));
+  end
+  wetdry_mask_rho=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho,'nearest');
+  clear zt
+  %
+  zt=double(ncread(parent_ini,'wetdry_mask_u'));
+  if (ndims(zt)>2)
+    zt=squeeze(zt(:,:,init_indx));
+  end
+  wetdry_mask_u=griddata(lou,lau,zt,Gout.lon_u,Gout.lat_u,'nearest');
+  clear zt
+  %
+  zt=double(ncread(parent_ini,'wetdry_mask_v'));
+  if (ndims(zt)>2)
+    zt=squeeze(zt(:,:,init_indx));
+  end
+  wetdry_mask_v=griddata(lov,lav,zt,Gout.lon_v,Gout.lat_v,'nearest');
+  clear zt
+  %
+  zt=double(ncread(parent_ini,'wetdry_mask_psi'));
+  if (ndims(zt)>2)
+    zt=squeeze(zt(:,:,init_indx));
+  end
+  wetdry_mask_psi=griddata(lop,lap,zt,Gout.lon_psi,Gout.lat_psi,'nearest');
+  clear zt
+  %
+  do_wetdry=1;
+catch
+end
+
 %
 %7) Get number of noncohesive and cohesive sediments.
 finfo=ncinfo(parent_ini);
@@ -286,7 +325,7 @@ for idsed=1:NCS
   count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['mud_',count]);
-  if (size(sa)>3)
+  if (ndims(sa)>3)
     sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
@@ -309,7 +348,7 @@ for idsed=1:NNS
   count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['sand_',count]);
-  if (size(sa)>3)
+  if (ndims(sa)>3)
     sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
@@ -661,6 +700,13 @@ ncwrite(init_file,'ubar',ubar);
 ncwrite(init_file,'v',v);
 ncwrite(init_file,'vbar',vbar);
 ncwrite(init_file,'zeta',zeta);
+
+if (do_wetdry)
+  ncwrite(init_file,'wetdry_mask_rho',wetdry_mask_rho);
+  ncwrite(init_file,'wetdry_mask_u',  wetdry_mask_u);
+  ncwrite(init_file,'wetdry_mask_v',  wetdry_mask_v);
+  ncwrite(init_file,'wetdry_mask_psi',wetdry_mask_psi);
+end
 
 if (NST>0)
   for mm=1:NCS

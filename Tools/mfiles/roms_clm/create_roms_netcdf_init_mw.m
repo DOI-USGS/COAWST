@@ -34,7 +34,7 @@ disp(' ## Defining Dimensions...')
   ev   = M;
   N       = gn.N;
   
-psidimID = netcdf.defDim(nc_init,'xpsi',L);
+xpsidimID = netcdf.defDim(nc_init,'xpsi',L);
 xrhodimID = netcdf.defDim(nc_init,'xrho',LP);
 xudimID = netcdf.defDim(nc_init,'xu',L);
 xvdimID = netcdf.defDim(nc_init,'xv',LP);
@@ -151,6 +151,26 @@ zetaID = netcdf.defVar(nc_init,'zeta','float',[xrhodimID erhodimID timedimID]);
 netcdf.putAtt(nc_init,zetaID,'long_name','free-surface');
 netcdf.putAtt(nc_init,zetaID,'units','meter');
 netcdf.putAtt(nc_init,zetaID,'field','free-surface, scalar, series');
+
+wetdryrID = netcdf.defVar(nc_init,'wetdry_mask_rho','float',[xrhodimID erhodimID timedimID]);
+netcdf.putAtt(nc_init,wetdryrID,'long_name','wet/dry mask on RHO-points');
+netcdf.putAtt(nc_init,wetdryrID,'units','-');
+netcdf.putAtt(nc_init,wetdryrID,'field','wetdry_mask_rho, scalar, series');
+
+wetdryuID = netcdf.defVar(nc_init,'wetdry_mask_u','float',[xudimID eudimID timedimID]);
+netcdf.putAtt(nc_init,wetdryuID,'long_name','wet/dry mask on u-points');
+netcdf.putAtt(nc_init,wetdryuID,'units','-');
+netcdf.putAtt(nc_init,wetdryuID,'field','wetdry_mask_rho, scalar, series');
+
+wetdryvID = netcdf.defVar(nc_init,'wetdry_mask_v','float',[xvdimID evdimID timedimID]);
+netcdf.putAtt(nc_init,wetdryvID,'long_name','wet/dry mask on v-points');
+netcdf.putAtt(nc_init,wetdryvID,'units','-');
+netcdf.putAtt(nc_init,wetdryvID,'field','wetdry_mask_rho, scalar, series');
+
+wetdrypID = netcdf.defVar(nc_init,'wetdry_mask_psi','float',[xpsidimID epsidimID timedimID]);
+netcdf.putAtt(nc_init,wetdrypID,'long_name','wet/dry mask on psi-points');
+netcdf.putAtt(nc_init,wetdrypID,'units','-');
+netcdf.putAtt(nc_init,wetdrypID,'field','wetdry_mask_rho, scalar, series');
  
 for mm=1:NCS
     count=['00',num2str(mm)];

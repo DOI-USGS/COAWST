@@ -451,7 +451,6 @@
             DO WHILE ((is.lt.MSCs).and.                                  &
      &                ((cff2.lt.kDmax).or.(k.eq.N(ng))))
               cff4 = 0.5_r8*cff3*(cff6-cff7)
-              cff5 = (2.0_r8*cff4*SINH(0.5_r8*cff3)**2.0_r8)
 !              
               IF (cff3.lt.kD2deep) THEN
 !

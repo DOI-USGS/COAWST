@@ -166,6 +166,36 @@
     temp(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 18;
   end
 
+do_wetdry=0;
+if (1)
+display('Initializing wet dry mask')
+  if (read_init)
+    wetdry_mask_rho=ncread(data_file,'wetdry_mask_rho',[1 1 tidx],[Inf Inf 1]);
+  else
+    wetdry_mask_rho(1:xi_rho,1:eta_rho,1:length(init_time)) = 1;
+  end
+%
+  if (read_init)
+    wetdry_mask_u=ncread(data_file,'wetdry_mask_u',[1 1 tidx],[Inf Inf 1]);
+  else
+    wetdry_mask_u(1:xi_u,1:eta_u,1:length(init_time)) = 1;
+  end
+%
+  if (read_init)
+    wetdry_mask_v=ncread(data_file,'wetdry_mask_v',[1 1 tidx],[Inf Inf 1]);
+  else
+    wetdry_mask_v(1:xi_v,1:eta_v,1:length(init_time)) = 1;
+  end
+%
+  if (read_init)
+    wetdry_mask_psi=ncread(data_file,'wetdry_mask_psi',[1 1 tidx],[Inf Inf 1]);
+  else
+    wetdry_mask_psi(1:xi_psi,1:eta_psi,1:length(init_time)) = 1;
+  end
+%
+  do_wetdry=1;
+end
+
 %7) Enter number of mud sediments (NCS) and number of sand sediments (NNS).
 %   These values should be the same as in mod_param.F
     NCS = 0;   %number of cohesive sed classes
@@ -366,6 +396,13 @@ ncwrite(init_file,'u',u);
 ncwrite(init_file,'v',v);
 ncwrite(init_file,'temp',temp);
 ncwrite(init_file,'salt',salt);
+
+if (do_wetdry)
+  ncwrite(init_file,'wetdry_mask_rho',wetdry_mask_rho);
+  ncwrite(init_file,'wetdry_mask_u',  wetdry_mask_u);
+  ncwrite(init_file,'wetdry_mask_v',  wetdry_mask_v);
+  ncwrite(init_file,'wetdry_mask_psi',wetdry_mask_psi);
+end
 
 for mm=1:NCS
   count=['00',num2str(mm)];
