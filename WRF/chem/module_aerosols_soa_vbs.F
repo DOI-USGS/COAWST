@@ -74,7 +74,7 @@ CONTAINS
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
-         INTENT(INOUT ) ::    brch_ratio 
+         INTENT(INOUT ) ::    brch_ratio
 
 !           cvasoa1,cvasoa2,    &
 !           cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4
@@ -1520,7 +1520,7 @@ SUBROUTINE aeroproc(blksize,nspcsda,numcells,layer,cblk,dt,blkta,blkprs, &
 !        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. do_isorropia )then
 !            CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
         if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 )then
-           CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
+            CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
         endif
 !        if ( do_n2o5het ) then
 !           CALL n2o5het(blksize,nspcsda,numcells,dt,cblk,blkta,blkrh,dgnuc,dgacc,dgcor,igrid,jgrid,kgrid)
@@ -3499,7 +3499,7 @@ SUBROUTINE nuclcond(blksize,nspcsda,numcells,cblk,dt,layer,blkta,blkprs, &
 !TYPE (grid_config_rec_type), INTENT (in) :: config_flags
 
 
-! dimension of arrays             
+! dimension of arrays
       INTEGER blksize
       INTEGER layer
 ! number of species in CBLK       
@@ -4794,7 +4794,7 @@ END SUBROUTINE rpmares_old
       INTEGER nspcsda
 
 ! number of species in CBLK ciarev02           
-      REAL cblk(blksize,nspcsda) 
+      REAL cblk(blksize,nspcsda)
 
 ! *** Meteorological information in blocked arays:
 
@@ -4804,7 +4804,7 @@ END SUBROUTINE rpmares_old
       REAL blkta(blksize) ! Air temperature [ K ]                     
       REAL blkprs(blksize) ! Air pressure in [ Pa ]                    
       REAL blkdens(blksize) ! Air density  [ kg m^-3 ]                  
-      REAL blkrh(blksize) 
+      REAL blkrh(blksize)
 
 ! *** Chemical production rates [ ug m**-3 s -1 ] :
 
@@ -6681,8 +6681,8 @@ SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,      
   end if
  !     dust_opt changed to 13 since it conflicts with gocart/afwa
   if( dust_opt == 13 ) then
-   !czhao -------------------------- 
-      call soa_vbs_dust_gocartemis(                                &
+   !czhao --------------------------
+      call soa_vbs_dust_gocartemis(                               &
            ktau,dtstep,num_soil_layers,alt,u_phy,                 &
            v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,        &
            ivgtyp,isltyp,xland,dx,g,                              &
