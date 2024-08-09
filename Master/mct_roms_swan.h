@@ -1039,10 +1039,10 @@
 !
 ! Rotate velocity to be East positive.
 !
-          cff1=OCEAN(ng)%uwave(i,j)*GRID(ng)%CosAngler(i,j)-            &
-     &         OCEAN(ng)%vwave(i,j)*GRID(ng)%SinAngler(i,j)
+          cff1=u2wav(i,j)*GRID(ng)%CosAngler(i,j)-            &
+     &         u2wav(i,j)*GRID(ng)%SinAngler(i,j)
 # else
-          cff1=OCEAN(ng)%uwave(i,j)
+          cff1=u2wav(i,j)
 # endif
           A(ij)=cff1
         END DO
@@ -1058,10 +1058,10 @@
 !
 ! Rotate velocity to be North positive.
 !
-          cff1=OCEAN(ng)%uwave(i,j)*GRID(ng)%SinAngler(i,j)+            &
-     &         OCEAN(ng)%vwave(i,j)*GRID(ng)%CosAngler(i,j)
+          cff1=v2wav(i,j)*GRID(ng)%SinAngler(i,j)+            &
+     &         v2wav(i,j)*GRID(ng)%CosAngler(i,j)
 # else
-          cff1=OCEAN(ng)%vwave(i,j)
+          cff1=v2wav(i,j)
 # endif
           A(ij)=cff1
         END DO
