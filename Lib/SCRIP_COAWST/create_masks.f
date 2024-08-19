@@ -2240,7 +2240,7 @@
 !  NOTICE piped ww3 and roms loops to end
       allocate(do_adjust(Ngrids_ww3))
       do mw=1,Ngrids_ww3
-        do_adjust(mw)=0
+!       do_adjust(mw)=0
         do mo=1,Ngrids_roms
 !
 !  Allocate the destination mask
@@ -2375,46 +2375,49 @@
 !  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
 !  If so, then offset the dst by 2.0e-7 rads
 !
-            tol=1.1459e-05
-            do i=1,ngrd_rm(mo)%xi_size
-              if (do_adjust(mw).eq.1) exit
-              do j=1,ngrd_rm(mo)%eta_size
-                if (do_adjust(mw).eq.1) exit
-                lons=ngrd_rm(mo)%lon_rho_o(i,j)
-                lats=ngrd_rm(mo)%lat_rho_o(i,j)
-                do nx=1,ngrd_w3(mw)%Numx_ww3
-                  if (do_adjust(mw).eq.1) exit
-                  do ny=1,ngrd_w3(mw)%Numy_ww3
-                    lond=ngrd_w3(mw)%lon_rho_w(nx,ny)
-                    latd=ngrd_w3(mw)%lat_rho_w(nx,ny)
-                    cff=min(abs(lons-lond),abs(lats-latd))
-                    if (cff.le.tol) then
-                      do_adjust(mw)=1
-                  write(*,*) 'Do adjust for coincident points grid ', mw
-                      exit
-                    end if
-                  enddo
-                enddo
-              enddo
-            enddo
-            if (do_adjust(mw).eq.1) then
-              do nx=1,ngrd_w3(mw)%Numx_ww3
-                do ny=1,ngrd_w3(mw)%Numy_ww3
-                  ngrd_w3(mw)%lon_rho_w(nx,ny)=                         &
-     &                                  ngrd_w3(mw)%lon_rho_w(nx,ny)+tol
-                  ngrd_w3(mw)%lat_rho_w(nx,ny)=                         &
-     &                                  ngrd_w3(mw)%lat_rho_w(nx,ny)+tol
-                enddo
-              enddo
-              do nx=1,ngrd_w3(mw)%Numx_ww3+1
-                do ny=1,ngrd_w3(mw)%Numy_ww3+1
-                  ngrd_w3(mw)%x_full_grid(nx,ny)=                       &
-     &                                ngrd_w3(mw)%x_full_grid(nx,ny)+tol
-                  ngrd_w3(mw)%y_full_grid(nx,ny)=                       &
-     &                                ngrd_w3(mw)%y_full_grid(nx,ny)+tol
-                enddo
-              enddo
-            end if
+!       if (0.eq.1) then
+!            tol=1.1459e-05
+!            do i=1,ngrd_rm(mo)%xi_size
+!              if (do_adjust(mw).eq.1) exit
+!              do j=1,ngrd_rm(mo)%eta_size
+!                if (do_adjust(mw).eq.1) exit
+!                lons=ngrd_rm(mo)%lon_rho_o(i,j)
+!                lats=ngrd_rm(mo)%lat_rho_o(i,j)
+!                do nx=1,ngrd_w3(mw)%Numx_ww3
+!                  if (do_adjust(mw).eq.1) exit
+!                  do ny=1,ngrd_w3(mw)%Numy_ww3
+!                    lond=ngrd_w3(mw)%lon_rho_w(nx,ny)
+!                    latd=ngrd_w3(mw)%lat_rho_w(nx,ny)
+!                    cff=min(abs(lons-lond),abs(lats-latd))
+!                    if (cff.le.tol) then
+!                      do_adjust(mw)=1
+!                  write(*,*) 'Do adjust for coincident points grid ', mw
+!                      exit
+!                    end if
+!                  enddo
+!                enddo
+!              enddo
+!            enddo
+!            if (do_adjust(mw).eq.1) then
+!              do nx=1,ngrd_w3(mw)%Numx_ww3
+!                do ny=1,ngrd_w3(mw)%Numy_ww3
+!                  ngrd_w3(mw)%lon_rho_w(nx,ny)=                         &
+!     &                                  ngrd_w3(mw)%lon_rho_w(nx,ny)+tol
+!                  ngrd_w3(mw)%lat_rho_w(nx,ny)=                         &
+!     &                                  ngrd_w3(mw)%lat_rho_w(nx,ny)+tol
+!                enddo
+!              enddo
+!              do nx=1,ngrd_w3(mw)%Numx_ww3+1
+!                do ny=1,ngrd_w3(mw)%Numy_ww3+1
+!                  ngrd_w3(mw)%x_full_grid(nx,ny)=                       &
+!     &                                ngrd_w3(mw)%x_full_grid(nx,ny)+tol
+!                  ngrd_w3(mw)%y_full_grid(nx,ny)=                       &
+!     &                                ngrd_w3(mw)%y_full_grid(nx,ny)+tol
+!                enddo
+!              enddo
+!            end if
+!         end if
+
 !
 !  Send the data to SCRIP routines
 !
@@ -2446,7 +2449,7 @@
 
           counter_grid=counter_grid+1
           My_map_type = 2
-!         samegrid=0
+!          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -2472,25 +2475,26 @@
      &                       samegrid)
 !
 !  Undo the grid adjust.
-          if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
-            do nx=1,ngrd_w3(mw)%Numx_ww3
-              do ny=1,ngrd_w3(mw)%Numy_ww3
-                ngrd_w3(mw)%lon_rho_w(nx,ny)=                           &
-     &                                ngrd_w3(mw)%lon_rho_w(nx,ny)-tol
-                ngrd_w3(mw)%lat_rho_w(nx,ny)=                           &
-     &                                ngrd_w3(mw)%lat_rho_w(nx,ny)-tol
-              enddo
-            enddo
-            do nx=1,ngrd_w3(mw)%Numx_ww3+1
-              do ny=1,ngrd_w3(mw)%Numy_ww3+1
-                ngrd_w3(mw)%x_full_grid(nx,ny)=                         &
-     &                              ngrd_w3(mw)%x_full_grid(nx,ny)-tol
-                ngrd_w3(mw)%y_full_grid(nx,ny)=                         &
-     &                              ngrd_w3(mw)%y_full_grid(nx,ny)-tol
-              enddo
-            enddo
-          end if
-          do_adjust(mw)=0
+!         if (0.eq.1) then
+!          if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
+!            do nx=1,ngrd_w3(mw)%Numx_ww3
+!              do ny=1,ngrd_w3(mw)%Numy_ww3
+!                ngrd_w3(mw)%lon_rho_w(nx,ny)=                           &
+!     &                                ngrd_w3(mw)%lon_rho_w(nx,ny)-tol
+!                ngrd_w3(mw)%lat_rho_w(nx,ny)=                           &
+!     &                                ngrd_w3(mw)%lat_rho_w(nx,ny)-tol
+!              enddo
+!            enddo
+!            do nx=1,ngrd_w3(mw)%Numx_ww3+1
+!              do ny=1,ngrd_w3(mw)%Numy_ww3+1
+!                ngrd_w3(mw)%x_full_grid(nx,ny)=                         &
+!     &                              ngrd_w3(mw)%x_full_grid(nx,ny)-tol
+!                ngrd_w3(mw)%y_full_grid(nx,ny)=                         &
+!     &                              ngrd_w3(mw)%y_full_grid(nx,ny)-tol
+!              enddo
+!            enddo
+!          end if
+!          do_adjust(mw)=0
 !
           deallocate(ngrd_w3(mw)%dst_mask)
           deallocate(dst_mask_unlim)
