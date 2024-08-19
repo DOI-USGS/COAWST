@@ -558,6 +558,9 @@ MODULE W3ADATMD
     REAL, POINTER         :: SPPNT(:,:,:)
     !
     INTEGER               :: ITIME, IPASS, IDLAST, NSEALM
+#ifdef W3_COAWST_MODEL
+    INTEGER               :: ITIME_COAWST
+#endif
     REAL, POINTER         :: ALPHA(:,:)
     LOGICAL               :: AINIT, AINIT2, FL_ALL, FLCOLD, FLIWND
     !
@@ -681,6 +684,9 @@ MODULE W3ADATMD
   REAL, POINTER           :: SPPNT(:,:,:)
   !
   INTEGER, POINTER        :: ITIME, IPASS, IDLAST, NSEALM
+#ifdef W3_COAWST_MODEL
+  INTEGER,POINTER         :: ITIME_COAWST
+#endif
   REAL, POINTER           :: ALPHA(:,:)
   LOGICAL, POINTER        :: AINIT, AINIT2, FL_ALL, FLCOLD, FLIWND
   !/
@@ -792,6 +798,9 @@ CONTAINS
     !
     DO I=1, NGRIDS
       WADATS(I)%ITIME  = 0
+#ifdef W3_COAWST_MODEL
+      WADATS(I)%ITIME_COAWST = 0
+#endif
       WADATS(I)%IPASS  = 0
       WADATS(I)%IDLAST = 0
       WADATS(I)%NSEALM = 0
@@ -2718,6 +2727,9 @@ CONTAINS
     ! 3.  Set pointers
     !
     ITIME  => WADATS(IMOD)%ITIME
+#ifdef W3_COAWST_MODEL
+    ITIME_COAWST  => WADATS(IMOD)%ITIME_COAWST
+#endif
     IPASS  => WADATS(IMOD)%IPASS
     IDLAST => WADATS(IMOD)%IDLAST
     NSEALM => WADATS(IMOD)%NSEALM

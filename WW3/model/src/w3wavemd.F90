@@ -1023,6 +1023,9 @@ CONTAINS
       IF ( DTTST .EQ. 0. ) THEN
         IT0    = 0
         IF ( .NOT.FLZERO ) ITIME  = ITIME - 1
+#ifdef W3_COAWST_MODEL
+        IF ( .NOT.FLZERO ) ITIME_COAWST = ITIME_COAWST - 1
+#endif
         NT     = 0
       ELSE
         IT0    = 1
@@ -1066,6 +1069,9 @@ CONTAINS
         call print_memcheck(memunit, 'memcheck_____:'//' WW3_WAVE TIME LOOP 0')
         !
         ITIME  = ITIME + 1
+#ifdef W3_COAWST_MODEL
+        IF ( .NOT.FLZERO ) ITIME_COAWST = ITIME_COAWST + 1
+#endif
         !
         DTG    = REAL(NINT(DTGA+DTRES+0.0001))
         DTRES  = DTRES + DTGA - DTG
@@ -2356,12 +2362,11 @@ CONTAINS
 400   CONTINUE
 #if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
       ! jcw bottom of wavemd calling the coupler
-      !  IMOD is the grid number
-      IF (Nwav_grids.eq.1) THEN
-        CALL COAWST_CPL (ITIME)
-      ELSE
+      !  IMOD is the grid number, ITIME is a bad counter. It steps for 
+      !  updates to the forcings. So we made a clean counter.
+      IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
         IF (IMOD.eq.Nwav_grids) THEN
-          CALL COAWST_CPL (ITIME-1)
+          CALL COAWST_CPL (ITIME_COAWST)
         END IF
       END IF
 #endif

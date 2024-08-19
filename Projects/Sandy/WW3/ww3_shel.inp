@@ -15,7 +15,7 @@ $ Include ice and mud parameters only if IC1/2/3/4 used :
    F F     Mud parameter 3
    C F     Water levels
    C F     Currents
-   C F     Winds
+   T F     Winds
    F F     Ice concentrations
    F F     Atmospheric momentum
    F F     Air density

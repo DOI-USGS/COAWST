@@ -111,7 +111,8 @@ read_swan.o: $(SRCDIR)/read_swan.f kinds_mod.o scripwrap_mod.o \
 
 read_ww3.o: $(SRCDIR)/read_ww3.f kinds_mod.o scripwrap_mod.o \
 	               create_fullgrid.o     $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/read_ww3.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_ww3.f  $(SRCDIR)/read_ww3.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_ww3.fpp
 
 read_roms.o: $(SRCDIR)/read_roms.f kinds_mod.o scripwrap_mod.o  \
                         netcdf.o create_fullgrid.o $(INCLUDE)

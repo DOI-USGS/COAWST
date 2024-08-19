@@ -3,6 +3,8 @@
 % jcwarner 13Nov2017
 %
 
+cd Projects/Sandy/Ww3
+
 netcdf_load('../romsforc_NARR_Sandy2012.nc')
 [LP, MP, ntimes]=size(Uwind);
 %

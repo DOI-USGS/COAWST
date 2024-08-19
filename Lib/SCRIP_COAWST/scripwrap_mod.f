@@ -31,7 +31,7 @@
       integer(int_kind) :: Ngrids_roms, Ngrids_swan, Ngrids_wrf
       integer(int_kind) :: Ngrids_ww3, Ngrids_hyd
       integer(int_kind) :: Ngrids_comb_total
-      integer(int_kind) :: roms_swan_samegrid
+      integer(int_kind) :: roms_swan_samegrid, roms_ww3_samegrid
       integer(int_kind),dimension(5) :: swan_numx, swan_numy
       integer(int_kind),dimension(5) :: ww3_numx, ww3_numy
       integer(int_kind),dimension(5) :: cartesian

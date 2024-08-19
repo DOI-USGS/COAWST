@@ -85,7 +85,7 @@
         IF (OutThread.eq.0) THEN
           write(stdout,*) 'Reading WW3 grids'
         END IF
-        call load_ww3_grid()
+        call load_ww3_grid( MyComm )
       end if
       if (Ngrids_wrf>0) then
         IF (OutThread.eq.0) THEN

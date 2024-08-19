@@ -3,36 +3,44 @@
 % This mfile will create WAVEWATCH III grid files of:
 % xcoord, ycoord, bathy, and mapsta.
 %
-% This m file is set up to work on the Projects/Sandy test case. IT can be 
-% modified for other applications.
+% This m file is set up to work on the Projects/Sandy/WW3 test case.
+% It can be modified for other applications.
 %
-% jcwarner 13Nov2017
+% jcwarner 13Nov2017, updated 2004/08/15 for nesting.
 %
+
+%0)
+cd Projects/Sandy/WW3
 
 % 1) Enter name of ROMS grid, or provide the varaibles of 
-% lon_rho, lat_rho, h, and mask_rho:
-roms_grid='Sandy_roms_grid.nc';
-% or 
-% lon_rho= , lat_rho= , mask_rho= , h= .
+% This is needed to get lon_rho, lat_rho, h, and mask_rho:
+%roms_grid='../Sandy_roms_grid.nc';
+roms_grid='../Sandy_roms_grid_ref3.nc';
 
 % 2) Enter name of WW3 xcoord file to be created:
-ww3_xcoord_file='ww3_sandy_xcoord.dat';
+%ww3_xcoord_file='ww3_sandy_xcoord.dat';
+ww3_xcoord_file='ww3_sandy_xcoord_ref3.dat';
 
 % 3) Enter name of WW3 ycoord file to be created:
-ww3_ycoord_file='ww3_sandy_ycoord.dat';
+%ww3_ycoord_file='ww3_sandy_ycoord.dat';
+ww3_ycoord_file='ww3_sandy_ycoord_ref3.dat';
 
 % 4) Enter name of WW3 bathy file to be created:
-ww3_bath_file='ww3_sandy_bathy.bot';
+%ww3_bath_file='ww3_sandy_bathy.bot';
+ww3_bath_file='ww3_sandy_bathy_ref3.bot';
 min_depth=5.1;
 
 % 5) Enter name of WW3 mask file to be created:
-ww3_mask_file='ww3_sandy_mapsta.inp';
+%ww3_mask_file='ww3_sandy_mapsta.inp';
+ww3_mask_file='ww3_sandy_mapsta_ref3.inp';
 
 % 6) Enter name of WW3 unstructured msh file to be created:
-ww3_msh_file='ww3_sandy_grid.msh';
+%ww3_msh_file='ww3_sandy_grid.msh';
+ww3_msh_file='ww3_sandy_grid_ref3.msh';
 
 % 7) If nesting, enter ww grid number order (ie the parent is grid 1, first child = 2)
-ww3_grdnum=1;
+%ww3_grdnum=1;
+ww3_grdnum=2;
 
 %%%%%%%%%%%%%%%%%%    END OF USER INPUT   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -109,7 +117,7 @@ ww3_mask(end,:)=2;
 for index1 = 2:MP-1;
     for index2 = 2:LP-1;
         if (mask_rho(index2,index1)==0)
-          ww3_mask(index2,index1)=0;
+%          ww3_mask(index2,index1)=0;
         end
         if (h(index2,index1)<min_depth)
 %          ww3_mask(index2,index1)=0;
@@ -122,7 +130,6 @@ end
 fid = fopen(ww3_mask_file,'w');
 for index1 = 1:MP;
     for index2 = 1:LP;
-%      fprintf(fid,'   ');
        fprintf(fid,'%6i',ww3_mask(index2,index1));
     end
     fprintf(fid,'\n');

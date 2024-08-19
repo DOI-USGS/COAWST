@@ -73,6 +73,7 @@ elseif (interpto_user_grid)
   if (get_NARR); offset=-360; end
   if (get_NAM);  offset=-360; end
 % Select grid resolution.
+% I used 0.25 for Sandy case, but you should use 0.1.
   lon_rho = [255:0.1:310]+offset;      % always use global values in the [0:360]
   lat_rho = [ 10:0.1:50 ];
   lon_rho = repmat(lon_rho,size(lat_rho,2),1)';

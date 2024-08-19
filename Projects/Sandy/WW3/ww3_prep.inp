@@ -70,8 +70,6 @@ $ 'UNIT' 3 1 '(..T..)' '(..F..)'
 $ 10 'data_file.1'
 $ 10 'data_file.2'
 
-$  'NAME' 1 1 '(..T..)' '(..T..)'
-$  40 'ww3_sandy_wind_forc.dat'
   'NAME' 1 1 '(....)' '(....)'
    40 'ww3_sandy_wind_forc.dat'
 $

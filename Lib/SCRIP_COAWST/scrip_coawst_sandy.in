@@ -8,15 +8,16 @@ $INPUTS
 ! 1) Enter name of output netcdf4 file
 !
 !OUTPUT_NCFILE='scrip_sandy_moving.nc'
-OUTPUT_NCFILE='scrip_sandy_static.nc'
+!OUTPUT_NCFILE='scrip_sandy_static.nc'
 !OUTPUT_NCFILE='scrip_sandy_nowavenest.nc'
+OUTPUT_NCFILE='scrip_sandy_roms_ww3_2grids.nc'
 
 ! 2) Enter total number of ROMS, SWAN, WW3, and WRF grids:
 !
 NGRIDS_ROMS=2,
-NGRIDS_SWAN=2,
-NGRIDS_WW3=0,
-NGRIDS_WRF=2,
+NGRIDS_SWAN=0,
+NGRIDS_WW3=2,
+NGRIDS_WRF=0,
 NGRIDS_HYD=0,
 
 ! 3) Enter name of the ROMS grid file(s):
@@ -35,8 +36,8 @@ SWAN_COORD(2)='../../Projects/Sandy/Sandy_swan_coord_ref3.grd',
 SWAN_BATH(1)='../../Projects/Sandy/Sandy_swan_bathy.bot',
 SWAN_BATH(2)='../../Projects/Sandy/Sandy_swan_bathy_ref3.bot',
 SWAN_NUMX(1)=87,
-SWAN_NUMX(2)=116,
 SWAN_NUMY(1)=65,
+SWAN_NUMX(2)=116,
 SWAN_NUMY(2)=86,
 CARTESIAN(1)=0,
 CARTESIAN(2)=0,
@@ -50,9 +51,9 @@ WW3_YCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_ycoord.dat',
 WW3_BATH(1)='../../Projects/Sandy/WW3/ww3_sandy_bathy.bot',
 WW3_NUMX(1)=87,
 WW3_NUMY(1)=65,
-WW3_XCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_xcoord.dat',
-WW3_YCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_ycoord.dat',
-WW3_BATH(2)='../../Projects/Sandy/WW3/ww3_sandy_ref3_bathy.bot',
+WW3_XCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_xcoord_ref3.dat',
+WW3_YCOORD(2)='../../Projects/Sandy/WW3/ww3_sandy_ycoord_ref3.dat',
+WW3_BATH(2)='../../Projects/Sandy/WW3/ww3_sandy_bathy_ref3.bot',
 WW3_NUMX(2)=116,
 WW3_NUMY(2)=86,
 

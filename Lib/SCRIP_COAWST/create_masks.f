@@ -2196,6 +2196,7 @@
 
       integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
+      integer (kind=int_kind) :: mx, my, scale, scale2
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
 !  Allocate the source mask
@@ -2226,13 +2227,13 @@
         do mo=2,Ngrids_roms
           i=ngrd_rm(mo)%xi_size
           do j=1,ngrd_rm(mo)%eta_size
-            ngrd_rm(mo)%src_mask(1,j)=0
-            ngrd_rm(mo)%src_mask(i,j)=0
+!            ngrd_rm(mo)%src_mask(1,j)=0
+!            ngrd_rm(mo)%src_mask(i,j)=0
           end do
           j=ngrd_rm(mo)%eta_size
           do i=1,ngrd_rm(mo)%xi_size
-            ngrd_rm(mo)%src_mask(i,1)=0
-            ngrd_rm(mo)%src_mask(i,j)=0
+!            ngrd_rm(mo)%src_mask(i,1)=0
+!            ngrd_rm(mo)%src_mask(i,j)=0
           end do
         end do
       end if
@@ -2248,10 +2249,56 @@
           ny=ngrd_w3(mw)%Numy_ww3
           allocate(ngrd_w3(mw)%dst_mask(nx,ny))
           allocate(dst_mask_unlim(nx,ny))
+          do nx=1,ngrd_w3(mw)%Numx_ww3
+            do ny=1,ngrd_w3(mw)%Numy_ww3
+              ngrd_w3(mw)%dst_mask(nx,ny)=1
+              dst_mask_unlim(nx,ny)=1
+            enddo
+          enddo
+
 !
 !  Compute ww3 grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
+
+          if (roms_ww3_samegrid.eq.1) then
+            if (mw.eq.mo) then                     ! same grid, start with src mask
+              samegrid=1
+              do nx=1,ngrd_w3(mw)%Numx_ww3
+                do ny=1,ngrd_w3(mw)%Numy_ww3
+                  ngrd_w3(mw)%dst_mask(nx,ny)=                          &
+     &                                       ngrd_rm(mo)%src_mask(nx,ny)
+                enddo
+              enddo
+            end if
+            if (mw.gt.mo) then                    ! src is coarser, no use it
+              samegrid=0
+              do nx=1,ngrd_w3(mw)%Numx_ww3
+                do ny=1,ngrd_w3(mw)%Numy_ww3
+                  ngrd_w3(mw)%dst_mask(nx,ny)=0
+                enddo
+              enddo
+            end if
+            if (mw.lt.mo) then                   ! wave is larger than ocn
+              samegrid=0
+              do nx=1,ngrd_w3(mw)%Numx_ww3
+                do ny=1,ngrd_w3(mw)%Numy_ww3
+                  ngrd_w3(mw)%dst_mask(nx,ny)=0  ! start with all 0s
+                enddo
+              enddo
+              if (mw.eq.mo-1) then                 ! wave is 1x larger than ocn
+                do nx=ngrd_w3(mw+1)%istr_w,ngrd_w3(mw+1)%iend_w
+                  do ny=ngrd_w3(mw+1)%jstr_w,ngrd_w3(mw+1)%jend_w
+                    ngrd_w3(mw)%dst_mask(nx,ny)=1  ! make child receiving area be 1
+                  end do
+                end do
+              else                                 ! wave is 2x or more larger than ocn, do nothing
+              end if
+            end if
+          else            !not same roms swan grids
+            samegrid=0
+
+
           do nx=1,ngrd_w3(mw)%Numx_ww3
             do ny=1,ngrd_w3(mw)%Numy_ww3
               dist_max=10e6
@@ -2263,14 +2310,6 @@
                 do i=1,ngrd_rm(mo)%xi_size
                   dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
      &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
-!                 xx1=ngrd_rm(mo)%lon_rho_o(i,j)
-!                 yy1=ngrd_rm(mo)%lat_rho_o(i,j)
-!                 dlon = xx1-xx2
-!                 latrad1=abs(yy1*deg2rad)
-!                 latrad2=abs(yy2*deg2rad)
-!                 dep=cos(0.5*(latrad2+latrad1))*dlon
-!                 dlat=yy2-yy1
-!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -2282,6 +2321,8 @@
      &                                 ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
             enddo
           enddo
+         end if         ! roms /= swan grids
+
 !  Apply the ww3 grid Land/Sea mask to dst_mask
           do j=1,ngrd_w3(mw)%Numy_ww3
             do i=1,ngrd_w3(mw)%Numx_ww3
@@ -2405,7 +2446,7 @@
 
           counter_grid=counter_grid+1
           My_map_type = 2
-          samegrid=0
+!         samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -2500,13 +2541,13 @@
         do mw=2,Ngrids_ww3
           i=ngrd_w3(mw)%Numx_ww3
           do j=1,ngrd_w3(mw)%Numy_ww3
-            ngrd_w3(mw)%src_mask(1,j)=0
-            ngrd_w3(mw)%src_mask(i,j)=0
+!            ngrd_w3(mw)%src_mask(1,j)=0
+!            ngrd_w3(mw)%src_mask(i,j)=0
           end do
           j=ngrd_w3(mw)%Numy_ww3
           do i=1,ngrd_w3(mw)%Numx_ww3
-            ngrd_w3(mw)%src_mask(i,1)=0
-            ngrd_w3(mw)%src_mask(i,j)=0
+!            ngrd_w3(mw)%src_mask(i,1)=0
+!            ngrd_w3(mw)%src_mask(i,j)=0
           end do
         end do
       end if
@@ -2520,40 +2561,77 @@
           ny=ngrd_rm(mo)%eta_size
           allocate(ngrd_rm(mo)%dst_mask(nx,ny))
           allocate(dst_mask_unlim(nx,ny))
+          do nx=1,ngrd_rm(mo)%xi_size
+            do ny=1,ngrd_rm(mo)%eta_size
+              ngrd_rm(mo)%dst_mask(nx,ny)=1
+              dst_mask_unlim(nx,ny)=1
+            enddo
+          enddo
+
 !
 !  Compute roms grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_rm(mo)%xi_size
-            do ny=1,ngrd_rm(mo)%eta_size
-              dist_max=10e6
-              Ikeep=1
-              Jkeep=1
-              xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
-              yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
-              do j=1,ngrd_w3(mw)%Numy_ww3
-                do i=1,ngrd_w3(mw)%Numx_ww3
-                  dist1=sqrt((ngrd_w3(mw)%lon_rho_w(i,j)-xx2)**2+       &
-     &                       (ngrd_w3(mw)%lat_rho_w(i,j)-yy2)**2)
-!                 xx1=ngrd_sw(mw)%lon_rho_w(i,j)
-!                 yy1=ngrd_sw(mw)%lat_rho_w(i,j)
-!                 dlon = xx1-xx2
-!                 latrad1=abs(yy1*deg2rad)
-!                 latrad2=abs(yy2*deg2rad)
-!                 dep=cos(0.5*(latrad2+latrad1))*dlon
-!                 dlat=yy2-yy1
-!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
-                  if(dist1<=dist_max)then
-                    dist_max=dist1
-                    Ikeep=i
-                    Jkeep=j
-                  endif
+          if (roms_ww3_samegrid.eq.1) then
+            if (mo.eq.mw) then                     ! same grid, start with src mask
+              samegrid=1
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=                          &
+     &                                       ngrd_w3(mw)%src_mask(nx,ny)
                 enddo
               enddo
-              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
+            end if
+            if (mo.gt.mw) then                    ! src is coarser, no use it
+              samegrid=0
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=0
+                enddo
+              enddo
+            end if
+            if (mo.lt.mw) then                   ! wave is larger than ocn
+              samegrid=0
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=0  ! start with all 0s
+                enddo
+              enddo
+              if (mo.eq.mw-1) then                 ! ocn is 1x larger than wav
+                do nx=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
+                  do ny=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+                    ngrd_rm(mo)%dst_mask(nx,ny)=1  ! make child receiving area be 1
+                  end do
+                end do
+              else                                 ! ocn is 2x or more larger than wav, do 0
+              end if
+            end if
+          else            !not same roms swan grids
+            samegrid=0
+            do nx=1,ngrd_rm(mo)%xi_size
+              do ny=1,ngrd_rm(mo)%eta_size
+                dist_max=10e6
+                Ikeep=1
+                Jkeep=1
+                xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
+                yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
+                do j=1,ngrd_w3(mw)%Numy_ww3
+                  do i=1,ngrd_w3(mw)%Numx_ww3
+                    dist1=sqrt((ngrd_w3(mw)%lon_rho_w(i,j)-xx2)**2+     &
+     &                         (ngrd_w3(mw)%lat_rho_w(i,j)-yy2)**2)
+                    if(dist1<=dist_max)then
+                      dist_max=dist1
+                      Ikeep=i
+                      Jkeep=j
+                    endif
+                  enddo
+                enddo
+                ngrd_rm(mo)%dst_mask(nx,ny)=                            &
      &                                 ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
+              enddo
             enddo
-          enddo
+          end if         ! roms /= swan grids
+
 !  Apply the roms grid Land/Sea mask to dst_mask
           do j=1,ngrd_rm(mo)%eta_size
             do i=1,ngrd_rm(mo)%xi_size
@@ -2632,7 +2710,7 @@
 
           counter_grid=counter_grid+1
           My_map_type = 2
-          samegrid=0
+!         samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_w3(mw)%Numx_ww3,                      &

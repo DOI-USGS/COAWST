@@ -57,12 +57,13 @@
 ! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = namelist.input                            ! atmospheric model
-!   WAV_name = Projects/Sandy/swan_sandy.in \
-!              Projects/Sandy/swan_sandy_ref3.in         ! wave model
-   WAV_name = ww3_grid.inp
-!  WAV_name = Projects/Sandy/WW3/ww3_multi.inp
-   OCN_name = Projects/Sandy/WW3/ocean_sandy.in             ! ocean model
-   HYD_name = hydro.namelist                            ! hydro model
+!  WAV_name = Projects/Sandy/swan_sandy.in \
+!             Projects/Sandy/swan_sandy_ref3.in         ! SWAN wave model
+!
+!  WAV_name = ww3_grid.inp                         ! use this for WW3 no   NESTING
+   WAV_name = Projects/Sandy/WW3/ww3_multi.inp     ! use this for WW3 with NESTING
+   OCN_name = Projects/Sandy/WW3/ocean_sandy.in    ! ocean model
+   HYD_name = hydro.namelist                       ! hydro model
 
 ! Sparse matrix interpolation weights files. You have 2 options:
 ! Enter "1" for option 1, or "2" for option 2, and then list the 
@@ -75,11 +76,10 @@
 !           weights. This file is created using the code in
 !           Lib/SCRIP_COAWST/scrip_coawst[.exe]
 
-!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
-   SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
-!  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
-
-!   SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_2ww3_2roms.nc
+!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc ! roms(2) swan(2) WRF(2)moving
+!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc ! roms(2) swan(2) WRF(2)static
+!  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc  ! roms(1) ww3(1) WRF(2)
+   SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_roms_ww3_2grids.nc  ! roms(2) ww3(2)
 
 !
 !  GLOSSARY:
