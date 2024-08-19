@@ -34,6 +34,9 @@ INPGRID FRIC CURVILINEAR 0 0 86 64 EXC 9.999000e+003 &
 INPGRID WIND REGULAR -105 10 0 220 160 0.25 0.25 &
        NONSTATIONARY 20121028.000000 6 HR 20121031.000000
 &READINP WIND 1 'Projects/Sandy/swan_GFS_Oct2012.dat' 4 0 FREE
+& the line above should be commented when coupling to WRF,
+& and should not be commented when swan needs to read the wind file.
+
 
 & Boundary files  ****************************************
 

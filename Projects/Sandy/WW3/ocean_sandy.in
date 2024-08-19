@@ -77,12 +77,12 @@
 
 ! Number of nested grids.
 
-      Ngrids =  1
+      Ngrids =  2
 
 ! Number of grid nesting layers.  This parameter is used to allow refinement
 ! and composite grid combinations.
 
-  NestLayers =  1
+  NestLayers =  2
 
 ! Number of grids in each nesting layer [1:NestLayers].
 
@@ -667,7 +667,6 @@ Hout(idUair) == T T     ! Uwind              surface U-wind
 Hout(idVair) == T T     ! Vwind              surface V-wind
 Hout(idUairE) == T T    ! Uwind_eastward     surface U-wind
 Hout(idVairN) == T T    ! Vwind_northward    surface V-wind
-Hout(idaoCd) == T T     ! Vwind              atm-ocn Cd
 
 Hout(idTsur) == T T T T ! shflux, ssflux     surface net heat and salt flux
 Hout(idLhea) == T T     ! latent             latent heat flux
@@ -768,7 +767,11 @@ Qout(idWdip) == F       ! Dwavep             wave direction-peak
 Qout(idWptp) == F       ! Pwave_top          wave surface period
 Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
-Qout(idWdis) == F       ! Wave_dissip        wave dissipation
+Qout(idWdif) == T       ! Dissip_fric        wave dissipation due to bottom friction
+Qout(idWdib) == T       ! Dissip_break       wave dissipation due to breaking
+Qout(idWdiw) == T       ! Dissip_wcap        wave dissipation due to white capping
+Qout(idWdis) == T       ! Dissip_roller      wave roller dissipation
+Qout(idWrol) == T       ! rollA              wave roller action density
 
 Qout(idPair) == F       ! Pair               surface air pressure
 Qout(idTair) == F       ! Tair               surface air temperature
@@ -1078,10 +1081,10 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc 
-!                Projects/Sandy/Sandy_roms_grid_ref3.nc
-     ININAME == Projects/Sandy/Sandy_ini.nc
-!                Projects/Sandy/Sandy_ini_ref3.nc
+     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc \
+                Projects/Sandy/Sandy_roms_grid_ref3.nc
+     ININAME == Projects/Sandy/Sandy_ini.nc \
+                Projects/Sandy/Sandy_ini_ref3.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -1139,8 +1142,8 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! the last one.
 
      NCLMFILES == 1                         ! number of climate files
-     CLMNAME == Projects/Sandy/Sandy_clm.nc 
-!                Projects/Sandy/Sandy_clm_ref3.nc
+     CLMNAME == Projects/Sandy/Sandy_clm.nc \
+                Projects/Sandy/Sandy_clm_ref3.nc
 
 
 ! Input climatology nudging coefficients file name.
@@ -1174,23 +1177,23 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! the last one.
 
      NFFILES == 1
-     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc 
-!                Projects/Sandy/romsforc_NARR_Sandy2012.nc
+     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc \
+                Projects/Sandy/romsforc_NARR_Sandy2012.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
-     RSTNAME == Sandy_ocean_rst.nc 
-!                Sandy_ocean_ref3_rst.nc
-     HISNAME == Sandy_ocean_his.nc 
-!                Sandy_ocean_ref3_his.nc
+     RSTNAME == Sandy_ocean_rst.nc \
+                Sandy_ocean_ref3_rst.nc
+     HISNAME == Sandy_ocean_his.nc \
+                Sandy_ocean_ref3_his.nc
      QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
-     AVGNAME == Sandy_ocean_avg.nc 
-!                Sandy_ocean_ref3_avg.nc
+     AVGNAME == Sandy_ocean_avg.nc \
+                Sandy_ocean_ref3_avg.nc
      HARNAME == ocean_har.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
@@ -2839,7 +2842,11 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! Qout(idWptp)   Write out wave surface period.
 ! Qout(idWpbt)   Write out wave bottom period.
 ! Qout(idWorb)   Write out wave bottom orbital velocity.
-! Qout(idWdis)   Write out wave dissipation.
+! Qout(idWdif)   Write out wave dissipation due to bottom friction
+! Qout(idWdib)   Write out wave dissipation due to breaking
+! Qout(idWdiw)   Write out wave dissipation due to white capping
+! Qout(idWdis)   Write out wave roller dissipation
+! Qout(idWrol)   Write out wave roller action density
 !
 ! Qout(idPair)   Write out surface air pressure.
 ! Qout(idTair)   Write out surface air temperature.
