@@ -2047,6 +2047,18 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_ds, FORCES(ng)%Wave_qp)
 # endif
+# ifdef SPECTRUM_STOKES
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,1,MSCs,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%spec_wn)
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,1,MSCs,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%spec_us,FORCES(ng)%spec_vs)
+# endif
 #endif
 !
 !  Deallocate communication arrays.
