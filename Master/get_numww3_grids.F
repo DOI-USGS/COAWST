@@ -49,28 +49,27 @@
       INTEGER, PARAMETER      :: CLGTYPE = 2
       INTEGER, PARAMETER      :: UNGTYPE = 3
       INTEGER, PARAMETER      :: SMCTYPE = 4
-      LOGICAL                 :: FLAGLL, JCWL
-      REAL                    :: JCWR
-      REAL, ALLOCATABLE       :: XGRD4(:,:), YGRD4(:,:)
-      INTEGER, ALLOCATABLE       :: NBO(:), NBO2(:)
-
-      REAL, ALLOCATABLE       :: TRNX(:,:), TRNY(:,:)
-      REAL, ALLOCATABLE       ::    ZB(:)
+      INTEGER, ALLOCATABLE    :: NBO(:), NBO2(:)
       INTEGER, ALLOCATABLE    :: MAPTMP(:,:), MAPFS(:,:), MAPSF(:,:)
 
-      REAL             :: SX, SY, X0, Y0, DTCFL, DTCFLI, DTMAX,      &
-         DTMIN, DMIN, CTMAX, FICE0, FICEN, FICEL,   &
-         PFMOVE, STEXU, STEYU, STEDU, IICEHMIN,     &
-         IICEHINIT, ICESCALES(4), IICEHFAC, IICEHDISP, &
-         IICEDDISP, IICEFDISP, BTBETA, AAIRCMIN, AAIRGB
-      LOGICAL          :: GINIT, FLDRY, FLCX, FLCY, FLCTH, FLCK,    &
+      REAL, ALLOCATABLE       :: XGRD4(:,:), YGRD4(:,:)
+      REAL, ALLOCATABLE       :: TRNX(:,:), TRNY(:,:)
+      REAL, ALLOCATABLE       ::    ZB(:)
+      REAL                    :: JCWR
+      REAL             :: SX, SY, X0, Y0, DTCFL, DTCFLI, DTMAX,         &
+     &                    DTMIN, DMIN, CTMAX, FICE0, FICEN, FICEL,      &
+     &                    PFMOVE, STEXU, STEYU, STEDU, IICEHMIN,        &
+     &                    IICEHINIT, ICESCALES(4), IICEHFAC, IICEHDISP, &
+     &                    IICEDDISP, IICEFDISP, BTBETA, AAIRCMIN, AAIRGB
+      LOGICAL          :: FLAGLL, JCWL
+      LOGICAL          :: GINIT, FLDRY, FLCX, FLCY, FLCTH, FLCK,        &
      &                    FLSOU, IICEDISP, IICESMOOTH
       REAL   , ALLOCATABLE :: CLATS(:)
       REAL   , ALLOCATABLE :: CLATIS(:)
       REAL   , ALLOCATABLE :: CTHG0S(:)
-      LOGICAL          :: CMPRTRCK
-      CHARACTER    :: CALTYPE*8
-      LOGICAL               :: FLBPI, FLBPO
+      LOGICAL              :: CMPRTRCK
+      CHARACTER            :: CALTYPE*8
+      LOGICAL              :: FLBPI, FLBPO
       
 !$UNSTR
       LOGICAL :: FSN,FSPSI,FSFCT,FSNIMP,FSTOTALIMP,FSTOTALEXP
@@ -91,7 +90,7 @@
       REAL*8  :: B_JGS_NORM_THR
       INTEGER :: B_JGS_NLEVEL
       LOGICAL :: B_JGS_SOURCE_NONLINEAR
-      INTEGER  :: NTRI, COUNTOT, COUNTRI, NNZ
+      INTEGER :: NTRI, COUNTOT, COUNTRI, NNZ
 !
       REAL :: MAXX, MAXY, DXYMAX
       DOUBLE PRECISION, POINTER  :: XGRD(:,:), YGRD(:,:) 
@@ -160,133 +159,125 @@
         write(moddef_name,'(A11,I1)') 'mod_def.grd',num
         OPEN (inp, FILE=TRIM(moddef_name), FORM='unformatted',          &
      &        STATUS='old', convert='big_endian',ERR=110)
-      GO TO 130
- 110  WRITE (out,120) tempname
-      IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,         &
-     &                        TRIM(tempname)
-!     exit_flag=4
-      RETURN
- 120  FORMAT (/,' get num ww3 grids - Unable to open ww3 input file.',  &
-     &        /,a80)
- 130  CONTINUE
+        GO TO 130
+ 110    WRITE (out,120) tempname
+        IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,       &
+     &                          TRIM(tempname)
+!       exit_flag=4
+        RETURN
+ 120    FORMAT (/,' get num ww3 grids - Unable to open ww3 input file.',&
+     &          /,a80)
+ 130    CONTINUE
 !
-!      DO WHILE (.TRUE.)
-    REWIND ( inp )
-
-      READ (inp,END=801,ERR=802,IOSTAT=IERR)                    &
-           IDTST, VERTST, NX, NY, NSEA, MTH, MK,                 &
-           NBI, NFBPO, GNAME, FNAME0, FNAME1, FNAME2, FNAME3,    &
-           FNAME4, FNAME5, FNAME6, FNAMEP, FNAMEG,               &
-           FNAMEF, FNAMEI
-      !
-
-      ALLOCATE (NBO(0:NFBPO), NBO2(0:NFBPO)) 
-      READ (inp,END=801,ERR=802,IOSTAT=IERR)                   &
-           (NBO(I),I=0,NFBPO), (NBO2(I),I=0,NFBPO)
-      DEALLOCATE (NBO, NBO2) 
-
-      READ (inp,END=801,ERR=802,IOSTAT=IERR)                      &
-           GTYPE, FLAGLL, ICLOSE
-
-      SELECT CASE ( GTYPE )
-      CASE ( RLGTYPE )
-       READ (inp,END=801,ERR=802,IOSTAT=IERR)                 &
-             SX, SY, X0, Y0
-
-      CASE ( CLGTYPE )
-        ALLOCATE(XGRD4(NY,NX),YGRD4(NY,NX)); XGRD4 = 0.; YGRD4 = 0.
-        READ (inp,END=801,ERR=802,IOSTAT=IERR)               &
-             XGRD4, YGRD4
-        DEALLOCATE(XGRD4, YGRD4)
-
-      CASE (UNGTYPE)
-
-        ALLOCATE ( XGRD(1,NX), YGRD(1,NX) )
-        ALLOCATE ( CCON(NX), COUNTCON(NX) )
-        ALLOCATE ( IAA(NX+1) )
-        ALLOCATE ( INDEX_CELL(NX+1) )
-        ALLOCATE ( IOBP(NX) )
-        ALLOCATE ( IOBPD(MTH,NX), IOBDP(NX), IOBPA(NX) )
+        REWIND ( inp )
 
         READ (inp,END=801,ERR=802,IOSTAT=IERR)                          &
+     &       IDTST, VERTST, NX, NY, NSEA, MTH, MK,                      &
+     &       NBI, NFBPO, GNAME, FNAME0, FNAME1, FNAME2, FNAME3,         &
+     &       FNAME4, FNAME5, FNAME6, FNAMEP, FNAMEG,                    &
+     &       FNAMEF, FNAMEI
+!
+#if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
+!  use grid 1 to set the number of freqs.
+        IF (num.eq.1) THEN
+          MSCs=MK
+        END IF
+#endif
+        ALLOCATE (NBO(0:NFBPO), NBO2(0:NFBPO)) 
+        READ (inp,END=801,ERR=802,IOSTAT=IERR)                          &
+     &       (NBO(I),I=0,NFBPO), (NBO2(I),I=0,NFBPO)
+        DEALLOCATE (NBO, NBO2) 
+!
+        READ (inp,END=801,ERR=802,IOSTAT=IERR)                          &
+              GTYPE, FLAGLL, ICLOSE
+!
+        SELECT CASE ( GTYPE )
+
+        CASE ( RLGTYPE )
+          READ (inp,END=801,ERR=802,IOSTAT=IERR) SX, SY, X0, Y0
+
+        CASE ( CLGTYPE )
+          ALLOCATE(XGRD4(NY,NX),YGRD4(NY,NX)); XGRD4 = 0.; YGRD4 = 0.
+          READ (inp,END=801,ERR=802,IOSTAT=IERR) XGRD4, YGRD4
+          DEALLOCATE(XGRD4, YGRD4)
+
+        CASE (UNGTYPE)
+          ALLOCATE ( XGRD(1,NX), YGRD(1,NX) )
+          ALLOCATE ( CCON(NX), COUNTCON(NX) )
+          ALLOCATE ( IAA(NX+1) )
+          ALLOCATE ( INDEX_CELL(NX+1) )
+          ALLOCATE ( IOBP(NX) )
+          ALLOCATE ( IOBPD(MTH,NX), IOBDP(NX), IOBPA(NX) )
+
+          READ (inp,END=801,ERR=802,IOSTAT=IERR)                        &
      &        FSN, FSPSI,FSFCT,FSNIMP,FSTOTALIMP,FSTOTALEXP,            &
      &        FSBCCFL, FSREFRACTION, FSFREQSHIFT, FSSOURCE,             &
-     &        DO_CHANGE_WLV, SOLVERTHR_STP, CRIT_DEP_STP,      &
-     &        NTRI, COUNTOT, COUNTRI, NNZ,                     &
-     &        B_JGS_TERMINATE_MAXITER,                         &
-     &        B_JGS_TERMINATE_DIFFERENCE,                      &
-     &        B_JGS_TERMINATE_NORM,                            &
-     &        B_JGS_LIMITER,                                   &
-     &        B_JGS_BLOCK_GAUSS_SEIDEL,                        &
-     &        B_JGS_USE_JACOBI,                                &
-     &        B_JGS_MAXITER,                                   &
-     &        B_JGS_PMIN,                                      &
-     &        B_JGS_DIFF_THR,                                  &
-     &        B_JGS_NORM_THR,                                  &
-     &        B_JGS_NLEVEL,                                    &
+     &        DO_CHANGE_WLV, SOLVERTHR_STP, CRIT_DEP_STP,               &
+     &        NTRI, COUNTOT, COUNTRI, NNZ,                              &
+     &        B_JGS_TERMINATE_MAXITER,                                  &
+     &        B_JGS_TERMINATE_DIFFERENCE,                               &
+     &        B_JGS_TERMINATE_NORM,                                     &
+     &        B_JGS_LIMITER,                                            &
+     &        B_JGS_BLOCK_GAUSS_SEIDEL,                                 &
+     &        B_JGS_USE_JACOBI,                                         &
+     &        B_JGS_MAXITER,                                            &
+     &        B_JGS_PMIN,                                               &
+     &        B_JGS_DIFF_THR,                                           &
+     &        B_JGS_NORM_THR,                                           &
+     &        B_JGS_NLEVEL,                                             &
      &        B_JGS_SOURCE_NONLINEAR
 
-        ALLOCATE ( TRIGP(3,NTRI) )
-        ALLOCATE ( TRIA(NTRI), LEN(NTRI,3),SI(NX), IEN(NTRI,6) )
-        ALLOCATE ( ANGLE(NTRI,3), ANGLE0(NTRI,3) )
-        ALLOCATE ( IE_CELL(COUNTOT) )
-        ALLOCATE ( POS_CELL(COUNTOT) )
-        ALLOCATE ( POSI(3,COUNTOT) )
-        ALLOCATE ( JAA(NNZ) )
+          ALLOCATE ( TRIGP(3,NTRI) )
+          ALLOCATE ( TRIA(NTRI), LEN(NTRI,3),SI(NX), IEN(NTRI,6) )
+          ALLOCATE ( ANGLE(NTRI,3), ANGLE0(NTRI,3) )
+          ALLOCATE ( IE_CELL(COUNTOT) )
+          ALLOCATE ( POS_CELL(COUNTOT) )
+          ALLOCATE ( POSI(3,COUNTOT) )
+          ALLOCATE ( JAA(NNZ) )
 
-        READ (inp,END=801,ERR=802,IOSTAT=IERR)               &
-             X0, Y0, SX, SY, DXYMAX, XGRD, YGRD, TRIGP, TRIA, &
-             LEN, IEN, ANGLE0, ANGLE, SI, MAXX, MAXY,         &
-             DXYMAX, INDEX_CELL, CCON, COUNTCON, IE_CELL,     &
-             POS_CELL, IOBP, IOBPA, IOBDP, IOBPD, IAA, JAA, POSI
-
-
-        DEALLOCATE ( XGRD, YGRD )
-        DEALLOCATE ( TRIGP )
-        DEALLOCATE ( TRIA, LEN, SI, IEN )
-        DEALLOCATE ( ANGLE, ANGLE0 )
-        DEALLOCATE ( CCON, COUNTCON, IE_CELL )
-        DEALLOCATE ( POS_CELL, IAA, JAA )
-        DEALLOCATE ( POSI, INDEX_CELL )
-        DEALLOCATE ( IOBP )
-        DEALLOCATE ( IOBPD, IOBDP, IOBPA )
+          READ (inp,END=801,ERR=802,IOSTAT=IERR)                        &
+     &             X0, Y0, SX, SY, DXYMAX, XGRD, YGRD, TRIGP, TRIA,     &
+     &        LEN, IEN, ANGLE0, ANGLE, SI, MAXX, MAXY,                  &
+     &        DXYMAX, INDEX_CELL, CCON, COUNTCON, IE_CELL,              &
+     &        POS_CELL, IOBP, IOBPA, IOBDP, IOBPD, IAA, JAA, POSI
 
 
+          DEALLOCATE ( XGRD, YGRD )
+          DEALLOCATE ( TRIGP )
+          DEALLOCATE ( TRIA, LEN, SI, IEN )
+          DEALLOCATE ( ANGLE, ANGLE0 )
+          DEALLOCATE ( CCON, COUNTCON, IE_CELL )
+          DEALLOCATE ( POS_CELL, IAA, JAA )
+          DEALLOCATE ( POSI, INDEX_CELL )
+          DEALLOCATE ( IOBP )
+          DEALLOCATE ( IOBPD, IOBDP, IOBPA )
 
-      END SELECT !GTYPE
+        END SELECT !GTYPE
  
+        ALLOCATE ( ZB(1:NSEA) )
+        ALLOCATE ( MAPTMP(NY,NX), MAPFS(NY,NX), MAPSF(NSEA,3) )
+        READ (inp,END=801,ERR=802,IOSTAT=IERR)   &
+     &              ZB, MAPTMP, MAPFS, MAPSF, TRFLAG
+        DEALLOCATE ( ZB, MAPTMP, MAPFS, MAPSF )
 
-      ALLOCATE ( ZB(1:NSEA) )
-      ALLOCATE ( MAPTMP(NY,NX), MAPFS(NY,NX), MAPSF(NSEA,3) )
-      READ (inp,END=801,ERR=802,IOSTAT=IERR)   &
-     &            ZB, MAPTMP, MAPFS, MAPSF, TRFLAG
-      DEALLOCATE ( ZB, MAPTMP, MAPFS, MAPSF )
+        IF ( TRFLAG .NE. 0 ) THEN
+           ALLOCATE ( TRNX(NY,NX), TRNY(NY,NX) )
+           READ (inp,END=801,ERR=802,IOSTAT=IERR) TRNX, TRNY
+           DEALLOCATE ( TRNX, TRNY )
+        END IF
 
-      IF ( TRFLAG .NE. 0 ) THEN
-         ALLOCATE ( TRNX(NY,NX), TRNY(NY,NX) )
-         READ (inp,END=801,ERR=802,IOSTAT=IERR) TRNX, TRNY
+        ALLOCATE ( CLATS(0:NSEA), CLATIS(0:NSEA), CTHG0S(0:NSEA) )
 
-        if (myrank.eq.0) then
-!        write(*,*) 'trnx is ', trnx
-        endif
-        if (myrank.eq.0) then
-!        write(*,*) 'trny is ', trny
-        endif
-         DEALLOCATE ( TRNX, TRNY )
-      END IF
-
-      ALLOCATE ( CLATS(0:NSEA), CLATIS(0:NSEA), CTHG0S(0:NSEA) )
-
-      READ (inp,END=801,ERR=802,IOSTAT=IERR)                       &
-     &           DTCFL, DTCFLI, DTMAX, DTMIN, DMIN, CTMAX,         &
-     &      FICE0, FICEN, FICEL, PFMOVE, FLDRY, FLCX, FLCY,        &
-     &      FLCTH, FLCK, FLSOU, FLBPI, FLBPO, CLATS, CLATIS,       &
-     &      CTHG0S, STEXU, STEYU, STEDU, IICEHMIN, IICEHINIT,      &
-     &      IICEDISP, ICESCALES(1:4), CALTYPE, CMPRTRCK, IICEHFAC, &
-     &      IICEDDISP, IICEHDISP, IICEFDISP, BTBETA,               &
+        READ (inp,END=801,ERR=802,IOSTAT=IERR)                          &
+     &           DTCFL, DTCFLI, DTMAX, DTMIN, DMIN, CTMAX,              &
+     &      FICE0, FICEN, FICEL, PFMOVE, FLDRY, FLCX, FLCY,             &
+     &      FLCTH, FLCK, FLSOU, FLBPI, FLBPO, CLATS, CLATIS,            &
+     &      CTHG0S, STEXU, STEYU, STEDU, IICEHMIN, IICEHINIT,           &
+     &      IICEDISP, ICESCALES(1:4), CALTYPE, CMPRTRCK, IICEHFAC,      &
+     &      IICEDDISP, IICEHDISP, IICEFDISP, BTBETA,                    &
      &      AAIRCMIN, AAIRGB
 
-      DEALLOCATE ( CLATS, CLATIS, CTHG0S )
+        DEALLOCATE ( CLATS, CLATIS, CTHG0S )
 
 !  assign dtwav
         dtwav(num)=DTCFL

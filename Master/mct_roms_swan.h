@@ -439,7 +439,7 @@
         cid=cid+cad
       END DO
 #endif
-#  if defined WAVE_PARTITION
+#if defined WAVE_PARTITION
 !
       to_add=':HsPT01'
       cad=LEN_TRIM(to_add)
@@ -490,7 +490,7 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#  endif
+#endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.

@@ -1289,6 +1289,9 @@ CONTAINS
          SYY, SXY, PHS, PTP, PLP, PDIR, PSI, PWS,    &
          PWST, PNR, USERO, TUSX, TUSY, PRMS, TPMS,   &
          USSX, USSY, MSSX, MSSY, MSSD, MSCX, MSCY,   &
+#ifdef W3_COAWST_MODEL
+         USS_COAWST, VSS_COAWST, KSS_COAWST,         &
+#endif
          MSCD, CHARN,                                &
          BHD, CGE, P2SMS, US3D, EF, TH1M, STH1M,     &
          TH2M, STH2M, HSIG, STMAXE, STMAXD,          &
@@ -1355,6 +1358,9 @@ CONTAINS
          ALPXT(NSEAL), ALPYT(NSEAL),          &
          ALPXY(NSEAL), SCREST(NSEAL)
     REAL                       USSCO, FT1
+#ifdef W3_COAWST_MODEL
+    REAL                       DS, ETOTX, ETOTY, ETOTXM1, ETOTYM1
+#endif
     REAL, SAVE              :: HSMIN = 0.01
     LOGICAL                 :: FLOLOC(NOGRP,NGRPP)
     !/
@@ -1399,6 +1405,11 @@ CONTAINS
     SXY    = 0.
     USSX   = 0.
     USSY   = 0.
+#ifdef W3_COAWST_MODEL
+    USS_COAWST   = 0.
+    VSS_COAWST   = 0.
+    KSS_COAWST   = 0.
+#endif
     TUSX   = 0.
     TUSY   = 0.
     MSSX   = 0.
@@ -1668,6 +1679,52 @@ CONTAINS
 #endif
       !
     END DO
+#ifdef W3_COAWST_MODEL
+!
+!  jcw compute uss vss kss for stokes
+!
+      DO JSEA=1, NSEAL
+        ETOTXM1 = 0.
+        ETOTYM1 = 0.
+
+        DO IK=2, NK
+!swan   DO IS = 2, MSC
+
+          ETOTX = 0.
+          ETOTY = 0.
+          DO ITH=1, NTH
+!swan     DO ID = 1, MDC
+!            ETOTX = ETOTX + ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
+!            ETOTY = ETOTY + ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
+             ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
+             ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
+          ENDDO
+! convert from A(theta,k) to E(theta,freq)
+          ETOTX = ETOTX*SIG(IK)/CG(IK,JSEA)  !/TPI
+          ETOTY = ETOTY*SIG(IK)/CG(IK,JSEA)  !/TPI
+!
+!         DS = SPCSIG(IS) - SPCSIG(IS-1)
+          DS = SIG(IK) - SIG(IK-1)
+!         USS(IP,IS-1) = DS*(WK(IS)*ETOTX*SPCSIG(IS)**2.0
+!    &                 + WK(IS-1)*ETOTXM1*SPCSIG(IS-1)**2.0)
+!         VSS(IP,IS-1) = DS*(WK(IS)*ETOTY*SPCSIG(IS)**2.0
+!    &                 + WK(IS-1)*ETOTYM1*SPCSIG(IS-1)**2.0)
+          USS_COAWST(JSEA,IK-1)=DS*(WN(IK,JSEA)*ETOTX*SIG(IK  )**2.0    &
+     &                            +WN(IK-1,JSEA)*ETOTXM1*SIG(IK-1)**2.0)
+          VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,JSEA)*ETOTY*SIG(IK  )**2.0    &
+     &                           +WN(IK-1,JSEA)*ETOTYM1* SIG(IK-1)**2.0)
+          ETOTXM1 = ETOTX
+          ETOTYM1 = ETOTY
+          KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,JSEA)+WN(IK-1,JSEA))
+        END DO
+
+        USS_COAWST(JSEA,NTH) = 2.0*WN(NTH,JSEA)*ETOTX*SIG(NTH)**3.0
+        VSS_COAWST(JSEA,NTH) = 2.0*WN(NTH,JSEA)*ETOTY*SIG(NTH)**3.0
+        KSS_COAWST(JSEA,NTH) = WN(NTH,JSEA)
+      END DO
+!  end jcw
+#endif
+
     !
     ! Start of Space-Time Extremes Section
     IF ( ( STEXU .GT. 0. .AND. STEYU .GT. 0. ) &

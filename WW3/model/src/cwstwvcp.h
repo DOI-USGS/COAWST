@@ -269,7 +269,7 @@
 !=======================================================================
 !
       USE MCT_COUPLER_PARAMS
-      USE W3GDATMD, ONLY: NX, NY, NSEA
+      USE W3GDATMD, ONLY: NX, NY, NSEA, NK
 # ifdef MCT_INTERP_WV2AT
 !     USE mod_coupler_iounits
 # endif
@@ -284,10 +284,14 @@
       integer :: i, j, io, ia, Isize, Jsize, Asize
       integer :: nRows, nCols, num_sparse_elems
       integer :: cid, cad
+      integer :: IZ
       character (len=70)  :: nc_name
       character (len=20)  :: to_add
-      character (len=120) :: wostring
-      character (len=120) :: owstring
+      character (len=1200) :: wostring
+      character (len=1200) :: owstring
+# if defined SPECTRUM_STOKES
+      character (len=5)   :: LSTCODE
+# endif
 
       real :: cff
 
@@ -592,13 +596,50 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+#  if defined VEGETATION && defined VEG_SWAN_COUPLING \
       && defined VEG_STREAMING
       to_add=':DISVEG'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#endif
+#  endif
+#  ifdef SPECTRUM_STOKES
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":KS",IZ
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":US",IZ
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":VS",IZ
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+#  endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -650,13 +691,6 @@
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
-#  ifdef ICE_MODEL
-!
-      to_add=':SEAICE'
-      cad=LEN_TRIM(to_add)
-      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
-      cid=cid+cad
-#  endif
 !
 !  Finalize and remove trailing spaces from the owstring
 !  for the rlist.
@@ -795,9 +829,10 @@
 !=======================================================================
 !
       USE CONSTANTS, ONLY: PI
-      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
+      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK
       USE MCT_COUPLER_PARAMS
-      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA
+      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA,            &
+     &                    USS_COAWST, VSS_COAWST, KSS_COAWST
       USE W3ADATMD, ONLY: THM, WLM
 !     USE W3ODATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
@@ -819,7 +854,10 @@
       integer :: start, length, grdsize
       integer :: Isize, Jsize, Nprocs, ipp
       integer, pointer :: points(:)
-
+# ifdef SPECTRUM_STOKES
+      character (len=4) :: SCODE
+      integer :: IZ
+# endif
       real, pointer :: SND_BUF(:), RCV_BUF(:)
       real(m8) :: fac, cff
       real(m8), pointer :: avdata(:)
@@ -1346,6 +1384,119 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                           "TAUOCN",avdata)
+!-------------------------------------------------------------------
+# ifdef SPECTRUM_STOKES
+!  USS_COAWST VSS_COAWST KSS_COAWST for computation of stokes
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!
+!  USS
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "US0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "US", IZ
+        END IF
+!
+        SND_BUF=0.0
+        DO i=1,NSEAL
+          IP=(MyRank+1)+(i-1)*Nprocs
+          IX     = MAPSF(IP,1)
+          IY     = MAPSF(IP,2)
+          IP=(IY-1)*NX+IX
+          SND_BUF(IP)=USS_COAWST(i,IZ)
+        END DO
+!
+!  Gather up all the data.
+!
+        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
+     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+        IP=0
+        DO i=start,start+length-1
+          IP=IP+1
+          avdata(IP)=REAL(RCV_BUF(i),m8)
+        END DO
+!
+        CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,           &
+     &                             SCODE,avdata)
+      END DO
+!
+!  VSS
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "VS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "VS", IZ
+        END IF
+!
+        SND_BUF=0.0
+        DO i=1,NSEAL
+          IP=(MyRank+1)+(i-1)*Nprocs
+          IX     = MAPSF(IP,1)
+          IY     = MAPSF(IP,2)
+          IP=(IY-1)*NX+IX
+          SND_BUF(IP)=VSS_COAWST(i,IZ)
+        END DO
+!
+!  Gather up all the data.
+!
+        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
+     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+        IP=0
+        DO i=start,start+length-1
+          IP=IP+1
+          avdata(IP)=REAL(RCV_BUF(i),m8)
+        END DO
+!
+        CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,           &
+     &                             SCODE,avdata)
+      END DO
+!
+!  KSS
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "KS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "KS", IZ
+        END IF
+!
+        SND_BUF=0.0
+        DO i=1,NSEAL
+          IP=(MyRank+1)+(i-1)*Nprocs
+          IX     = MAPSF(IP,1)
+          IY     = MAPSF(IP,2)
+          IP=(IY-1)*NX+IX
+          SND_BUF(IP)=KSS_COAWST(i,IZ)
+        END DO
+!
+!  Gather up all the data.
+!
+        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
+     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+        IP=0
+        DO i=start,start+length-1
+          IP=IP+1
+          avdata(IP)=REAL(RCV_BUF(i),m8)
+        END DO
+!
+        CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,           &
+     &                             SCODE,avdata)
+      END DO
+!
+# endif
 !
 !-----------------------------------------------------------------------
 !  Send wave fields bundle to ocean model, ROMS.
@@ -1354,7 +1505,7 @@
 # ifdef WAVES_OCEAN
           Tag=io*100+0*10+iw
           CALL MCT_isend (AttrVect_G(iw)%wav2ocn_AV,                    &
-     &                   Router_O(iw,io)%SWANtoROMS, Tag)
+     &                    Router_O(iw,io)%SWANtoROMS, Tag)
           CALL MCT_waits (Router_O(iw,io)%SWANtoROMS)
           IF (MyRank.EQ.0) THEN
             WRITE (SCREEN,36)' == WW3 grid ',iw,                        &

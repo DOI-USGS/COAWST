@@ -49,6 +49,14 @@ ww3_grdnum=2;
 %
 netcdf_load(roms_grid)
 [LP, MP]=size(h);
+
+% add small offset to every other grid so WW3 scrip can determine
+% over lap regions.
+if (mod(ww3_grdnum,2)==0)
+  lon_rho=lon_rho+0.000012;
+  lat_rho=lat_rho+0.000012;
+end
+
 %
 % 2) Create WW3 x coords
 %
@@ -139,13 +147,6 @@ fclose(fid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  here we create the unstructured mesh
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% add small offset to every other grid so WW3 scrip can determine
-% over lap regions.
-if (mod(ww3_grdnum,2)==0)
-  lon_rho=lon_rho+0.000012;
-  lat_rho=lat_rho+0.000012;
-end
 
 %
 % set grid increments

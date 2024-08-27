@@ -453,6 +453,10 @@ MODULE W3ADATMD
          USSY(:), TAUOCX(:), TAUOCY(:),      &
          PRMS(:),  TPMS(:), PHICE(:),        &
          TAUICE(:,:)
+#ifdef W3_COAWST_MODEL
+    REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),    &
+                             KSS_COAWST(:,:)
+#endif
     REAL, POINTER         ::  P2SMS(:,:),  US3D(:,:), USSP(:,:)
     REAL, POINTER         :: XSXX(:), XSYY(:), XSXY(:), XTAUOX(:),&
          XTAUOY(:), XBHD(:), XPHIOC(:),       &
@@ -609,6 +613,10 @@ MODULE W3ADATMD
        TUSX(:), TUSY(:), USSX(:), USSY(:),  &
        TAUOCX(:), TAUOCY(:), PRMS(:),       &
        TPMS(:), PHICE(:), TAUICE(:,:)
+#ifdef W3_COAWST_MODEL
+  REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),      &
+                           KSS_COAWST(:,:)
+#endif
   REAL, POINTER           :: P2SMS(:,:), US3D(:,:), USSP(:,:)
   !
   REAL, POINTER           :: ABA(:), ABD(:), UBA(:), UBD(:),      &
@@ -1201,6 +1209,11 @@ CONTAINS
          WADATS(IMOD)%TUSY  (NSEALM) ,                        &
          WADATS(IMOD)%USSX  (NSEALM) ,                        &
          WADATS(IMOD)%USSY  (NSEALM) ,                        &
+#ifdef W3_COAWST_MODEL
+         WADATS(IMOD)%USS_COAWST (NSEALM,NTH) ,               &
+         WADATS(IMOD)%VSS_COAWST (NSEALM,NTH) ,               &
+         WADATS(IMOD)%KSS_COAWST (NSEALM,NTH) ,               &
+#endif
          WADATS(IMOD)%TAUOCX(NSEALM) ,                        &
          WADATS(IMOD)%TAUOCY(NSEALM) ,                        &
          WADATS(IMOD)%PRMS  (NSEALM) ,                        &
@@ -1237,6 +1250,11 @@ CONTAINS
     WADATS(IMOD)%TUSY   = UNDEF
     WADATS(IMOD)%USSX   = UNDEF
     WADATS(IMOD)%USSY   = UNDEF
+#ifdef W3_COAWST_MODEL
+    WADATS(IMOD)%USS_COAWST = UNDEF
+    WADATS(IMOD)%VSS_COAWST = UNDEF
+    WADATS(IMOD)%KSS_COAWST = UNDEF
+#endif
     WADATS(IMOD)%TAUOCX = UNDEF
     WADATS(IMOD)%TAUOCY = UNDEF
     WADATS(IMOD)%PRMS   = UNDEF
@@ -2881,6 +2899,11 @@ CONTAINS
       TUSY   => WADATS(IMOD)%TUSY
       USSX   => WADATS(IMOD)%USSX
       USSY   => WADATS(IMOD)%USSY
+#ifdef W3_COAWST_MODEL
+      USS_COAWST   => WADATS(IMOD)%USS_COAWST
+      VSS_COAWST   => WADATS(IMOD)%VSS_COAWST
+      KSS_COAWST   => WADATS(IMOD)%KSS_COAWST
+#endif
       PRMS   => WADATS(IMOD)%PRMS
       TPMS   => WADATS(IMOD)%TPMS
       P2SMS  => WADATS(IMOD)%P2SMS

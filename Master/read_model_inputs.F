@@ -292,7 +292,18 @@
       DO WHILE (test.eq.1)
 ! Define spectrum
         READ (inp,'(a)',ERR=116,END=140) line
-        IF (line(1:1).ne.'$') test=0
+        IF (line(1:1).ne.'$') THEN
+          test=0
+! get the number of freqs
+          aline=ADJUSTL(line)
+          DO i=1,2
+            indx=INDEX(aline,blank)
+            aline=aline(indx+1:LEN(aline))
+            aline=ADJUSTL(aline)
+          END DO
+          indx=INDEX(aline,blank)
+          read(aline(1:indx),'(i2)') MSCs
+        END IF
       END DO
 !
       test=1

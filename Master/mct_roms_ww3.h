@@ -50,11 +50,15 @@
       integer :: cid, cad
       integer, allocatable :: length(:)
       integer, allocatable :: start(:)
-!      integer, dimension(2) :: src_grid_dims, dst_grid_dims
+!     integer, dimension(2) :: src_grid_dims, dst_grid_dims
+      integer               :: IZ
+#if defined SPECTRUM_STOKES
+      character (len=5)     :: LSTCODE
+#endif
       character (len=70)    :: nc_name
       character (len=20)    :: to_add
-      character (len=120)   :: wostring
-      character (len=120)   :: owstring
+      character (len=1200)   :: wostring
+      character (len=1200)   :: owstring
       real(r8) :: cff
 !
 !-----------------------------------------------------------------------
@@ -387,7 +391,46 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
+#ifdef SPECTRUM_STOKES
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":KS",IZ
+        END IF
 
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":US",IZ
+        END IF
+
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+        ELSE
+          WRITE(LSTCODE,"(A3,I2)") ":VS",IZ
+        END IF
+
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+#endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -1084,6 +1127,10 @@
 #ifdef DISTRIBUTE
       character (len=3), dimension(2) :: op_handle
 #endif
+#ifdef SPECTRUM_STOKES
+      character (len=4) :: SCODE
+      integer :: IZ
+#endif
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -1675,6 +1722,108 @@
 # endif
       IF (Myrank.eq.MyMaster) THEN
         write(stdout,40) 'WW3toROMS Min/Max DISVEG  (Wm-2):  ',         &
+     &                    range(1),range(2)
+      END IF
+#endif
+#ifdef SPECTRUM_STOKES
+!
+!  Spectrum stokes spec_wn
+!
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "KS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "KS",IZ
+        END IF
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                             A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_wn(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_wn(i,j,IZ)=FORCES(ng)%spec_wn(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max WAVENO  (m-1):   ',         &
+     &                    range(1),range(2)
+      END IF
+!
+!  Spectrum stokes spec_us
+!
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "US0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "US",IZ
+        END IF
+
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                           A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_us(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_us(i,j,IZ)=FORCES(ng)%spec_us(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max USS (ms-1):      ',         &
+     &                    range(1),range(2)
+      END IF
+!
+!  Spectrum stokes spec_vs
+!
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "VS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "VS",IZ
+        END IF
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                           A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            cff=A(ij)
+            IF (iw.eq.1) THEN
+              FORCES(ng)%spec_vs(i,j,IZ)=cff
+            ELSE
+              FORCES(ng)%spec_vs(i,j,IZ)=FORCES(ng)%spec_vs(i,j,IZ)+    &
+     &                               cff
+            END IF
+            range(1)=MIN(range(1),cff)
+            range(2)=MAX(range(2),cff)
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max VSS     (ms-1):  ',         &
      &                    range(1),range(2)
       END IF
 #endif
