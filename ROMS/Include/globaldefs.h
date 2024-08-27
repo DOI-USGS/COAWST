@@ -914,7 +914,7 @@
 #endif
 
 #if defined WEC
-# if defined SWAN_COUPLING || defined WW3_COUPLING
+# if defined SWAN_COUPLING
 #   define SPECTRUM_STOKES
 # else
 #   define BULK_STOKES
