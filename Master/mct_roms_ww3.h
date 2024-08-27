@@ -1971,6 +1971,17 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_qp)
 # endif
+# ifdef SPECTRUM_STOKES
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_wn)
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_us)
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_vs)
+# endif
       END IF
 #ifdef DISTRIBUTE
 !
