@@ -2235,6 +2235,25 @@
         write(stdout,40) 'SWANtoROMS Min/Max VSS     (ms-1):  ',        &
      &                    range(1),range(2)
       END IF
+# ifdef CURVGRID
+!
+!  Rotate gridded stokes components to curvilinear grid.
+!
+      IF (iw.eq.Nwav_grids) THEN
+        DO IZ=1,MSCs
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              cff1=FORCES(ng)%spec_us(i,j,IZ)*GRID(ng)%CosAngler(i,j)+  &
+     &             FORCES(ng)%spec_vs(i,j,IZ)*GRID(ng)%SinAngler(i,j)
+              cff2=FORCES(ng)%spec_vs(i,j,IZ)*GRID(ng)%CosAngler(i,j)-  &
+     &             FORCES(ng)%spec_us(i,j,IZ)*GRID(ng)%SinAngler(i,j)
+              FORCES(ng)%spec_us(i,j,IZ)=cff1
+              FORCES(ng)%spec_vs(i,j,IZ)=cff2
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
 #endif
 #ifdef WAVE_PARTITION
 !

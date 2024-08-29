@@ -828,12 +828,14 @@
 !                                                                      !
 !=======================================================================
 !
-      USE CONSTANTS, ONLY: PI
-      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK
       USE MCT_COUPLER_PARAMS
+      USE CONSTANTS, ONLY: PI
+      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA,            &
-     &                    USS_COAWST, VSS_COAWST, KSS_COAWST
-      USE W3ADATMD, ONLY: THM, WLM
+# ifdef SPECTRUM_STOKES
+     &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
+# endif
+     &                    THM, WLM
 !     USE W3ODATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
@@ -1386,10 +1388,44 @@
      &                           "TAUOCN",avdata)
 !-------------------------------------------------------------------
 # ifdef SPECTRUM_STOKES
-!  USS_COAWST VSS_COAWST KSS_COAWST for computation of stokes
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
+!
+!  KSS
+      DO IZ=1,NK
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "KS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "KS", IZ
+        END IF
+!
+        SND_BUF=0.0
+        DO i=1,NSEAL
+          IP=(MyRank+1)+(i-1)*Nprocs
+          IX     = MAPSF(IP,1)
+          IY     = MAPSF(IP,2)
+          IP=(IY-1)*NX+IX
+          SND_BUF(IP)=KSS_COAWST(i,IZ)
+        END DO
+!
+!  Gather up all the data.
+!
+        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
+     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+        IP=0
+        DO i=start,start+length-1
+          IP=IP+1
+          avdata(IP)=REAL(RCV_BUF(i),m8)
+        END DO
+!
+        CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,           &
+     &                             SCODE,avdata)
+      END DO
 !
 !  USS
       DO IZ=1,NK
@@ -1441,41 +1477,6 @@
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
           SND_BUF(IP)=VSS_COAWST(i,IZ)
-        END DO
-!
-!  Gather up all the data.
-!
-        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
-     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
-!
-!  Now extract the section of data from this tile
-!  and fill the mct array.
-!
-        IP=0
-        DO i=start,start+length-1
-          IP=IP+1
-          avdata(IP)=REAL(RCV_BUF(i),m8)
-        END DO
-!
-        CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,           &
-     &                             SCODE,avdata)
-      END DO
-!
-!  KSS
-      DO IZ=1,NK
-        IF (IZ.LT.10) THEN
-          WRITE(SCODE,"(A3,I1)") "KS0",IZ
-        ELSE
-          WRITE(SCODE,"(A2,I2)") "KS", IZ
-        END IF
-!
-        SND_BUF=0.0
-        DO i=1,NSEAL
-          IP=(MyRank+1)+(i-1)*Nprocs
-          IX     = MAPSF(IP,1)
-          IY     = MAPSF(IP,2)
-          IP=(IY-1)*NX+IX
-          SND_BUF(IP)=KSS_COAWST(i,IZ)
         END DO
 !
 !  Gather up all the data.

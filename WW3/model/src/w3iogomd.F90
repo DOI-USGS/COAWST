@@ -1681,48 +1681,43 @@ CONTAINS
     END DO
 #ifdef W3_COAWST_MODEL
 !
-!  jcw compute uss vss kss for stokes
+!  Compute uss vss kss for stokes in ROMS
 !
-      DO JSEA=1, NSEAL
-        ETOTXM1 = 0.
-        ETOTYM1 = 0.
-
-        DO IK=2, NK
-!swan   DO IS = 2, MSC
-
-          ETOTX = 0.
-          ETOTY = 0.
-          DO ITH=1, NTH
-!swan     DO ID = 1, MDC
-!            ETOTX = ETOTX + ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
-!            ETOTY = ETOTY + ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
-             ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
-             ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
-          ENDDO
-! convert from A(theta,k) to E(theta,freq)
-          ETOTX = ETOTX*SIG(IK)/CG(IK,JSEA)  !/TPI
-          ETOTY = ETOTY*SIG(IK)/CG(IK,JSEA)  !/TPI
+    DO JSEA=1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+      IX     = MAPSF(ISEA,1)
+      IY     = MAPSF(ISEA,2)
+      ETOTXM1 = 0.
+      ETOTYM1 = 0.
+      DO IK=2, NK
+        ETOTX = 0.
+        ETOTY = 0.
+        DO ITH=1, NTH
+!          ETOTX = ETOTX + ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
+!          ETOTY = ETOTY + ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
+           ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
+           ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
+        ENDDO
+! Convert from A(theta,k) to E(theta,freq)
+        ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)  !/TPI
+        ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)  !/TPI
 !
-!         DS = SPCSIG(IS) - SPCSIG(IS-1)
-          DS = SIG(IK) - SIG(IK-1)
-!         USS(IP,IS-1) = DS*(WK(IS)*ETOTX*SPCSIG(IS)**2.0
-!    &                 + WK(IS-1)*ETOTXM1*SPCSIG(IS-1)**2.0)
-!         VSS(IP,IS-1) = DS*(WK(IS)*ETOTY*SPCSIG(IS)**2.0
-!    &                 + WK(IS-1)*ETOTYM1*SPCSIG(IS-1)**2.0)
-          USS_COAWST(JSEA,IK-1)=DS*(WN(IK,JSEA)*ETOTX*SIG(IK  )**2.0    &
-     &                            +WN(IK-1,JSEA)*ETOTXM1*SIG(IK-1)**2.0)
-          VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,JSEA)*ETOTY*SIG(IK  )**2.0    &
-     &                           +WN(IK-1,JSEA)*ETOTYM1* SIG(IK-1)**2.0)
-          ETOTXM1 = ETOTX
-          ETOTYM1 = ETOTY
-          KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,JSEA)+WN(IK-1,JSEA))
-        END DO
-
-        USS_COAWST(JSEA,NTH) = 2.0*WN(NTH,JSEA)*ETOTX*SIG(NTH)**3.0
-        VSS_COAWST(JSEA,NTH) = 2.0*WN(NTH,JSEA)*ETOTY*SIG(NTH)**3.0
-        KSS_COAWST(JSEA,NTH) = WN(NTH,JSEA)
+        DS = SIG(IK) - SIG(IK-1)
+        USS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTXM1*SIG(IK-1)**2.0)
+        VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTYM1*SIG(IK-1)**2.0)
+        ETOTXM1 = ETOTX
+        ETOTYM1 = ETOTY
+        KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
       END DO
-!  end jcw
+!
+!  Compute last freq.
+!
+      USS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTX*SIG(NK)**3.0
+      VSS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTY*SIG(NK)**3.0
+      KSS_COAWST(JSEA,NK) = WN(NK,ISEA)
+    END DO
 #endif
 
     !

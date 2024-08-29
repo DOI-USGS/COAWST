@@ -1210,9 +1210,9 @@ CONTAINS
          WADATS(IMOD)%USSX  (NSEALM) ,                        &
          WADATS(IMOD)%USSY  (NSEALM) ,                        &
 #ifdef W3_COAWST_MODEL
-         WADATS(IMOD)%USS_COAWST (NSEALM,NTH) ,               &
-         WADATS(IMOD)%VSS_COAWST (NSEALM,NTH) ,               &
-         WADATS(IMOD)%KSS_COAWST (NSEALM,NTH) ,               &
+         WADATS(IMOD)%USS_COAWST (NSEALM,NK) ,                &
+         WADATS(IMOD)%VSS_COAWST (NSEALM,NK) ,                &
+         WADATS(IMOD)%KSS_COAWST (NSEALM,NK) ,                &
 #endif
          WADATS(IMOD)%TAUOCX(NSEALM) ,                        &
          WADATS(IMOD)%TAUOCY(NSEALM) ,                        &

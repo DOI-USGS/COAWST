@@ -488,13 +488,6 @@
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 #endif
-#ifdef ICE_MODEL
-!
-      to_add=':SEAICE'
-      cad=LEN_TRIM(to_add)
-      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
-      cid=cid+cad
-#endif
 !
 !  Finalize and remove trailing spaces from the owstring
 !  for the rlist.
@@ -1560,6 +1553,67 @@
      &                    range(1),range(2)
       END IF
 #endif
+#ifdef WAVES_DSPR
+!
+!  wave directional spreading
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Wave_ds(i,j)=cff
+          ELSE
+            FORCES(ng)%Wave_ds(i,j)=FORCES(ng)%Wave_ds(i,j)+            &
+     &                              cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max WDSPR   (deg):   ',         &
+     &                    range(1),range(2)
+      END IF
+!
+!  wave spectrum peakedness
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Wave_qp(i,j)=cff
+          ELSE
+            FORCES(ng)%Wave_qp(i,j)=FORCES(ng)%Wave_qp(i,j)+            &
+     &                              cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max WQP     (-):     ',         &
+     &                    range(1),range(2)
+      END IF
+#endif
+!
 #ifdef WAV2OCN_FLUXES
 !
 !  TAUOCE  wav stress to ocean east
@@ -1635,67 +1689,6 @@
       END IF
 # endif
 #endif
-#ifdef WAVES_DSPR
-!
-!  wave directional spreading
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
-     &                           A, Asize)
-      range(1)= Large
-      range(2)=-Large
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
-          IF (iw.eq.1) THEN
-            FORCES(ng)%Wave_ds(i,j)=cff
-          ELSE
-            FORCES(ng)%Wave_ds(i,j)=FORCES(ng)%Wave_ds(i,j)+            &
-     &                              cff
-          END IF
-          range(1)=MIN(range(1),cff)
-          range(2)=MAX(range(2),cff)
-        END DO
-      END DO
-# ifdef DISTRIBUTE
-      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
-# endif
-      IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'WW3toROMS Min/Max WDSPR   (deg):   ',         &
-     &                    range(1),range(2)
-      END IF
-!
-!  wave spectrum peakedness
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
-     &                           A, Asize)
-      range(1)= Large
-      range(2)=-Large
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
-          IF (iw.eq.1) THEN
-            FORCES(ng)%Wave_qp(i,j)=cff
-          ELSE
-            FORCES(ng)%Wave_qp(i,j)=FORCES(ng)%Wave_qp(i,j)+            &
-     &                              cff
-          END IF
-          range(1)=MIN(range(1),cff)
-          range(2)=MAX(range(2),cff)
-        END DO
-      END DO
-# ifdef DISTRIBUTE
-      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
-# endif
-      IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'WW3toROMS Min/Max WQP     (-):     ',         &
-     &                    range(1),range(2)
-      END IF
-#endif
-!
 #if defined WAVES_OCEAN && defined WEC_VF && \
     defined BOTTOM_STREAMING && defined VEGETATION &&  \
     defined VEG_SWAN_COUPLING && defined VEG_STREAMING
@@ -1831,6 +1824,25 @@
         write(stdout,40) 'WW3toROMS Min/Max VSS     (ms-1):  ',         &
      &                    range(1),range(2)
       END IF
+# ifdef CURVGRID
+!
+!  Rotate gridded stokes components to curvilinear grid.
+!
+      IF (iw.eq.Nwav_grids) THEN
+        DO IZ=1,MSCs
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              cff1=FORCES(ng)%spec_us(i,j,IZ)*GRID(ng)%CosAngler(i,j)+  &
+     &             FORCES(ng)%spec_vs(i,j,IZ)*GRID(ng)%SinAngler(i,j)
+              cff2=FORCES(ng)%spec_vs(i,j,IZ)*GRID(ng)%CosAngler(i,j)-  &
+     &             FORCES(ng)%spec_us(i,j,IZ)*GRID(ng)%SinAngler(i,j)
+              FORCES(ng)%spec_us(i,j,IZ)=cff1
+              FORCES(ng)%spec_vs(i,j,IZ)=cff2
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
 #endif
 #ifdef WAV2OCN_FLUXES
 !
