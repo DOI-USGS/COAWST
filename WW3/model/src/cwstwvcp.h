@@ -1336,6 +1336,9 @@
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
         cff=RHOAIR(ISEA)*UST(ISEA)*UST(ISEA)
+        IF (cff.GE.10.) THEN
+          cff=0.0
+        END IF
         SND_BUF(IP)=cff*COS(USTDIR(ISEA))
       END DO
 !
@@ -1368,6 +1371,9 @@
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
         cff=RHOAIR(ISEA)*UST(ISEA)*UST(ISEA)
+        IF (cff.GE.10.) THEN
+          cff=0.0
+        END IF
         SND_BUF(IP)=cff*SIN(USTDIR(ISEA))
       END DO
 !
