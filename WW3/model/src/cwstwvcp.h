@@ -910,7 +910,7 @@
 !
 !  Call the output routine to compute the mean properties.
 !
-       CALL W3OUTG ( VA, .FALSE., .FALSE., .FALSE. )
+       CALL W3OUTG_COAWST ( VA, .FALSE., .FALSE., .FALSE. )
 !
 !
 !  Load WW3 data into MCT storage buffers.
@@ -1170,6 +1170,8 @@
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                           "DIRN",DIRN)
 !-------------------------------------------------------------------
+!  NEED DIRE and DIRN: Peak directions, break into 2 components
+!-------------------------------------------------------------------
 !  WLEN: mean wave length
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
@@ -1212,6 +1214,7 @@
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
         SND_BUF(IP)=WLM(i)     !  jcw need to make this peak
+!       SND_BUF(IP)=WLP0(i)     !  jcw need to make this peak
       END DO
 !
 !  Gather up all the data.
@@ -1241,8 +1244,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-!       SND_BUF(IP)=QB(i)
-        SND_BUF(IP)=0.
+        SND_BUF(IP)=WBT(i)
       END DO
 !
 !  Gather up all the data.
@@ -1272,8 +1274,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-!       SND_BUF(IP)=QB(i)*0.    ! jcw need this
-        SND_BUF(IP)=0.    ! jcw need this
+        SND_BUF(IP)=THS(i)
       END DO
 !
 !  Gather up all the data.
@@ -1292,7 +1293,7 @@
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "WDSPR",avdata)
 !-------------------------------------------------------------------
-!  WQP:
+!  WQP: wave spectrum peakedness
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
@@ -1303,8 +1304,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-!       SND_BUF(IP)=QB(i)*0.    ! jcw need this
-        SND_BUF(IP)=0.    ! jcw need this
+        SND_BUF(IP)=QP(i)
       END DO
 !
 !  Gather up all the data.

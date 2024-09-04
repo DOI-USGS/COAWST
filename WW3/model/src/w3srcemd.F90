@@ -814,6 +814,9 @@ CONTAINS
 #ifdef W3_PDLIB
     REAL                 :: PreVS, FAK, DVS, SIDT, FAKS, MAXDAC
 #endif
+#ifdef W3_COAWST_MODEL
+    REAL                    :: oDTG
+#endif
 
 #ifdef W3_NNT
     CHARACTER(LEN=17), SAVE :: FNAME = 'test_data_nnn.ww3'
@@ -948,6 +951,9 @@ CONTAINS
 #endif
 #ifdef W3_ST6
     ZWND   = 10.
+#endif
+#ifdef W3_COAWST_MODEL
+    oDTG=1.0/DTG
 #endif
     !
     DRAT  = DAIR / DWAT
@@ -2046,6 +2052,15 @@ CONTAINS
     !
     ! Transformation in momentum flux in m^2 / s^2
     !
+#ifdef W3_COAWST_MODEL
+    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
+    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
+    TAUWIX=TAUWIX*oDTG
+    TAUWIY=TAUWIY*oDTG
+    TAUWNX=TAUWNX*oDTG
+    TAUWNY=TAUWNY*oDTG
+    TAUBBL(:)=TAUBBL(:)*oDTG
+#else
     TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))/DTG
     TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))/DTG
     TAUWIX=TAUWIX/DTG
@@ -2053,15 +2068,23 @@ CONTAINS
     TAUWNX=TAUWNX/DTG
     TAUWNY=TAUWNY/DTG
     TAUBBL(:)=TAUBBL(:)/DTG
+#endif
     TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX-TAUWIX)
     TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY-TAUWIY)
     !
     ! Transformation in wave energy flux in W/m^2=kg / s^3
     !
+#ifdef W3_COAWST_MODEL
+    PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)*oDTG
+    PHIAW =DWAT*GRAV*PHIAW *oDTG
+    PHINL =DWAT*GRAV*PHINL *oDTG
+    PHIBBL=DWAT*GRAV*PHIBBL*oDTG
+#else
     PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)/DTG
     PHIAW =DWAT*GRAV*PHIAW /DTG
     PHINL =DWAT*GRAV*PHINL /DTG
     PHIBBL=DWAT*GRAV*PHIBBL/DTG
+#endif
     !
     ! 10.1  Adds ice scattering and dissipation: implicit integration---------------- *
     !     INFLAGS2(4) is true if ice concentration was ever read during

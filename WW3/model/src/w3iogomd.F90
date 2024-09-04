@@ -2400,6 +2400,816 @@ CONTAINS
     !/ End of W3OUTG ----------------------------------------------------- /
     !/
   END SUBROUTINE W3OUTG
+
+
+#ifdef W3_COAWST_MODEL
+  !/ ------------------------------------------------------------------- /
+  !>
+  !> @brief Fill necessary arrays for exchange with COAWST.
+  !>
+  !> @param[in] A        Input spectra, left in par list to changeshape.
+  !> @param[in] FLPART   Flag for filling fields with partition data.
+  !> @param[in] FLOUTG   Flag for file field output.
+  !> @param[in] FLOUTG2  Flag for coupling field output.
+  !>
+  !> @author H. L. Tolman  @date 10-Apr-2015
+  !>
+  SUBROUTINE W3OUTG_COAWST ( A, FLPART, FLOUTG, FLOUTG2 )
+    !/
+    !/                  +-----------------------------------+
+    !/                  | WAVEWATCH III           NOAA/NCEP |
+    !/                  |           H. L. Tolman            |
+    !/                  |                        FORTRAN 90 |
+    !/                  | Last update :         03-Sep-2024 |
+    !/                  +-----------------------------------+
+    !/
+    !/    10-Dec-1998 : Distributed FORTRAN 77 version.     ( version 1.18 )
+    !/    04-Jan-2000 : Upgrade to FORTRAN 90               ( version 2.00 )
+    !/                  Major changes to logistics.
+    !/    09-May-2002 : Switch clean up.                    ( version 2.21 )
+    !/    19-Oct-2004 : Multiple grid version.              ( version 3.06 )
+    !/    21-Jul-2005 : Adding output fields 19-21.         ( version 3.07 )
+    !/    23-Apr-2006 : Filter for directional spread.      ( version 3.09 )
+    !/    02-Apr-2007 : Adding partitioned output.          ( version 3.11 )
+    !/                  Adding user slots for outputs.
+    !/    08-Oct-2007 : Adding ST3 source term option.      ( version 3.13 )
+    !/                  ( F. Ardhuin )
+    !/    05-Mar-2008 : Added NEC sxf90 compiler directives
+    !/                  (Chris Bunney, UK Met Office)       ( version 3.13 )
+    !/    25-Dec-2012 : New output structure and smaller    ( version 4.11 )
+    !/                  memory footprint.
+    !/    10-Feb-2014 : Bug correction for US3D: div. by df ( version 4.18 )
+    !/    30-Apr-2014 : Add th2m and sth2m calculation      ( version 5.01 )
+    !/    27-May-2014 : Switch to OMPG switch.              ( version 5.02 )
+    !/    10-Apr-2015 : Remove unused variables             ( version 5.08 )
+    !/    10-Jan-2017 : Separate Stokes drift calculation   ( version 6.01 )
+    !/    01-Mar-2018 : Removed RTD code (now used in post  ( version 6.02 )
+    !/                  processing code)
+    !/    22-Aug-2018 : Add WBT parameter                   ( version 6.06 )
+    !/    25-Sep-2019 : Corrected th2m and sth2m            ( version 6.07 )
+    !/                  calculations. (J Dykes, NRL)
+    !/
+    !  1. Purpose :
+    !
+    !     Fill necessary arrays with gridded data for output.
+    !
+    !  3. Parameters :
+    !
+    !     Parameter list
+    !     ----------------------------------------------------------------
+    !       A       R.A.   I   Input spectra. Left in par list to change
+    !                          shape.
+    !       FLPART  Log.   I   Flag for filling fields with part. data.
+    !       FLOUTG  Log.   I   Flag for file field output
+    !       FLOUTG2 Log.   I   Flag for coupling field output
+    !     ----------------------------------------------------------------
+    !
+    !     Locally saved parameters
+    !     ----------------------------------------------------------------
+    !       HSMIN   Real  Filter level in Hs for calculation of mean
+    !                     wave parameters.
+    !     ----------------------------------------------------------------
+    !
+    !  4. Subroutines used :
+    !
+    !     See module documentation.
+    !
+    !  5. Called by :
+    !
+    !      Name      Type  Module   Description
+    !     ----------------------------------------------------------------
+    !      W3WAVE    Subr. W3WAVEMD Actual wave model routine.
+    !     ----------------------------------------------------------------
+    !
+    !  6. Error messages :
+    !
+    !     None.
+    !
+    !  8. Structure :
+    !
+    !     See source code.
+    !
+    !  9. Switches :
+    !
+    !     !/SHRD  Switch for shared / distributed memory architecture.
+    !     !/DIST  Id.
+    !
+    !     !/OMPG  OpenMP compiler directive for loop splitting.
+    !
+    !     !/O8    Filter for low wave heights ( HSMIN )
+    !     !/O9    Negative wave height alowed, other mean parameters will
+    !             not be correct.
+    !
+    !     !/ST0   No source terms.
+    !     !/ST1   Source term set 1 (WAM equiv.)
+    !     !/ST2   Source term set 2 (Tolman and Chalikov)
+    !     !/ST3   Source term set 3 (WAM 4+)
+    !     !/ST6   Source term set 6 (BYDRZ)
+    !
+    !     !/S     Enable subroutine tracing.
+    !     !/T     Test output.
+    !
+    ! 10. Source code :
+    !
+    !/ ------------------------------------------------------------------- /
+    USE CONSTANTS
+    USE W3GDATMD
+    USE W3WDATMD, ONLY: UST, FPIS
+    USE W3ADATMD, ONLY: CG, WN, DW
+    USE W3ADATMD, ONLY: HS, WLM, T02, T0M1, T01, FP0,               &
+         THM, THS, THP0
+    USE W3ADATMD, ONLY: ABA, ABD, UBA, UBD, FCUT, SXX,              &
+         SYY, SXY, PHS, PTP, PLP, PDIR, PSI, PWS,    &
+         PWST, PNR, USERO, TUSX, TUSY, PRMS, TPMS,   &
+         USSX, USSY, MSSX, MSSY, MSSD, MSCX, MSCY,   &
+#ifdef W3_COAWST_MODEL
+         USS_COAWST, VSS_COAWST, KSS_COAWST,         &
+#endif
+         MSCD, CHARN,                                &
+         BHD, CGE, P2SMS, US3D, EF, TH1M, STH1M,     &
+         TH2M, STH2M, HSIG, STMAXE, STMAXD,          &
+         HCMAXE, HMAXE, HCMAXD, HMAXD, USSP, QP, PQP,&
+         PTHP0, PPE, PGW, PSW, PTM1, PT1, PT2, PEP,  &
+         WBT
+    USE W3ODATMD, ONLY: NDST, UNDEF, IAPROC, NAPROC, NAPFLD,        &
+         ICPRT, DTPRT, WSCUT, NOSWLL, FLOGRD, FLOGR2,&
+         NOGRP, NGRPP
+    USE W3ADATMD, ONLY: NSEALM
+#ifdef W3_S
+    USE W3SERVMD, ONLY: STRACE
+#endif
+    !
+    USE W3PARALL, ONLY : INIT_GET_ISEA
+    IMPLICIT NONE
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Parameter list
+    !/
+    REAL, INTENT(IN)        :: A(NTH,NK,0:NSEAL)
+    LOGICAL, INTENT(IN)     :: FLPART, FLOUTG, FLOUTG2
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Local parameters
+    !/
+    INTEGER                 :: IK, ITH, JSEA, ISEA, IX, IY,         &
+         IKP0(NSEAL), NKH(NSEAL),             &
+         I, J, LKMS, HKMS, ITL
+    INTEGER                 :: COAWST_YES
+#ifdef W3_S
+    INTEGER, SAVE           :: IENT = 0
+#endif
+    REAL                    :: FXPMC, FACTOR, FACTOR2, EBAND, FKD,  &
+         AABS, UABS,                          &
+         XL, XH, XL2, XH2, EL, EH, DENOM, KD, &
+         M1, M2, MA, MB, MC, STEX, STEY, STED
+    REAL                    :: ET(NSEAL), EWN(NSEAL), ETR(NSEAL),   &
+         ETX(NSEAL), ETY(NSEAL), AB(NSEAL),   &
+         ETXX(NSEAL), ETYY(NSEAL), ETXY(NSEAL),&
+         ABX(NSEAL), ABY(NSEAL),ET02(NSEAL),  &
+         EBD(NK,NSEAL), EC(NSEAL),            &
+         ABR(NSEAL), UBR(NSEAL), UBS(NSEAL),  &
+         ABX2(NSEAL), ABY2(NSEAL),            &
+         AB2X(NSEAL), AB2Y(NSEAL),            &
+         ABST(NSEAL), ABXX(NSEAL),            &
+         ABYY(NSEAL), ABXY(NSEAL),            &
+         ABYX(NSEAL), EET1(NSEAL),            &
+         ETUSCX(NSEAL), ETUSCY(NSEAL),        &
+         ETMSSL(NSEAL), ETMSSCL(NSEAL),       &
+         ETTPMM(NSEAL), ETF(NSEAL),           &
+         ET1(NSEAL), ABX2M(NSEAL),            &
+         ABY2M(NSEAL), ABXM(NSEAL),           &
+         ABYM(NSEAL), ABXYM(NSEAL),           &
+         MSSXM(NSEAL), MSSYM(NSEAL),          &
+         MSSXTM(NSEAL), MSSYTM(NSEAL),        &
+         MSSXYM(NSEAL), THMP(NSEAL),          &
+         T02P(NSEAL), NV(NSEAL), NS(NSEAL),   &
+         NB(NSEAL), MODE(NSEAL),              &
+         MU(NSEAL), NI(NSEAL), STMAXEL(NSEAL),&
+         PHI(21,NSEAL),PHIST(NSEAL),         &
+         EBC(NK,NSEAL), ABP(NSEAL),           &
+         STMAXDL(NSEAL), TLPHI(NSEAL),        &
+         WL02X(NSEAL), WL02Y(NSEAL),          &
+         ALPXT(NSEAL), ALPYT(NSEAL),          &
+         ALPXY(NSEAL), SCREST(NSEAL)
+    REAL                       USSCO, FT1
+#ifdef W3_COAWST_MODEL
+    REAL                       DS, ETOTX, ETOTY, ETOTXM1, ETOTYM1
+#endif
+    REAL, SAVE              :: HSMIN = 0.01
+    LOGICAL                 :: FLOLOC(NOGRP,NGRPP)
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/
+#ifdef W3_S
+    CALL STRACE (IENT, 'W3OUTG')
+#endif
+    DO I=1,NOGRP
+      DO J=1,NGRPP
+        FLOLOC(I,J) =   &
+             ((FLOUTG.AND.FLOGRD(I,J)).OR.(FLOUTG2.AND.FLOGR2(I,J)))
+      END DO
+    END DO
+    !
+    FXPMC  = 0.66 * GRAV / 28.
+    HSMIN  = HSMIN
+    FT1    =  0.3333 * SIG(NK)**2 * DTH * SIG(NK)
+    COAWST_YES=1
+    !
+    ! 1.  Initialize storage arrays -------------------------------------- *
+    !
+    ET     = 0.
+    ET02   = 0.
+    EWN    = 0.
+    ETR    = 0.
+    ET1    = 0.
+    EET1   = 0.
+    ETX    = 0.
+    ETY    = 0.
+    ETXX   = 0.
+    ETYY   = 0.
+    ETXY   = 0.
+    ABR    = 0.
+    ABA    = 0.
+    ABD    = 0.
+    UBR    = 0.
+    UBA    = 0.
+    UBD    = 0.
+    UBS    = 0.
+    SXX    = 0.
+    SYY    = 0.
+    SXY    = 0.
+    USSX   = 0.
+    USSY   = 0.
+#ifdef W3_COAWST_MODEL
+    USS_COAWST   = 0.
+    VSS_COAWST   = 0.
+    KSS_COAWST   = 0.
+#endif
+    TUSX   = 0.
+    TUSY   = 0.
+    MSSX   = 0.
+    MSSY   = 0.
+    MSSD   = 0.
+    MSCX   = 0.
+    MSCY   = 0.
+    MSCD   = 0.
+    PRMS   = 0.
+    TPMS   = 0.
+    ETUSCY = 0.
+    ETUSCY = 0.
+    ETMSSL = 0.
+    ETMSSCL= 0.
+    ETTPMM = 0.
+    EBD    = 0.
+    EC     = 0.
+    ETF    = 0.
+    EBC    = 0.
+    BHD = 0.
+    MSSXM = 0.
+    MSSYM = 0.
+    MSSXTM = 0.
+    MSSYTM = 0.
+    MSSXYM = 0.
+    PHI    = 0.
+    PHIST  = 0.
+    TLPHI  = 0.
+    STMAXEL = 0.
+    STMAXDL = 0.
+    !
+    HS     = UNDEF
+    WLM    = UNDEF
+    T0M1   = UNDEF
+    T01    = UNDEF
+    T02    = UNDEF
+    FP0    = UNDEF
+    THM    = UNDEF
+    THS    = UNDEF
+    THP0   = UNDEF
+    HSIG   = UNDEF
+    WL02X  = UNDEF
+    WL02Y  = UNDEF
+    ALPXY  = UNDEF
+    ALPXT  = UNDEF
+    ALPYT  = UNDEF
+    THMP = UNDEF
+    T02P = UNDEF
+    SCREST = UNDEF
+    NV = UNDEF
+    NS = UNDEF
+    NB = UNDEF
+    MU = UNDEF
+    NI = UNDEF
+    MODE = UNDEF
+    STMAXE = UNDEF
+    STMAXD = UNDEF
+    HCMAXE = UNDEF
+    HMAXE = UNDEF
+    HCMAXD = UNDEF
+    HMAXD = UNDEF
+    QP    = UNDEF
+    WBT    = UNDEF
+    !
+    ! 2.  Integral over discrete part of spectrum ------------------------ *
+    !
+    DO IK=1, NK
+      !
+      ! 2.a Initialize energy in band
+      !
+      AB     = 0.
+      ABX    = 0.
+      ABY    = 0.
+      ABX2   = 0.
+      ABY2   = 0.
+      AB2X   = 0.
+      AB2Y   = 0.
+      ABXX   = 0.
+      ABYY   = 0.
+      ABXY   = 0.
+      ABYX   = 0.
+      ABST   = 0.
+      !
+      ! 2.b Integrate energy in band
+      !
+      DO ITH=1, NTH
+        !
+#ifdef W3_OMPG
+        !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,FACTOR)
+#endif
+        !
+        DO JSEA=1, NSEAL
+!          NKH(JSEA)  = MIN ( NK ,   &
+!               INT(FACTI2+FACTI1*LOG(MAX(1.E-7,FCUT(JSEA)))) )
+          AB (JSEA)  = AB (JSEA) + A(ITH,IK,JSEA)                                              !yes
+          ABX(JSEA)  = ABX(JSEA) + A(ITH,IK,JSEA)*ECOS(ITH)
+          ABY(JSEA)  = ABY(JSEA) + A(ITH,IK,JSEA)*ESIN(ITH)
+          ! These are the integrals with cos^2 and sin^2
+!          ABX2(JSEA) = ABX2(JSEA) + A(ITH,IK,JSEA)*EC2(ITH)
+!          ABY2(JSEA) = ABY2(JSEA) + A(ITH,IK,JSEA)*ES2(ITH)
+          ! Using trig identities to represent cos2theta and sin2theta.
+!          AB2X(JSEA) = AB2X(JSEA) + A(ITH,IK,JSEA)*(2*EC2(ITH) - 1)
+!          AB2Y(JSEA) = AB2Y(JSEA) + A(ITH,IK,JSEA)*(2*ESC(ITH))
+!          ABYX(JSEA) = ABYX(JSEA) + A(ITH,IK,JSEA)*ESC(ITH)
+!          IF (ITH.LE.NTH/2) THEN
+!            ABST(JSEA) = ABST(JSEA) +                               &
+!                 A(ITH,IK,JSEA)*A(ITH+NTH/2,IK,JSEA)
+!          END IF
+!          CALL INIT_GET_ISEA(ISEA, JSEA)
+!          FACTOR     = MAX ( 0.5 , CG(IK,ISEA)/SIG(IK)*WN(IK,ISEA) )
+!          ABXX(JSEA) = ABXX(JSEA) + ((1.+EC2(ITH))*FACTOR-0.5) *    &
+!               A(ITH,IK,JSEA)
+!          ABYY(JSEA) = ABYY(JSEA) + ((1.+ES2(ITH))*FACTOR-0.5) *    &
+!               A(ITH,IK,JSEA)
+!          ABXY(JSEA) = ABXY(JSEA) + ESC(ITH)*FACTOR * A(ITH,IK,JSEA)
+        END DO
+        !
+#ifdef W3_OMPG
+        !$OMP END PARALLEL DO
+#endif
+        !
+      END DO
+      !
+      ! 2.c Finalize integration over band and update mean arrays
+      !
+      !
+#ifdef W3_OMPG
+      !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,FACTOR,FACTOR2,MA,MC,MB,KD,FKD,USSCO,M1,M2)
+#endif
+      !
+      DO JSEA=1, NSEAL
+
+       IF (COAWST_YES.eq.1) THEN
+        CALL INIT_GET_ISEA(ISEA, JSEA)
+        FACTOR       = DDEN(IK) / CG(IK,ISEA)
+        EBD(IK,JSEA) = AB(JSEA) * FACTOR
+        ET(JSEA)     = ET(JSEA) + EBD(IK,JSEA)
+       END IF
+
+#ifdef W3_IG1
+        IF (IK.EQ.NINT(IGPARS(5))) HSIG(JSEA) = 4*SQRT(ET(JSEA))
+#endif
+!       ETF(JSEA)  = ETF(JSEA) + EBD(IK,JSEA) * CG(IK,ISEA)
+        EWN(JSEA)  = EWN(JSEA) + EBD(IK,JSEA) / WN(IK,ISEA)                               ! yes
+        ETR(JSEA)  = ETR(JSEA) + EBD(IK,JSEA) / SIG(IK)                                   !     yes
+        ET1(JSEA)  = ET1(JSEA) + EBD(IK,JSEA) * SIG(IK)
+        EET1(JSEA) = EET1(JSEA)+ EBD(IK,JSEA)**2 * SIG(IK)
+        ET02(JSEA) = ET02(JSEA)+ EBD(IK,JSEA) * SIG(IK)**2
+        ETX(JSEA)  = ETX(JSEA) + ABX(JSEA) * FACTOR                                       ! yes
+        ETY(JSEA)  = ETY(JSEA) + ABY(JSEA) * FACTOR                                       !  yes
+
+        !
+        ! Deep water limits
+        !
+        KD    = MAX ( 0.001 , WN(IK,ISEA) * DW(ISEA) )
+        IF ( KD .LT. 6. ) THEN
+          FKD       = FACTOR / SINH(KD)**2
+          ABR(JSEA) = ABR(JSEA) + AB(JSEA) * FKD
+          ABA(JSEA) = ABA(JSEA) + ABX(JSEA) * FKD
+          ABD(JSEA) = ABD(JSEA) + ABY(JSEA) * FKD
+          UBR(JSEA) = UBR(JSEA) + AB(JSEA) * SIG(IK)**2 * FKD                             !      yes
+          UBA(JSEA) = UBA(JSEA) + ABX(JSEA) * SIG(IK)**2 * FKD                            !     yes
+          UBD(JSEA) = UBD(JSEA) + ABY(JSEA) * SIG(IK)**2 * FKD
+!          USSCO=FKD*SIG(IK)*WN(IK,ISEA)*COSH(2.*KD)
+!          BHD(JSEA) = BHD(JSEA) +                             &
+!               GRAV*WN(IK,ISEA) * EBD(IK,JSEA) / (SINH(2.*KD))
+        ELSE
+!          USSCO=FACTOR*SIG(IK)*2.*WN(IK,ISEA)
+        END IF
+        !
+!        ABXX(JSEA)   = MAX ( 0. , ABXX(JSEA) ) * FACTOR
+!        ABYY(JSEA)   = MAX ( 0. , ABYY(JSEA) ) * FACTOR
+!        ABXY(JSEA)   = ABXY(JSEA) * FACTOR
+!        SXX(JSEA)    = SXX(JSEA)  + ABXX(JSEA)
+!        SYY(JSEA)    = SYY(JSEA)  + ABYY(JSEA)
+!        SXY(JSEA)    = SXY(JSEA)  + ABXY(JSEA)
+        EBD(IK,JSEA) = EBD(IK,JSEA) / DSII(IK)
+        !
+!        IF ( FLOLOC( 3, 1).AND.(IK.GE.E3DF(2,1).AND.IK.LE.E3DF(3,1)))   &
+!             EF(JSEA,IK)  = EBD(IK,JSEA) * TPI
+        !
+!        USSX(JSEA)  = USSX(JSEA) + ABX(JSEA)*USSCO
+!        USSY(JSEA)  = USSY(JSEA) + ABY(JSEA)*USSCO
+        !
+        ! Fills the 3D Stokes drift spectrum array
+        !  ! The US3D Stokes drift specrum array is now calculated in a
+        !  subroutine and called at the end of this subroutine
+        !          IF ( FLOLOC( 6, 8).AND.(IK.GE.US3DF(2).AND.IK.LE.US3DF(3) ))   THEN
+        !            US3D(JSEA,IK)    =  ABX(JSEA)*USSCO/(DSII(IK)*TPIINV)
+        !            US3D(JSEA,NK+IK) =  ABY(JSEA)*USSCO/(DSII(IK)*TPIINV)
+        !          END IF
+!        IF ( FLOLOC( 3, 2).AND.(IK.GE.E3DF(2,2).AND.IK.LE.E3DF(3,2)))  &
+!             TH1M(JSEA,IK)= MOD ( 630. - RADE*ATAN2(ABY(JSEA),ABX(JSEA)) , 360. )
+!        M1 = SQRT(ABX(JSEA)**2+ABY(JSEA)**2)/MAX(1E-20,AB(JSEA))
+!        IF ( FLOLOC( 3, 3).AND.(IK.GE.E3DF(2,3).AND.IK.LE.E3DF(3,3)))  &
+!             STH1M(JSEA,IK)= SQRT(ABS(2.*(1-M1)))*RADE
+!        IF ( FLOLOC( 3, 4).AND.(IK.GE.E3DF(2,4).AND.IK.LE.E3DF(3,4)))  &
+!             TH2M(JSEA,IK)= MOD ( 270. - RADE*0.5*ATAN2(ABY2(JSEA),AB2X(JSEA)) , 180. )
+!        M2 = SQRT(AB2X(JSEA)**2+AB2Y(JSEA)**2)/MAX(1E-20,AB(JSEA))
+!        IF ( FLOLOC( 3, 5).AND.(IK.GE.E3DF(2,5).AND.IK.LE.E3DF(3,5)))  &
+!             STH2M(JSEA,IK)= SQRT(ABS(0.5*(1-M2)))*RADE
+      END DO
+      !
+#ifdef W3_OMPG
+      !$OMP END PARALLEL DO
+#endif
+      !
+    END DO
+#ifdef W3_COAWST_MODEL
+!
+!  Compute uss vss kss for stokes in ROMS
+!
+    DO JSEA=1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+
+      IX     = MAPSF(ISEA,1)
+      IY     = MAPSF(ISEA,2)
+        if ((jsea.eq.1)) then
+!          write(*,*) 'w3io ix iy ', ix, iy
+        end if
+
+      ETOTXM1 = 0.
+      ETOTYM1 = 0.
+      DO IK=2, NK
+        ETOTX = 0.
+        ETOTY = 0.
+        DO ITH=1, NTH
+!          ETOTX = ETOTX + ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
+!          ETOTY = ETOTY + ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
+           ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
+           ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
+        ENDDO
+! Convert from A(theta,k) to E(theta,freq)
+        ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)  !/TPI
+        ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)  !/TPI
+!
+        DS = SIG(IK) - SIG(IK-1)
+        USS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTXM1*SIG(IK-1)**2.0)
+        VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTYM1*SIG(IK-1)**2.0)
+
+        if ((jsea.eq.1)) then
+          write(*,*) 'w3io ', ik-1, uss_coawst(jsea,ik-1)
+        end if
+
+        ETOTXM1 = ETOTX
+        ETOTYM1 = ETOTY
+        KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
+      END DO
+!
+!  Compute last freq.
+!
+      USS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTX*SIG(NK)**3.0
+      VSS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTY*SIG(NK)**3.0
+      KSS_COAWST(JSEA,NK) = WN(NK,ISEA)
+    END DO
+#endif
+
+!    jcw removed space time extremes.
+
+    !
+    ! 3.  Finalize computation of mean parameters ------------------------ *
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,EBAND)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+      !
+!      IF (COAWST_YES.eq.0) THEN
+!      ! 3.a Directional mss parameters
+!      !     NB: the slope PDF is proportional to ell1=ETYY*EC2-2*ETXY*ECS+ETXX*ES2 = C*EC2-2*B*ECS+A*ES2
+!      !     This is an ellipse equation with axis direction given by dir=0.5*ATAN2(2.*ETXY,ETXX-ETYY)
+!      !     From matlab script: t0=0.5*(atan2(2.*B,A-C));
+!      !     From matlab script: A2=A.*cos(t0).^2+2.*B.*sin(t0).*cos(t0)+A.*cos(t0).^2+C.*sin(t0)^2;
+!      !     From matlab script: C2=C.*cos(t0)^2-2.*B.*sin(t0).*cos(t0)+A.*sin(t0).^2;
+!      MSSD(JSEA)=0.5*(ATAN2(2*ETXY(JSEA),ETXX(JSEA)-ETYY(JSEA)))
+!      MSSX(JSEA)  = ETXX(JSEA)*COS(MSSD(JSEA))**2   &
+!           +2*ETXY(JSEA)*SIN(MSSD(JSEA))*COS(MSSD(JSEA))+ETYY(JSEA)*SIN(MSSD(JSEA))**2
+!      MSSY(JSEA)  = ETYY(JSEA)*COS(MSSD(JSEA))**2   &
+!           -2*ETXY(JSEA)*SIN(MSSD(JSEA))*COS(MSSD(JSEA))+ETXX(JSEA)*SIN(MSSD(JSEA))**2
+!      !
+!      ! 3.b Add tail
+!      !     ( DTH * SIG absorbed in FTxx )
+!      END IF   !CY
+
+      EBAND     = AB(JSEA) / CG(NK,ISEA)
+      ET (JSEA) = ET (JSEA) + FTE  * EBAND                                                       !   yes
+      EWN(JSEA) = EWN(JSEA) + FTWL * EBAND                                                       !   yes
+!     ETF(JSEA) = ETF(JSEA) + GRAV * FTTR * EBAND  ! this is the integral of CgE in deep water
+      ETR(JSEA) = ETR(JSEA) + FTTR * EBAND                                                       !  yes
+      ET1(JSEA) = ET1(JSEA) + FT1  * EBAND
+      EET1(JSEA)= ET1(JSEA) + FT1  * EBAND**2
+      ET02(JSEA)= ET02(JSEA)+ EBAND* 0.5 * SIG(NK)**4 * DTH
+      ETX(JSEA) = ETX(JSEA) + FTE * ABX(JSEA) / CG(NK,ISEA)                                      !   yes
+      ETY(JSEA) = ETY(JSEA) + FTE * ABY(JSEA) / CG(NK,ISEA)                                      !   yes
+
+!      SXX(JSEA) = SXX(JSEA) + FTE * ABXX(JSEA) / CG(NK,ISEA)
+!      SYY(JSEA) = SYY(JSEA) + FTE * ABYY(JSEA) / CG(NK,ISEA)
+!      SXY(JSEA) = SXY(JSEA) + FTE * ABXY(JSEA) / CG(NK,ISEA)
+      !
+      ! Tail for surface stokes drift is commented out: very sensitive to tail power
+      !
+      !       USSX(JSEA)  = USSX(JSEA) + 2*GRAV*ETUSCX(JSEA)/SIG(NK)
+      !       USSY(JSEA)  = USSY(JSEA) + 2*GRAV*ETUSCY(JSEA)/SIG(NK)
+      UBS(JSEA) = UBS(JSEA) + FTWL * EBAND/GRAV
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+!    SXX    = SXX * DWAT * GRAV
+!    SYY    = SYY * DWAT * GRAV
+!    SXY    = SXY * DWAT * GRAV
+    !
+
+    IF (COAWST_YES.eq.1) THEN
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,IX,IY)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+      IX     = MAPSF(ISEA,1)
+      IY     = MAPSF(ISEA,2)
+      IF ( MAPSTA(IY,IX) .GT. 0 ) THEN
+#ifdef W3_O9
+        IF ( ET(JSEA) .GE. 0. ) THEN
+#endif
+          HS (JSEA) = 4. * SQRT ( ET(JSEA) )
+#ifdef W3_O9
+        ELSE
+          HS (JSEA) = - 4. * SQRT ( -ET(JSEA) )
+        END IF
+#endif
+        IF ( ET(JSEA) .GT. 1.E-7 ) THEN
+          QP(JSEA) = ( 2. / ET(JSEA)**2 ) * EET1(JSEA) * TPIINV**2
+
+          WLM(JSEA) = EWN(JSEA) / ET(JSEA) * TPI                                            !  yes
+          T0M1(JSEA) = ETR(JSEA) / ET(JSEA) * TPI                                             
+          THS(JSEA) = RADE * SQRT ( MAX ( 0. , 2. * ( 1. - SQRT ( &                         ! yes
+               MAX(0.,(ETX(JSEA)**2+ETY(JSEA)**2)/ET(JSEA)**2) ) ) ) )
+          IF ( THS(JSEA) .LT. 0.01*RADE*DTH ) THS(JSEA) = 0.
+        ELSE
+          WLM(JSEA) = 0.
+          T0M1(JSEA) = TPI / SIG(NK)
+          THS(JSEA) = 0.
+        END IF
+        IF ( ABS(ETX(JSEA))+ABS(ETY(JSEA)) .GT. 1.E-7 ) THEN
+          THM(JSEA) = ATAN2(ETY(JSEA),ETX(JSEA))                                            !     yes
+        ELSE
+          THM(JSEA) = 0.
+        END IF                                                                              !    end yes
+
+        ABR(JSEA) = SQRT ( 2. * MAX ( 0. , ABR(JSEA) ) )
+        IF ( ABR(JSEA) .GE. 1.E-7 ) THEN
+          ABD(JSEA) = ATAN2(ABD(JSEA),ABA(JSEA))
+        ELSE
+          ABD(JSEA) = 0.
+        ENDIF
+        ABA(JSEA) = ABR(JSEA)
+        UBR(JSEA) = SQRT ( 2. * MAX ( 0. , UBR(JSEA) ) )                                ! yes
+        IF ( UBR(JSEA) .GE. 1.E-7 ) THEN
+          UBD(JSEA) = ATAN2(UBD(JSEA),UBA(JSEA))
+        ELSE
+          UBD(JSEA) = 0.
+        ENDIF
+        UBA(JSEA) = UBR(JSEA)                                                           !     yes
+!        CGE(JSEA) = DWAT*GRAV*ETF(JSEA)
+        IF ( ET02(JSEA) .GT. 1.E-7  .AND.  ET(JSEA) .GT. 0 ) THEN
+          T02(JSEA) = TPI * SQRT(ET(JSEA) / ET02(JSEA) )
+          T01(JSEA) = TPI * ET(JSEA) / ET1(JSEA)
+        ELSE
+          T02(JSEA) = TPI / SIG(NK)
+          T01(JSEA)= T02(JSEA)
+        ENDIF
+        !
+        !  Add here USERO(JSEA,1) ...
+        !
+      END IF
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+    ! 3.b Clean-up small values if !/O8 switch selected
+    !
+#ifdef W3_O8
+    DO JSEA=1, NSEAL
+      IF ( HS(JSEA).LE.HSMIN .AND. HS(JSEA).NE.UNDEF) THEN                               !    yes
+        WLM(JSEA) = UNDEF
+        T02(JSEA) = UNDEF
+        T0M1(JSEA) = UNDEF
+        THM(JSEA) = UNDEF
+        THS(JSEA) = UNDEF
+      END IF
+    END DO
+#endif
+    !
+    ! 4.  Peak frequencies and directions -------------------------------- *
+    ! 4.a Initialize
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      EC  (JSEA) = EBD(NK,JSEA)
+      FP0 (JSEA) = UNDEF
+      IKP0(JSEA) = NK
+      THP0(JSEA) = UNDEF
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+    ! 4.b Discrete peak frequencies
+    !
+    DO IK=NK-1, 1, -1
+      !
+#ifdef W3_OMPG
+      !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+      !
+      DO JSEA=1, NSEAL
+        IF ( EC(JSEA) .LT. EBD(IK,JSEA) ) THEN
+          EC  (JSEA) = EBD(IK,JSEA)
+          IKP0(JSEA) = IK
+        END IF
+      END DO
+      !
+#ifdef W3_OMPG
+      !$OMP END PARALLEL DO
+#endif
+      !
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      IF ( IKP0(JSEA) .NE. NK ) FP0(JSEA) = SIG(IKP0(JSEA)) * TPIINV                           !       yes
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+    ! 4.c Continuous peak frequencies
+    !
+    XL     = 1./XFR - 1.
+    XH     =  XFR - 1.
+    XL2    = XL**2
+    XH2    = XH**2
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA,EL,EH,DENOM)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      IF ( IKP0(JSEA) .NE. NK ) THEN
+        IF ( IKP0(JSEA) .EQ. 1 ) THEN
+          EL = - EBD(IKP0(JSEA), JSEA)
+        ELSE
+          EL = EBD(IKP0(JSEA)-1, JSEA) - EBD(IKP0(JSEA), JSEA)
+        END IF
+
+        EH = EBD(IKP0(JSEA)+1, JSEA) - EBD(IKP0(JSEA), JSEA)
+
+        DENOM  = XL*EH - XH*EL
+        FP0(JSEA) = FP0 (JSEA) * ( 1. + 0.5 * ( XL2*EH - XH2*EL )   &                       ! yes
+             / SIGN ( MAX(ABS(DENOM),1.E-15) , DENOM ) )
+      END IF
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+    ! 4.d Peak directions
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      ETX(JSEA) = 0.
+      ETY(JSEA) = 0.
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+    !
+    DO ITH=1, NTH
+      !
+#ifdef W3_OMPG
+      !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+      !
+      DO JSEA=1, NSEAL
+        IF ( IKP0(JSEA) .NE. NK ) THEN
+          ETX(JSEA) = ETX(JSEA) + A(ITH,IKP0(JSEA),JSEA)*ECOS(ITH)
+          ETY(JSEA) = ETY(JSEA) + A(ITH,IKP0(JSEA),JSEA)*ESIN(ITH)
+        END IF
+      END DO
+      !
+#ifdef W3_OMPG
+      !$OMP END PARALLEL DO
+#endif
+      !
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP PARALLEL DO PRIVATE(JSEA)
+#endif
+    !
+    DO JSEA=1, NSEAL
+      IF ( ABS(ETX(JSEA))+ABS(ETY(JSEA)) .GT. 1.E-7 .AND.           &
+           FP0(JSEA).NE.UNDEF )                                     &
+           THP0(JSEA) = ATAN2(ETY(JSEA),ETX(JSEA))
+      ETX(JSEA) = 0.
+      ETY(JSEA) = 0.
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+    !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,IX,IY)
+#endif
+    !
+    DO JSEA =1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+      IX          = MAPSF(ISEA,1)
+      IY          = MAPSF(ISEA,2)
+      IF ( MAPSTA(IY,IX) .LE. 0 ) THEN
+        FP0 (JSEA) = UNDEF
+        THP0(JSEA) = UNDEF
+      END IF
+    END DO
+    !
+#ifdef W3_OMPG
+    !$OMP END PARALLEL DO
+#endif
+
+    END IF           !  CYES
+
+!   CALL CALC_U3STOKES(A,1)
+    !
+    RETURN
+    !
+    ! Formats
+    !
+
+    !/
+    !/ End of W3OUTG_COAWST--------------------------------------------- /
+    !/
+  END SUBROUTINE W3OUTG_COAWST
+#endif
+
   !/ ------------------------------------------------------------------- /
   !/
   !>
