@@ -835,7 +835,7 @@
 # ifdef SPECTRUM_STOKES
      &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
 # endif
-     &                    THM, WLM
+     &                    THM, WLM, WBT, THS, QP
 !     USE W3ODATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
