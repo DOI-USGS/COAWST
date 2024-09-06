@@ -3421,7 +3421,7 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idWdid).and.Qout(idWdib,ng)) THEN
+        IF (.not.got_var(idWdid).and.Qout(idWdid,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdid)),          &
      &                                  TRIM(ncname)
           exit_flag=3
