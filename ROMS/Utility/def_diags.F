@@ -814,6 +814,10 @@
             got_var(idtime)=.TRUE.
             DIA(ng)%Vid(idtime)=var_id(i)
           END IF
+          IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
+            got_var(idFsur)=.TRUE.
+            DIA(ng)%Vid(idFsur)=var_id(i)
+          END IF
 # ifdef DIAGNOSTICS_UV
           DO ivar=1,NDM2d
             IF (TRIM(var_name(i)).eq.                                   &
@@ -901,6 +905,12 @@
 !
         IF (.not.got_var(idtime)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idtime)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idFsur)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idFsur)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
