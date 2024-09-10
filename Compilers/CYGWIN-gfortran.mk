@@ -163,6 +163,13 @@ ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
 endif
 
+ifdef USE_WW3
+             FFLAGS += -frecord-marker=4 -fconvert=big-endian
+             LIBS += WW3/build/model/src/CMakeFiles/ww3_shel.dir/ww3_shel.F90.o
+             LIBS += WW3/build/model/src/CMakeFiles/ww3_multi.dir/ww3_multi.F90.o
+             LIBS += WW3/build/lib/libww3.a
+endif
+
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
@@ -207,12 +214,6 @@ ifdef USE_OpenMP
            FFLAGS += -fopenmp -static-libgcc
 endif
 
-ifdef USE_WW3
-             FFLAGS += -frecord-marker=4 -fconvert=big-endian
-             LIBS += WW3/build/model/src/CMakeFiles/ww3_shel.dir/ww3_shel.F90.o
-             LIBS += WW3/build/model/src/CMakeFiles/ww3_multi.dir/ww3_multi.F90.o
-             LIBS += WW3/build/lib/libww3.a
-endif
 
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include

@@ -44,6 +44,16 @@
         ]
     },
     {
+        "name": "scripmpi",
+        "num_switches": "upto2",
+        "description": "",
+        "valid-options": [
+            {
+                "name": "SCRIPMPI"
+            }
+        ]
+    },
+    {
         "name": "shared",
         "num_switches": "one",
         "description": "'shared / distributed memory",
