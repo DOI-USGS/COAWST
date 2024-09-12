@@ -2862,18 +2862,12 @@ CONTAINS
 
       IX     = MAPSF(ISEA,1)
       IY     = MAPSF(ISEA,2)
-        if ((jsea.eq.1)) then
-!          write(*,*) 'w3io ix iy ', ix, iy
-        end if
-
       ETOTXM1 = 0.
       ETOTYM1 = 0.
       DO IK=2, NK
         ETOTX = 0.
         ETOTY = 0.
         DO ITH=1, NTH
-!          ETOTX = ETOTX + ACLOC(ID,IS)*SPCDIR(ID,2)*DDIR
-!          ETOTY = ETOTY + ACLOC(ID,IS)*SPCDIR(ID,3)*DDIR
            ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
            ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
         ENDDO
@@ -2886,11 +2880,6 @@ CONTAINS
      &                           +WN(IK-1,ISEA)*ETOTXM1*SIG(IK-1)**2.0)
         VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
      &                           +WN(IK-1,ISEA)*ETOTYM1*SIG(IK-1)**2.0)
-
-        if ((jsea.eq.1)) then
-          write(*,*) 'w3io ', ik-1, uss_coawst(jsea,ik-1)
-        end if
-
         ETOTXM1 = ETOTX
         ETOTYM1 = ETOTY
         KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
