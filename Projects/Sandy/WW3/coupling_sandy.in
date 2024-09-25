@@ -59,9 +59,9 @@
    ATM_name = namelist.input                            ! atmospheric model
 !  WAV_name = Projects/Sandy/swan_sandy.in \
 !             Projects/Sandy/swan_sandy_ref3.in         ! SWAN wave model
-!
-!  WAV_name = ww3_grid.inp                         ! use this for WW3 no   NESTING
-   WAV_name = Projects/Sandy/WW3/ww3_multi.inp     ! use this for WW3 with NESTING
+!  
+!  WAV_name = ww3_grid.inp                ! use this for WW3 no   NESTING
+   WAV_name = ww3_multi.inp               ! use this for WW3 with NESTING
    OCN_name = Projects/Sandy/WW3/ocean_sandy.in    ! ocean model
    HYD_name = hydro.namelist                       ! hydro model
 

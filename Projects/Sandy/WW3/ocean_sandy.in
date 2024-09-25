@@ -652,14 +652,14 @@ Hout(idWdip) == T T     ! Dwavep             wave direction-peak
 Hout(idWptp) == T T     ! Pwave_top          wave surface period
 Hout(idWpbt) == T T     ! Pwave_bot          wave bottom period
 Hout(idWorb) == T T     ! Uwave_rms          wave bottom orbital velocity
-Hout(idWbrk) == F F     ! Wave_break         wave breaking (percent)
+Hout(idWbrk) == T F     ! Wave_break         wave breaking (percent)
 Hout(idUwav) == T T     ! uWave              wave-depth avgeraged U-velocity
 Hout(idVwav) == T T     ! vWave              wave-depth avgeraged V-velocity
-Hout(idWdif) == F F     ! Dissip_fric        wave dissipation due to bottom friction
-Hout(idWdib) == F F     ! Dissip_break       wave dissipation due to breaking
-Hout(idWdiw) == F F     ! Dissip_wcap        wave dissipation due to white capping
-Hout(idWdis) == F F     ! Dissip_roller      wave roller dissipation
-Hout(idWrol) == F F     ! rollA              wave roller action density
+Hout(idWdif) == T F     ! Dissip_fric        wave dissipation due to bottom friction
+Hout(idWdib) == T F     ! Dissip_break       wave dissipation due to breaking
+Hout(idWdiw) == T F     ! Dissip_wcap        wave dissipation due to white capping
+Hout(idWdis) == T F     ! Dissip_roller      wave roller dissipation
+Hout(idWrol) == T F     ! rollA              wave roller action density
 
 Hout(idPair) == T T     ! Pair               surface air pressure
 Hout(idTair) == T T     ! Tair               surface air temperature
