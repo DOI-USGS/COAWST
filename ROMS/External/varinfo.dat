@@ -1676,6 +1676,24 @@
   'r2dvar'
   0.00097561                                       !1/rho0
 
+'Dissip_breakx'                                    ! Input
+  'wave dissipation due to surface breaking x-dir'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_breakx, scalar, series'
+  'wave_time'
+  'idWdix'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
+'Dissip_breaky'                                    ! Input
+  'wave dissipation due to surface breaking y-dir'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_breaky, scalar, series'
+  'wave_time'
+  'idWdiy'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
 'Dissip_break_dir'                                 ! Input
   'wave dissipation in dirs due to surface breaking'
   'Watts meter-2'                                  ! [W/m2]

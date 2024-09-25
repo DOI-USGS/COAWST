@@ -58,7 +58,7 @@
 
    ATM_name = namelist.input                                      ! WRF input file
    WAV_name = ww3_grid.inp                                        ! wave model
-   OCN_name = Projects/Inlet_test/Coupled/ocean_inlet_test.in     ! ocean model
+   OCN_name = Projects/Inlet_test/WW3/ocean_inlet_test.in         ! ocean model
    HYD_name = hydro.namelist                                      ! hydro model
 
 ! Sparse matrix interpolation weights files. You have 2 options:

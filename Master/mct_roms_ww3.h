@@ -313,6 +313,18 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+#ifdef DISSIP_BREAK_DIR
+      to_add=':DISSURFX'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISSURFY'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+#endif
       to_add=':DISWCAP'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -657,9 +669,6 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       integer :: iveg
 #endif
-
-      real(r8), parameter ::  Lwave_min = 1.0_r8
-      real(r8), parameter ::  Lwave_max = 500.0_r8
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, ramp
@@ -1072,7 +1081,7 @@
 #ifdef UV_KIRBY
       USE mod_coupling
 #endif
-#ifdef WAV2OCN_FLUXES
+#if defined WAV2OCN_FLUXES || defined DISSIP_BREAK_DIR
       USE bc_2d_mod
 #endif
 !
@@ -1105,16 +1114,19 @@
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
 !     real(r8), parameter ::  Large = 1.0E+20_r8
+      real(r8), parameter ::  eps = 1.0E-8_r8
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, fac, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
+      real(r8) :: Dstp, sigma, waven
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ubar_rho
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vbar_rho
 #ifdef WAV2OCN_FLUXES
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taue
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taun
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: fac1
 #endif
       real(r8), dimension(2) :: range
       real(r8), pointer :: A(:)
@@ -1281,6 +1293,68 @@
         write(stdout,40) 'WW3toROMS Min/Max DISSURF (Wm-2):  ',         &
      &                    range(1),range(2)
       END IF
+# ifdef DISSIP_BREAK_DIR
+!  Get x and y dirs.  Rotate after surface streesses.
+!  Wave dissipation due to surface breaking x-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSURFX", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_breakx(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_breakx(i,j)=FORCES(ng)%Dissip_breakx(i,j)+&
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISSURFX (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  Wave dissipation due to surface breaking y-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSURFY", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_breaky(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_breaky(i,j)=FORCES(ng)%Dissip_breaky(i,j)+&
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISSURFY (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
+# endif
 !
 !  Wave dissipation due to white capping.
 !
@@ -1472,7 +1546,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+          cff=MIN(Lwave_max,MAX(Lwave_min,A(ij)))
           IF (iw.eq.1) THEN
             FORCES(ng)%Lwave(i,j)=cff
           ELSE
@@ -1616,6 +1690,17 @@
 !
 #ifdef WAV2OCN_FLUXES
 !
+!  Compute scale factor for removal of dissip_break
+!
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,j),Lwave_min)
+          Dstp=GRID(ng)%z_w(i,j,N(ng))-GRID(ng)%z_w(i,j,0)
+          sigma=SQRT(MAX(g*waven*TANH(waven*Dstp),eps))
+          fac1(i,j)=waven/sigma
+        END DO
+      END DO
+!
 !  TAUOCE  wav stress to ocean east
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TAUOCE",   &
@@ -1627,6 +1712,17 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=A(ij)
+!
+!  Here we need to remove the depth-limited breaking from the surface stress.
+!
+# ifdef DISSIP_BREAK_DIR
+          cff=cff-FORCES(ng)%Dissip_breakx(i,j)*fac1(i,j)
+# else
+          cff1=1.5_r8*pi-Dwave(i,j)  !-angler(i,j)
+          cff2=COS(cff1)
+          cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
+# endif
+!
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocx(i,j)=cff
           ELSE
@@ -1640,13 +1736,13 @@
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
       IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'WW3toROMS Min/Max TauocE (N/m2):  ',         &
+        write(stdout,40) 'WW3toROMS Min/Max TauocE (N/m2):  ',          &
      &                    range(1),range(2)
       END IF
 !
 !  TAUOCN
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TAUOCN",  &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TAUOCN",   &
      &                           A, Asize)
       range(1)= Large
       range(2)=-Large
@@ -1655,6 +1751,16 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=A(ij)
+!
+!  Here we need to remove the depth-limited breaking from the surface stress.
+!
+# ifdef DISSIP_BREAK_DIR
+          cff=cff-FORCES(ng)%Dissip_breaky(i,j)*fac1(i,j)
+# else
+          cff1=1.5_r8*pi-Dwave(i,j)  !-angler(i,j)
+          cff2=SIN(cff1)
+          cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
+# endif
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocy(i,j)=cff
           ELSE
@@ -1684,6 +1790,26 @@
      &           FORCES(ng)%Tauocx(i,j)*GRID(ng)%SinAngler(i,j)
             FORCES(ng)%Tauocx(i,j)=cff1
             FORCES(ng)%Tauocy(i,j)=cff2
+          END DO
+        END DO
+      END IF
+# endif
+#endif
+#ifdef DISSIP_BREAK_DIR
+# ifdef CURVGRID
+!
+!  Waited until we used the stresses in N and E above before we
+!  rotate gridded stresses to curvilinear grid.
+!
+      IF (iw.eq.Nwav_grids) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            cff1=FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%CosAngler(i,j)+ &
+     &           FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%SinAngler(i,j)
+            cff2=FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%CosAngler(i,j)- &
+     &           FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%SinAngler(i,j)
+            FORCES(ng)%Dissip_breakx(i,j)=cff1
+            FORCES(ng)%Dissip_breaky(i,j)=cff2
           END DO
         END DO
       END IF
@@ -1846,85 +1972,25 @@
 #endif
 #ifdef WAV2OCN_FLUXES
 !
-!  Apply gradient bc;s for the TAUOCE and TAUOCN
+!  Apply gradient bcs for the TAUOCE and TAUOCN
 !
-!      CALL bc_r2d_tile (ng, tile,                                       &
-!     &                  LBi, UBi, LBj, UBj,                             &
-!     &                  FORCES(ng)%Tauocx)
-!      CALL bc_r2d_tile (ng, tile,                                       &
-!     &                  LBi, UBi, LBj, UBj,                             &
-!     &                  FORCES(ng)%Tauocy)
-!!
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Tauocx)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Tauocy)
+#endif
+#ifdef DISSIP_BREAK_DIR
 !
+!  Apply gradient bcs for the TAUOCE and TAUOCN
 !
-!-----------------------------------------------------------------------
-!  East-West gradient boundary conditions.
-!-----------------------------------------------------------------------
-!
-      IF (.not.EWperiodic(ng)) THEN
-        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
-          DO j=Jstr,Jend
-            FORCES(ng)%Tauocx(Iend+1,j)=FORCES(ng)%Tauocx(Iend,j)
-            FORCES(ng)%Tauocy(Iend+1,j)=FORCES(ng)%Tauocy(Iend,j)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-          DO j=Jstr,Jend
-            FORCES(ng)%Tauocx(Istr-1,j)=FORCES(ng)%Tauocx(Istr,j)
-            FORCES(ng)%Tauocy(Istr-1,j)=FORCES(ng)%Tauocy(Istr,j)
-          END DO
-        END IF
-      END IF
-!
-!-----------------------------------------------------------------------
-!  North-South gradient boundary conditions.
-!-----------------------------------------------------------------------
-!
-      IF (.not.NSperiodic(ng)) THEN
-        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
-          DO i=Istr,Iend
-            FORCES(ng)%Tauocx(i,Jend+1)=FORCES(ng)%Tauocx(i,Jend)
-            FORCES(ng)%Tauocy(i,Jend+1)=FORCES(ng)%Tauocy(i,Jend)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-          DO i=Istr,Iend
-            FORCES(ng)%Tauocx(i,Jstr-1)=FORCES(ng)%Tauocx(i,Jstr)
-            FORCES(ng)%Tauocy(i,Jstr-1)=FORCES(ng)%Tauocy(i,Jstr)
-          END DO
-        END IF
-      END IF
-!
-!-----------------------------------------------------------------------
-!  Boundary corners.
-!-----------------------------------------------------------------------
-!
-      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
-        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-          FORCES(ng)%Tauocx(Istr-1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocx(Istr,Jstr-1)+     &
-     &                             FORCES(ng)%Tauocx(Istr-1,Jstr  ))
-          FORCES(ng)%Tauocy(Istr-1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocy(Istr,Jstr-1)+     &
-     &                             FORCES(ng)%Tauocy(Istr-1,Jstr  ))
-        END IF
-        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-          FORCES(ng)%Tauocx(Iend+1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocx(Iend  ,Jstr-1)+ &
-     &                             FORCES(ng)%Tauocx(Iend+1,Jstr  ))
-          FORCES(ng)%Tauocy(Iend+1,Jstr-1)=0.5_r8*(FORCES(ng)%Tauocy(Iend  ,Jstr-1)+ &
-     &                             FORCES(ng)%Tauocy(Iend+1,Jstr  ))
-        END IF
-        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-          FORCES(ng)%Tauocx(Istr-1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocx(Istr-1,Jend  )+  &
-     &                           FORCES(ng)%Tauocx(Istr  ,Jend+1))
-          FORCES(ng)%Tauocy(Istr-1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocy(Istr-1,Jend  )+  &
-     &                           FORCES(ng)%Tauocy(Istr  ,Jend+1))
-        END IF
-        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          FORCES(ng)%Tauocx(Iend+1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocx(Iend+1,Jend  )+ &
-     &                           FORCES(ng)%Tauocx(Iend  ,Jend+1))
-          FORCES(ng)%Tauocy(Iend+1,Jend+1)=0.5_r8*(FORCES(ng)%Tauocy(Iend+1,Jend  )+ &
-     &                           FORCES(ng)%Tauocy(Iend  ,Jend+1))
-        END IF
-      END IF
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_breakx)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_breaky)
 #endif
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1936,6 +2002,14 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dissip_break)
+# ifdef DISSIP_BREAK_DIR
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_breakx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_breaky)
+# endif
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dissip_fric)
@@ -1972,14 +2046,6 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_break)
 # endif
-# ifdef WAV2OCN_FLUXES
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%Tauocx)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        FORCES(ng)%Tauocy)
-# endif
 # ifdef WAVES_DSPR
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -2013,6 +2079,14 @@
      &                    FORCES(ng)%Dissip_break,                      &
      &                    FORCES(ng)%Dissip_fric,                       &
      &                    FORCES(ng)%Dissip_wcap)
+# ifdef DISSIP_BREAK_DIR
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%Dissip_breakx,                     &
+     &                    FORCES(ng)%Dissip_breaky)
+# endif
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &

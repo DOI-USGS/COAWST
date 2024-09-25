@@ -3907,7 +3907,46 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-
+# if defined DISSIP_BREAK_DIR
+!
+!  Define wave dissipation due to breaking x-dir.
+!
+        IF (Hout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdix)
+          Vinfo( 2)=Vname(2,idWdix)
+          Vinfo( 3)=Vname(3,idWdix)
+          Vinfo(14)=Vname(4,idWdix)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idWdix)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdix,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdix),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define wave dissipation due to breaking y-dir.
+!
+        IF (Hout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdiy)
+          Vinfo( 2)=Vname(2,idWdiy)
+          Vinfo( 3)=Vname(3,idWdiy)
+          Vinfo(14)=Vname(4,idWdiy)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idWdiy)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdiy,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdiy),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+# endif
 # if defined WAVE_PARTITION
 !
 !  Define wave dissipation due to breaking in dirs.
@@ -4623,6 +4662,14 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
             got_var(idWdib)=.TRUE.
             HIS(ng)%Vid(idWdib)=var_id(i)
+#if defined DISSIP_BREAK_DIR
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdix))) THEN
+            got_var(idWdix)=.TRUE.
+            HIS(ng)%Vid(idWdix)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiy))) THEN
+            got_var(idWdiy)=.TRUE.
+            HIS(ng)%Vid(idWdiy)=var_id(i)
+#endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdid))) THEN
             got_var(idWdid)=.TRUE.
             HIS(ng)%Vid(idWdid)=var_id(i)
@@ -5629,6 +5676,20 @@
           exit_flag=3
           RETURN
         END IF
+#if defined DISSIP_BREAK_DIR
+        IF (.not.got_var(idWdix).and.Hout(idWdix,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdix)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdiy).and.Hout(idWdiy,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiy)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
         IF (.not.got_var(idWdid).and.Hout(idWdid,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdid)),          &
      &                                  TRIM(ncname)

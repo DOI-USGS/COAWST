@@ -18,7 +18,7 @@ $   4) Output server type as in ww3_shel.inp
 $   5) Flag for dedicated process for unified point output.
 $   6) Flag for grids sharing dedicated output processes.
 $
-  2 2 F 0 F F
+  2 2 F 1 F F
 $
 $ -------------------------------------------------------------------- $
 $ If there are input data grids defined ( NRINP > 0 ), then these

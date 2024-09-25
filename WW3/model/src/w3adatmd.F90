@@ -456,6 +456,7 @@ MODULE W3ADATMD
 #ifdef W3_COAWST_MODEL
     REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),    &
                              KSS_COAWST(:,:)
+    REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
 #endif
     REAL, POINTER         ::  P2SMS(:,:),  US3D(:,:), USSP(:,:)
     REAL, POINTER         :: XSXX(:), XSYY(:), XSXY(:), XTAUOX(:),&
@@ -616,6 +617,7 @@ MODULE W3ADATMD
 #ifdef W3_COAWST_MODEL
   REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),      &
                            KSS_COAWST(:,:)
+  REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
 #endif
   REAL, POINTER           :: P2SMS(:,:), US3D(:,:), USSP(:,:)
   !
@@ -1213,6 +1215,8 @@ CONTAINS
          WADATS(IMOD)%USS_COAWST (NSEALM,NK) ,                &
          WADATS(IMOD)%VSS_COAWST (NSEALM,NK) ,                &
          WADATS(IMOD)%KSS_COAWST (NSEALM,NK) ,                &
+         WADATS(IMOD)%PHIBRKX (NSEALM) ,                      &
+         WADATS(IMOD)%PHIBRKY (NSEALM) ,                      &
 #endif
          WADATS(IMOD)%TAUOCX(NSEALM) ,                        &
          WADATS(IMOD)%TAUOCY(NSEALM) ,                        &
@@ -1254,6 +1258,8 @@ CONTAINS
     WADATS(IMOD)%USS_COAWST = UNDEF
     WADATS(IMOD)%VSS_COAWST = UNDEF
     WADATS(IMOD)%KSS_COAWST = UNDEF
+    WADATS(IMOD)%PHIBRKX = UNDEF
+    WADATS(IMOD)%PHIBRKY = UNDEF
 #endif
     WADATS(IMOD)%TAUOCX = UNDEF
     WADATS(IMOD)%TAUOCY = UNDEF
@@ -2903,6 +2909,8 @@ CONTAINS
       USS_COAWST   => WADATS(IMOD)%USS_COAWST
       VSS_COAWST   => WADATS(IMOD)%VSS_COAWST
       KSS_COAWST   => WADATS(IMOD)%KSS_COAWST
+      PHIBRKX      => WADATS(IMOD)%PHIBRKX
+      PHIBRKY      => WADATS(IMOD)%PHIBRKY
 #endif
       PRMS   => WADATS(IMOD)%PRMS
       TPMS   => WADATS(IMOD)%TPMS

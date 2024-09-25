@@ -27,6 +27,11 @@
 #define SPLINES_VDIFF
 #define SPLINES_VVISC
 
+#ifdef WW3_MODEL
+# define DISSIP_BREAK_DIR
+# define WAV2OCN_FLUXES
+#endif
+
 #define SOLVE3D
 #undef  WEC_MELLOR
 #define WEC_VF

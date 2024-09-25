@@ -742,10 +742,12 @@ CONTAINS
 #ifdef W3_T
       WRITE (NDST,9011) DTL0
 #endif
+#if !defined W3_COAWST_MODEL
       IF ( DTL0 .LT. 0. ) THEN
         IF ( IAPROC .EQ. NAPERR ) WRITE (NDSE,1001)
         CALL EXTCDE ( 2 )
       END IF
+#endif
     ELSE
       DTL0   = 0.
     END IF
@@ -762,10 +764,12 @@ CONTAINS
 #ifdef W3_T
       WRITE (NDST,9012) DTTST1, DTTST2, DTTST3
 #endif
+#if !defined W3_COAWST_MODEL
       IF ( DTTST1.LT.0. .OR. DTTST2.LT.0. .OR. DTTST3.LT.0. ) THEN
         IF ( IAPROC .EQ. NAPERR ) WRITE (NDSE,1002)
         CALL EXTCDE ( 3 )
       END IF
+#endif
       IF ( DTTST2.EQ.0..AND. ITIME.EQ.0 ) THEN
         IDACT(7:7) = 'F'
         TOFRST = TIME
@@ -1559,6 +1563,9 @@ CONTAINS
                  TWS(JSEA), PHIOC(JSEA), TMP1, D50, PSIC, TMP2,     &
                  PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),             &
                  TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),          &
+#ifdef W3_COAWST_MODEL
+                 PHIBRKX(JSEA), PHIBRKY(JSEA),                      &
+#endif
                  RHOAIR(ISEA), ASF(ISEA))
             IF (.not. LSLOC) THEN
               VSTOT(:,JSEA) = VSioDummy
@@ -2233,6 +2240,9 @@ CONTAINS
                        TWS(JSEA),PHIOC(JSEA), TMP1, D50, PSIC, TMP2,     &
                        PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),            &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
+#ifdef W3_COAWST_MODEL
+                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+#endif
                        RHOAIR(ISEA), ASF(ISEA))
                 ELSE
 #endif
@@ -2259,6 +2269,9 @@ CONTAINS
                        TWS(JSEA), PHIOC(JSEA), TMP1, D50, PSIC,TMP2,     &
                        PHIBBL(JSEA), TMP3, TMP4 , PHICE(JSEA),           &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
+#ifdef W3_COAWST_MODEL
+                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+#endif
                        RHOAIR(ISEA), ASF(ISEA))
 #ifdef W3_PDLIB
                 END IF
@@ -2360,16 +2373,6 @@ CONTAINS
       ! ==================================================================== /
       !
 400   CONTINUE
-#if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
-      ! jcw bottom of wavemd calling the coupler
-      !  IMOD is the grid number, ITIME is a bad counter. It steps for 
-      !  updates to the forcings. So we made a clean counter.
-      IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
-        IF (IMOD.eq.Nwav_grids) THEN
-          CALL COAWST_CPL (ITIME_COAWST)
-        END IF
-      END IF
-#endif
       !
       ! 4.  Perform output to file if requested ---------------------------- /
       ! 4.a Check if time is output time
@@ -2811,6 +2814,16 @@ CONTAINS
       IDACT  = '         '
       OUTID  = '           '
       FLACT  = .FALSE.
+#if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
+      ! jcw bottom of wavemd calling the coupler
+      !  IMOD is the grid number, ITIME is a bad counter. It steps for 
+      !  updates to the forcings. So we made a clean counter.
+      IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
+        IF (IMOD.eq.Nwav_grids) THEN
+          CALL COAWST_CPL (ITIME_COAWST)
+        END IF
+      END IF
+#endif
       !
       ! 6.  If time is not ending time, branch back to 2 ------------------- /
       !

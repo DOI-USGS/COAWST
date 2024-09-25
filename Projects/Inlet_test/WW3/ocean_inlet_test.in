@@ -749,7 +749,11 @@ Qout(idWdip) == F       ! Dwavep             wave direction-peak
 Qout(idWptp) == F       ! Pwave_top          wave surface period
 Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
-Qout(idWdis) == F       ! Wave_dissip        wave dissipation
+Qout(idWdif) == T       ! Dissip_fric        wave dissipation due to bottom friction
+Qout(idWdib) == T       ! Dissip_break       wave dissipation due to breaking
+Qout(idWdiw) == T       ! Dissip_wcap        wave dissipation due to white capping
+Qout(idWdis) == T       ! Dissip_roller      wave roller dissipation
+Qout(idWrol) == T       ! rollA              wave roller action density
 
 Qout(idPair) == F       ! Pair               surface air pressure
 Qout(idTair) == F       ! Tair               surface air temperature
@@ -843,6 +847,7 @@ Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 Aout(idW3Sd) == F       ! omega_stokes       3D Omega-Stokes velocity
 Aout(idW3St) == F       ! w_stokes           3D W-Stokes velocity
 Aout(idWamp) == T       ! Hwave              wave height
+Aout(idWam2) == T       ! Hwave^2            wave height squared
 Aout(idWlen) == T       ! Lwave              wave length-mean
 Aout(idWlep) == F       ! Lwavep             wave length-peak
 Aout(idWdir) == T       ! Dwave              wave direction
@@ -1058,7 +1063,7 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inlet_test/Coupled/inlet_test_grid.nc 
+     GRDNAME == Projects/Inlet_test/WW3/inlet_test_grid.nc 
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -1169,10 +1174,10 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! Input ASCII parameter filenames.
 
      APARNAM =  ROMS/External/s4dvar.in
-     SPOSNAM =  Projects/Inlet_test/Coupled/stations_inlet_test.in
+     SPOSNAM =  Projects/Inlet_test/WW3/stations_inlet_test.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  Projects/Inlet_test/Coupled/sediment_inlet_test.in 
+     SPARNAM =  Projects/Inlet_test/WW3/sediment_inlet_test.in 
      USRNAME =  ROMS/External/MyFile.dat
      VEGNAM  =  vegetation.in
 
@@ -2809,7 +2814,11 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! Qout(idWptp)   Write out wave surface period.
 ! Qout(idWpbt)   Write out wave bottom period.
 ! Qout(idWorb)   Write out wave bottom orbital velocity.
-! Qout(idWdis)   Write out wave dissipation.
+! Qout(idWdif)   Write out wave dissipation due to bottom friction
+! Qout(idWdib)   Write out wave dissipation due to breaking
+! Qout(idWdiw)   Write out wave dissipation due to white capping
+! Qout(idWdis)   Write out wave roller dissipation
+! Qout(idWrol)   Write out wave roller action density
 !
 ! Qout(idPair)   Write out surface air pressure.
 ! Qout(idTair)   Write out surface air temperature.

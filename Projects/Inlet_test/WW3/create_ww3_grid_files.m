@@ -99,20 +99,19 @@ LL=1:rfact:LP; LL=LL(end);
 MM=1:rfact:MP; MM=MM(end);
 ww3_mask=ones(LL,MM);
 %
-% now make boudaries = 3
+% now make boudaries = 2
 %
-ww3_mask(:,1)=3;      %south
-ww3_mask(:,end)=3;    %north
-ww3_mask(1,:)=3;      %west edge
-ww3_mask(end,:)=3;    %east
-ww3_mask(2:end-1,end-1)=2;  %impose BC at 1 grid cell in along north edge
+ww3_mask(:,1)=2;      %south
+ww3_mask(:,end)=2;    %north
+ww3_mask(1,:)=2;      %west edge
+ww3_mask(end,:)=2;    %east
 %
 % now remove land and set these points as 0
 %
 zz=find(mask_rho==0);
 ww3_mask(zz)=0;
-zz=find(h<(min_depth));
-ww3_mask(zz)=0;
+%zz=find(h<(min_depth));
+%ww3_mask(zz)=0;
 
 % now write this out
 %

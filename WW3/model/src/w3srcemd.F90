@@ -201,7 +201,11 @@ CONTAINS
        TAUWY, TAUOX, TAUOY, TAUWIX, TAUWIY, TAUWNX,&
        TAUWNY, PHIAW, CHARN, TWS, PHIOC, WHITECAP, &
        D50, PSIC, BEDFORM , PHIBBL, TAUBBL, TAUICE,&
-       PHICE, TAUOCX, TAUOCY, WNMEAN, DAIR, COEF)
+       PHICE, TAUOCX, TAUOCY, WNMEAN,              &
+#ifdef W3_COAWST_MODEL
+       PHIBRKX, PHIBRKY,                           &
+#endif
+       DAIR, COEF)
     !/
     !/                  +-----------------------------------+
     !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -675,6 +679,9 @@ CONTAINS
          TAUBBL(2), TAUICE(2), WHITECAP(4),   &
          TAUWIX, TAUWIY, TAUWNX, TAUWNY,      &
          ICEF, TAUOCX, TAUOCY, WNMEAN
+#ifdef W3_COAWST_MODEL
+    REAL, INTENT(INOUT)     :: PHIBRKX, PHIBRKY
+#endif
     REAL, INTENT(OUT)       :: DTDYN, FCUT
     REAL, INTENT(IN)        :: COEF
     !/
@@ -815,7 +822,7 @@ CONTAINS
     REAL                 :: PreVS, FAK, DVS, SIDT, FAKS, MAXDAC
 #endif
 #ifdef W3_COAWST_MODEL
-    REAL                    :: oDTG
+    REAL                    :: oDTG, BRK_COAWST(NK*NTH)
 #endif
 
 #ifdef W3_NNT
@@ -1006,7 +1013,10 @@ CONTAINS
     TAUOCX = 0.
     TAUOCY = 0.
     WNMEAN = 0.
-
+#ifdef W3_COAWST_MODEL
+    PHIBRKX = 0.
+    PHIBRKY = 0.
+#endif
     !
     ! TIME is updated in W3WAVEMD prior to the call of W3SCRE, we should
     ! move 'TIME' one time step backward (QL)
@@ -1321,6 +1331,7 @@ CONTAINS
       IF (.NOT. FSSOURCE .or. LSLOC) THEN
 #endif
 #ifdef W3_DB1
+!  jcw here is the depth limited breaking
         CALL W3SDB1 ( IX, SPEC, DEPTH, EMEAN, FMEAN, WNMEAN, CG1,       &
              LBREAK, VSDB, VDDB )
 #endif
@@ -1732,9 +1743,17 @@ CONTAINS
         END IF
         !
 #ifdef W3_DB1
+# ifdef W3_COAWST_MODEL
+        BRK_COAWST=0.
+# endif
+!jcw here we lose the breaking dissip energy, SPEC is decreased.
+! so the MWX/YFINISH below has the loss of breaking in it.
         DO IS=IS1, NSPECH
           eInc1 = VSDB(IS) * DT / MAX ( 1. , (1.-HDT*VDDB(IS)))
           SPEC(IS) = MAX ( 0. , SPEC(IS)+eInc1 )
+# ifdef W3_COAWST_MODEL
+          BRK_COAWST(IS)=-VSDB(IS)*DT   !dim of A
+# endif
         END DO
 #endif
 #ifdef W3_TR1
@@ -1786,13 +1805,16 @@ CONTAINS
           COSI(2)=ESIN(IS)
           PHIAW = PHIAW + (VSIN(IS))* DT * FACTOR                    &
                / MAX ( 1. , (1.-HDT*VDIN(IS))) ! semi-implict integration scheme
-
           PHIBBL= PHIBBL- (VSBT(IS))* DT * FACTOR                    &
                / MAX ( 1. , (1.-HDT*VDBT(IS))) ! semi-implict integration scheme
           PHINL = PHINL + VSNL(IS)* DT * FACTOR                      &
                / MAX ( 1. , (1.-HDT*VDNL(IS))) ! semi-implict integration scheme
           IF (VSIN(IS).GT.0.) WHITECAP(3) = WHITECAP(3) + SPEC(IS)  * FACTOR
           HSTOT = HSTOT + SPEC(IS) * FACTOR
+#ifdef W3_COAWST_MODEL
+          PHIBRKX=PHIBRKX+BRK_COAWST(IS)*ECOS(ITH)*FACTOR 
+          PHIBRKY=PHIBRKY+BRK_COAWST(IS)*ESIN(ITH)*FACTOR 
+#endif
         END DO
       END DO
       WHITECAP(3)=4.*SQRT(WHITECAP(3))
@@ -2079,6 +2101,8 @@ CONTAINS
     PHIAW =DWAT*GRAV*PHIAW *oDTG
     PHINL =DWAT*GRAV*PHINL *oDTG
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
+    PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
+    PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
 #else
     PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)/DTG
     PHIAW =DWAT*GRAV*PHIAW /DTG

@@ -88,7 +88,6 @@
 # define ANA_BSFLUX
 # define ANA_BPFLUX
 # define ANA_SPFLUX
-# define ANA_SRFLUX
 # define EMINUSP
 # define SOLAR_SOURCE
 

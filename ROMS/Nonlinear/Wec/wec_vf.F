@@ -100,6 +100,10 @@
      &                            FORCES(ng) % Dissip_break_dir,        &
 # endif
      &                            FORCES(ng) % Dissip_break,            &
+# ifdef DISSIP_BREAK_DIR
+     &                            FORCES(ng) % Dissip_breakx,           &
+     &                            FORCES(ng) % Dissip_breaky,           &
+# endif
 # ifdef WEC_ROLLER
      &                            FORCES(ng) % Dissip_roller,           &
 # endif
@@ -164,6 +168,9 @@
      &                                  Dissip_break_dir,               &
 # endif
      &                                  Dissip_break,                   &
+# ifdef DISSIP_BREAK_DIR
+     &                                  Dissip_breakx, Dissip_breaky,   &
+# endif
 # ifdef WEC_ROLLER
      &                                  Dissip_roller,                  &
 # endif
@@ -253,6 +260,10 @@
       real(r8), intent(in) :: Dissip_break_dir(LBi:,LBj:,:)
 #  endif
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
+#  ifdef DISSIP_BREAK_DIR
+      real(r8), intent(in) :: Dissip_breakx(LBi:,LBj:)
+      real(r8), intent(in) :: Dissip_breaky(LBi:,LBj:)
+#  endif
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:,LBj:)
 #  endif
@@ -320,6 +331,10 @@
       real(r8), intent(in) :: Dissip_break_dir(LBi:UBi,LBj:UBj,1:ND)
 #  endif
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
+#  ifdef DISSIP_BREAK_DIR
+      real(r8), intent(in) :: Dissip_breakx(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Dissip_breaky(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
 #  endif
@@ -717,11 +732,21 @@
               BBYbrk(i,j)=BBYbrk(i,j)+cff3*cff4*wavey
             END DO
 # else
+#  ifdef DISSIP_BREAK_DIR
+            cff1=Dissip_breakx(i,j)
+            cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
+            BBXbrk(i,j)=cff3*cff4*waven(i,j)
+!
+            cff1=Dissip_breaky(i,j)
+            cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
+            BBYbrk(i,j)=cff3*cff4*waven(i,j)
+#  else
 !           cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
             cff1=Dissip_break(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBXbrk(i,j)=cff3*cff4*wavenx(i,j)
             BBYbrk(i,j)=cff3*cff4*waveny(i,j)
+#  endif
 # endif
 # ifdef WEC_ROLLER
             cff5=Dissip_roller(i,j)*osigma(i,j)

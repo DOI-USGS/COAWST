@@ -21,7 +21,7 @@ $ - Scale factor., defaults to 1 if less than or equal 0.
 $ - Spectrum F(f,theta) (single read statement) 
 $ (should have the resolution specified in ww3_grid.inp). 
 $
-  0.001
+  0.00001
      0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0 
      0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0 
      0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0 

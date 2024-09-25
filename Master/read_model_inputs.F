@@ -302,7 +302,9 @@
             aline=ADJUSTL(aline)
           END DO
           indx=INDEX(aline,blank)
+#  ifdef SPECTRUM_STOKES
           read(aline(1:indx),'(i2)') MSCs
+#  endif
         END IF
       END DO
 !

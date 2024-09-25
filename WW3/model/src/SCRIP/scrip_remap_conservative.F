@@ -268,7 +268,6 @@ C$OMP& srch_center_lon_find_adj_cell)
 !
 !-----------------------------------------------------------------------
 #ifdef W3_SCRIPMPI
-      integer (SCRIP_i4) :: grid1_str, grid1_end, grid2_str, grid2_end
       integer (SCRIP_i4) :: IERR_MPI, IPROC, ratio
       integer (SCRIP_i4) :: j, ij, add1, add2, got_weight
       integer (SCRIP_i4) :: nlink, min_link, max_link
@@ -278,6 +277,7 @@ C$OMP& srch_center_lon_find_adj_cell)
       integer (SCRIP_i4), dimension(:), allocatable :: Arecv1
       integer (SCRIP_i4), dimension(:), allocatable :: Arecv2
 #endif
+      integer (SCRIP_i4) :: grid1_str, grid1_end, grid2_str, grid2_end
 
       integer (SCRIP_i4), parameter ::
      &     phi_or_theta = 2      ! integrate w.r.t. phi (1) or theta (2)

@@ -403,6 +403,8 @@
       integer  :: idWbeh        ! WEC Bernoulli head
       integer  :: idWbrk        ! wind-induced wave breaking
       integer  :: idWdib        ! wave dissipation from surface breaking
+      integer  :: idWdix        ! wave dissipation from surface breaking x-dir
+      integer  :: idWdiy        ! wave dissipation from surface breaking y-dir
       integer  :: idWdid        ! wave dissipation from surface breaking in dirs
       integer  :: idWdif        ! wave dissipation from bottom friction 
       integer  :: idWdip        ! wind-induced peak wave direction
@@ -1712,6 +1714,10 @@
             idWbrk=varid
           CASE ('idWdib')
             idWdib=varid
+          CASE ('idWdix')
+            idWdix=varid
+          CASE ('idWdiy')
+            idWdiy=varid
           CASE ('idWdid')
             idWdid=varid
           CASE ('idWdif')
