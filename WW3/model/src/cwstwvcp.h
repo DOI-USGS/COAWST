@@ -972,6 +972,7 @@
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
         cff=PHIBRKX(i)**2+PHIBRKY(i)**2
+        IF (cff.ge.1000.0) cff=0.
         SND_BUF(IP)=SQRT(cff)
       END DO
 !
@@ -1003,7 +1004,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=PHIBRKX(i)
+        cff=MAX(PHIBRKX(i), 0.0)
+        SND_BUF(IP)=cff
       END DO
 !
 !  Gather up all the data.
@@ -1033,7 +1035,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=PHIBRKY(i)
+        cff=MAX(PHIBRKY(i), 0.0)
+        SND_BUF(IP)=cff
       END DO
 !
 !  Gather up all the data.
