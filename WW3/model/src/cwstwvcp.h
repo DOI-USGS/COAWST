@@ -1414,10 +1414,8 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCX(ISEA)
-        IF (cff.GE.10.) THEN
-          cff=0.0
-        END IF
+        cff=TAUOCX(i)
+        IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO
 !
@@ -1449,10 +1447,8 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCY(ISEA)
-        IF (cff.GE.10.) THEN
-          cff=0.0
-        END IF
+        cff=TAUOCY(i)
+        IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO
 !
