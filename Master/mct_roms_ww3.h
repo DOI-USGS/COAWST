@@ -1718,7 +1718,7 @@
 # ifdef DISSIP_BREAK_DIR
           cff=cff-FORCES(ng)%Dissip_breakx(i,j)*fac1(i,j)
 # else
-          cff1=1.5_r8*pi-Dwave(i,j)  !-angler(i,j)
+          cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,j)  !-angler(i,j)
           cff2=COS(cff1)
           cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
 # endif
@@ -1757,7 +1757,7 @@
 # ifdef DISSIP_BREAK_DIR
           cff=cff-FORCES(ng)%Dissip_breaky(i,j)*fac1(i,j)
 # else
-          cff1=1.5_r8*pi-Dwave(i,j)  !-angler(i,j)
+          cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,j)  !-angler(i,j)
           cff2=SIN(cff1)
           cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
 # endif
