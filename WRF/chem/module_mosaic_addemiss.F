@@ -1006,6 +1006,8 @@ size_loop: &
 !c
 !c   uses bubble emissions formula (eqn 5a) from 
 !c	Gong et al. [JGR, 1997, p 3805-3818]
+!c  https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/96JD02953
+!c   https://doi.org/10.1029/96JD02953
 !c
 !c   *** for rdry < rdry_star, this formula overpredicts emissions.
 !c	A strictly ad hoc correction is applied to the formula,
@@ -1018,8 +1020,7 @@ size_loop: &
 
 !c   subr arguments
 	integer ireduce_smallr_emit
-	real dpdrylo_cm, dpdryhi_cm,				&
-                emitfact_numb, emitfact_surf, emitfact_mass
+	real dpdrylo_cm, dpdryhi_cm, emitfact_numb, emitfact_surf, emitfact_mass
 
 !c   local variables
 	integer isub_bin, nsub_bin
