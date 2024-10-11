@@ -878,6 +878,7 @@
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
+      real(m8), parameter :: eps = 1.0E-8
 !
 !-----------------------------------------------------------------------
 !  Send wave fields to ROMS.
@@ -973,7 +974,7 @@
         IP=(IY-1)*NX+IX
         cff=PHIBRKX(i)**2+PHIBRKY(i)**2
         IF (cff.ge.1000.0) cff=0.
-        SND_BUF(IP)=SQRT(cff)
+        SND_BUF(IP)=SQRT(cff+eps)
       END DO
 !
 !  Gather up all the data.

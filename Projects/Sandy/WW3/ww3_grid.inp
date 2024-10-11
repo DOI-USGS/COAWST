@@ -602,9 +602,9 @@ $      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ycoord_ref3.dat'
 $      -1.0  -1.0  40 -1. 1 1 '(....)' 'NAME' 'ww3_sandy_bathy_ref3.bot'
 $
 $     'UNST'  T  'NONE'
-$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'Sandy_roms_grid.msh'
+$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'ww3_sandy_grid.msh'
 $     'UNST'  T  'NONE'
-$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'Sandy_roms_grid_ref3.msh'
+$      10.0  1.1  40 -1. 4 1 '(20f10.2)' 'NAME' 'ww3_sandy_grid_ref3.msh'
 $ ------------------------------------------------------------------------
 $ Example for curvilinear grid with spherical (lon/lat) coordinate system.
 $ Same spatial grid as preceding rectilinear example.
@@ -756,17 +756,20 @@ $      2  11   T
 $
 $  Close list by defining point (0,0) (mandatory)
 $
+$  for unstr
 $      0   0   F
 $
 $ Excluded grid points from segment data ( FROM != PART )
 $   First defined as lines, identical to the definition of the input
 $   boundary points, and closed the same way.
 $
+$  for unstr
 $      0   0   F
 $
 $   Second, define a point in a closed body of sea points to remove
 $   the entire body of sea points. Also close by point (0,0)
 $
+$  for unstr
 $       0   0
 $
 $ Sedimentary bottom map if namelist &SBT4 SEDMAPD50 = T

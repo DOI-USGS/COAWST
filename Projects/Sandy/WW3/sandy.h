@@ -31,6 +31,7 @@
 #endif
 #if defined WW3_MODEL
 # define WAV2OCN_FLUXES
+# define DISSIP_BREAK_DIR
 #endif
 
 #ifdef ROMS_MODEL

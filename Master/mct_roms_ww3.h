@@ -1354,6 +1354,24 @@
         write(stdout,40) 'WW3toROMS Min/Max DISSURFY (Wm-2):  ',        &
      &                    range(1),range(2)
       END IF
+#  ifdef CURVGRID
+!
+!  Waited until we used the stresses in N and E above before we
+!  rotate gridded stresses to curvilinear grid.
+!
+      IF (iw.eq.Nwav_grids) THEN
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            cff1=FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%CosAngler(i,j)+ &
+     &           FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%SinAngler(i,j)
+            cff2=FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%CosAngler(i,j)- &
+     &           FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%SinAngler(i,j)
+            FORCES(ng)%Dissip_breakx(i,j)=cff1
+            FORCES(ng)%Dissip_breaky(i,j)=cff2
+          END DO
+        END DO
+      END IF
+#  endif
 # endif
 !
 !  Wave dissipation due to white capping.
@@ -1692,15 +1710,6 @@
 !
 !  Compute scale factor for removal of dissip_break
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,j),Lwave_min)
-          Dstp=GRID(ng)%z_w(i,j,N(ng))-GRID(ng)%z_w(i,j,0)
-          sigma=SQRT(MAX(g*waven*TANH(waven*Dstp),eps))
-          fac1(i,j)=waven/sigma
-        END DO
-      END DO
-!
 !  TAUOCE  wav stress to ocean east
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TAUOCE",   &
@@ -1715,13 +1724,6 @@
 !
 !  Here we need to remove the depth-limited breaking from the surface stress.
 !
-# ifdef DISSIP_BREAK_DIR
-          cff=cff-FORCES(ng)%Dissip_breakx(i,j)*fac1(i,j)
-# else
-          cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,j)  !-angler(i,j)
-          cff2=COS(cff1)
-          cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
-# endif
 !
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocx(i,j)=cff
@@ -1754,13 +1756,6 @@
 !
 !  Here we need to remove the depth-limited breaking from the surface stress.
 !
-# ifdef DISSIP_BREAK_DIR
-          cff=cff-FORCES(ng)%Dissip_breaky(i,j)*fac1(i,j)
-# else
-          cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,j)  !-angler(i,j)
-          cff2=SIN(cff1)
-          cff=cff-FORCES(ng)%Dissip_break(i,j)*fac1(i,j)*cff2
-# endif
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocy(i,j)=cff
           ELSE
@@ -1790,26 +1785,6 @@
      &           FORCES(ng)%Tauocx(i,j)*GRID(ng)%SinAngler(i,j)
             FORCES(ng)%Tauocx(i,j)=cff1
             FORCES(ng)%Tauocy(i,j)=cff2
-          END DO
-        END DO
-      END IF
-# endif
-#endif
-#ifdef DISSIP_BREAK_DIR
-# ifdef CURVGRID
-!
-!  Waited until we used the stresses in N and E above before we
-!  rotate gridded stresses to curvilinear grid.
-!
-      IF (iw.eq.Nwav_grids) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            cff1=FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%CosAngler(i,j)+ &
-     &           FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%SinAngler(i,j)
-            cff2=FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%CosAngler(i,j)- &
-     &           FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%SinAngler(i,j)
-            FORCES(ng)%Dissip_breakx(i,j)=cff1
-            FORCES(ng)%Dissip_breaky(i,j)=cff2
           END DO
         END DO
       END IF

@@ -822,7 +822,7 @@ CONTAINS
     REAL                 :: PreVS, FAK, DVS, SIDT, FAKS, MAXDAC
 #endif
 #ifdef W3_COAWST_MODEL
-    REAL                    :: oDTG, BRK_COAWST(NK*NTH)
+    REAL                    :: oDTG, TAUBRKX, TAUBRKY
 #endif
 
 #ifdef W3_NNT
@@ -1016,6 +1016,8 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     PHIBRKX = 0.
     PHIBRKY = 0.
+    TAUBRKX = 0.
+    TAUBRKY = 0.
 #endif
     !
     ! TIME is updated in W3WAVEMD prior to the call of W3SCRE, we should
@@ -1743,17 +1745,13 @@ CONTAINS
         END IF
         !
 #ifdef W3_DB1
-# ifdef W3_COAWST_MODEL
-        BRK_COAWST=0.
-# endif
-!jcw here we lose the breaking dissip energy, SPEC is decreased.
-! so the MWX/YFINISH below has the loss of breaking in it.
+!
+!  we need to lose the breaking dissip energy, SPEC is decreased.
+!  so the MWX/YFINISH below has the loss of breaking in it.
+!
         DO IS=IS1, NSPECH
           eInc1 = VSDB(IS) * DT / MAX ( 1. , (1.-HDT*VDDB(IS)))
           SPEC(IS) = MAX ( 0. , SPEC(IS)+eInc1 )
-# ifdef W3_COAWST_MODEL
-          BRK_COAWST(IS)=-VSDB(IS)*DT   !dim of A
-# endif
         END DO
 #endif
 #ifdef W3_TR1
@@ -1799,6 +1797,10 @@ CONTAINS
 
         ! Wave direction is "direction to"
         ! therefore there is a PLUS sign for the stress
+#ifdef W3_COAWST_MODEL
+        A1BAND = 0.
+        B1BAND = 0.
+#endif
         DO ITH=1, NTH
           IS   = (IK-1)*NTH + ITH
           COSI(1)=ECOS(IS)
@@ -1812,10 +1814,20 @@ CONTAINS
           IF (VSIN(IS).GT.0.) WHITECAP(3) = WHITECAP(3) + SPEC(IS)  * FACTOR
           HSTOT = HSTOT + SPEC(IS) * FACTOR
 #ifdef W3_COAWST_MODEL
-          PHIBRKX=PHIBRKX+BRK_COAWST(IS)*ECOS(ITH)*FACTOR 
-          PHIBRKY=PHIBRKY+BRK_COAWST(IS)*ESIN(ITH)*FACTOR 
+          A1BAND=A1BAND - VSDB(IS) * DT * FACTOR * ECOS(ITH)       &
+               / MAX ( 1. , (1.-HDT*VDDB(IS)))
+          B1BAND=B1BAND - VSDB(IS) * DT * FACTOR * ESIN(ITH)       &
+               / MAX ( 1. , (1.-HDT*VDDB(IS)))
 #endif
         END DO
+#ifdef W3_COAWST_MODEL
+!  Here we compute breaking stress in W/m2
+        PHIBRKX = PHIBRKX + A1BAND
+        PHIBRKY = PHIBRKY + B1BAND
+!  Here we compute breaking stress in N/m2
+        TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
+        TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
+#endif
       END DO
       WHITECAP(3)=4.*SQRT(WHITECAP(3))
       HSTOT=4.*SQRT(HSTOT)
@@ -2075,8 +2087,10 @@ CONTAINS
     ! Transformation in momentum flux in m^2 / s^2
     !
 #ifdef W3_COAWST_MODEL
-    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
-    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
+!   TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
+!   TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
+    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1)-TAUBRKX*DTG/DWAT)*oDTG
+    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2)-TAUBRKY*DTG/DWAT)*oDTG
     TAUWIX=TAUWIX*oDTG
     TAUWIY=TAUWIY*oDTG
     TAUWNX=TAUWNX*oDTG

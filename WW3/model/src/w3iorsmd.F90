@@ -298,6 +298,9 @@ CONTAINS
          PHIOC, TUSX, TUSY, USSX, USSY, TAUICE,      &
          UBA, UBD, PHIBBL, TAUBBL, TAUOCX, TAUOCY,   &
          WNMEAN
+#ifdef W3_COAWST_MODEL
+    USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY
+#endif
     !/
     USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, NSPEC, MAPSTA, MAPST2, &
          GNAME, FILEXT, GTYPE, UNGTYPE
@@ -924,10 +927,81 @@ CONTAINS
             NREC  = NREC + 1
             RPOS  = 1_8 + LRECL*(NREC-1_8)
             WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
-            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)         &
-                 (FPIS(ISEA),ISEA=1+(IPART-1)*NSIZE,         &
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (FPIS(ISEA),ISEA=1+(IPART-1)*NSIZE,                    &
                  MIN(NSEA,IPART*NSIZE))
           END DO
+
+#ifdef W3_COAWST_MODEL
+!
+!  Write TAUOCX/Y into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (TAUOCX(ISEA),ISEA=1+(IPART-1)*NSIZE,                  &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (TAUOCY(ISEA),ISEA=1+(IPART-1)*NSIZE,                  &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+!
+!  Write CX/Y into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (CX(ISEA),ISEA=1+(IPART-1)*NSIZE,                      &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+          DO IPART=1,NPART
+           NREC  = NREC + 1
+           RPOS  = 1_8 + LRECL*(NREC-1_8)
+           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                (CY(ISEA),ISEA=1+(IPART-1)*NSIZE,                      &
+                MIN(NSEA,IPART*NSIZE))
+          END DO
+!
+!  Write PHIBRKX/Y into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (PHIBRKX(ISEA),ISEA=1+(IPART-1)*NSIZE,                 &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (PHIBRKY(ISEA),ISEA=1+(IPART-1)*NSIZE,                 &
+                   MIN(NSEA,IPART*NSIZE))
+          END DO
+!
+!  Write PHIBBL into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (PHIBBL(ISEA),ISEA=1+(IPART-1)*NSIZE,                  &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+#endif
           IF (OARST) THEN
 #ifdef W3_MPI
             CALL W3XETA ( IGRD, NDSE, NDST )
@@ -1102,6 +1176,70 @@ CONTAINS
                (FPIS(ISEA),ISEA=1+(IPART-1)*NSIZE,             &
                MIN(NSEA,IPART*NSIZE))
         END DO
+#ifdef W3_COAWST_MODEL
+!
+!  Read TAUOCX/Y from rst file
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (TAUOCX(ISEA),ISEA=1+(IPART-1)*NSIZE,                    &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (TAUOCY(ISEA),ISEA=1+(IPART-1)*NSIZE,                    &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+!
+!  Read CX/Y from rst file
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (CX(ISEA),ISEA=1+(IPART-1)*NSIZE,                        &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (CY(ISEA),ISEA=1+(IPART-1)*NSIZE,                        &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+!
+!  Read PHIBRKX/Y from rst file
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (PHIBRKX(ISEA),ISEA=1+(IPART-1)*NSIZE,                   &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (PHIBRKY(ISEA),ISEA=1+(IPART-1)*NSIZE,                   &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+!
+!  Read PHIBBL from rst file
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (PHIBBL(ISEA),ISEA=1+(IPART-1)*NSIZE,                    &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+#endif
         IF (OARST) THEN
           IF ( FLOGOA(1,2) ) THEN
             READ (NDSR,ERR=802,IOSTAT=IERR) CX(1:NSEA)
