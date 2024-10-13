@@ -4738,11 +4738,11 @@ CONTAINS
       IF (OARST) THEN
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(34*NAPROC) )
       ELSE
-#ifdef W3_COAWST_MODEL
+# ifdef W3_COAWST_MODEL
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(10*NAPROC) )
-#else
+# else
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(3*NAPROC) )
-#endif
+# endif
       ENDIF
       IRQRS  => OUTPTS(IMOD)%OUT4%IRQRS
 #endif
@@ -5689,7 +5689,11 @@ CONTAINS
       IF (OARST) THEN
         IT0    = IT0 + 34
       ELSE
+# ifdef W3_COAWST_MODEL
+        IT0    = IT0 + 10
+# else
         IT0    = IT0 + 3
+# endif
       ENDIF
 #endif
       !
@@ -5703,11 +5707,7 @@ CONTAINS
 #ifdef W3_MPI
       IF ( IOSTYP .GT. 0 ) THEN
         !
-# ifdef W3_COAWST_MODEL
-        NBLKRS = 17
-# else
         NBLKRS = 10
-# endif
         RSBLKS = MAX ( 5 , NSEALM/NBLKRS )
         IF ( NBLKRS*RSBLKS .LT. NSEALM ) RSBLKS = RSBLKS + 1
         NBLKRS = 1 + (NSEALM-1)/RSBLKS

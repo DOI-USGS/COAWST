@@ -915,6 +915,7 @@ CONTAINS
                  (USTDIR(ISEA),ISEA=1+(IPART-1)*NSIZE,       &
                  MIN(NSEA,IPART*NSIZE))
           END DO
+#ifdef W3_STAB2
           DO IPART=1,NPART
             NREC  = NREC + 1
             RPOS  = 1_8 + LRECL*(NREC-1_8)
@@ -923,6 +924,7 @@ CONTAINS
                  (ASF(ISEA),ISEA=1+(IPART-1)*NSIZE,          &
                  MIN(NSEA,IPART*NSIZE))
           END DO
+#endif
           DO IPART=1,NPART
             NREC  = NREC + 1
             RPOS  = 1_8 + LRECL*(NREC-1_8)
@@ -1162,6 +1164,7 @@ CONTAINS
                (USTDIR(ISEA),ISEA=1+(IPART-1)*NSIZE,           &
                MIN(NSEA,IPART*NSIZE))
         END DO
+#ifdef W3_STAB2
         DO IPART=1,NPART
           NREC  = NREC + 1
           RPOS  = 1_8 + LRECL*(NREC-1_8)
@@ -1169,6 +1172,7 @@ CONTAINS
                (ASF(ISEA),ISEA=1+(IPART-1)*NSIZE,              &
                MIN(NSEA,IPART*NSIZE))
         END DO
+#endif
         DO IPART=1,NPART
           NREC  = NREC + 1
           RPOS  = 1_8 + LRECL*(NREC-1_8)
