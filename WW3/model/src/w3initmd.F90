@@ -4784,89 +4784,6 @@ CONTAINS
 #ifdef W3_MPIT
         WRITE (NDST,9021) IH, 'S FP', IROOT, IT, IRQRS(IH), IERR
 #endif
-
-#ifdef W3_COAWST_MODEL
-!
-!       TAUOCX/Y
-!
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 4
-        CALL MPI_SEND_INIT (TAUOCX(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S TX', IROOT, IT, IRQRS(IH), IERR
-# endif
-        !
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 5
-        CALL MPI_SEND_INIT (TAUOCY(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S TY', IROOT, IT, IRQRS(IH), IERR
-# endif
-!
-!       CX/Y
-!
-
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 6
-        CALL MPI_SEND_INIT (CX(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S CX', IROOT, IT, IRQRS(IH), IERR
-# endif
-        !
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 7
-        CALL MPI_SEND_INIT (CY(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S CY', IROOT, IT, IRQRS(IH), IERR
-# endif
-!
-!       PHIBRKX/Y
-!
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 8
-        CALL MPI_SEND_INIT (PHIBRKX(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S PX', IROOT, IT, IRQRS(IH), IERR
-# endif
-        !
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 9
-        CALL MPI_SEND_INIT (PHIBRKY(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S PY', IROOT, IT, IRQRS(IH), IERR
-# endif
-!
-!       PHIBBL
-!
-# ifdef W3_MPI
-        IH     = IH + 1
-        IT     = IT0 + 10
-        CALL MPI_SEND_INIT (PHIBBL(IAPROC), 1, WW3_FIELD_VEC, &
-             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
-# endif
-# ifdef W3_MPIT
-        WRITE (NDST,9021) IH, 'S PB', IROOT, IT, IRQRS(IH), IERR
-# endif
-#endif
-
         !
 #ifdef W3_MPI
       ELSE IF ( IAPROC .EQ. NAPRST ) THEN
@@ -4902,33 +4819,103 @@ CONTAINS
 #ifdef W3_MPIT
             WRITE (NDST,9021) IH, 'R FP', IFROM, IT, IRQRS(IH), IERR
 #endif
-
+#ifdef W3_MPI
+          END IF
+        END DO
+      END IF
+#endif
+      !
 #ifdef W3_COAWST_MODEL
-            ! TAUOCX/Y
+!
+!       CX/Y
+!
 # ifdef W3_MPI
-            IH     = IH + 1
-            IT     = IT0 + 4
-            CALL MPI_RECV_INIT (TAUOCX(I0),1,WW3_FIELD_VEC, &
-                 IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+        IH     = IH + 1
+        IT     = IT0 + 4
+        CALL MPI_SEND_INIT (CX(IAPROC), 1, WW3_FIELD_VEC, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 # endif
 # ifdef W3_MPIT
-            WRITE (NDST,9021) IH, 'R TX', IFROM, IT, IRQRS(IH), IERR
+        WRITE (NDST,9021) IH, 'S CX', IROOT, IT, IRQRS(IH), IERR
 # endif
-            !
+!
 # ifdef W3_MPI
-            IH     = IH + 1
-            IT     = IT0 + 5
-            CALL MPI_RECV_INIT (TAUOCY(I0),1,WW3_FIELD_VEC, &
-                 IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+        IH     = IH + 1
+        IT     = IT0 + 5
+        CALL MPI_SEND_INIT (CY(IAPROC), 1, WW3_FIELD_VEC, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 # endif
 # ifdef W3_MPIT
-            WRITE (NDST,9021) IH, 'R TY', IFROM, IT, IRQRS(IH), IERR
+        WRITE (NDST,9021) IH, 'S CY', IROOT, IT, IRQRS(IH), IERR
 # endif
 
+!
+!       TAUOCX/Y
+!
+# ifdef W3_MPI
+        IH     = IH + 1
+        IT     = IT0 + 6
+        CALL MPI_SEND_INIT (TAUOCX(1), NSEALM, MPI_REAL, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+        WRITE (NDST,9021) IH, 'S TX', IROOT, IT, IRQRS(IH), IERR
+# endif
+        !
+# ifdef W3_MPI
+        IH     = IH + 1
+        IT     = IT0 + 7
+        CALL MPI_SEND_INIT (TAUOCY(1), NSEALM, MPI_REAL, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+        WRITE (NDST,9021) IH, 'S TY', IROOT, IT, IRQRS(IH), IERR
+# endif
+!
+!       PHIBRKX/Y
+!
+# ifdef W3_MPI
+        IH     = IH + 1
+        IT     = IT0 + 8
+        CALL MPI_SEND_INIT (PHIBRKX(1), NSEALM, MPI_REAL, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+        WRITE (NDST,9021) IH, 'S PX', IROOT, IT, IRQRS(IH), IERR
+# endif
+        !
+# ifdef W3_MPI
+        IH     = IH + 1
+        IT     = IT0 + 9
+        CALL MPI_SEND_INIT (PHIBRKY(1), NSEALM, MPI_REAL, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+        WRITE (NDST,9021) IH, 'S PY', IROOT, IT, IRQRS(IH), IERR
+# endif
+!
+!       PHIBBL
+!
+# ifdef W3_MPI
+        IH     = IH + 1
+        IT     = IT0 + 10
+        CALL MPI_SEND_INIT (PHIBBL(1), NSEALM, MPI_REAL, &
+             IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+        WRITE (NDST,9021) IH, 'S PB', IROOT, IT, IRQRS(IH), IERR
+# endif
+
+!     ELSE IF ( IAPROC .EQ. NAPRST ) THEN
+      IF ( IAPROC .EQ. NAPRST ) THEN
+        IF (NAPRST .NE. NAPFLD) CALL W3XDMA ( IMOD, NDSE, NDST, FLOGRR )
+        CALL W3XETA ( IMOD, NDSE, NDST )
+        DO I0=1, NAPROC
+          IFROM  = I0 - 1
             ! CX/Y
 # ifdef W3_MPI
             IH     = IH + 1
-            IT     = IT0 + 6
+            IT     = IT0 + 4
             CALL MPI_RECV_INIT (CX(I0),1,WW3_FIELD_VEC, &
                  IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 # endif
@@ -4938,14 +4925,33 @@ CONTAINS
             !
 # ifdef W3_MPI
             IH     = IH + 1
-            IT     = IT0 + 7
+            IT     = IT0 + 5
             CALL MPI_RECV_INIT (CY(I0),1,WW3_FIELD_VEC, &
                  IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 # endif
 # ifdef W3_MPIT
             WRITE (NDST,9021) IH, 'R CY', IFROM, IT, IRQRS(IH), IERR
 # endif
-
+            ! TAUOCX/Y
+# ifdef W3_MPI
+            IH     = IH + 1
+            IT     = IT0 + 6
+            CALL MPI_RECV_INIT (TAUOCX(I0),1,WW3_FIELD_VEC, &
+                 IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9021) IH, 'R TX', IFROM, IT, IRQRS(IH), IERR
+# endif
+            !
+# ifdef W3_MPI
+            IH     = IH + 1
+            IT     = IT0 + 7
+            CALL MPI_RECV_INIT (TAUOCY(I0),1,WW3_FIELD_VEC, &
+                 IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9021) IH, 'R TY', IFROM, IT, IRQRS(IH), IERR
+# endif
             ! PHIBRKX/Y
 # ifdef W3_MPI
             IH     = IH + 1
@@ -4966,7 +4972,6 @@ CONTAINS
 # ifdef W3_MPIT
             WRITE (NDST,9021) IH, 'R PY', IFROM, IT, IRQRS(IH), IERR
 # endif
-
             ! PHIBBL
 # ifdef W3_MPI
             IH     = IH + 1
@@ -4977,12 +4982,12 @@ CONTAINS
 # ifdef W3_MPIT
             WRITE (NDST,9021) IH, 'R PB', IFROM, IT, IRQRS(IH), IERR
 # endif
+!         END IF
+        END DO
+        CALL W3SETA ( IMOD, NDSE, NDST )
+      END IF
 #endif
 #ifdef W3_MPI
-          END IF
-        END DO
-      END IF
-      !
       IF (OARST) THEN
         IF ( FLOGRR( 1, 2) ) THEN
           IH     = IH + 1
