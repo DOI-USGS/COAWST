@@ -1783,12 +1783,21 @@ CONTAINS
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 #endif
 #ifdef W3_PR2
+# ifdef W3_CURSP
+                    CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),     &
+                         CYTH(ISEA,:), DCXDX(IY,IXrel), DCXDY(IY,IXrel),   &
+                         DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR3
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -2106,12 +2115,21 @@ CONTAINS
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 #endif
 #ifdef W3_PR2
+# ifdef W3_CURSP
+                    CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),       &
+                         CYTH(ISEA,:), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
+                         DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR3
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &

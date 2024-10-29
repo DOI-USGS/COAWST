@@ -397,6 +397,9 @@ MODULE W3ADATMD
     !
     REAL, POINTER         :: DW(:), UA(:), UD(:), U10(:), U10D(:),&
          AS(:), CX(:), CY(:), TAUA(:), TAUADIR(:)
+#ifdef W3_CURSP
+    REAL, POINTER         ::  CXTH(:,:), CYTH(:,:)
+#endif
     !
     ! Output fields group 2)
     !
@@ -589,6 +592,9 @@ MODULE W3ADATMD
   !
   REAL, POINTER           :: DW(:), UA(:), UD(:), U10(:), U10D(:),&
        AS(:), CX(:), CY(:), TAUA(:), TAUADIR(:)
+#ifdef W3_CURSP
+  REAL, POINTER           ::  CXTH(:,:), CYTH(:,:)
+#endif
   !
   REAL, POINTER           :: HS(:), WLM(:),  T02(:), T0M1(:),     &
        T01 (:), FP0(:), THM(:), THS(:),     &
@@ -1027,6 +1033,15 @@ CONTAINS
     CHECK_ALLOC_STATUS ( ISTAT )
     WADATS(IMOD)%CX(:)=0.
     WADATS(IMOD)%CY(:)=0.
+
+#ifdef W3_CURSP
+    ALLOCATE ( WADATS(IMOD)%CXTH(0:NSEA,NK) , WADATS(IMOD)%CYTH(0:NSEA,NK) , &
+         STAT=ISTAT )
+    CHECK_ALLOC_STATUS ( ISTAT )
+    WADATS(IMOD)%CXTH(:,:)=0.
+    WADATS(IMOD)%CYTH(:,:)=0.
+#endif
+
     !
     ALLOCATE ( WADATS(IMOD)%UA(0:NSEA) , WADATS(IMOD)%UD(0:NSEA) , &
          WADATS(IMOD)%U10(NSEA)  , WADATS(IMOD)%U10D(NSEA) , &
@@ -2860,6 +2875,10 @@ CONTAINS
       AS     => WADATS(IMOD)%AS
       CX     => WADATS(IMOD)%CX
       CY     => WADATS(IMOD)%CY
+#ifdef W3_CURSP
+      CXTH     => WADATS(IMOD)%CXTH
+      CYTH     => WADATS(IMOD)%CYTH
+#endif
       TAUA   => WADATS(IMOD)%TAUA
       TAUADIR=> WADATS(IMOD)%TAUADIR
       !

@@ -292,6 +292,9 @@
 # if defined SPECTRUM_STOKES
       character (len=5)   :: LSTCODE
 # endif
+#if defined UV_BANIHASHEMI
+      character (len=7)     :: LUVCODE
+#endif
 
       real :: cff
 
@@ -682,6 +685,33 @@
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+#if defined UV_BANIHASHEMI
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELX0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELX",IZ
+        END IF
+
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+!
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(LUVCODE,"(A6,I1)") ":VELY0",IZ
+        ELSE
+          WRITE(LUVCODE,"(A5,I2)") ":VELY",IZ
+        END IF
+
+        to_add=LUVCODE
+        cad=LEN_TRIM(to_add)
+        write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+#else
       to_add=':VELX'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -691,6 +721,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+#endif
 !
       to_add=':ZO'
       cad=LEN_TRIM(to_add)
@@ -878,7 +909,6 @@
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
-      real(m8), parameter :: eps = 1.0E-8
 !
 !-----------------------------------------------------------------------
 !  Send wave fields to ROMS.
@@ -974,7 +1004,7 @@
         IP=(IY-1)*NX+IX
         cff=PHIBRKX(i)**2+PHIBRKY(i)**2
         IF (cff.ge.1000.0) cff=0.
-        SND_BUF(IP)=SQRT(cff+eps)
+        SND_BUF(IP)=SQRT(cff)
       END DO
 !
 !  Gather up all the data.
@@ -1879,13 +1909,16 @@
 !                                                                      !
 !=======================================================================
 !
-      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
+      USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH
       USE W3SERVMD
       USE W3IDATMD
       USE MCT_COUPLER_PARAMS
 !     USE W3WDATMD, ONLY: WLV
 !     USE W3IDATMD, ONLY: WLEV
       USE W3ADATMD, ONLY: CX, CY
+#if defined UV_BANIHASHEMI
+      USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
 !
       implicit none
 !
@@ -1911,6 +1944,10 @@
       real, dimension(2)           :: range
       real, pointer                :: SND_BUF(:), RCV_BUF(:)
       real(m8), pointer            :: avdata(:)
+#if defined UV_BANIHASHEMI
+      character (len=6) :: SCODE
+      integer :: IZ
+#endif
 !
 !-----------------------------------------------------------------------
 !  Send wave fields to ROMS.
@@ -2036,16 +2073,114 @@
 !
 !  Scatter to array WLEV.
 !
-       DO i=1,NSEA
-         IX     = MAPSF(i,1)
-         IY     = MAPSF(i,2)
-         IP=(IY-1)*NX+IX
-         IF (io.eq.1) THEN
-           WLEV(IX,IY)=RCV_BUF(IP)
-         ELSE
-           WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
-         END IF
-       END DO
+        DO i=1,NSEA
+          IX     = MAPSF(i,1)
+          IY     = MAPSF(i,2)
+          IP=(IY-1)*NX+IX
+          IF (io.eq.1) THEN
+            WLEV(IX,IY)=RCV_BUF(IP)
+          ELSE
+            WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
+          END IF
+        END DO
+#if defined UV_BANIHASHEMI
+!
+!  Wave number dependent u-velocity...................................
+!
+        DO IZ=1,NK
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A5,I1)") "VELX0",IZ
+          ELSE
+            WRITE(SCODE,"(A4,I2)") "VELX", IZ
+          END IF
+          CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,          &
+     &                               SCODE,avdata,gsmsize)
+          range(1)= Large
+          range(2)=-Large
+          SND_BUF=0.0
+          IP=0
+          DO i=start,start+length-1
+            IP=IP+1
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+            SND_BUF(i)=REAL(avdata(IP))
+          END DO
+          CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,              &
+                             MPI_MIN, WAV_COMM_WORLD, MyError)
+          CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,              &
+                             MPI_MAX, WAV_COMM_WORLD, MyError)
+          IF (MyRank.eq.0) THEN
+            write(SCREEN,40) 'ROMStoWW3 Min/Max VELX    (ms-1):     ',   &
+     &                        cffmin, cffmax
+          END IF
+!
+!  now scatter data to all nodes.
+!
+          CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                  &
+     &                       MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Scatter to array VELX.
+!
+          DO i=1,NSEA
+            IX     = MAPSF(i,1)
+            IY     = MAPSF(i,2)
+            IP=(IY-1)*NX+IX
+            IF (io.eq.1) THEN
+              CXTH(i,IZ)=RCV_BUF(IP)
+            ELSE
+              CXTH(i,IZ)=CXTH(i,IZ)+RCV_BUF(IP)
+            END IF
+          END DO
+        END DO
+!
+!  Wave number dependent v-velocity...................................
+!
+        DO IZ=1,NK
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A5,I1)") "VELY0",IZ
+          ELSE
+            WRITE(SCODE,"(A4,I2)") "VELY", IZ
+          END IF
+          CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,          &
+     &                               SCODE,avdata,gsmsize)
+          range(1)= Large
+          range(2)=-Large
+          SND_BUF=0.0
+          IP=0
+          DO i=start,start+length-1
+            IP=IP+1
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+            SND_BUF(i)=REAL(avdata(IP))
+          END DO
+          CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,              &
+                             MPI_MIN, WAV_COMM_WORLD, MyError)
+          CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,              &
+                             MPI_MAX, WAV_COMM_WORLD, MyError)
+          IF (MyRank.eq.0) THEN
+            write(SCREEN,40) 'ROMStoWW3 Min/Max VELY    (ms-1):     ',   &
+     &                        cffmin, cffmax
+          END IF
+!
+!  now scatter data to all nodes.
+!
+          CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                  &
+     &                       MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Scatter to array VELX.
+!
+          DO i=1,NSEA
+            IX     = MAPSF(i,1)
+            IY     = MAPSF(i,2)
+            IP=(IY-1)*NX+IX
+            IF (io.eq.1) THEN
+              CYTH(i,IZ)=RCV_BUF(IP)
+            ELSE
+              CYTH(i,IZ)=CYTH(i,IZ)+RCV_BUF(IP)
+            END IF
+          END DO
+        END DO
+#else
 !
 !  Depth-integrated u-velocity........................................
 !
@@ -2128,6 +2263,7 @@
            CY(i)=CY(i)+RCV_BUF(IP)
          END IF
        END DO
+#endif
 !
 !  Bottom roughness...................................................
 !

@@ -47,13 +47,11 @@
       integer :: Asize, Isize, Jsize, MyError
       integer :: i, ic, iw, j, jc, nprocs
       integer :: nRows, nCols, num_sparse_elems
-      integer :: cid, cad
+      integer :: cid, cad, IZ
       integer, allocatable :: length(:)
       integer, allocatable :: start(:)
-!      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
       character (len=20)    :: to_add
-      integer               :: IZ
 #if defined SPECTRUM_STOKES
       character (len=5)     :: LSTCODE
 #endif
@@ -761,9 +759,6 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       integer :: iveg
 #endif
-
-      real(r8), parameter ::  Lwave_min = 1.0_r8
-      real(r8), parameter ::  Lwave_max = 500.0_r8
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, ramp
@@ -1830,7 +1825,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+          cff=MIN(Lwave_max,MAX(Lwave_min,A(ij)))
           IF (iw.eq.1) THEN
             FORCES(ng)%Lwave(i,j)=cff
           ELSE
@@ -1874,7 +1869,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+          cff=MIN(Lwave_max,MAX(Lwave_min,A(ij)))
           IF (iw.eq.1) THEN
             FORCES(ng)%Lwavep(i,j)=cff
           ELSE

@@ -137,6 +137,9 @@ CONTAINS
          FSN, FSPSI, FSFCT, FSNIMP, GTYPE, UNGTYPE
 
     USE W3WDATMD, ONLY: TIME
+#ifdef W3_CURSP
+    USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
     USE W3ODATMD, ONLY: TBPI0, TBPIN, FLBPI
     USE W3ADATMD, ONLY: CG, CX, CY, ATRNX, ATRNY, ITIME, CFLXYMAX, DW
     USE W3IDATMD, ONLY: FLCUR
@@ -159,7 +162,7 @@ CONTAINS
     !/ Local parameters
     !/
     INTEGER                 :: ITH, IK, ISEA, IXY
-    INTEGER                 :: IX
+    INTEGER                 :: IX, ISPC
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
@@ -212,14 +215,22 @@ CONTAINS
     END DO
 
     IF ( FLCUR ) THEN
+#ifdef W3_CURSP
+      ISPC=INT((ISP-1)/NTH)+1
+#endif
       DO ISEA=1, NSEA
         IXY =  MAPSF(ISEA,3)
         !
         ! Currents are not included on coastal boundaries (IOBP(IXY).EQ.0)
         !
         IF (IOBP(IXY) .EQ. 1) THEN
+#ifdef W3_CURSP
+          VLCFLX(IXY) = VLCFLX(IXY) + CCURX*CXTH(ISEA,ISPC)/CLATS(ISEA)
+          VLCFLY(IXY) = VLCFLY(IXY) + CCURY*CYTH(ISEA,ISPC)
+#else
           VLCFLX(IXY) = VLCFLX(IXY) + CCURX*CX(ISEA)/CLATS(ISEA)
           VLCFLY(IXY) = VLCFLY(IXY) + CCURY*CY(ISEA)
+#endif
         END IF
       END DO
     END IF

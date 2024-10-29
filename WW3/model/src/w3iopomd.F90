@@ -1392,6 +1392,9 @@ CONTAINS
       END IF
       !
     END DO
+#ifdef W3_COAWST_MODEL
+    FLUSH(NDSOP)
+#endif
     IF (OFILES(2) .EQ. 1)  CLOSE (NDSOP)
     !
     RETURN
