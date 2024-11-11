@@ -1141,13 +1141,27 @@ CONTAINS
 #ifdef W3_DEBUGDCXDX
             WRITE(740+IAPROC,*) 'Before call to UG_GRADIENT for assigning DCXDX/DCXDY array'
 #endif
+#ifdef W3_CURSP
+            DO IP=1,NK
+              CALL UG_GRADIENTS(CXTH(:,IP), DCXDXTH(:,:,IP), DCXDYTH(:,:,IP))
+              CALL UG_GRADIENTS(CYTH(:,IP), DCYDXTH(:,:,IP), DCYDYTH(:,:,IP))
+            END DO
+#else
             CALL UG_GRADIENTS(CX, DCXDX, DCXDY)
             CALL UG_GRADIENTS(CY, DCYDX, DCYDY)
+#endif
             UGDTUPDATE=.TRUE.
             CFLXYMAX = 0.
           ELSE
+#ifdef W3_CURSP
+            DO IP=1,NK
+              CALL W3DZXY(CXTH(1:UBOUND(CX,1),IP),'m/s',DCXDXTH(:,:,IP), DCXDYTH(:,:,IP)) !CX GRADIENT
+              CALL W3DZXY(CYTH(1:UBOUND(CY,1),IP),'m/s',DCYDXTH(:,:,IP), DCYDYTH(:,:,IP)) !CY GRADIENT
+            END DO
+#else
             CALL W3DZXY(CX(1:UBOUND(CX,1)),'m/s',DCXDX, DCXDY) !CX GRADIENT
             CALL W3DZXY(CY(1:UBOUND(CY,1)),'m/s',DCYDX, DCYDY) !CY GRADIENT
+#endif
           ENDIF  !! End GTYPE
           !
           call print_memcheck(memunit, 'memcheck_____:'//' WW3_WAVE TIME LOOP 4')
@@ -1786,9 +1800,9 @@ CONTAINS
 # ifdef W3_CURSP
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
-                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),     &
-                         CYTH(ISEA,:), DCXDX(IY,IXrel), DCXDY(IY,IXrel),   &
-                         DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),   &
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),                 &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -2119,8 +2133,8 @@ CONTAINS
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),       &
-                         CYTH(ISEA,:), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
-                         DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),     &
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),           &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &

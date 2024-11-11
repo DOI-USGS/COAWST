@@ -131,6 +131,9 @@
 !
       integer :: i, j, k, m, nn, count
       integer :: polycon, NDEG,IERR
+      integer :: II, IK
+      real(r8) :: DIF, FD, FF, FR1, KK, KOLD, RDIF, RFR1, RXFR, SIGMA, TPI
+      real(r8) :: W0, XFR
       real(r8) :: cff, cff1, cff2, Dstp, fac1
       real(r8) :: FRINTF, SHIG, SLOW, SFAC, FRINTH
       real(r8) :: FRLOW, FRHIG, SND, SND2
@@ -138,15 +141,12 @@
       real(r8) :: Ap, A1, A1k, B1, dB, B1u, B1v
       real(r8) :: C2u, C2v, Cg_KC2, dApu, dApv
       real(r8) :: dBp, dCp
-!     real(dp), parameter :: khmax = 5.0_dp
-      real(dp), parameter :: khmax = 250.0_dp
-!     real(dp), parameter :: khmax = 200.0_dp
-      real(dp), parameter :: kmax = 0.3_dp            !20m
-!     real(r8), parameter :: Lwave_min = 1.0_r8
+!     real(dp), parameter :: khmax = 250.0_dp
+      real(dp), parameter :: khmax = 300.0_dp
+!     real(dp), parameter :: khmax = 15.0_dp
       real(r8), parameter :: eps = 1.0E-10_r8
-
+!
       real(r8), dimension(N(ng)) :: X, Y, Wts, R
-
       real(r8), dimension(MSCs) :: waven, owaven, dA, B2
       real(r8), dimension(MSCs) :: Au, Av, A1u, A1v, A1ku, A1kv
       real(r8), dimension(MSCs) :: dAu, dAv
@@ -158,12 +158,11 @@
       real(r8), dimension(MSCs) :: SPCSIG
       real(r8), dimension(MSCs) :: dUtdk2, dUtdk, dVtdk, dVtdk2
       real(r8), dimension(MSCs) :: Cg_0, kh, c0
-
 !
-
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: u2wav
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: v2wav
 !
+      real(r8), allocatable :: SIG(:)
       real(r8), allocatable :: A(:)
       real(r8), allocatable :: TC(:)
       real(r8), allocatable :: A0u(:)
@@ -174,7 +173,7 @@
       real(r8), allocatable :: K2(:,:)
       real(r8), allocatable :: HH(:,:)
       real(r8), allocatable :: H(:,:,:)
-
+!
 # include "set_bounds.h"
 !
 !   SUBROUTINE banihashemi(ng, tile, U0,Ut,dUtdk,dUtdk2,C2,Cg_2,Cg_0,k,Cg_KC2)
@@ -279,11 +278,11 @@
           END DO
         END DO
       END DO
-
 !
 !  Compute wavenumbers. at some point we need diff of k 
 !  so we need to compute all the k's first.
 !
+#ifdef SWAN_MODEL
 !  Borrow this from swanpre1.ftn
 !  Compute freqs.
 !
@@ -300,6 +299,32 @@
       DO k = 2, MSCs
         SPCSIG(k) = SPCSIG(k-1) * SFAC
       END DO
+#endif
+#ifdef WW3_MODEL
+!  w3gridmd
+!   b Frequencies :
+    !
+    TPI=2.0_r8*pi
+    RXFR = 1.1_r8
+    RFR1 = 0.04118_r8
+!   NK=25
+      IF (.not.allocated(SIG)) THEN
+        allocate ( SIG(0:MSCs+1) )
+        SIG=0.0_r8
+      END IF
+
+    XFR    = MAX ( RXFR , 1.00001 )
+    FR1    = MAX ( RFR1 , 1.E-6_r8 )
+!
+    SIGMA   = FR1 * TPI / XFR**2
+!   SXFR    = 0.5 * (XFR-1./XFR)
+    !
+    DO IK=0, MSCs+1
+      SIGMA    = SIGMA * XFR
+      SIG (IK) = SIGMA
+!     DSIP(IK) = SIGMA * SXFR
+    END DO
+#endif
 !
 !  Start long J loop.
 !
@@ -311,6 +336,7 @@
           Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
           fac1 = SQRT(Dstp/g)
 !
+#ifdef SWAN_MODEL
           DO k=1,MSCs
 !
 !  Compute k.  This is borrowed from SWAN swanser.ftn.
@@ -331,6 +357,79 @@
             ENDIF
             owaven(k)=1.0_r8/(waven(k)+eps)
           END DO
+#endif
+#ifdef WW3_MODEL
+      DO IK=0, MSCs !+1
+        !
+        !         Calculate wavenumbers and group velocities.
+!        CALL WAVNU1(SIG(IK),DEPTH,WN(IK,IS),CG(IK,IS))
+!   SUBROUTINE WAVNU2 (W,H,K,CG,EPS,NMAX,ICON)
+!    CG   = 0
+    KOLD = 0
+!    ICON = 0
+    
+    W0   = ABS(SIG(IK))
+    !
+    !     1st approach :
+    !
+    IF (W0.LT.SQRT(g/Dstp)) THEN
+      KK = W0/SQRT(g*Dstp)
+    ELSE
+      KK = W0*W0/g
+    END IF
+    !
+    !     Refinement :
+    !
+    DO II=1, 10 !NMAX
+      DIF = ABS(KK-KOLD)
+      IF (KK.NE.0.0_r8) THEN
+        RDIF = DIF/KK
+      ELSE
+        RDIF = 0.0_r8
+      END IF
+      IF (DIF .LT. EPS .AND. RDIF .LT. EPS) THEN
+!        ICON = 1
+        GOTO 100
+      ELSE
+        KOLD = KK
+        FF    = g*KOLD*TANH(KOLD*Dstp)-W0**2
+        IF (KOLD*Dstp.GT.25.0_r8) THEN
+          FD = g*TANH(KOLD*Dstp)
+        ELSE
+          FD = g*TANH(KOLD*Dstp) + g*KOLD*Dstp/((COSH(KOLD*Dstp))**2)
+        END IF
+        KK    = KOLD - FF/FD
+      END IF
+    END DO
+    !
+    DIF   = ABS(KK-KOLD)
+    RDIF  = DIF/KK
+!    IF (DIF .LT. EPS .AND. RDIF .LT. EPS) ICON = 1
+100 CONTINUE
+    IF (IK.gt.0) THEN
+      waven(IK)=KK
+      owaven(IK)=1.0_r8/(waven(IK))
+
+            if ((i.eq.34).and.(j.eq.4)) then
+!              write(*,*) 'k is ',waven(IK)
+            endif
+
+      
+    END IF
+!    IF (2*K*H.GT.25) THEN
+!      CG = W0/K * 0.5
+!    ELSE
+!      CG = W0/K * 0.5*(1+(2*K*H/SINH(2*K*H)))
+!    END IF
+!    IF (W.LT.0.0) THEN
+!      K  = (-1)*K
+!      CG = CG*(-1)
+!    END IF
+    END DO
+
+#endif
+
+
 !
 !  Compute polynomial fit coeffs TC for the velocity profile.
 !         TC -     Vector containing the first LL+1 Taylor coefficients
@@ -429,25 +528,9 @@
 !
 ! finalize u v wavenk
 !
-            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)
-            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)
-
-!jcw
-            if (k.ge.20) then
-!              uwavek(i,j,k)=uwavek(i,j,19)
-!              vwavek(i,j,k)=vwavek(i,j,19)
-            end if
-!jcw limiter
-            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),2.0_r8*                &
-     &                    ABS(u2wav(i,j,N(ng))))*                       &
-     &                    SIGN(1.0_r8,uwavek(i,j,k))
-            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),2.0_r8*                &
-     &                    ABS(v2wav(i,j,N(ng))))*                       &
-     &                    SIGN(1.0_r8,vwavek(i,j,k))
-
-!            uwavek(i,j,k)=0.0_r8
-!            vwavek(i,j,k)=0.0_r8
-
+!            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)
+!            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!jcw
 !
 ! %Calculating dU^2/dk^2 equation (A.24)
@@ -455,11 +538,11 @@
             K2(1,k)=0                                                      !%{GI_20}_kk
             K2(2,k)=-0.5_r8*(Dstp**2)*d2mu                                 !%{GI_21}_kk
             DO m=2,polycon
-              K2(m+1,k)=2.0_r8*G1*I2(m+1,k)*owaven(k)*owaven(k)-          &
+              K2(m+1,k)=2.0_r8*G1*I2(m+1,k)*owaven(k)*owaven(k)-        &
      &                  0.5_r8*((-Dstp)**(m-1)*dG*REAL(m,r8)+           &
      &                  REAL(m,r8)*REAL((m-1),r8)*K1(m-1,k))*           &
-     &                  owaven(k)*owaven(k)*owaven(k)-                     &
-     &                  2.0_r8*K1(m+1,k)*owaven(k)+                      &
+     &                  owaven(k)*owaven(k)*owaven(k)-                  &
+     &                  2.0_r8*K1(m+1,k)*owaven(k)+                     &
      &                  0.25_r8*((-Dstp)**(m-1)*d2G*REAL(m,r8)+         &
      &                  REAL(m,r8)*REAL((m-1),r8)*K2(m-1,k))*           &
      &                  owaven(k)*owaven(k)
@@ -484,20 +567,22 @@
             A1u(k)=0.0_r8
             A1v(k)=0.0_r8
             DO m=0,polycon
-              A1u(k)=A1u(k)+(A0u(m+1)*I1(m+1,k)/(Dstp**m))
-              A1v(k)=A1v(k)+(A0v(m+1)*I1(m+1,k)/(Dstp**m))
+              cff=1.0_r8/(Dstp**m)
+              A1u(k)=A1u(k)+A0u(m+1)*I1(m+1,k)*cff
+              A1v(k)=A1v(k)+A0v(m+1)*I1(m+1,k)*cff
             END DO
 !
-            A1ku(k)=0.0_r8
-            A1kv(k)=0.0_r8
-            DO m=0,polycon
-              A1ku(k)=A1ku(k)+2.0_r8*A0u(m+1)*(Dstp*I2(m+1,k)+I2(m+2,k))/(Dstp**m)   !  <   these are not used
-              A1kv(k)=A1kv(k)+2.0_r8*A0v(m+1)*(Dstp*I2(m+1,k)+I2(m+2,k))/(Dstp**m)   !  <   these are not used
-            END DO
+!            A1ku(k)=0.0_r8
+!            A1kv(k)=0.0_r8
+!            DO m=0,polycon
+!              A1ku(k)=A1ku(k)+2.0_r8*A0u(m+1)*(Dstp*I2(m+1,k)+I2(m+2,k))/(Dstp**m)   !  <   these are not used
+!              A1kv(k)=A1kv(k)+2.0_r8*A0v(m+1)*(Dstp*I2(m+1,k)+I2(m+2,k))/(Dstp**m)   !  <   these are not used
+!            END DO
 !
-            Au(k)=4.0_r8*waven(k)*A1u(k)-(1.0_r8+2.0_r8*dcosh(2.0_r8*kh(k)))*Ut(k)
-            Av(k)=4.0_r8*waven(k)*A1v(k)-(1.0_r8+2.0_r8*dcosh(2.0_r8*kh(k)))*Vt(k)
-!
+            Au(k)=4.0_r8*waven(k)*A1u(k)-(1.0_r8+2.0_r8*                &
+     &                                   dcosh(2.0_r8*kh(k)))*Ut(k)
+            Av(k)=4.0_r8*waven(k)*A1v(k)-(1.0_r8+2.0_r8*                &
+     &                                   dcosh(2.0_r8*kh(k)))*Vt(k)
           END DO
 !
 !  Calculate dAdk
@@ -525,7 +610,7 @@
           DO k=1,MSCs
             Bp(k)=waven(k)/c0(k)/dsinh(2.0_r8*kh(k))
 !
-            B1u=0.0_r8                                                   !i added u and v
+            B1u=0.0_r8
             B1v=0.0_r8
             DO m=0,polycon
               DO nn=0,polycon
@@ -538,8 +623,9 @@
             B2v(k)=0.0_r8
             DO m=0,polycon
               DO nn=0,polycon
-                B2u(k)=B2u(k)+A0u(m+1)*A0u(nn+1)*I2(nn+m+1,k)/(Dstp**(nn+m))
-                B2v(k)=B2v(k)+A0v(m+1)*A0v(nn+1)*I2(nn+m+1,k)/(Dstp**(nn+m))
+                cff=1.0_r8/(Dstp**(nn+m))
+                B2u(k)=B2u(k)+A0u(m+1)*A0u(nn+1)*I2(nn+m+1,k)*cff
+                B2v(k)=B2v(k)+A0v(m+1)*A0v(nn+1)*I2(nn+m+1,k)*cff
               END DO
             END DO
 !
@@ -574,14 +660,17 @@
 !           Cp(k)=4.0_r8*waven(k)*waven(k)/c0(k)/dsinh(2.0_r8*kh(k))
 !
             DO m=0,polycon
-              H(1,m+1,k)=((-Dstp)**(m+1)/(m+1)+I2(m+1,k))*0.5_r8*owaven(k)
-              H(2,m+1,k)=((-Dstp)**(m+2)/(m+2)+(-Dstp)*I2(m+1,k)+                &
+              H(1,m+1,k)=((-Dstp)**(m+1)/(m+1)+I2(m+1,k))*              &
+     &                   0.5_r8*owaven(k)
+              H(2,m+1,k)=((-Dstp)**(m+2)/(m+2)+(-Dstp)*I2(m+1,k)+       &
      &                   I1(m+1,k)*0.5_r8*owaven(k))*0.5_r8*owaven(k)
               DO nn=2,polycon
-                H(nn+1,m+1,k)=((-Dstp)**(nn+m+1)/(nn+m+1)+                    &
-     &                         (-Dstp)**(nn)*I2(m+1,k)+                       &
-     &                         (nn)*(-Dstp)**(nn-1)*I1(m+1,k)*0.5_r8*owaven(k)+(nn)*(nn-1) &
-     &                        *H(nn-1,m+1,k)*0.5_r8*owaven(k))*0.5_r8*owaven(k)
+                H(nn+1,m+1,k)=((-Dstp)**(nn+m+1)/(nn+m+1)+              &
+     &                         (-Dstp)**(nn)*I2(m+1,k)+                 &
+     &                         (nn)*(-Dstp)**(nn-1)*I1(m+1,k)*          &
+     &                         0.5_r8*owaven(k)+(nn)*(nn-1)             &
+     &                        *H(nn-1,m+1,k)*0.5_r8*owaven(k))*         &
+     &                         0.5_r8*owaven(k)
               END DO
             END DO
           END DO
@@ -591,8 +680,9 @@
           DO k=1,MSCs
             DO m=0,polycon
               DO nn=0,polycon
-                Cu(k)=Cu(k)+A0u(m+1)*A0u(nn+1)*H(nn+1,m+1,k)/(Dstp**(nn+m))
-                Cv(k)=Cv(k)+A0v(m+1)*A0v(nn+1)*H(nn+1,m+1,k)/(Dstp**(nn+m))
+                cff=1.0_r8/(Dstp**(nn+m))
+                Cu(k)=Cu(k)+A0u(m+1)*A0u(nn+1)*H(nn+1,m+1,k)*cff
+                Cv(k)=Cv(k)+A0v(m+1)*A0v(nn+1)*H(nn+1,m+1,k)*cff
               END DO
             END DO
           END DO
@@ -617,14 +707,13 @@
      &              (waven(MSCs)-waven(MSCs-1))
 !
           DO k=1,MSCs
-
+!
+! cant use Cp, so make if cff
             cff=4.0_r8*waven(k)*waven(k)/c0(k)/dsinh(2.0_r8*kh(k))
 !           cff1=csch(2.0_r8*kh(k))
             cff1=1.0_r8/dsinh(2.0_r8*kh(k))
 !           cff2=coth(2.0_r8*kh(k))
-!           write(*,*) 'tanh ', i,j,k,2.0_r8*kh(k)
             cff2=1.0_r8/tanh(2.0_r8*waven(k)*Dstp)
-! cantt use Cp, so make if cff
 
             C2u=Apu(k)*Au(k)+cff*Cu(k)+Bp(k)*Bu(k)                 !%A.12
             C2v=Apv(k)*Av(k)+cff*Cv(k)+Bp(k)*Bv(k)  !%A.12
@@ -632,22 +721,48 @@
 !  % now we want to evaluate Cg based on A.23
 !  % Cg_2=C2+k*(dAp*A+dA*Ap+dBp*B+dB*Bp+dCp*C+dC*Cp)
 !
-            dApu=-0.5_r8*c0(k)**(-2)*Ut(k)*dc0(k)+0.5_r8*c0(k)**(-1)*dUtdk(k)
-            dApv=-0.5_r8*c0(k)**(-2)*Vt(k)*dc0(k)+0.5_r8*c0(k)**(-1)*dVtdk(k)
+            dApu=-0.5_r8*c0(k)**(-2)*Ut(k)*dc0(k)+0.5_r8*c0(k)**(-1)*   &
+     &            dUtdk(k)
+            dApv=-0.5_r8*c0(k)**(-2)*Vt(k)*dc0(k)+0.5_r8*c0(k)**(-1)*   &
+     &            dVtdk(k)
 !
-            dBp=c0(k)**(-1)*cff1+(-2.0_r8)*waven(k)*Dstp*c0(k)**(-1)*cff2 &
-     &                  *cff1+(-1)*waven(k)*c0(k)**(-2.0_r8)* &
+            dBp=c0(k)**(-1)*cff1+(-2.0_r8)*waven(k)*Dstp*c0(k)**(-1)*   &
+     &                   cff2*cff1+(-1)*waven(k)*c0(k)**(-2.0_r8)*      &
      &                   cff1*dc0(k)
-            dCp=8.0_r8*waven(k)*c0(k)**(-1)*cff1+             &
-     &          (-8.0_r8)*Dstp*waven(k)**2.0_r8*c0(k)**(-1)*cff2*&
+            dCp=8.0_r8*waven(k)*c0(k)**(-1)*cff1+                       &
+     &          (-8.0_r8)*Dstp*waven(k)**2.0_r8*c0(k)**(-1)*cff2*       &
      &          cff1+(-4.0_r8)*waven(k)**2*c0(k)**(-2)*cff1*dc0(k)
 !
-            Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+dCp*Cu(k)+    &
-     &             cff*dCu(k)+dBp*Bu(k)+dBu(k)*Bp(k))                               !A.23
-!           Cg_2u(i,j,j,k)=Cg_0(k)+Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
-            Cg_KC2=C2v+waven(k)*(dApv*Av(k)+dAv(k)*Apv(k)+dCp*Cv(k)+    &
-     &             cff*dCv(k)+dBp*Bv(k)+dBv(k)*Bp(k))                               !A.23
-!           Cg_2v(i,j,j,k)=Cg_0(k)+Vt(k)+waven(k)*dVtdk(k)+Cg_KC2
+!  pull final term together
+!
+!         % Cg_2= C2+k*(dAp*A + dA*Ap + dBp*B + dB*Bp + dCp*C + dC*Cp)
+!
+
+!           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
+!     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
+!           Cg_KC2=C2u+waven(k)*(dApu*Au(k))
+!           Cg_KC2=C2u
+
+!           Total final group vel is
+!           Cg_2u total = Cg_0(k)+Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
+!           We send the additional terms after Cg_0 to wave model
+            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)  !+Cg_KC2
+!
+            Cg_KC2=C2v+waven(k)*(dApv*Av(k)+dAv(k)*Apv(k)+              &
+     &                 dBp*Bv(k)+dBv(k)*Bp(k)+dCp*Cv(k)+dCv(k)*cff)      !A.23
+!           Total final group vel is
+!           Cg_2v total = Cg_0(k)+Vt(k)+waven(k)*dVtdk(k)+Cg_KC2
+!           We send the additional terms after Cg_0 to wave model
+            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)  !+Cg_KC2
+
+!
+!jcw limiter
+            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8*                &
+     &                    ABS(u2wav(i,j,N(ng))))*                       &
+     &                    SIGN(1.0_r8,uwavek(i,j,k))
+            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8*                &
+     &                    ABS(v2wav(i,j,N(ng))))*                       &
+     &                    SIGN(1.0_r8,vwavek(i,j,k))
 
           END DO
         END DO
@@ -656,6 +771,9 @@
       deallocate ( A, TC, A0u, A0v )
       deallocate ( I1, I2, K1, K2 )
       deallocate ( H, HH )
+#ifdef WW3_MODEL
+      deallocate ( SIG )
+#endif
 
       RETURN
       END SUBROUTINE banihashemi_tile

@@ -885,9 +885,9 @@
           v2wav(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+                &
      &                       OCEAN(ng)%vbar(i,j+1,KOUT))
 #  endif
-# endif
         END DO
       END DO
+# endif
       IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         DO i=IstrR,IendR
           v2wav(i,JendR)=v2wav(i,JendR-1)

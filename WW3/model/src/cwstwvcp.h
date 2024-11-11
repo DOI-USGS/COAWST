@@ -878,7 +878,7 @@
 # ifdef SPECTRUM_STOKES
      &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
 # endif
-     &                    THM, WLM, WBT, THS, QP,                       &
+	&                    THM, WLM, WLP, WBT, THS, QP,                  &
      &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY
 !     USE W3ODATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
@@ -1323,8 +1323,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=WLM(i)     !  jcw need to make this peak
-!       SND_BUF(IP)=WLP0(i)     !  jcw need to make this peak
+        SND_BUF(IP)=WLP(i)
       END DO
 !
 !  Gather up all the data.

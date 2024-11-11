@@ -2466,14 +2466,12 @@ CONTAINS
     USE W3WDATMD, ONLY: UST, FPIS
     USE W3ADATMD, ONLY: CG, WN, DW
     USE W3ADATMD, ONLY: HS, WLM, T02, T0M1, T01, FP0,               &
-         THM, THS, THP0
+         THM, THS, THP0, WLP
     USE W3ADATMD, ONLY: ABA, ABD, UBA, UBD, FCUT,                   &
          PHS, PTP, PLP, PDIR, PSI, PWS,    &
          PWST, PNR, USERO, TUSX, TUSY, PRMS, TPMS,   &
          MSSX, MSSY, MSSD, MSCX, MSCY,   &
-#ifdef W3_COAWST_MODEL
          USS_COAWST, VSS_COAWST, KSS_COAWST,         &
-#endif
          MSCD, CHARN,                                &
          CGE, P2SMS, US3D, EF, TH1M, STH1M,          &
          TH2M, STH2M, HSIG, STMAXE, STMAXD,          &
@@ -2503,7 +2501,7 @@ CONTAINS
     INTEGER                 :: IK, ITH, JSEA, ISEA, IX, IY,         &
          IKP0(NSEAL),                                               &
          I, J, LKMS, HKMS, ITL
-    INTEGER                 :: COAWST_YES
+    INTEGER                 :: COAWST_YES, ISIGM
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
@@ -2511,6 +2509,7 @@ CONTAINS
          AABS, UABS,                          &
          XL, XH, XL2, XH2, EL, EH, DENOM, KD, &
          M1, M2, MA, MB, MC, STEX, STEY, STED
+    REAL EMAX, ETD
     REAL                    :: ET(NSEAL), EWN(NSEAL), ETR(NSEAL),   &
          ETX(NSEAL), ETY(NSEAL), AB(NSEAL),   &
          ABX(NSEAL), ABY(NSEAL),ET02(NSEAL),  &
@@ -2527,9 +2526,7 @@ CONTAINS
          EBC(NK,NSEAL), ABP(NSEAL),           &
          TLPHI(NSEAL)
     REAL                       USSCO, FT1
-#ifdef W3_COAWST_MODEL
     REAL                       DS, ETOTX, ETOTY, ETOTXM1, ETOTYM1
-#endif
     REAL, SAVE              :: HSMIN = 0.01
     LOGICAL                 :: FLOLOC(NOGRP,NGRPP)
     !/
@@ -2567,11 +2564,9 @@ CONTAINS
     UBA    = 0.
     UBD    = 0.
     UBS    = 0.
-#ifdef W3_COAWST_MODEL
     USS_COAWST   = 0.
     VSS_COAWST   = 0.
     KSS_COAWST   = 0.
-#endif
     TUSX   = 0.
     TUSY   = 0.
     MSSX   = 0.
@@ -2592,6 +2587,7 @@ CONTAINS
     !
     HS     = UNDEF
     WLM    = UNDEF
+    WLP    = UNDEF
     T0M1   = UNDEF
     T01    = UNDEF
     T02    = UNDEF
@@ -2653,12 +2649,10 @@ CONTAINS
       !
       DO JSEA=1, NSEAL
 
-       IF (COAWST_YES.eq.1) THEN
         CALL INIT_GET_ISEA(ISEA, JSEA)
         FACTOR       = DDEN(IK) / CG(IK,ISEA)
         EBD(IK,JSEA) = AB(JSEA) * FACTOR
         ET(JSEA)     = ET(JSEA) + EBD(IK,JSEA)
-       END IF
 
 #ifdef W3_IG1
         IF (IK.EQ.NINT(IGPARS(5))) HSIG(JSEA) = 4*SQRT(ET(JSEA))
@@ -2712,13 +2706,30 @@ CONTAINS
       IY     = MAPSF(ISEA,2)
       ETOTXM1 = 0.
       ETOTYM1 = 0.
+! wlp , assume peak wl is not the first bin
+      EMAX = 0.
+      ISIGM = -1
+! end wlp
       DO IK=2, NK
+!wlp
+        ETD = 0.
+        FACTOR = WN(IK,ISEA)*SIG(IK)*DTH/CG(IK,ISEA)
+!end wlp
         ETOTX = 0.
         ETOTY = 0.
         DO ITH=1, NTH
-           ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
-           ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
+!wlp
+          ETD = ETD + A(ITH,IK,JSEA)*FACTOR
+!elp end
+          ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
+          ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
         ENDDO
+!wlp
+        IF (ETD.GT.EMAX) THEN
+          EMAX  = ETD
+          ISIGM = IK
+        ENDIF
+!wlp end
 ! Convert from A(theta,k) to E(theta,freq)
         ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)  !/TPI
         ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)  !/TPI
@@ -2732,6 +2743,13 @@ CONTAINS
         ETOTYM1 = ETOTY
         KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
       END DO
+!wlp
+      IF (ISIGM.GT.0) THEN
+        WLP(JSEA) = 2.*PI/WN(ISIGM,ISEA)
+      ELSE
+        WLP(JSEA) = 0.
+      ENDIF
+!wlp end
 !
 !  Compute last freq.
 !

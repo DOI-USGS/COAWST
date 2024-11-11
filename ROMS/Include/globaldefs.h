@@ -969,7 +969,7 @@
 
 #if (!defined DEEPWATER_WAVES      && \
      (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)) || \
-      defined DRENNAN
+      defined DRENNAN || defined WAVES_OCEAN
 # define WAVES_LENGTHP
 #endif
 

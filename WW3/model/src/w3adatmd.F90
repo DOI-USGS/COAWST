@@ -461,6 +461,7 @@ MODULE W3ADATMD
                              KSS_COAWST(:,:)
     REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
     REAL, POINTER         :: XPHIBRKX(:), XPHIBRKY(:)
+    REAL, POINTER         :: WLP(:)
 #endif
     REAL, POINTER         ::  P2SMS(:,:),  US3D(:,:), USSP(:,:)
     REAL, POINTER         :: XSXX(:), XSYY(:), XSXY(:), XTAUOX(:),&
@@ -503,6 +504,10 @@ MODULE W3ADATMD
     !
     REAL, POINTER         :: DDDX(:,:), DDDY(:,:), DCXDX(:,:),    &
          DCYDX(:,:), DCXDY(:,:), DCYDY(:,:)
+#ifdef W3_CURSP
+    REAL, POINTER         :: DCXDXTH(:,:,:), DCYDXTH(:,:,:),      &
+                             DCXDYTH(:,:,:), DCYDYTH(:,:,:)
+#endif
     REAL, POINTER         :: DCDX(:,:,:), DCDY(:,:,:)
 #ifdef W3_SMC
     REAL, POINTER         :: DHDX(:), DHDY(:), DHLMT(:,:)
@@ -625,6 +630,7 @@ MODULE W3ADATMD
   REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),      &
                            KSS_COAWST(:,:)
   REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
+  REAL, POINTER         :: WLP(:)
 #endif
   REAL, POINTER           :: P2SMS(:,:), US3D(:,:), USSP(:,:)
   !
@@ -643,6 +649,10 @@ MODULE W3ADATMD
   !
   REAL, POINTER           :: DDDX(:,:), DDDY(:,:), DCXDX(:,:),    &
        DCYDX(:,:), DCXDY(:,:), DCYDY(:,:)
+#ifdef W3_CURSP
+    REAL, POINTER         :: DCXDXTH(:,:,:), DCYDXTH(:,:,:),      &
+                             DCXDYTH(:,:,:), DCYDYTH(:,:,:)
+#endif
   REAL, POINTER           :: DCDX(:,:,:), DCDY(:,:,:)
 #ifdef W3_SMC
   REAL, POINTER         :: DHDX(:), DHDY(:), DHLMT(:,:)
@@ -1084,9 +1094,16 @@ CONTAINS
          WADATS(IMOD)%WNMEAN(NSEALM),                               &
          STAT=ISTAT )
     CHECK_ALLOC_STATUS ( ISTAT )
+#ifdef W3_COAWST_MODEL
+    ALLOCATE ( WADATS(IMOD)%WLP (NSEALM))
+    CHECK_ALLOC_STATUS ( ISTAT )
+#endif
     !
     WADATS(IMOD)%HS     = UNDEF
     WADATS(IMOD)%WLM    = UNDEF
+#ifdef W3_COAWST_MODEL
+    WADATS(IMOD)%WLP    = UNDEF
+#endif
     WADATS(IMOD)%T02    = UNDEF
     WADATS(IMOD)%T0M1   = UNDEF
     WADATS(IMOD)%T01    = UNDEF
@@ -1420,6 +1437,12 @@ CONTAINS
              WADATS(IMOD)%DCYDX(NY,NX) ,          &
              WADATS(IMOD)%DCXDY(NY,NX) ,          &
              WADATS(IMOD)%DCYDY(NY,NX) , STAT=ISTAT           )
+#ifdef W3_CURSP
+        ALLOCATE ( WADATS(IMOD)%DCXDXTH(NY,NX,NK),&
+             WADATS(IMOD)%DCYDXTH(NY,NX,NK) ,     &
+             WADATS(IMOD)%DCXDYTH(NY,NX,NK) ,     &
+             WADATS(IMOD)%DCYDYTH(NY,NX,NK) , STAT=ISTAT      )
+#endif
       ELSE
         ALLOCATE ( WADATS(IMOD)%DDDX(1,NSEAL)  ,  &
              WADATS(IMOD)%DDDY(1,NSEAL)  ,        &
@@ -1430,6 +1453,13 @@ CONTAINS
              WADATS(IMOD)%DCXDY(1,NSEAL) ,        &
              WADATS(IMOD)%DCYDY(1,NSEAL) ,        &
              STAT=ISTAT           )
+#ifdef W3_CURSP
+        ALLOCATE ( WADATS(IMOD)%DCXDXTH(1,NSEAL,NK), &
+             WADATS(IMOD)%DCYDXTH(1,NSEAL,NK) ,      &
+             WADATS(IMOD)%DCXDYTH(1,NSEAL,NK) ,      &
+             WADATS(IMOD)%DCYDYTH(1,NSEAL,NK) ,      &
+             STAT=ISTAT           )
+#endif
       ENDIF
       CHECK_ALLOC_STATUS ( ISTAT )
       WADATS(IMOD)%DDDX = 0.
@@ -1440,6 +1470,12 @@ CONTAINS
       WADATS(IMOD)%DCYDX = 0.
       WADATS(IMOD)%DCXDY = 0.
       WADATS(IMOD)%DCYDY = 0.
+#ifdef W3_CURSP
+      WADATS(IMOD)%DCXDXTH = 0.
+      WADATS(IMOD)%DCYDXTH = 0.
+      WADATS(IMOD)%DCXDYTH = 0.
+      WADATS(IMOD)%DCYDYTH = 0.
+#endif
       !
 #ifdef W3_SMC
       ALLOCATE ( WADATS(IMOD)%DHDX(NSEA) ,                  &
@@ -2884,6 +2920,9 @@ CONTAINS
       !
       HS     => WADATS(IMOD)%HS
       WLM    => WADATS(IMOD)%WLM
+#ifdef W3_COAWST_MODEL
+      WLP    => WADATS(IMOD)%WLP
+#endif
       T02    => WADATS(IMOD)%T02
       T0M1   => WADATS(IMOD)%T0M1
       T01    => WADATS(IMOD)%T01
@@ -3011,6 +3050,12 @@ CONTAINS
         DCYDX  => WADATS(IMOD)%DCYDX
         DCXDY  => WADATS(IMOD)%DCXDY
         DCYDY  => WADATS(IMOD)%DCYDY
+#ifdef W3_CURSP
+        DCXDXTH  => WADATS(IMOD)%DCXDXTH
+        DCYDXTH  => WADATS(IMOD)%DCYDXTH
+        DCXDYTH  => WADATS(IMOD)%DCXDYTH
+        DCYDYTH  => WADATS(IMOD)%DCYDYTH
+#endif
         !
 #ifdef W3_SMC
         DHDX   => WADATS(IMOD)%DHDX

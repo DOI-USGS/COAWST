@@ -672,7 +672,7 @@ CONTAINS
     !/ Local parameters
     !/
     INTEGER                 :: ITH, IK, NTLOC, ITLOC, ISEA, IXY,    &
-         IX,IY, IY0, IP, IBI, ISPC
+         IX,IY, IY0, IP, IBI
     INTEGER                 :: TTEST(2),DTTST
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
@@ -744,11 +744,11 @@ CONTAINS
     !
     IF ( FLCUR ) THEN
 #ifdef W3_CURSP
-      ISPC=INT((ISP-1)/NTH)+1
-      CXMIN  = MINVAL ( CXTH(1:NSEA,ISPC) )
-      CXMAX  = MAXVAL ( CXTH(1:NSEA,ISPC) )
-      CYMIN  = MINVAL ( CYTH(1:NSEA,ISPC) )
-      CYMAX  = MAXVAL ( CYTH(1:NSEA,ISPC) )
+!     ISPC=INT((ISP-1)/NTH)+1
+      CXMIN  = MINVAL ( CXTH(1:NSEA,IK) )
+      CXMAX  = MAXVAL ( CXTH(1:NSEA,IK) )
+      CYMIN  = MINVAL ( CYTH(1:NSEA,IK) )
+      CYMAX  = MAXVAL ( CYTH(1:NSEA,IK) )
 #else
       CXMIN  = MINVAL ( CX(1:NSEA) )
       CXMAX  = MAXVAL ( CX(1:NSEA) )
@@ -878,8 +878,8 @@ CONTAINS
       DO ISEA=1, NSEA
         IXY         = MAPSF(ISEA,3)
 #ifdef W3_CURSP
-        CXTOT(IXY) = CXTOT(IXY) + CXTH(ISEA,ISPC)/CLATS(ISEA)
-        CYTOT(IXY) = CYTOT(IXY) + CYTH(ISEA,ISPC)
+        CXTOT(IXY) = CXTOT(IXY) + CXTH(ISEA,IK)/CLATS(ISEA)
+        CYTOT(IXY) = CYTOT(IXY) + CYTH(ISEA,IK)
 #else
         CXTOT(IXY) = CXTOT(IXY) + CX(ISEA)/CLATS(ISEA)
         CYTOT(IXY) = CYTOT(IXY) + CY(ISEA)
@@ -1237,8 +1237,8 @@ CONTAINS
   !/ ------------------------------------------------------------------- /
 #ifdef W3_CURSP
   SUBROUTINE W3KTP2 ( ISEA, FACTH, FACK, CTHG0, CG, WN, DEPTH,    &
-       DDDX, DDDY, CXTH, CYTH, DCXDX, DCXDY,           &
-       DCYDX, DCYDY, DCDX, DCDY, VA )
+       DDDX, DDDY, CXTH, CYTH, DCXDXTH, DCXDYTH,           &
+       DCYDXTH, DCYDYTH, DCDX, DCDY, VA )
 #else
   SUBROUTINE W3KTP2 ( ISEA, FACTH, FACK, CTHG0, CG, WN, DEPTH,    &
        DDDX, DDDY, CX, CY, DCXDX, DCXDY,           &
@@ -1376,7 +1376,7 @@ CONTAINS
 #ifdef W3_CURSP
     REAL, INTENT(IN)        :: FACTH, FACK, CTHG0, CG(0:NK+1),      &
          WN(0:NK+1), DEPTH, DDDX, DDDY,       &
-         CXTH(:), CYTH(:), DCXDX, DCXDY, DCYDX, DCYDY
+         CXTH(:), CYTH(:), DCXDXTH(:), DCXDYTH(:), DCYDXTH(:), DCYDYTH(:)
 #else
     REAL, INTENT(IN)        :: FACTH, FACK, CTHG0, CG(0:NK+1),      &
          WN(0:NK+1), DEPTH, DDDX, DDDY,       &
@@ -1388,7 +1388,7 @@ CONTAINS
     !/ ------------------------------------------------------------------- /
     !/ Local parameters
     !/
-    INTEGER                 :: ITH, IK, ISP
+    INTEGER                 :: ITH, IK, ISP, IP
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
@@ -1492,6 +1492,17 @@ CONTAINS
       ! 3.d Current refraction
       !
       IF ( FLCUR ) THEN
+#ifdef W3_CURSP
+        DO ISP=1, NSPEC
+          IK = 1 + (ISP-1)/NTH
+          DCYX   = FACTH *   DCYDXTH(IK)
+          DCXXYY = FACTH * ( DCXDXTH(IK) - DCYDYTH(IK) )
+          DCXY   = FACTH *   DCXDYTH(IK)
+        !
+          VCFLT(MAPTH2(ISP)) = VCFLT(MAPTH2(ISP)) +             &
+               ES2(ISP)*DCYX  + ESC(ISP)*DCXXYY - EC2(ISP)*DCXY
+        END DO
+#else
         !
         DCYX   = FACTH *   DCYDX
         DCXXYY = FACTH * ( DCXDX - DCYDY )
@@ -1501,6 +1512,7 @@ CONTAINS
           VCFLT(MAPTH2(ISP)) = VCFLT(MAPTH2(ISP)) +             &
                ES2(ISP)*DCYX  + ESC(ISP)*DCXXYY - EC2(ISP)*DCXY
         END DO
+#endif
         !
       END IF
       !
@@ -1513,34 +1525,50 @@ CONTAINS
       !
       ! 4.a Directionally dependent part
       !
+#if !defined W3_CURSP
+      FKD    =    ( CX*DDDX + CY*DDDY )
       DCXX   =  -   DCXDX
       DCXYYX =  - ( DCXDY + DCYDX )
       DCYY   =  -   DCYDY
-#if !defined W3_CURSP
-      FKD    =    ( CX*DDDX + CY*DDDY )
-#endif
       !
       DO ITH=1, NTH
         FKC(ITH) = EC2(ITH)*DCXX +                                &
              ESC(ITH)*DCXYYX + ES2(ITH)*DCYY
       END DO
+#endif
       !
       ! 4.b Velocities
       !
       DO IK=0, NK+1
 #if defined W3_CURSP
-      IF (IK.eq.0) THEN
-        FKD = ( CXTH(1)*DDDX + CYTH(1)*DDDY )
-      ELSE IF (IK.EQ.NK+1) THEN
-        FKD = ( CXTH(NK)*DDDX + CYTH(NK)*DDDY )
-      ELSE
-        FKD    =    ( CXTH(IK)*DDDX + CYTH(IK)*DDDY )
-      END IF
-#endif
+        IF (IK.eq.0) THEN
+          IP = 1
+        ELSE IF (IK.EQ.NK+1) THEN
+          IP = NK
+        ELSE
+          IP = IK
+        END IF
+
+        DO ITH=1, NTH
+          DCXX   =  -   DCXDXTH(IP)
+          DCXYYX =  - ( DCXDYTH(IP) + DCYDXTH(IP) )
+          DCYY   =  -   DCYDYTH(IP)
+      !
+          FKC(ITH) = EC2(ITH)*DCXX +                             &
+                     ESC(ITH)*DCXYYX + ES2(ITH)*DCYY
+        END DO
+!
+        FKD = ( CXTH(IP)*DDDX + CYTH(IP)*DDDY )
         FKD0   = FKD / CG(IK) * DSDD(IK)
         DO ITH=1, NTH
           CFLK(IK+1,ITH) = FKD0 + WN(IK)*FKC(ITH)
         END DO
+#else
+        FKD0   = FKD / CG(IK) * DSDD(IK)
+        DO ITH=1, NTH
+          CFLK(IK+1,ITH) = FKD0 + WN(IK)*FKC(ITH)
+        END DO
+#endif
       END DO
       !
       ! 4.c Band widths
