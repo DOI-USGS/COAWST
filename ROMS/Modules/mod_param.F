@@ -99,7 +99,7 @@
 !=======================================================================
 !
       USE mod_kinds
-#ifdef SPECTRUM_STOKES
+#if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
       USE mct_coupler_params
 #endif
 !

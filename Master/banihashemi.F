@@ -61,11 +61,14 @@
      &                       GRID(ng) % umask,                          &
      &                       GRID(ng) % vmask,                          &
 # endif
+# ifdef WET_DRY
+     &                       GRID(ng) % rmask_wet,                      &
+# endif
      &                       GRID(ng) % z_r,                            &
      &                       GRID(ng) % z_w,                            &
      &                       OCEAN(ng) % u,                             &
      &                       OCEAN(ng) % v,                             &
-     &                       OCEAN(ng) % uwavek,                         &
+     &                       OCEAN(ng) % uwavek,                        &
      &                       OCEAN(ng) % vwavek)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 19, __LINE__, MyFile)
@@ -81,6 +84,9 @@
      &                             nstp, nnew,                          &
 # ifdef MASKING
      &                             umask, vmask,                        &
+# endif
+# ifdef WET_DRY
+     &                             rmask_wet,                           &
 # endif
      &                             z_r, z_w,                            &
      &                             u, v, uwavek, vwavek)
@@ -108,6 +114,9 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
@@ -118,6 +127,9 @@
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
@@ -274,7 +286,7 @@
         DO i=Istr,Iend
           DO k=1,N(ng)
             u2wav(i,j,k)=0.5_r8*(u(i,j,k,nnew)+u(i+1,j,k,nnew))
-            v2wav(i,j,k)=0.5_r8*(v(i,j,k,nnew)+v(i+1,j,k,nnew))
+            v2wav(i,j,k)=0.5_r8*(v(i,j,k,nnew)+v(i,j+1,k,nnew))
           END DO
         END DO
       END DO
@@ -306,8 +318,8 @@
     !
     TPI=2.0_r8*pi
     RXFR = 1.1_r8
-    RFR1 = 0.04118_r8
-!   NK=25
+!   RFR1 = 0.04118_r8
+    RFR1 = 0.038_r8
       IF (.not.allocated(SIG)) THEN
         allocate ( SIG(0:MSCs+1) )
         SIG=0.0_r8
@@ -362,12 +374,7 @@
       DO IK=0, MSCs !+1
         !
         !         Calculate wavenumbers and group velocities.
-!        CALL WAVNU1(SIG(IK),DEPTH,WN(IK,IS),CG(IK,IS))
-!   SUBROUTINE WAVNU2 (W,H,K,CG,EPS,NMAX,ICON)
-!    CG   = 0
     KOLD = 0
-!    ICON = 0
-    
     W0   = ABS(SIG(IK))
     !
     !     1st approach :
@@ -388,7 +395,6 @@
         RDIF = 0.0_r8
       END IF
       IF (DIF .LT. EPS .AND. RDIF .LT. EPS) THEN
-!        ICON = 1
         GOTO 100
       ELSE
         KOLD = KK
@@ -404,31 +410,13 @@
     !
     DIF   = ABS(KK-KOLD)
     RDIF  = DIF/KK
-!    IF (DIF .LT. EPS .AND. RDIF .LT. EPS) ICON = 1
 100 CONTINUE
     IF (IK.gt.0) THEN
       waven(IK)=KK
       owaven(IK)=1.0_r8/(waven(IK))
-
-            if ((i.eq.34).and.(j.eq.4)) then
-!              write(*,*) 'k is ',waven(IK)
-            endif
-
-      
     END IF
-!    IF (2*K*H.GT.25) THEN
-!      CG = W0/K * 0.5
-!    ELSE
-!      CG = W0/K * 0.5*(1+(2*K*H/SINH(2*K*H)))
-!    END IF
-!    IF (W.LT.0.0) THEN
-!      K  = (-1)*K
-!      CG = CG*(-1)
-!    END IF
     END DO
-
 #endif
-
 
 !
 !  Compute polynomial fit coeffs TC for the velocity profile.
@@ -737,11 +725,8 @@
 !
 !         % Cg_2= C2+k*(dAp*A + dA*Ap + dBp*B + dB*Bp + dCp*C + dC*Cp)
 !
-
-!           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
-!     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
-!           Cg_KC2=C2u+waven(k)*(dApu*Au(k))
-!           Cg_KC2=C2u
+           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
+     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
 
 !           Total final group vel is
 !           Cg_2u total = Cg_0(k)+Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
@@ -757,12 +742,14 @@
 
 !
 !jcw limiter
-            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8*                &
-     &                    ABS(u2wav(i,j,N(ng))))*                       &
+            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.5_r8)*               &
      &                    SIGN(1.0_r8,uwavek(i,j,k))
-            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8*                &
-     &                    ABS(v2wav(i,j,N(ng))))*                       &
+            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.5_r8)*               &
      &                    SIGN(1.0_r8,vwavek(i,j,k))
+# ifdef WET_DRY
+            uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
+            vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
+# endif
 
           END DO
         END DO

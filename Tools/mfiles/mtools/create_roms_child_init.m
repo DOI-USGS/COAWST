@@ -274,6 +274,7 @@ try
   do_wetdry=1;
 catch
 end
+end
 
 %
 %7) Get number of noncohesive and cohesive sediments.

@@ -165,7 +165,7 @@ if (~isstruct(Ginp))
   end
     
   spherical = nc_read(Ginp,'spherical');
-  
+  spherical = spherical(1)  
   if (ischar(spherical))
     if (spherical == 'T' || spherical == 't')
       spherical = 1;

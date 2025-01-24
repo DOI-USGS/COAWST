@@ -2301,6 +2301,11 @@ CONTAINS
     ELSE
       CHARN = AALPHA
     ENDIF
+# ifdef W3_COAWST_MODEL
+! recompute the stresses for tranfer to ocean.
+    TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR)   ! + DWAT*(TAUOX-TAUWIX)
+    TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR)   ! + DWAT*(TAUOY-TAUWIY)
+# endif
 #endif
 #ifdef W3_FLD2
     IF (U10ABS.GT.10. .and. HSTOT.gt.0.5) then

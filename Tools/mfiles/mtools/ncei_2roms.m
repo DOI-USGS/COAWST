@@ -143,7 +143,8 @@ end
 
 % create NetCDF file for forcing data
 disp([' ## Creating ' ROMS_force_name '...'])
-nc = netcdf.create(ROMS_force_name,'nc_clobber');
+%nc = netcdf.create(ROMS_force_name,'nc_clobber');
+nc = netcdf.create(ROMS_force_name,bitor(0,4096));
 
 % global variables
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type', 'bulk fluxes forcing file');
@@ -821,8 +822,8 @@ if get_NAM
         
         %url = ['https://www.ncei.noaa.gov/thredds/dodsC/namanl/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb2'];
         %url = ['https://www.ncei.noaa.gov/thredds/dodsC/namanl/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb'];
-        url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-nam218/',dd(1:6),'/',dd(1:8),'/nam_218_',dd(1:8),'_',first,'_',second,'.grb2'];
-        
+        %url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-nam218/',dd(1:6),'/',dd(1:8),'/nam_218_',dd(1:8),'_',first,'_',second,'.grb2'];
+        url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-namanl-old/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb'];
         try
             if use_nctoolbox
                 geo = ncgeodataset(url);
@@ -855,10 +856,10 @@ if get_NAM
             end
             if get_lwrad
                 if use_matlab
-                    %down = double(ncread(url,'downward_long_wave_rad_flux_surface')).';
-                    %up = double(ncread(url,'upward_long_wave_rad_flux_surface')).';
-                     down = double(ncread(url,'Downward_Long-Wave_Radp_Flux_surface')).';
-                     up   = double(ncread(url,'Upward_Long-Wave_Radp_Flux_surface')).';
+                    down = double(ncread(url,'downward_long_wave_rad_flux_surface')).';
+                    up = double(ncread(url,'upward_long_wave_rad_flux_surface')).';
+                    % down = double(ncread(url,'Downward_Long-Wave_Radp_Flux_surface')).';
+                    % up   = double(ncread(url,'Upward_Long-Wave_Radp_Flux_surface')).';
                 elseif use_nctoolbox
                     down = double(squeeze(geo{'downward_long_wave_rad_flux_surface'}(:)));
                     up   = double(squeeze(geo{'upward_long_wave_rad_flux_surface'}(:)));
@@ -890,10 +891,10 @@ if get_NAM
             end
             if get_swrad
                 if use_matlab
-                    %down = squeeze(ncread(url,'downward_short_wave_rad_flux_surface'));
-                    %up = squeeze(ncread(url,'upward_short_wave_rad_flux_surface'));
-                     down = double(ncread(url,'Downward_Short-Wave_Radiation_Flux_surface')).';
-                     up   = double(ncread(url,'Upward_Short-Wave_Radiation_Flux_surface')).';
+                    down = double(squeeze(ncread(url,'downward_short_wave_rad_flux_surface'))).';
+                    up = double(squeeze(ncread(url,'upward_short_wave_rad_flux_surface'))).';
+                    % down = double(ncread(url,'Downward_Short-Wave_Radiation_Flux_surface')).';
+                    % up   = double(ncread(url,'Upward_Short-Wave_Radiation_Flux_surface')).';
                 elseif use_nctoolbox
                     down = double(squeeze(geo{'downward_short_wave_rad_flux_surface'}(:)));
                     up   = double(squeeze(geo{'upward_short_wave_rad_flux_surface'}(:)));
@@ -914,7 +915,8 @@ if get_NAM
             end
             if get_rain && mm == 1
                 % var = double(ncread(url,'Total_precipitation_surface_0_Hour_Accumulation')).';
-                var = double(ncread(url,'Categorical_Rain_surface')).';
+                % var = double(ncread(url,'Categorical_Rain_surface')).';
+                var = double(ncread(url,'Categorical_rain_yes1_no0_surface')).';
                 if gotF == 0
                   F = scatteredInterpolant(nlon(:),nlat(:),var(:));
                   gotF=1;
