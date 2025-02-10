@@ -4826,6 +4826,9 @@ CONTAINS
 #endif
       !
 #ifdef W3_COAWST_MODEL
+# ifdef W3_MPI
+      IF ( IAPROC.NE.NAPRST .AND. IAPROC.LE.NAPROC ) THEN
+# endif
 !
 !       CX/Y
 !
@@ -4906,12 +4909,15 @@ CONTAINS
         WRITE (NDST,9021) IH, 'S PB', IROOT, IT, IRQRS(IH), IERR
 # endif
 
-!     ELSE IF ( IAPROC .EQ. NAPRST ) THEN
-      IF ( IAPROC .EQ. NAPRST ) THEN
+# ifdef W3_MPI
+     ELSE IF ( IAPROC .EQ. NAPRST ) THEN
+!    IF ( IAPROC .EQ. NAPRST ) THEN
+# endif
         IF (NAPRST .NE. NAPFLD) CALL W3XDMA ( IMOD, NDSE, NDST, FLOGRR )
         CALL W3XETA ( IMOD, NDSE, NDST )
         DO I0=1, NAPROC
           IFROM  = I0 - 1
+          IF ( I0 .NE. IAPROC ) THEN
             ! CX/Y
 # ifdef W3_MPI
             IH     = IH + 1
@@ -4982,10 +4988,12 @@ CONTAINS
 # ifdef W3_MPIT
             WRITE (NDST,9021) IH, 'R PB', IFROM, IT, IRQRS(IH), IERR
 # endif
-!         END IF
+          END IF
         END DO
         CALL W3SETA ( IMOD, NDSE, NDST )
+# ifdef W3_MPI
       END IF
+# endif
 #endif
 #ifdef W3_MPI
       IF (OARST) THEN

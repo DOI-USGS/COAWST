@@ -1814,10 +1814,12 @@ CONTAINS
           IF (VSIN(IS).GT.0.) WHITECAP(3) = WHITECAP(3) + SPEC(IS)  * FACTOR
           HSTOT = HSTOT + SPEC(IS) * FACTOR
 #ifdef W3_COAWST_MODEL
+# ifdef W3_DB1
           A1BAND=A1BAND - VSDB(IS) * DT * FACTOR * ECOS(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
           B1BAND=B1BAND - VSDB(IS) * DT * FACTOR * ESIN(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
+# endif
 #endif
         END DO
 #ifdef W3_COAWST_MODEL

@@ -112,7 +112,7 @@
 !  defined variable dimensions in output NetCDF files.
 !
 #if defined INWAVE_MODEL || defined WAVE_PARTITION || \
-    defined UV_BANIHASHEMI
+    defined UV_BANIHASHEMI || defined VEGETATION
       integer, parameter :: nDimID = 36
 #else
       integer, parameter :: nDimID = 33
