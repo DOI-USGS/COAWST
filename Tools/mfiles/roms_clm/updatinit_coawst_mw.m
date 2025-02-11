@@ -301,6 +301,10 @@ for mm=1:NNS
     eval(['netcdf.putVar(nc_init,tempid,bedload_Vsand_',count,');']);
 end
 
+%close file
+netcdf.close(nc_init)
+netcdf.close(nc_clm)
+
 %Veg
 ncwrite(init_file,'plant_height',plant_height);
 ncwrite(init_file,'plant_diameter',plant_diameter);
@@ -308,9 +312,6 @@ ncwrite(init_file,'plant_density',plant_density);
 ncwrite(init_file,'plant_thickness',plant_thickness);
 ncwrite(init_file,'marsh_mask',marsh_mask);
 
-%close file
-netcdf.close(nc_init)
-netcdf.close(nc_clm)
 
 
 
