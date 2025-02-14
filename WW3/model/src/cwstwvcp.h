@@ -2126,8 +2126,14 @@
             IP=(IY-1)*NX+IX
             IF (io.eq.1) THEN
               CXTH(i,IZ)=RCV_BUF(IP)
+              IF (IZ.eq.1) THEN
+                CX(i)=RCV_BUF(IP)
+              END IF
             ELSE
               CXTH(i,IZ)=CXTH(i,IZ)+RCV_BUF(IP)
+              IF (IZ.eq.1) THEN
+                CX(i)=CX(i)+RCV_BUF(IP)
+              END IF
             END IF
           END DO
         END DO
@@ -2174,8 +2180,14 @@
             IP=(IY-1)*NX+IX
             IF (io.eq.1) THEN
               CYTH(i,IZ)=RCV_BUF(IP)
+              IF (IZ.eq.1) THEN
+                CY(i)=RCV_BUF(IP)
+              END IF
             ELSE
               CYTH(i,IZ)=CYTH(i,IZ)+RCV_BUF(IP)
+              IF (IZ.eq.1) THEN
+                CY(i)=CY(i)+RCV_BUF(IP)
+              END IF
             END IF
           END DO
         END DO

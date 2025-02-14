@@ -144,8 +144,8 @@
       integer :: i, j, k, m, nn, count
       integer :: polycon, NDEG,IERR
       integer :: II, IK
-      real(r8) :: DIF, FD, FF, FR1, KK, KOLD, RDIF, RFR1, RXFR, SIGMA, TPI
-      real(r8) :: W0, XFR
+      real(r8) :: DIF, FD, FF, FR1, KK, KOLD, RDIF, RFR1, RXFR, SIGMA
+      real(r8) :: W0, XFR, TPI
       real(r8) :: cff, cff1, cff2, Dstp, fac1
       real(r8) :: FRINTF, SHIG, SLOW, SFAC, FRINTH
       real(r8) :: FRLOW, FRHIG, SND, SND2
@@ -171,6 +171,8 @@
       real(r8), dimension(MSCs) :: dUtdk2, dUtdk, dVtdk, dVtdk2
       real(r8), dimension(MSCs) :: Cg_0, kh, c0
 !
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2avg
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v2avg
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: u2wav
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: v2wav
 !
@@ -282,13 +284,71 @@
 !
 !  Average u and v to rho points.
 !
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          DO k=1,N(ng)
+      DO k=1,N(ng)
+        DO j=Jstr-1,Jend+1
+          DO i=Istr-1,Iend+1
             u2wav(i,j,k)=0.5_r8*(u(i,j,k,nnew)+u(i+1,j,k,nnew))
             v2wav(i,j,k)=0.5_r8*(v(i,j,k,nnew)+v(i,j+1,k,nnew))
           END DO
         END DO
+
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            u2wav(Istr-1,j,k)=u2wav(Istr,j,k)
+            v2wav(Istr-1,j,k)=v2wav(Istr,j,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            u2wav(Iend+1,j,k)=u2wav(Iend,j,k)
+            v2wav(Iend+1,j,k)=v2wav(Iend,j,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            u2wav(i,Jstr-1,k)=u2wav(i,Jstr,k)
+            v2wav(i,Jstr-1,k)=v2wav(i,Jstr,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            u2wav(i,Jend+1,k)=u2wav(i,Jend,k)
+            v2wav(i,Jend+1,k)=v2wav(i,Jend,k)
+          END DO
+        END IF
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          u2wav(Istr-1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (u2wav(Istr  ,Jstr-1,k)+                   &
+     &                          u2wav(Istr-1,Jstr  ,k))
+          v2wav(Istr-1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (v2wav(Istr  ,Jstr-1,k)+                   &
+     &                          v2wav(Istr-1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          u2wav(Iend+1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (u2wav(Iend  ,Jstr-1,k)+                   &
+     &                          u2wav(Iend+1,Jstr  ,k))
+          v2wav(Iend+1,Jstr-1,k)=0.5_r8*                                  &
+     &                         (v2wav(Iend  ,Jstr-1,k)+                   &
+     &                          v2wav(Iend+1,Jstr  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          u2wav(Istr-1,Jend+1,k)=0.5_r8*                                  &
+     &                         (u2wav(Istr  ,Jend+1,k)+                   &
+     &                          u2wav(Istr-1,Jend  ,k))
+          v2wav(Istr-1,Jend+1,k)=0.5_r8*                                  &
+     &                         (v2wav(Istr  ,Jend+1,k)+                   &
+     &                          v2wav(Istr-1,Jend  ,k))
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          u2wav(Iend+1,Jend+1,k)=0.5_r8*                                  &
+     &                         (u2wav(Iend  ,Jend+1,k)+                   &
+     &                          u2wav(Iend+1,Jend  ,k))
+          v2wav(Iend+1,Jend+1,k)=0.5_r8*                                  &
+     &                         (v2wav(Iend  ,Jend+1,k)+                   &
+     &                          v2wav(Iend+1,Jend  ,k))
+        END IF
+
       END DO
 !
 !  Compute wavenumbers. at some point we need diff of k 
@@ -313,35 +373,34 @@
       END DO
 #endif
 #ifdef WW3_MODEL
-!  w3gridmd
-!   b Frequencies :
-    !
-    TPI=2.0_r8*pi
-    RXFR = 1.1_r8
-!   RFR1 = 0.04118_r8
-    RFR1 = 0.038_r8
+!   w3gridmd Frequencies :
+!
+      TPI=2.0_r8*pi
+      RXFR = 1.1_r8
+!     RFR1 = 0.04118_r8
+      RFR1 = 0.038_r8
       IF (.not.allocated(SIG)) THEN
         allocate ( SIG(0:MSCs+1) )
         SIG=0.0_r8
       END IF
 
-    XFR    = MAX ( RXFR , 1.00001 )
-    FR1    = MAX ( RFR1 , 1.E-6_r8 )
+      XFR    = MAX ( RXFR , 1.00001 )
+      FR1    = MAX ( RFR1 , 1.E-6_r8 )
 !
-    SIGMA   = FR1 * TPI / XFR**2
-!   SXFR    = 0.5 * (XFR-1./XFR)
-    !
-    DO IK=0, MSCs+1
-      SIGMA    = SIGMA * XFR
-      SIG (IK) = SIGMA
-!     DSIP(IK) = SIGMA * SXFR
-    END DO
+      SIGMA   = FR1 * TPI / XFR**2
+!     SXFR    = 0.5 * (XFR-1./XFR)
+!
+      DO IK=0, MSCs+1
+        SIGMA    = SIGMA * XFR
+        SIG (IK) = SIGMA
+!       DSIP(IK) = SIGMA * SXFR
+      END DO
 #endif
 !
 !  Start long J loop.
 !
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
+      DO j=Jstr-1,Jend+1
+        DO i=Istr-1,Iend+1
 !
 !  Compute depth.
 !
@@ -371,53 +430,58 @@
           END DO
 #endif
 #ifdef WW3_MODEL
-      DO IK=0, MSCs !+1
-        !
-        !         Calculate wavenumbers and group velocities.
-    KOLD = 0
-    W0   = ABS(SIG(IK))
+          DO IK=0, MSCs !+1
+!
+!           Calculate wavenumbers and group velocities.
+!           CALL WAVNU1(SIG(IK),DEPTH,WN(IK,IS),CG(IK,IS))
+!           SUBROUTINE WAVNU2 (W,H,K,CG,EPS,NMAX,ICON)
+!           CG   = 0
+            KOLD = 0
+!           ICON = 0
+            W0   = ABS(SIG(IK))
     !
-    !     1st approach :
+    !       1st approach :
     !
-    IF (W0.LT.SQRT(g/Dstp)) THEN
-      KK = W0/SQRT(g*Dstp)
-    ELSE
-      KK = W0*W0/g
-    END IF
+            IF (W0.LT.SQRT(g/Dstp)) THEN
+              KK = W0/SQRT(g*Dstp)
+            ELSE
+              KK = W0*W0/g
+            END IF
     !
     !     Refinement :
     !
-    DO II=1, 10 !NMAX
-      DIF = ABS(KK-KOLD)
-      IF (KK.NE.0.0_r8) THEN
-        RDIF = DIF/KK
-      ELSE
-        RDIF = 0.0_r8
-      END IF
-      IF (DIF .LT. EPS .AND. RDIF .LT. EPS) THEN
-        GOTO 100
-      ELSE
-        KOLD = KK
-        FF    = g*KOLD*TANH(KOLD*Dstp)-W0**2
-        IF (KOLD*Dstp.GT.25.0_r8) THEN
-          FD = g*TANH(KOLD*Dstp)
-        ELSE
-          FD = g*TANH(KOLD*Dstp) + g*KOLD*Dstp/((COSH(KOLD*Dstp))**2)
-        END IF
-        KK    = KOLD - FF/FD
-      END IF
-    END DO
+            DO II=1, 10 !NMAX
+              DIF = ABS(KK-KOLD)
+              IF (KK.NE.0.0_r8) THEN
+                RDIF = DIF/KK
+              ELSE
+                RDIF = 0.0_r8
+              END IF
+              IF (DIF .LT. EPS .AND. RDIF .LT. EPS) THEN
+!               ICON = 1
+                GOTO 100
+              ELSE
+                KOLD = KK
+                FF    = g*KOLD*TANH(KOLD*Dstp)-W0**2
+                IF (KOLD*Dstp.GT.25.0_r8) THEN
+                  FD = g*TANH(KOLD*Dstp)
+                ELSE
+                 FD=g*TANH(KOLD*Dstp)+g*KOLD*Dstp/((COSH(KOLD*Dstp))**2)
+                END IF
+                KK    = KOLD - FF/FD
+              END IF
+            END DO
     !
-    DIF   = ABS(KK-KOLD)
-    RDIF  = DIF/KK
+            DIF   = ABS(KK-KOLD)
+            RDIF  = DIF/KK
+!           IF (DIF .LT. EPS .AND. RDIF .LT. EPS) ICON = 1
 100 CONTINUE
-    IF (IK.gt.0) THEN
-      waven(IK)=KK
-      owaven(IK)=1.0_r8/(waven(IK))
-    END IF
-    END DO
+            IF (IK.gt.0) THEN
+              waven(IK)=KK
+              owaven(IK)=1.0_r8/(waven(IK))
+            END IF
+          END DO
 #endif
-
 !
 !  Compute polynomial fit coeffs TC for the velocity profile.
 !         TC -     Vector containing the first LL+1 Taylor coefficients
@@ -725,8 +789,9 @@
 !
 !         % Cg_2= C2+k*(dAp*A + dA*Ap + dBp*B + dB*Bp + dCp*C + dC*Cp)
 !
-           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
-     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
+
+!           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
+!     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
 
 !           Total final group vel is
 !           Cg_2u total = Cg_0(k)+Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
@@ -742,15 +807,35 @@
 
 !
 !jcw limiter
-            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.5_r8)*               &
+            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
      &                    SIGN(1.0_r8,uwavek(i,j,k))
-            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.5_r8)*               &
+            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8)*               &
      &                    SIGN(1.0_r8,vwavek(i,j,k))
 # ifdef WET_DRY
             uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
             vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
 # endif
-
+          END DO
+        END DO
+      END DO
+!
+!  Do horiz avg.
+!
+      DO k=1,MSCs
+        DO j=Jstr-1,Jend
+          DO i=Istr-1,Iend
+            u2avg(i,j)=0.25_r8*(uwavek(i,j  ,k)+uwavek(i+1,j  ,k)+      &
+     &                          uwavek(i,j+1,k)+uwavek(i+1,j+1,k))
+            v2avg(i,j)=0.25_r8*(vwavek(i,j  ,k)+vwavek(i+1,j  ,k)+      &
+     &                          vwavek(i,j+1,k)+vwavek(i+1,j+1,k))
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            uwavek(i,j,k)=0.25_r8*(u2avg(i,j  )+u2avg(i-1,j  )+         &
+     &                             u2avg(i,j-1)+u2avg(i-1,j-1))
+            vwavek(i,j,k)=0.25_r8*(v2avg(i,j  )+v2avg(i-1,j  )+         &
+     &                             v2avg(i,j-1)+v2avg(i-1,j-1))
           END DO
         END DO
       END DO
