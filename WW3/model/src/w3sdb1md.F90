@@ -145,7 +145,7 @@ CONTAINS
     USE W3ODATMD, ONLY: NDST
     USE W3GDATMD, ONLY: SIG
     USE W3ODATMD, only : IAPROC
-    USE W3ADATMD, ONLY: QB
+!   USE W3ADATMD, ONLY: QB
 #ifdef W3_S
     USE W3SERVMD, ONLY: STRACE
 #endif
@@ -176,8 +176,8 @@ CONTAINS
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
-!   REAL*8                    :: HM, BB, ARG, Q0, QB, B, CBJ, HRMS, EB(NK)
-    REAL*8                    :: HM, BB, ARG, Q0, B, CBJ, HRMS, EB(NK)
+    REAL*8                    :: HM, BB, ARG, Q0, QB, B, CBJ, HRMS, EB(NK)
+!   REAL*8                    :: HM, BB, ARG, Q0, B, CBJ, HRMS, EB(NK)
     REAL*8                    :: AUX, CBJ2, RATIO, S0, S1, THR, BR1, BR2, FAK
     REAL                      :: ETOT, FMEAN2
 #ifdef W3_T0
