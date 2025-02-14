@@ -1341,7 +1341,7 @@ CONTAINS
 #ifdef W3_DB1
 !  jcw here is the depth limited breaking
         CALL W3SDB1 ( IX, SPEC, DEPTH, EMEAN, FMEAN, WNMEAN, CG1,    &
-             LBREAK, QB, VSDB, VDDB )
+             LBREAK, VSDB, VDDB )
 !  recompute QB
         Hmax_r=0.45*(MAX(DEPTH,0.01))
         QB=MIN(1.0,1.0-EXP(-(HSTOT/SQRT(2.)/Hmax_r)**15.0))

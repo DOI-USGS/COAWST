@@ -50,7 +50,7 @@ MODULE W3SDB1MD
   !/
 CONTAINS
   !/ ------------------------------------------------------------------- /
-  SUBROUTINE W3SDB1 (IX, A, DEPTH, EMEAN, FMEAN, WNMEAN, CG, LBREAK, QB, S, D )
+  SUBROUTINE W3SDB1 (IX, A, DEPTH, EMEAN, FMEAN, WNMEAN, CG, LBREAK, S, D )
     !/
     !/                  +-----------------------------------+
     !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -145,6 +145,7 @@ CONTAINS
     USE W3ODATMD, ONLY: NDST
     USE W3GDATMD, ONLY: SIG
     USE W3ODATMD, only : IAPROC
+    USE W3ADATMD, ONLY: QB
 #ifdef W3_S
     USE W3SERVMD, ONLY: STRACE
 #endif
