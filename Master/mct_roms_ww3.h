@@ -1693,7 +1693,7 @@
       END IF
 #endif
 !
-#ifdef ROLLER_SVENDSEN
+!#ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
 !
@@ -1723,7 +1723,7 @@
         write(stdout,40) 'WW3toROMS Min/Max QB      (%):     ',         &
      &                    range(1),range(2)
       END IF
-#endif
+!#endif
 #ifdef WAVES_DSPR
 !
 !  wave directional spreading
@@ -2095,11 +2095,11 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwavep)
 # endif
-# ifdef ROLLER_SVENDSEN
+!# ifdef ROLLER_SVENDSEN
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_break)
-# endif
+!# endif
 # ifdef WAVES_DSPR
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -2166,13 +2166,13 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Lwavep)
 # endif
-# ifdef ROLLER_SVENDSEN
+!# ifdef ROLLER_SVENDSEN
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_break)
-# endif
+!# endif
 # ifdef WAV2OCN_FLUXES
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

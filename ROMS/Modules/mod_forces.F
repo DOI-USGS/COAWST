@@ -324,7 +324,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
           real(r8), pointer :: wave_break(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: wave_breakG(:,:,:)
@@ -768,7 +768,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
       allocate ( FORCES(ng) % wave_break(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
@@ -1361,7 +1361,7 @@
 #  endif
 # endif
 
-# if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
       IF (.not.destroy(ng, FORCES(ng)%wave_break, MyFile,               &
      &                 __LINE__, 'FORCES(ng)%wave_break')) RETURN
 #  ifndef ANA_WWAVE
@@ -1970,7 +1970,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
             FORCES(ng) % Wave_break(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Wave_breakG(i,j,1) = IniVal

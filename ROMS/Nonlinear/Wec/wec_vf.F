@@ -741,8 +741,11 @@
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBYbrk(i,j)=cff3*cff4*waven(i,j)
 #  else
-!           cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
+#   ifdef WW3_MODEL
+            cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
+#   else
             cff1=Dissip_break(i,j)
+#   endif
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBXbrk(i,j)=cff3*cff4*wavenx(i,j)
             BBYbrk(i,j)=cff3*cff4*waveny(i,j)

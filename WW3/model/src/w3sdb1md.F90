@@ -50,7 +50,7 @@ MODULE W3SDB1MD
   !/
 CONTAINS
   !/ ------------------------------------------------------------------- /
-  SUBROUTINE W3SDB1 (IX, A, DEPTH, EMEAN, FMEAN, WNMEAN, CG, LBREAK, S, D )
+  SUBROUTINE W3SDB1 (IX, A, DEPTH, EMEAN, FMEAN, WNMEAN, CG, LBREAK, QB, S, D )
     !/
     !/                  +-----------------------------------+
     !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -104,6 +104,7 @@ CONTAINS
     !       FMEAN   Real  I   Mean wave frequency.
     !       WNMEAN  Real  I   Mean wave number.
     !       DEPTH   Real  I   Mean water depth.
+    !       QB      Real  O   Percent wave break 0-1.
     !       S       R.A.  O   Source term (1-D version).
     !       D       R.A.  O   Diagonal term of derivative (1-D version).
     !     ----------------------------------------------------------------
@@ -161,7 +162,7 @@ CONTAINS
     !/
     INTEGER, INTENT(IN)     :: IX ! Local grid number
     REAL, INTENT(IN)        :: A(NSPEC)
-    REAL, INTENT(INOUT)     :: EMEAN, FMEAN, WNMEAN, DEPTH
+    REAL, INTENT(INOUT)     :: EMEAN, FMEAN, WNMEAN, DEPTH, QB
     REAL, INTENT(OUT)       :: S(NSPEC), D(NSPEC)
     REAL, INTENT(IN)        :: CG(NK)
     LOGICAL, INTENT(OUT)    :: LBREAK
@@ -174,7 +175,8 @@ CONTAINS
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
-    REAL*8                    :: HM, BB, ARG, Q0, QB, B, CBJ, HRMS, EB(NK)
+!   REAL*8                    :: HM, BB, ARG, Q0, QB, B, CBJ, HRMS, EB(NK)
+    REAL*8                    :: HM, BB, ARG, Q0, B, CBJ, HRMS, EB(NK)
     REAL*8                    :: AUX, CBJ2, RATIO, S0, S1, THR, BR1, BR2, FAK
     REAL                      :: ETOT, FMEAN2
 #ifdef W3_T0

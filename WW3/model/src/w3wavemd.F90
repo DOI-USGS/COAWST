@@ -1578,7 +1578,8 @@ CONTAINS
                  PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),             &
                  TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),          &
 #ifdef W3_COAWST_MODEL
-                 PHIBRKX(JSEA), PHIBRKY(JSEA),                      &
+                 PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),            &
+                 WCAPBRKX(JSEA), WCAPBRKY(JSEA),                    &
 #endif
                  RHOAIR(ISEA), ASF(ISEA))
             IF (.not. LSLOC) THEN
@@ -2273,7 +2274,8 @@ CONTAINS
                        PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),            &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
 #ifdef W3_COAWST_MODEL
-                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+                       PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),           &
+                       WCAPBRKX(JSEA), WCAPBRKY(JSEA),                   &
 #endif
                        RHOAIR(ISEA), ASF(ISEA))
                 ELSE
@@ -2302,7 +2304,8 @@ CONTAINS
                        PHIBBL(JSEA), TMP3, TMP4 , PHICE(JSEA),           &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
 #ifdef W3_COAWST_MODEL
-                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+                       PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),           &
+                       WCAPBRKX(JSEA), WCAPBRKY(JSEA),                   &
 #endif
                        RHOAIR(ISEA), ASF(ISEA))
 #ifdef W3_PDLIB

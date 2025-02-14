@@ -300,6 +300,7 @@ CONTAINS
          WNMEAN
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY
+    USE W3ADATMD, ONLY: WCAPBRKX, WCAPBRKY
 #endif
     !/
     USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, NSPEC, MAPSTA, MAPST2, &
@@ -999,6 +1000,25 @@ CONTAINS
                    MIN(NSEA,IPART*NSIZE))
           END DO
 !
+!  Write WCAPBRKX/Y into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (WCAPBRKX(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
+            WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
+                 (WCAPBRKY(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
+                   MIN(NSEA,IPART*NSIZE))
+          END DO
+!
 !  Write PHIBBL into rst file
 !
           DO IPART=1,NPART
@@ -1256,6 +1276,32 @@ CONTAINS
           IF (J .LE. NSEA) THEN
             PHIBRKX(I) = TMP(J)
             PHIBRKY(I) = TMP2(J)
+          ENDIF
+        ENDDO
+!
+!  Read WCAPBRKX/Y from rst file
+!
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (TMP(ISEA),ISEA=1+(IPART-1)*NSIZE,                   &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+        DO IPART=1,NPART
+          NREC  = NREC + 1
+          RPOS  = 1_8 + LRECL*(NREC-1_8)
+          READ (NDSR,POS=RPOS,ERR=802,IOSTAT=IERR)                      &
+               (TMP2(ISEA),ISEA=1+(IPART-1)*NSIZE,                   &
+               MIN(NSEA,IPART*NSIZE))
+        END DO
+        WCAPBRKX = 0.
+        WCAPBRKY = 0.
+        DO I=1, NSEALM
+          J = IAPROC + (I-1)*NAPROC
+          IF (J .LE. NSEA) THEN
+            WCAPBRKX(I) = TMP(J)
+            WCAPBRKY(I) = TMP2(J)
           ENDIF
         ENDDO
 !

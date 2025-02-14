@@ -878,9 +878,10 @@
 # ifdef SPECTRUM_STOKES
      &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
 # endif
-	&                    THM, WLM, WLP, WBT, THS, QP,                  &
-     &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY
-!     USE W3ODATMD, ONLY: QB
+     &                    THM, WLM, WLP, WBT, THS, QP,                  &
+     &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY,             &
+     &                    WCAPBRKX, WCAPBRKY
+      USE W3ADATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
 !
@@ -1098,7 +1099,9 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=PHIOC(i)*0.        ! jcw need this
+        cff=WCAPBRKX(i)**2+WCAPBRKY(i)**2
+        IF (cff.ge.1000.0) cff=0.
+        SND_BUF(IP)=SQRT(cff)
       END DO
 !
 !  Gather up all the data.
@@ -1353,7 +1356,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=WBT(i)
+!       SND_BUF(IP)=WBT(i)
+        SND_BUF(IP)=QB(i)
       END DO
 !
 !  Gather up all the data.

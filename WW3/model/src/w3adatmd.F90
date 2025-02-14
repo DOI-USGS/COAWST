@@ -459,8 +459,10 @@ MODULE W3ADATMD
 #ifdef W3_COAWST_MODEL
     REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),    &
                              KSS_COAWST(:,:)
-    REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
+    REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:), QB(:)
     REAL, POINTER         :: XPHIBRKX(:), XPHIBRKY(:)
+    REAL, POINTER         :: WCAPBRKX(:), WCAPBRKY(:)
+    REAL, POINTER         :: XWCAPBRKX(:), XWCAPBRKY(:)
     REAL, POINTER         :: WLP(:)
 #endif
     REAL, POINTER         ::  P2SMS(:,:),  US3D(:,:), USSP(:,:)
@@ -629,7 +631,8 @@ MODULE W3ADATMD
 #ifdef W3_COAWST_MODEL
   REAL, POINTER         :: USS_COAWST(:,:), VSS_COAWST(:,:),      &
                            KSS_COAWST(:,:)
-  REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:)
+  REAL, POINTER         :: PHIBRKX(:), PHIBRKY(:), QB(:)
+  REAL, POINTER         :: WCAPBRKX(:), WCAPBRKY(:)
   REAL, POINTER         :: WLP(:)
 #endif
   REAL, POINTER           :: P2SMS(:,:), US3D(:,:), USSP(:,:)
@@ -1250,6 +1253,9 @@ CONTAINS
          WADATS(IMOD)%KSS_COAWST (NSEALM,NK) ,                &
          WADATS(IMOD)%PHIBRKX (NSEALM) ,                      &
          WADATS(IMOD)%PHIBRKY (NSEALM) ,                      &
+         WADATS(IMOD)%QB (NSEALM) ,                           &
+         WADATS(IMOD)%WCAPBRKX (NSEALM) ,                     &
+         WADATS(IMOD)%WCAPBRKY (NSEALM) ,                     &
 #endif
          WADATS(IMOD)%TAUOCX(NSEALM) ,                        &
          WADATS(IMOD)%TAUOCY(NSEALM) ,                        &
@@ -1293,6 +1299,9 @@ CONTAINS
     WADATS(IMOD)%KSS_COAWST = UNDEF
     WADATS(IMOD)%PHIBRKX = UNDEF
     WADATS(IMOD)%PHIBRKY = UNDEF
+    WADATS(IMOD)%QB      = UNDEF
+    WADATS(IMOD)%WCAPBRKX = UNDEF
+    WADATS(IMOD)%WCAPBRKY = UNDEF
 #endif
     WADATS(IMOD)%TAUOCX = UNDEF
     WADATS(IMOD)%TAUOCY = UNDEF
@@ -2320,6 +2329,10 @@ CONTAINS
       CHECK_ALLOC_STATUS ( ISTAT )
       ALLOCATE ( WADATS(IMOD)%XPHIBRKY(NXXX), STAT=ISTAT )
       CHECK_ALLOC_STATUS ( ISTAT )
+      ALLOCATE ( WADATS(IMOD)%XWCAPBRKX(NXXX), STAT=ISTAT )
+      CHECK_ALLOC_STATUS ( ISTAT )
+      ALLOCATE ( WADATS(IMOD)%XWCAPBRKY(NXXX), STAT=ISTAT )
+      CHECK_ALLOC_STATUS ( ISTAT )
 #endif
     !
     WADATS(IMOD)%XABA    = UNDEF
@@ -2332,6 +2345,8 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     WADATS(IMOD)%XPHIBRKX = UNDEF
     WADATS(IMOD)%XPHIBRKY = UNDEF
+    WADATS(IMOD)%XWCAPBRKX = UNDEF
+    WADATS(IMOD)%XWCAPBRKY = UNDEF
 #endif
     !
     IF ( OUTFLAGS( 8, 1) ) THEN
@@ -2992,6 +3007,9 @@ CONTAINS
       KSS_COAWST   => WADATS(IMOD)%KSS_COAWST
       PHIBRKX      => WADATS(IMOD)%PHIBRKX
       PHIBRKY      => WADATS(IMOD)%PHIBRKY
+      QB           => WADATS(IMOD)%QB
+      WCAPBRKX     => WADATS(IMOD)%WCAPBRKX
+      WCAPBRKY     => WADATS(IMOD)%WCAPBRKY
 #endif
       PRMS   => WADATS(IMOD)%PRMS
       TPMS   => WADATS(IMOD)%TPMS
@@ -3278,6 +3296,8 @@ CONTAINS
       TAUOCY  => WADATS(IMOD)%XTAUOCY
       PHIBRKX => WADATS(IMOD)%XPHIBRKX
       PHIBRKY => WADATS(IMOD)%XPHIBRKY
+      WCAPBRKX => WADATS(IMOD)%XWCAPBRKX
+      WCAPBRKY => WADATS(IMOD)%XWCAPBRKY
       PHIBBL  => WADATS(IMOD)%XPHIBBL
 #endif
       HS     => WADATS(IMOD)%XHS

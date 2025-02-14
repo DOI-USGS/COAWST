@@ -3988,7 +3988,7 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #endif
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
 !
 !  Define percent wave breaking.
 !
@@ -4677,7 +4677,7 @@
             got_var(idWdiw)=.TRUE.
             HIS(ng)%Vid(idWdiw)=var_id(i)
 #endif
-#ifdef ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWbrk))) THEN
             got_var(idWbrk)=.TRUE.
             HIS(ng)%Vid(idWbrk)=var_id(i)
@@ -5703,7 +5703,7 @@
           RETURN
         END IF
 #endif
-#ifdef ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
         IF (.not.got_var(idWbrk).and.Hout(idWbrk,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWbrk)),          &
      &                                  TRIM(ncname)

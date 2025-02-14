@@ -203,7 +203,8 @@ CONTAINS
        D50, PSIC, BEDFORM , PHIBBL, TAUBBL, TAUICE,&
        PHICE, TAUOCX, TAUOCY, WNMEAN,              &
 #ifdef W3_COAWST_MODEL
-       PHIBRKX, PHIBRKY,                           &
+       PHIBRKX, PHIBRKY, QB,                       &
+       WCAPBRKX, WCAPBRKY,                         &
 #endif
        DAIR, COEF)
     !/
@@ -680,7 +681,8 @@ CONTAINS
          TAUWIX, TAUWIY, TAUWNX, TAUWNY,      &
          ICEF, TAUOCX, TAUOCY, WNMEAN
 #ifdef W3_COAWST_MODEL
-    REAL, INTENT(INOUT)     :: PHIBRKX, PHIBRKY
+    REAL, INTENT(INOUT)     :: PHIBRKX, PHIBRKY, QB
+    REAL, INTENT(INOUT)     :: WCAPBRKX, WCAPBRKY
 #endif
     REAL, INTENT(OUT)       :: DTDYN, FCUT
     REAL, INTENT(IN)        :: COEF
@@ -823,6 +825,7 @@ CONTAINS
 #endif
 #ifdef W3_COAWST_MODEL
     REAL                    :: oDTG, TAUBRKX, TAUBRKY
+    REAL                    :: A2BAND, B2BAND, Hmax_r
 #endif
 
 #ifdef W3_NNT
@@ -1016,6 +1019,9 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     PHIBRKX = 0.
     PHIBRKY = 0.
+    QB      = 0.
+    WCAPBRKX = 0.
+    WCAPBRKY = 0.
     TAUBRKX = 0.
     TAUBRKY = 0.
 #endif
@@ -1334,8 +1340,11 @@ CONTAINS
 #endif
 #ifdef W3_DB1
 !  jcw here is the depth limited breaking
-        CALL W3SDB1 ( IX, SPEC, DEPTH, EMEAN, FMEAN, WNMEAN, CG1,       &
-             LBREAK, VSDB, VDDB )
+        CALL W3SDB1 ( IX, SPEC, DEPTH, EMEAN, FMEAN, WNMEAN, CG1,    &
+             LBREAK, QB, VSDB, VDDB )
+!  recompute QB
+        Hmax_r=0.45*(MAX(DEPTH,0.01))
+        QB=MIN(1.0,1.0-EXP(-(HSTOT/SQRT(2.)/Hmax_r)**15.0))
 #endif
 #ifdef W3_PDLIB
       ENDIF
@@ -1800,6 +1809,8 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
         A1BAND = 0.
         B1BAND = 0.
+        A2BAND = 0.
+        B2BAND = 0.
 #endif
         DO ITH=1, NTH
           IS   = (IK-1)*NTH + ITH
@@ -1819,6 +1830,11 @@ CONTAINS
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
           B1BAND=B1BAND - VSDB(IS) * DT * FACTOR * ESIN(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
+!
+          A2BAND=A2BAND + VSDS(IS) * DT * FACTOR * ECOS(ITH)       &
+               / MAX ( 1. , (1.-HDT*VDDS(IS)))
+          B2BAND=B2BAND + VSDS(IS) * DT * FACTOR * ESIN(ITH)       &
+               / MAX ( 1. , (1.-HDT*VDDS(IS)))
 # endif
 #endif
         END DO
@@ -1826,6 +1842,8 @@ CONTAINS
 !  Here we compute breaking stress in W/m2
         PHIBRKX = PHIBRKX + A1BAND
         PHIBRKY = PHIBRKY + B1BAND
+        WCAPBRKX = WCAPBRKX + A2BAND
+        WCAPBRKY = WCAPBRKY + B2BAND
 !  Here we compute breaking stress in N/m2
         TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
         TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
@@ -2119,6 +2137,8 @@ CONTAINS
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
     PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
     PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
+    WCAPBRKX=DWAT*GRAV*WCAPBRKX*oDTG
+    WCAPBRKY=DWAT*GRAV*WCAPBRKY*oDTG
 #else
     PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)/DTG
     PHIAW =DWAT*GRAV*PHIAW /DTG

@@ -4217,7 +4217,7 @@
         END IF
       END IF
 #endif
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
 !
 !  Write out percent wave breaking.
 !

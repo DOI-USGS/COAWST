@@ -1941,7 +1941,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idWorb,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
             CASE ('Hout(idWbrk)')
               IF (idWbrk.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWbrk'
@@ -2863,7 +2863,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWdiw,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
-# ifdef ROLLER_SVENDSEN
+# ifdef ROLLER_SVENDSEN || defined WW3_MODEL
             CASE ('Aout(idWbrk)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWbrk,1:Ngrids)=Lswitch(1:Ngrids)
@@ -6219,7 +6219,7 @@
      &         'Hout(idWdiw)',                                          &
      &         'Write out wave dissipation due to white capping.'
 #endif
-#ifdef ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN  || defined WW3_MODEL
             IF (Hout(idWbrk,ng)) WRITE (out,170) Hout(idWbrk,ng),       &
      &         'Hout(idWbrk)',                                          &
      &         'Write out percent wave breaking.'
