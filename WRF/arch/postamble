@@ -84,7 +84,7 @@ io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_NFPAR CONFIGURE_WRFIO_PNF
 
 ## jcw
 CPP             =      /usr/bin/cpp -P -traditional
-CFLAGS_LOCAL    +=     -DNCEP_DEBUG_GLOBALSTDOUT -DNCEP_DEBUG_MULTIDIR
+# CFLAGS_LOCAL    +=     -DNCEP_DEBUG_GLOBALSTDOUT -DNCEP_DEBUG_MULTIDIR  # osipov disable to split the rsls into individual files
 
 
 
