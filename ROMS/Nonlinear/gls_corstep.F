@@ -3,11 +3,10 @@
 #if defined NONLINEAR && defined GLS_MIXING && defined SOLVE3D
 !
 !git $Id$
-!svn $Id: gls_corstep.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2025 The ROMS Group                              !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
-!    See License_ROMS.txt                   Alexander F. Shchepetkin   !
+!    See License_ROMS.md                    Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
 !                                                                      !
 !  This routine perfoms the corrector step for turbulent kinetic       !
@@ -262,17 +261,17 @@
       logical :: Lmy25
       integer :: i, itrc, j, k
 
-#ifdef AKLIMIT
-      real(r8), parameter :: Ak_max = 10.0_r8
-#endif
       real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
+!     real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
       real(r8) :: Zos_min
 
       real(r8) :: Gh, Gm, Kprod, Ls_unlmt, Ls_lmt, Pprod, Sh, Sm
       real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: cmu_fac1, cmu_fac2, cmu_fac3, cmu_fac4
+# if defined KANTHA_CLAYSON_KCQE
       real(r8) :: cmu, cmup, alphan, alpham
+# endif
       real(r8) :: gls_c3, gls_exp1, gls_fac1, gls_fac2, gls_fac3
       real(r8) :: gls_fac4, gls_fac5, gls_fac6, ql, sqrt2, strat2
       real(r8) :: tke_exp1, tke_exp2, tke_exp3, tke_exp4, wall_fac
@@ -661,15 +660,16 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
+            cff1=0.5_r8*(Hz(i,j,k)+Hz(i,j,k+1))         ! RRH, Jan 2025
             cff=dt(ng)*pm(i,j)*pn(i,j)
             tke(i,j,k,nnew)=tke(i,j,k,nnew)-                            &
      &                      cff*(FXK(i+1,j)-FXK(i,j)+                   &
      &                           FEK(i,j+1)-FEK(i,j))
-            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
+            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
             gls(i,j,k,nnew)=gls(i,j,k,nnew)-                            &
      &                      cff*(FXP(i+1,j)-FXP(i,j)+                   &
      &                           FEP(i,j+1)-FEP(i,j))
-            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
+            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
           END DO
         END DO
       END DO
@@ -738,13 +738,14 @@
 !
         DO k=1,N(ng)-1
           DO i=Istr,Iend
+            cff1=0.5_r8*(Hz(i,j,k)+Hz(i,j,k+1))         ! RRH, Jan 2025
             cff=dt(ng)*pm(i,j)*pn(i,j)
             tke(i,j,k,nnew)=tke(i,j,k,nnew)-                            &
      &                      cff*(FCK(i,k+1)-FCK(i,k))
-            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
+            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
             gls(i,j,k,nnew)=gls(i,j,k,nnew)-                            &
      &                      cff*(FCP(i,k+1)-FCP(i,k))
-            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
+            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
           END DO
         END DO
 !
@@ -881,7 +882,7 @@
 !-----------------------------------------------------------------------
 !
 !  Set Dirichlet surface and bottom boundary conditions. Compute
-!  surface roughness from wind stress (Charnok) and set Craig and
+!  surface roughness from wind stress (Charnock) and set Craig and
 !  Banner wave breaking surface flux, if appropriate.
 !
         DO i=Istr,Iend
@@ -893,8 +894,9 @@
      &                            gls_Kmin(ng))
 # elif defined TKE_WAVEDISS
           tke(i,j,N(ng),nnew)=MAX(cmu_fac4*(sz_alpha(ng)*               &
-     &                        (Dissip_break(i,j)+Dissip_wcap(i,j)))**   &
-     &                        (2.0_r8/3.0_r8), gls_Kmin(ng))
+     &                            (Dissip_break(i,j)+                   &
+     &                             Dissip_wcap (i,j)))**                &
+     &                            (2.0_r8/3.0_r8), gls_Kmin(ng))
 # else
           tke(i,j,N(ng),nnew)=MAX(cmu_fac3*0.5_r8*                      &
      &                            SQRT((sustr(i,j)+sustr(i+1,j))**2+    &
@@ -1007,12 +1009,12 @@
      &                           FCP(i,k+1)*gls(i,j,k+1,nnew))
           END DO
           gls(i,j,1,nnew)=gls(i,j,1,nnew)-cff*gls_fluxb(i)
-!!        gls(i,j,1,nnew)=MAX(gls(i,j,1,nnew), gls_Pmin(ng))
+          gls(i,j,1,nnew)=MAX(gls(i,j,1,nnew),gls_Pmin(ng))
         END DO
         DO k=2,N(ng)-1
           DO i=Istr,Iend
             gls(i,j,k,nnew)=gls(i,j,k,nnew)-CF(i,k)*gls(i,j,k-1,nnew)
-!!          gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew), gls_Pmin(ng))
+            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
           END DO
         END DO
 !
@@ -1025,8 +1027,8 @@
 !
 !  Compute turbulent length scale (m).
 !
-            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
-            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
+!           tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
+!           gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
             IF (gls_n(ng).ge.0.0_r8) THEN
               gls(i,j,k,nnew)=MIN(gls(i,j,k,nnew),gls_fac5*             &
      &                            tke(i,j,k,nnew)**(tke_exp4)*          &
@@ -1051,6 +1053,14 @@
               Ls_lmt=Ls_unlmt
             END IF
 !
+! New constraint controls instabilities in gls by limiting length scale,
+! L <= kappa*Depth. After harmonizing default advective schemes, this
+! limit is primarily active for inflows at the boundary or rivers where
+! upstream tke and gls are not well defined. (RRH, Jan 2025)
+!
+            cff1=0.4_r8*(z_w(i,j,N(ng))-z_w(i,j,0))
+            Ls_lmt=MIN(Ls_lmt,cff1)
+!
 ! Recompute gls based on limited length scale
 !
             gls(i,j,k,nnew)=MAX(gls_cmu0(ng)**gls_p(ng)*                &
@@ -1062,7 +1072,12 @@
 !
             Gh=MIN(gls_Gh0,-buoy2(i,j,k)*Ls_lmt*Ls_lmt/                 &
      &                    (2.0_r8*tke(i,j,k,nnew)))
-            Gh=MIN(Gh,Gh-(Gh-gls_Ghcri)**2/                             &
+
+!  Update to remove sharp discontinuity per Harcourt post 
+!  "Equation error in GLS model coded into gls_corstep.F" to myroms.org 
+!  board 13 Dec 2018. (RRH, Jan 2025)
+!
+            Gh=MIN(Gh,Gh-MAX(0.0_r8,Gh-gls_Ghcri)**2/                   &
      &                    (Gh+gls_Gh0-2.0_r8*gls_Ghcri))
             Gh=MAX(Gh,gls_Ghmin)
 # if defined CANUTO_A || defined CANUTO_B
