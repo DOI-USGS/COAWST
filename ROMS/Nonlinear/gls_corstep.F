@@ -262,7 +262,6 @@
       integer :: i, itrc, j, k
 
       real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
-!     real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
       real(r8) :: Zos_min
 
@@ -665,13 +664,11 @@
             tke(i,j,k,nnew)=tke(i,j,k,nnew)-                            &
      &                      cff*(FXK(i+1,j)-FXK(i,j)+                   &
      &                           FEK(i,j+1)-FEK(i,j))
-!           tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
-            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
+            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
             gls(i,j,k,nnew)=gls(i,j,k,nnew)-                            &
      &                      cff*(FXP(i+1,j)-FXP(i,j)+                   &
      &                           FEP(i,j+1)-FEP(i,j))
-!           gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
-            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
+            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
           END DO
         END DO
       END DO
@@ -744,12 +741,10 @@
             cff=dt(ng)*pm(i,j)*pn(i,j)
             tke(i,j,k,nnew)=tke(i,j,k,nnew)-                            &
      &                      cff*(FCK(i,k+1)-FCK(i,k))
-!           tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
-            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
+            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),cff1*gls_Kmin(ng))
             gls(i,j,k,nnew)=gls(i,j,k,nnew)-                            &
      &                      cff*(FCP(i,k+1)-FCP(i,k))
-!           gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
-            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),gls_Pmin(ng))
+            gls(i,j,k,nnew)=MAX(gls(i,j,k,nnew),cff1*gls_Pmin(ng))
           END DO
         END DO
 !
