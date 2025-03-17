@@ -692,23 +692,23 @@ endif
 
 ww3:
 ifdef USE_WW3
-	cd $(COAWST_WW3_DIR)/model/src; ls;                                   \
-	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include cwstwvcp.h > cwstwvcp.F90;    \
-	$(MY_ROMS_SRC)/$(CLEAN) cwstwvcp.F90;                                 \
-	echo " ";                                                             \
-	cd $(COAWST_WW3_DIR)/model/bin; ls;                                   \
-	cat $(WW3_SWITCH_FILE) | tr '\n' ' ' > switch_coawst;                 \
-	echo -n " COAWST_MODEL" | cat >> switch_coawst;                       \
-	if [ "$(USE_ROMS)" = 'on' ]; then echo -n " WAVES_OCEAN" | cat >> switch_coawst; fi;         \
-	if [ "$(USE_WRF)" = 'on' ]; then echo -n " AIR_WAVES" | cat >> switch_coawst; fi;         \
-	echo " updated switches";                                             \
-	cd $(COAWST_WW3_DIR);                                                 \
-	mkdir build;                                                      \
-	cd build;                                                         \
-	cmake .. -DSWITCH=$(COAWST_WW3_DIR)/model/bin/switch_coawst -DCMAKE_VERBOSE_MAKEFILE=ON; \
-	make --keep-going;                                                             \
-	echo "";                                                          \
-	echo "-------- Finished compiling WW3 ------------"               \
+	cd $(COAWST_WW3_DIR)/model/src; ls;                                                         \
+	$(CPP) $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include cwstwvcp.h > cwstwvcp.F90; \
+	$(MY_ROMS_SRC)/$(CLEAN) cwstwvcp.F90;                                                       \
+	echo " ";                                                                                   \
+	cd $(COAWST_WW3_DIR)/model/bin; ls;                                                         \
+	cat $(WW3_SWITCH_FILE) | tr '\n' ' ' > switch_coawst;                                       \
+	echo -n " COAWST_MODEL" | cat >> switch_coawst;                                             \
+	if [ "$(USE_ROMS)" = 'on' ]; then echo -n " WAVES_OCEAN" | cat >> switch_coawst; fi;        \
+	if [ "$(USE_WRF)" = 'on' ]; then echo -n " AIR_WAVES" | cat >> switch_coawst; fi;           \
+	echo " updated switches";                                                                   \
+	cd $(COAWST_WW3_DIR);                                                                       \
+	mkdir build;                                                                                \
+	cd build;                                                                                   \
+	cmake .. -DSWITCH=$(COAWST_WW3_DIR)/model/bin/switch_coawst -DCMAKE_VERBOSE_MAKEFILE=ON;    \
+	make --keep-going $(NCPUS);                                                                 \
+	echo "";                                                                                    \
+	echo "-------- Finished compiling WW3 ------------"                                         \
 	echo "";
 endif
 

@@ -54,6 +54,7 @@ cleanwrf=1
 cleanwrfhydro=1
 cleanww3=1
 cleanswan=1
+NCPUS="-j 1"
 
 export MY_CPP_FLAGS=
 
@@ -376,6 +377,7 @@ if [ $cleanww3 -eq 1 ]; then
   make ww3clean
   cd ${MY_ROMS_SRC}
 fi
+  export NCPUS=$NCPUS
   make ww3
 
 if [ $cleanswan -eq 1 ]; then
