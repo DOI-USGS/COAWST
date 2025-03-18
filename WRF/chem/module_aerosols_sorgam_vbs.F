@@ -2818,8 +2818,7 @@ END SUBROUTINE coagrate
 !      WRITE(20,*) ' IN EQL 3 '
 
 ! Fraction of dry sulfate mass in j-mode         
-      DO lcell = 1, &
-          numcells
+      DO lcell = 1, numcells
 ! *** Fetch temperature, fractional relative humidity, and
 !     air density
 
