@@ -1865,7 +1865,6 @@ CONTAINS
                / MAX ( 1. , (1.-HDT*VDDS(IS)))
           B2BAND=B2BAND - VSDS(IS) * DT * FACTOR * ESIN(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDS(IS)))
-# endif
 #endif
         END DO
 #ifdef W3_COAWST_MODEL
