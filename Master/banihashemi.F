@@ -1,4 +1,5 @@
 #include "cppdefs.h"
+#undef BANIHASHEMI_HOTS
       MODULE banihashemi_mod
 #ifdef UV_BANIHASHEMI
 !
@@ -354,7 +355,7 @@
 !  Compute wavenumbers. at some point we need diff of k 
 !  so we need to compute all the k's first.
 !
-#ifdef SWAN_MODEL
+# ifdef SWAN_MODEL
 !  Borrow this from swanpre1.ftn
 !  Compute freqs.
 !
@@ -371,8 +372,8 @@
       DO k = 2, MSCs
         SPCSIG(k) = SPCSIG(k-1) * SFAC
       END DO
-#endif
-#ifdef WW3_MODEL
+# endif
+# ifdef WW3_MODEL
 !   w3gridmd Frequencies :
 !
       TPI=2.0_r8*pi
@@ -395,7 +396,7 @@
         SIG (IK) = SIGMA
 !       DSIP(IK) = SIGMA * SXFR
       END DO
-#endif
+# endif
 !
 !  Start long J loop.
 !
@@ -407,7 +408,7 @@
           Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
           fac1 = SQRT(Dstp/g)
 !
-#ifdef SWAN_MODEL
+# ifdef SWAN_MODEL
           DO k=1,MSCs
 !
 !  Compute k.  This is borrowed from SWAN swanser.ftn.
@@ -428,8 +429,8 @@
             ENDIF
             owaven(k)=1.0_r8/(waven(k)+eps)
           END DO
-#endif
-#ifdef WW3_MODEL
+# endif
+# ifdef WW3_MODEL
           DO IK=0, MSCs !+1
 !
 !           Calculate wavenumbers and group velocities.
@@ -481,7 +482,7 @@
               owaven(IK)=1.0_r8/(waven(IK))
             END IF
           END DO
-#endif
+# endif
 !
 !  Compute polynomial fit coeffs TC for the velocity profile.
 !         TC -     Vector containing the first LL+1 Taylor coefficients
@@ -578,13 +579,14 @@
               dVtdk(k)=dVtdk(k)+A0v(m+1)*K1(m+1,k)*cff
             END DO
 !
-! finalize u v wavenk
+! finalize u v wavenk.  Hold off the HOTs for now.
 !
-!            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)
-!            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)
+            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)
+            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!jcw
 !
+# ifdef BANIHASHEMI_HOTS
 ! %Calculating dU^2/dk^2 equation (A.24)
 !
             K2(1,k)=0                                                      !%{GI_20}_kk
@@ -606,7 +608,9 @@
               dUtdk2(k)=dUtdk2(k)+A0u(m+1)*K2(m+1,k)/(Dstp**(m+1))
               dVtdk2(k)=dVtdk2(k)+A0v(m+1)*K2(m+1,k)/(Dstp**(m+1))
             END DO
+# endif
           END DO
+# ifdef BANIHASHEMI_HOTS
 !
 !  %% Now we calculate c_2 as in equation (A.12)
 !  %  C2=Ap*A+Bp*B+Cp*C
@@ -804,18 +808,18 @@
 !           Cg_2v total = Cg_0(k)+Vt(k)+waven(k)*dVtdk(k)+Cg_KC2
 !           We send the additional terms after Cg_0 to wave model
             vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)  !+Cg_KC2
-
 !
 !jcw limiter
             uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
      &                    SIGN(1.0_r8,uwavek(i,j,k))
             vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8)*               &
      &                    SIGN(1.0_r8,vwavek(i,j,k))
-# ifdef WET_DRY
+#  ifdef WET_DRY
             uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
             vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
-# endif
+#  endif
           END DO
+# endif
         END DO
       END DO
 !
@@ -824,6 +828,15 @@
       DO k=1,MSCs
         DO j=Jstr-1,Jend
           DO i=Istr-1,Iend
+!jcw limiter
+            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
+     &                    SIGN(1.0_r8,uwavek(i,j,k))
+            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8)*               &
+     &                    SIGN(1.0_r8,vwavek(i,j,k))
+#  ifdef WET_DRY
+            uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
+            vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
+#  endif
             u2avg(i,j)=0.25_r8*(uwavek(i,j  ,k)+uwavek(i+1,j  ,k)+      &
      &                          uwavek(i,j+1,k)+uwavek(i+1,j+1,k))
             v2avg(i,j)=0.25_r8*(vwavek(i,j  ,k)+vwavek(i+1,j  ,k)+      &
@@ -843,9 +856,9 @@
       deallocate ( A, TC, A0u, A0v )
       deallocate ( I1, I2, K1, K2 )
       deallocate ( H, HH )
-#ifdef WW3_MODEL
+# ifdef WW3_MODEL
       deallocate ( SIG )
-#endif
+# endif
 
       RETURN
       END SUBROUTINE banihashemi_tile

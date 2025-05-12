@@ -204,7 +204,7 @@ CONTAINS
        PHICE, TAUOCX, TAUOCY, WNMEAN,              &
 #ifdef W3_COAWST_MODEL
        PHIBRKX, PHIBRKY, QB,                       &
-       WCAPBRKX, WCAPBRKY,                         &
+       PHICAPX, PHICAPY,                           &
 #endif
        DAIR, COEF)
     !/
@@ -682,7 +682,7 @@ CONTAINS
          ICEF, TAUOCX, TAUOCY, WNMEAN
 #ifdef W3_COAWST_MODEL
     REAL, INTENT(INOUT)     :: PHIBRKX, PHIBRKY, QB
-    REAL, INTENT(INOUT)     :: WCAPBRKX, WCAPBRKY
+    REAL, INTENT(INOUT)     :: PHICAPX, PHICAPY
 #endif
     REAL, INTENT(OUT)       :: DTDYN, FCUT
     REAL, INTENT(IN)        :: COEF
@@ -789,6 +789,9 @@ CONTAINS
 #endif
 #ifdef W3_UOST
          VSUO(NSPEC), VDUO(NSPEC),            &
+#endif
+#ifdef W3_COAWST_MODEL
+         SPEC3(NSPEC), VS3(NSPEC), VD3(NSPEC), &
 #endif
          VS(NSPEC), VD(NSPEC), EB(NK)
 #ifdef W3_ST3
@@ -963,6 +966,9 @@ CONTAINS
     ZWND   = 10.
 #endif
 #ifdef W3_COAWST_MODEL
+    SPEC3  = 0.
+    VS3    = 0.
+    VD3    = 0.
     oDTG=1.0/DTG
 #endif
     !
@@ -1020,8 +1026,8 @@ CONTAINS
     PHIBRKX = 0.
     PHIBRKY = 0.
     QB      = 0.
-    WCAPBRKX = 0.
-    WCAPBRKY = 0.
+    PHICAPX = 0.
+    PHICAPY = 0.
     TAUBRKX = 0.
     TAUBRKY = 0.
 #endif
@@ -1738,6 +1744,28 @@ CONTAINS
       !
       ! 5.  Increment spectrum --------------------------------------------- *
       !
+#ifdef W3_COAWST_MODEL
+     SPEC3 = SPEC !EM set SPEC3 before VS VD changes
+      ! sum VS2 VD2 for stress calc
+      DO IS=IS1, NSPECH
+        VS3(IS) = VSLN(IS) + VSIN(IS) + VSNL(IS)
+        VD3(IS) = VDIN(IS) + VDNL(IS)  
+      END DO
+        IF ( SHAVE ) THEN
+          DO IS=IS1, NSPECH
+            eInc1 = VS3(IS) * DT / MAX ( 1. , (1.-HDT*VD3(IS)))
+            eInc2 = SIGN ( MIN (DAM(IS),ABS(eInc1)) , eInc1 )
+            SPEC3(IS) = MAX ( 0. , SPEC3(IS)+eInc2 )
+          END DO
+        ELSE
+           !
+          DO IS=IS1, NSPECH
+            eInc1 = VS3(IS) * DT / MAX ( 1. , (1.-HDT*VD3(IS)))
+            SPEC3(IS) = MAX ( 0. , SPEC3(IS)+eInc1 )
+          END DO
+        END IF
+#endif
+
       IF (srce_call .eq. srce_direct) THEN
         IF ( SHAVE ) THEN
           DO IS=IS1, NSPECH
@@ -1826,14 +1854,16 @@ CONTAINS
           HSTOT = HSTOT + SPEC(IS) * FACTOR
 #ifdef W3_COAWST_MODEL
 # ifdef W3_DB1
+! subtract VSDB bc it is negative, want to make positive
           A1BAND=A1BAND - VSDB(IS) * DT * FACTOR * ECOS(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
           B1BAND=B1BAND - VSDB(IS) * DT * FACTOR * ESIN(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDB(IS)))
-!
-          A2BAND=A2BAND + VSDS(IS) * DT * FACTOR * ECOS(ITH)       &
+# endif
+! subtract VSDS bc it is negative, want to make positive
+          A2BAND=A2BAND - VSDS(IS) * DT * FACTOR * ECOS(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDS(IS)))
-          B2BAND=B2BAND + VSDS(IS) * DT * FACTOR * ESIN(ITH)       &
+          B2BAND=B2BAND - VSDS(IS) * DT * FACTOR * ESIN(ITH)       &
                / MAX ( 1. , (1.-HDT*VDDS(IS)))
 # endif
 #endif
@@ -1842,8 +1872,8 @@ CONTAINS
 !  Here we compute breaking stress in W/m2
         PHIBRKX = PHIBRKX + A1BAND
         PHIBRKY = PHIBRKY + B1BAND
-        WCAPBRKX = WCAPBRKX + A2BAND
-        WCAPBRKY = WCAPBRKY + B2BAND
+        PHICAPX = PHICAPX + A2BAND
+        PHICAPY = PHICAPY + B2BAND
 !  Here we compute breaking stress in N/m2
         TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
         TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
@@ -2012,6 +2042,21 @@ CONTAINS
                + 0.
         END DO
       END DO
+#ifdef W3_COAWST_MODEL
+     DO IK=NKH+1, NK
+#ifdef W3_ST2
+        FACDIA = MAX ( 0. , MIN ( 1., (SIG(IK)-FHTRAN)/DFH) )
+        FACPAR = MAX ( 0. , 1.-FACDIA )
+#endif
+        DO ITH=1, NTH
+          SPEC3(ITH+(IK-1)*NTH) = SPEC3(ITH+(IK-2)*NTH) * FACHFA         &
+#ifdef W3_ST2
+               * FACDIA + FACPAR * SPEC3(ITH+(IK-1)*NTH)            &
+#endif
+               + 0.
+        END DO
+      END DO
+#endif            
       !
       ! 6.e  Update wave-supported stress----------------------------------- *
       !
@@ -2092,7 +2137,11 @@ CONTAINS
       A1BAND = 0.
       B1BAND = 0.
       DO ITH=1, NTH
+#ifdef W3_COAWST_MODEL
+        DIFF = SPECINIT(ITH+(IK-1)*NTH)-SPEC3(ITH+(IK-1)*NTH)
+#else
         DIFF = SPECINIT(ITH+(IK-1)*NTH)-SPEC(ITH+(IK-1)*NTH)
+#endif
         EBAND = EBAND + DIFF
         A1BAND = A1BAND + DIFF*ECOS(ITH)
         B1BAND = B1BAND + DIFF*ESIN(ITH)
@@ -2105,13 +2154,11 @@ CONTAINS
     END DO
     !
     ! Transformation in momentum flux in m^2 / s^2
-    !
+
 #ifdef W3_COAWST_MODEL
-!   TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
-!   TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
-    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1)-TAUBRKX*DTG/DWAT)*oDTG
-    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2)-TAUBRKY*DTG/DWAT)*oDTG
-    TAUWIX=TAUWIX*oDTG
+    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
+    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
+    TAUWIX=TAUWIX*oDTG     
     TAUWIY=TAUWIY*oDTG
     TAUWNX=TAUWNX*oDTG
     TAUWNY=TAUWNY*oDTG
@@ -2137,8 +2184,8 @@ CONTAINS
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
     PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
     PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
-    WCAPBRKX=DWAT*GRAV*WCAPBRKX*oDTG
-    WCAPBRKY=DWAT*GRAV*WCAPBRKY*oDTG
+    PHICAPX=DWAT*GRAV*PHICAPX*oDTG
+    PHICAPY=DWAT*GRAV*PHICAPY*oDTG
 #else
     PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)/DTG
     PHIAW =DWAT*GRAV*PHIAW /DTG

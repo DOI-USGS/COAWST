@@ -300,7 +300,7 @@ CONTAINS
          WNMEAN
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY
-    USE W3ADATMD, ONLY: WCAPBRKX, WCAPBRKY
+    USE W3ADATMD, ONLY: PHICAPX, PHICAPY
 #endif
     !/
     USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, NSPEC, MAPSTA, MAPST2, &
@@ -1000,14 +1000,14 @@ CONTAINS
                    MIN(NSEA,IPART*NSIZE))
           END DO
 !
-!  Write WCAPBRKX/Y into rst file
+!  Write PHICAPX/Y into rst file
 !
           DO IPART=1,NPART
             NREC  = NREC + 1
             RPOS  = 1_8 + LRECL*(NREC-1_8)
             WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
             WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
-                 (WCAPBRKX(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
+                 (PHICAPX(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
                  MIN(NSEA,IPART*NSIZE))
           END DO
           DO IPART=1,NPART
@@ -1015,7 +1015,7 @@ CONTAINS
             RPOS  = 1_8 + LRECL*(NREC-1_8)
             WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
             WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
-                 (WCAPBRKY(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
+                 (PHICAPY(ISEA),ISEA=1+(IPART-1)*NSIZE,                &
                    MIN(NSEA,IPART*NSIZE))
           END DO
 !
@@ -1279,7 +1279,7 @@ CONTAINS
           ENDIF
         ENDDO
 !
-!  Read WCAPBRKX/Y from rst file
+!  Read PHICAPX/Y from rst file
 !
         DO IPART=1,NPART
           NREC  = NREC + 1
@@ -1295,13 +1295,13 @@ CONTAINS
                (TMP2(ISEA),ISEA=1+(IPART-1)*NSIZE,                   &
                MIN(NSEA,IPART*NSIZE))
         END DO
-        WCAPBRKX = 0.
-        WCAPBRKY = 0.
+        PHICAPX = 0.
+        PHICAPY = 0.
         DO I=1, NSEALM
           J = IAPROC + (I-1)*NAPROC
           IF (J .LE. NSEA) THEN
-            WCAPBRKX(I) = TMP(J)
-            WCAPBRKY(I) = TMP2(J)
+            PHICAPX(I) = TMP(J)
+            PHICAPY(I) = TMP2(J)
           ENDIF
         ENDDO
 !

@@ -540,6 +540,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DISWCAPX'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAPY'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 #  endif
       to_add=':DISWCAP'
       cad=LEN_TRIM(to_add)
@@ -880,7 +890,7 @@
 # endif
      &                    THM, WLM, WLP, WBT, THS, QP,                  &
      &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY,             &
-     &                    WCAPBRKX, WCAPBRKY
+     &                    PHICAPX, PHICAPY
       USE W3ADATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
@@ -1004,7 +1014,7 @@
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
         cff=PHIBRKX(i)**2+PHIBRKY(i)**2
-        IF (cff.ge.1000.0) cff=0.
+        IF (cff.ge.10000.0) cff=0.
         SND_BUF(IP)=SQRT(cff)
       END DO
 !
@@ -1036,7 +1046,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        cff=MAX(PHIBRKX(i), 0.0)
+        cff=PHIBRKX(i)
+        IF (cff.le.-998.0) cff=0.0
         SND_BUF(IP)=cff
       END DO
 !
@@ -1067,7 +1078,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        cff=MAX(PHIBRKY(i), 0.0)
+        cff=PHIBRKY(i)
+        IF (cff.le.-998.0) cff=0.0
         SND_BUF(IP)=cff
       END DO
 !
@@ -1086,8 +1098,72 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "DISSURFY",avdata)
-# endif
-!-------------------------------------------------------------------
+!
+!  DISSURF: Dissipation white capping x-dir
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        IP=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(IP,1)
+        IY     = MAPSF(IP,2)
+        IP=(IY-1)*NX+IX
+        cff=PHICAPX(i)
+        IF (cff.le.-998.0) cff=0.0
+        SND_BUF(IP)=cff
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                             "DISWCAPX",avdata)
+!
+!  DISSURF: Dissipation white capping y-dir
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        IP=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(IP,1)
+        IY     = MAPSF(IP,2)
+        IP=(IY-1)*NX+IX
+        cff=PHICAPY(i)
+	IF (cff.le.-998.0) cff=0.0
+        SND_BUF(IP)=cff
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                             "DISWCAPY",avdata)
+#endif
+!
 !  DISWCAP: Dissipation white capping
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
@@ -1099,8 +1175,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        cff=WCAPBRKX(i)**2+WCAPBRKY(i)**2
-        IF (cff.ge.1000.0) cff=0.
+        cff=PHICAPX(i)**2+PHICAPY(i)**2
+        IF (cff.ge.10000.0) cff=0.
         SND_BUF(IP)=SQRT(cff)
       END DO
 !

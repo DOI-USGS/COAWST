@@ -3907,6 +3907,25 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+!
+!  Define wave dissipation due to white capping.
+!
+        IF (Hout(idWdiw,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdiw)
+          Vinfo( 2)=Vname(2,idWdiw)
+          Vinfo( 3)=Vname(3,idWdiw)
+          Vinfo(14)=Vname(4,idWdiw)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(21)=Vname(6,idWdiw)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdiw,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdiw),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
 # if defined DISSIP_BREAK_DIR
 !
 !  Define wave dissipation due to breaking x-dir.
@@ -3946,6 +3965,44 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+!
+!  Define wave dissipation due to white capping x-dir.
+!
+        IF (Hout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWcpx)
+          Vinfo( 2)=Vname(2,idWcpx)
+          Vinfo( 3)=Vname(3,idWcpx)
+          Vinfo(14)=Vname(4,idWcpx)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idWcpx)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWcpx,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWcpx),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+!
+!  Define wave dissipation due to white capping y-dir.
+!
+        IF (Hout(idWdib,ng)) THEN
+          Vinfo( 1)=Vname(1,idWcpy)
+          Vinfo( 2)=Vname(2,idWcpy)
+          Vinfo( 3)=Vname(3,idWcpy)
+          Vinfo(14)=Vname(4,idWcpy)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(21)=Vname(6,idWcpy)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWcpy,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWcpy),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
 # endif
 # if defined WAVE_PARTITION
 !
@@ -3968,25 +4025,6 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
-!
-!  Define wave dissipation due to white capping.
-!
-        IF (Hout(idWdiw,ng)) THEN
-          Vinfo( 1)=Vname(1,idWdiw)
-          Vinfo( 2)=Vname(2,idWdiw)
-          Vinfo( 3)=Vname(3,idWdiw)
-          Vinfo(14)=Vname(4,idWdiw)
-          Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-# endif
-          Vinfo(21)=Vname(6,idWdiw)
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idWdiw,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdiw),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
 #endif
 #if defined ROLLER_SVENDSEN || defined WW3_MODEL
 !
@@ -4669,6 +4707,12 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiy))) THEN
             got_var(idWdiy)=.TRUE.
             HIS(ng)%Vid(idWdiy)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWcpx))) THEN
+            got_var(idWcpx)=.TRUE.
+            HIS(ng)%Vid(idWcpx)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWcpy))) THEN
+            got_var(idWcpy)=.TRUE.
+            HIS(ng)%Vid(idWcpy)=var_id(i)            
 #endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdid))) THEN
             got_var(idWdid)=.TRUE.
@@ -5685,6 +5729,18 @@
         END IF
         IF (.not.got_var(idWdiy).and.Hout(idWdiy,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiy)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWcpx).and.Hout(idWcpx,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWcpx)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWcpy).and.Hout(idWcpy,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWcpy)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

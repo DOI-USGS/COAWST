@@ -1712,6 +1712,24 @@
   'r2dvar'
   0.00097561                                       !1/rho0
 
+'Dissip_wcapx'                                      ! Input
+  'wave dissipation due to white capping x-dir'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_wcapx, scalar, series'
+  'wave_time'
+  'idWcpx'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+
+'Dissip_wcapy'                                      ! Input
+  'wave dissipation due to white capping y-dir'
+  'Watts meter-2'                                  ! [W/m2]
+  'Dissip_wcapy, scalar, series'
+  'wave_time'
+  'idWcpy'
+  'r2dvar'
+  0.00097561                                       !1/rho0
+  
 'Dissip_roller'                                    ! Input
   'wave roller dissipation'
   'Watts meter-2'                                  ! [W/m2]

@@ -326,6 +326,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DISWCAPX'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAPY'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 #endif
       to_add=':DISWCAP'
       cad=LEN_TRIM(to_add)
@@ -1385,7 +1395,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          cff=A(ij)*ramp*fac
           IF (iw.eq.1) THEN
             FORCES(ng)%Dissip_breakx(i,j)=cff
           ELSE
@@ -1415,7 +1425,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          cff=A(ij)*ramp*fac
           IF (iw.eq.1) THEN
             FORCES(ng)%Dissip_breaky(i,j)=cff
           ELSE
@@ -1433,6 +1443,66 @@
         write(stdout,40) 'WW3toROMS Min/Max DISSURFY (Wm-2):  ',        &
      &                    range(1),range(2)
       END IF
+!  Get x and y dirs.  Rotate after surface streesses.
+!  Wave dissipation due white capping x-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAPX", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=A(ij)*ramp*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_wcapx(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_wcapx(i,j)=FORCES(ng)%Dissip_wcapx(i,j)+  &
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISWCAPX (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  Wave dissipation due to white capping y-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAPY", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=A(ij)*ramp*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_wcapy(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_wcapy(i,j)=FORCES(ng)%Dissip_wcapy(i,j)+  &
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISWCAPY (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #  ifdef CURVGRID
 !
 !  Waited until we used the stresses in N and E above before we
@@ -1445,8 +1515,14 @@
      &           FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%SinAngler(i,j)
             cff2=FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%CosAngler(i,j)- &
      &           FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%SinAngler(i,j)
+            cff3=FORCES(ng)%Dissip_wcapx(i,j)*GRID(ng)%CosAngler(i,j)+ &
+     &           FORCES(ng)%Dissip_wcapy(i,j)*GRID(ng)%SinAngler(i,j)
+            cff4=FORCES(ng)%Dissip_wcapy(i,j)*GRID(ng)%CosAngler(i,j)- &
+     &           FORCES(ng)%Dissip_wcapx(i,j)*GRID(ng)%SinAngler(i,j)
             FORCES(ng)%Dissip_breakx(i,j)=cff1
             FORCES(ng)%Dissip_breaky(i,j)=cff2
+            FORCES(ng)%Dissip_wcapx(i,j)=cff3
+            FORCES(ng)%Dissip_wcapy(i,j)=cff4
           END DO
         END DO
       END IF
@@ -2045,6 +2121,12 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  FORCES(ng)%Dissip_breaky)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_wcapx)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_wcapy)
 #endif
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -2063,6 +2145,12 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dissip_breaky)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_wcapx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_wcapy)
 # endif
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -2134,12 +2222,14 @@
      &                    FORCES(ng)%Dissip_fric,                       &
      &                    FORCES(ng)%Dissip_wcap)
 # ifdef DISSIP_BREAK_DIR
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Dissip_breakx,                     &
-     &                    FORCES(ng)%Dissip_breaky)
+     &                    FORCES(ng)%Dissip_breaky,                     &
+     &                    FORCES(ng)%Dissip_wcapx,                      &
+     &                    FORCES(ng)%Dissip_wcapy)
 # endif
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &

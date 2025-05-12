@@ -303,6 +303,8 @@
 # if defined DISSIP_BREAK_DIR
           real(r8), pointer :: Dissip_breakx(:,:)
           real(r8), pointer :: Dissip_breaky(:,:)
+          real(r8), pointer :: Dissip_wcapx(:,:)
+          real(r8), pointer :: Dissip_wcapy(:,:)
 # endif
           real(r8), pointer :: Dissip_wcap(:,:)
 # ifndef ANA_WWAVE
@@ -738,6 +740,10 @@
       allocate ( FORCES(ng) % Dissip_breakx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Dissip_breaky(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % Dissip_wcapx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % Dissip_wcapy(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # endif
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
@@ -1329,6 +1335,10 @@
      &                 __LINE__, 'FORCES(ng)%Dissip_breakx')) RETURN
       IF (.not.destroy(ng, FORCES(ng)%Dissip_breaky, MyFile,            &
      &                 __LINE__, 'FORCES(ng)%Dissip_breaky')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcapx, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcapx')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcapy, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcapy')) RETURN
 #  endif
       IF (.not.destroy(ng, FORCES(ng)%Dissip_wcap, MyFile,              &
      &                 __LINE__, 'FORCES(ng)%Dissip_wcap')) RETURN
@@ -1945,6 +1955,8 @@
 # if defined DISSIP_BREAK_DIR
             FORCES(ng) % Dissip_breakx(i,j) = IniVal
             FORCES(ng) % Dissip_breaky(i,j) = IniVal
+            FORCES(ng) % Dissip_wcapx(i,j) = IniVal
+            FORCES(ng) % Dissip_wcapy(i,j) = IniVal
 # endif
             FORCES(ng) % Dissip_wcap(i,j) = IniVal
 # ifndef ANA_WWAVE

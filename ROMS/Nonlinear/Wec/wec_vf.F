@@ -103,6 +103,8 @@
 # ifdef DISSIP_BREAK_DIR
      &                            FORCES(ng) % Dissip_breakx,           &
      &                            FORCES(ng) % Dissip_breaky,           &
+     &                            FORCES(ng) % Dissip_wcapx,            &
+     &                            FORCES(ng) % Dissip_wcapy,            &
 # endif
 # ifdef WEC_ROLLER
      &                            FORCES(ng) % Dissip_roller,           &
@@ -170,6 +172,7 @@
      &                                  Dissip_break,                   &
 # ifdef DISSIP_BREAK_DIR
      &                                  Dissip_breakx, Dissip_breaky,   &
+     &                                  Dissip_wcapx, Dissip_wcapy,     &
 # endif
 # ifdef WEC_ROLLER
      &                                  Dissip_roller,                  &
@@ -263,6 +266,8 @@
 #  ifdef DISSIP_BREAK_DIR
       real(r8), intent(in) :: Dissip_breakx(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_breaky(LBi:,LBj:)
+      real(r8), intent(in) :: Dissip_wcapx(LBi:,LBj:)
+      real(r8), intent(in) :: Dissip_wcapy(LBi:,LBj:)
 #  endif
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:,LBj:)
@@ -334,6 +339,8 @@
 #  ifdef DISSIP_BREAK_DIR
       real(r8), intent(in) :: Dissip_breakx(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_breaky(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Dissip_wcapx(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Dissip_wcapy(LBi:UBi,LBj:UBj)      
 #  endif
 #  ifdef WEC_ROLLER
       real(r8), intent(in) :: Dissip_roller(LBi:UBi,LBj:UBj)
@@ -733,11 +740,11 @@
             END DO
 # else
 #  ifdef DISSIP_BREAK_DIR
-            cff1=Dissip_breakx(i,j)
+            cff1=Dissip_breakx(i,j)+Dissip_wcapx(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBXbrk(i,j)=cff3*cff4*waven(i,j)
 !
-            cff1=Dissip_breaky(i,j)
+            cff1=Dissip_breaky(i,j)+Dissip_wcapy(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)
             BBYbrk(i,j)=cff3*cff4*waven(i,j)
 #  else
