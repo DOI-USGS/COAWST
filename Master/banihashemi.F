@@ -583,6 +583,15 @@
 !
             uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)
             vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)
+!jcw limiter
+            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
+     &                    SIGN(1.0_r8,uwavek(i,j,k))
+            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8)*               &
+     &                    SIGN(1.0_r8,vwavek(i,j,k))
+#  ifdef WET_DRY
+            uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
+            vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
+#  endif
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!jcw
 !
@@ -828,15 +837,6 @@
       DO k=1,MSCs
         DO j=Jstr-1,Jend
           DO i=Istr-1,Iend
-!jcw limiter
-            uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
-     &                    SIGN(1.0_r8,uwavek(i,j,k))
-            vwavek(i,j,k)=MIN(ABS(vwavek(i,j,k)),3.0_r8)*               &
-     &                    SIGN(1.0_r8,vwavek(i,j,k))
-#  ifdef WET_DRY
-            uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
-            vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
-#  endif
             u2avg(i,j)=0.25_r8*(uwavek(i,j  ,k)+uwavek(i+1,j  ,k)+      &
      &                          uwavek(i,j+1,k)+uwavek(i+1,j+1,k))
             v2avg(i,j)=0.25_r8*(vwavek(i,j  ,k)+vwavek(i+1,j  ,k)+      &
