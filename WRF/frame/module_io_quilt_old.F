@@ -703,7 +703,9 @@ okay_to_w = .false.
                CALL mpi_finalize(ierr)
 #endif
 #if defined WRF_COUPLING
-               CALL mpi_barrier (mpi_comm_local, ierr)
+               CALL mpi_barrier (MPI_COMM_WORLD, ierr)  ! call global comm, not local
+               ! the MCTWorld_clean call is probaly needed in between
+               CALL mpi_finalize(ierr)
 #endif
 #if ( DA_CORE != 1 )
             END IF
@@ -1708,8 +1710,15 @@ okay_to_w = .false.
 #ifdef GRIB2
             CALL ext_gr2_ioexit( Status )
 #endif
-            CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
-            CALL mpi_finalize(ierr)
+            CALL wrf_message ( 'I/O QUILT SERVERS DONE (PNC)' )
+#if !defined WRF_COUPLING
+               CALL mpi_finalize(ierr)
+#endif
+#if defined WRF_COUPLING
+               CALL mpi_barrier (MPI_COMM_WORLD, ierr)  ! call global comm, not local
+               ! the MCTWorld_clean call is probaly needed in between
+               CALL mpi_finalize(ierr)
+#endif
             STOP
           ELSE
             WRITE(mess,*)'Possible 32-bit overflow on output server. Try larger nio_tasks_per_group in namelist.'
