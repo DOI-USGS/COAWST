@@ -136,6 +136,11 @@ $  T  T  2    14   HCMAXE     MXHC  Max wave height from crest (STE)
 $  T  T  2    15   HMAXD      SDMH  St Dev of MXC (STE)
 $  T  T  2    16   HCMAXD     SDMHC St Dev of MXHC (STE)
 $  F  T  2    17   WBT        WBT   Dominant wave breaking probability bT
+$  F  T  2    18   TP         TP    Peak period
+$  F  T  2    19   WNM        WNM   Mean wave number.
+$  F  T  2    20   THM        THM   Mean wave direction.
+$  F  T  2    21   WLP        LP    Peak wave length.
+$  F  T  2    22   QB         QB    Perecent wave breaking.
 $   -------------------------------------------------
 $        3                          Spectral Parameters (first 5)
 $   -------------------------------------------------
@@ -194,6 +199,12 @@ $  F  F  6     9   P2SMS      P2L   Micro seism  source term
 $  F  F  6    10   TAUICE     TWI   Wave to sea ice stress
 $  F  F  6    11   PHICE      FIC   Wave to sea ice energy flux
 $  F  F  6    12   USSP       USP   Partitioned surface Stokes drift
+$  F  F  6    13   TAUOC[X,Y] TOC   Total ocean momentum component
+$  F  F  6    14   PHIBRK[X,Y] FDB  Energy flux due to depth limited breaking
+$  F  F  6    15   PHICAP[X,Y] FDW  Energy flux due to whitecapping
+$  F  F  6    16   STK_STOKES STK   Wave number term for stokes drift
+$  F  F  6    17   STU_STOKES STU   East current term for stokes drift
+$  F  F  6    18   STV_STOKES STV   North current term for stokes drift
 $   -------------------------------------------------
 $        7                          Wave-bottom layer 
 $   -------------------------------------------------
@@ -237,8 +248,9 @@ $ DPT CUR WND AST WLV ICE IBG D50 IC1 IC5
   T   T   T   T   T   F   F   F   F   F
 $ (2) Standard mean wave Parameters
   T
-$ HS  LM  T02 T0M1 T01 FP DIR SPR DP
-  T   T   T   T   T   T   T   T   T
+$ 1   2   3   4    5   6  7   8   9  10  11  12   13  14   15   16    17  18 19  20  21 22
+$ HS  LM  T02 T0M1 T01 FP DIR SPR DP HIG MXE MXES MXH MXHC SDMH SDMHC WBT TP WNM THM LP QB
+  T   T   T   T   T   T   T   T   T   F  F    F    F   F    F     F    F  T  T    F  T  T
 $ (3) Frequency-dependent parameters
   T
 $ EF TH1M STH1M TH2M STH2M WN
@@ -246,15 +258,15 @@ $ EF TH1M STH1M TH2M STH2M WN
 $ (4) Spectral Partition Parameters
   T
 $ PHS PTP PLP PDIR PSPR PWS TWS PNR
-  T   T   T   T   T   T   T   T
+  T   T   T   T    T    T   T   T
 $ (5) Atmosphere-waves layer
   T
 $ UST CHA CGE FAW TAW TWA WCC WCF WCH WCM
   T   T   T   T   T   T   T   T   T   T
 $ (6) Wave-Ocean layer
   T
-$ SXY TWO BHD FOC TUS USS P2S USF P2L TWI FIC
-  T   T   T   T   T   T   T   F   F   F   F
+$ SXY TWO BHD FOC TUS USS P2S USF P2L TWI FIC USP TAUOC(XY) FDB(XY) FDW(XY) STK STU STV
+  T   T   T   T   T   T   T   T   T   T   T    T     T        T       T     T   T   T
 $ (7) Wave-bottom layer
   T
 $ ABR UBR BED FBB TBB

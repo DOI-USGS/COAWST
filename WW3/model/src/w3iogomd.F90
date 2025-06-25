@@ -916,6 +916,14 @@ CONTAINS
       I = 2
       J = 20
 #endif
+#ifdef W3_COAWST_MODEL
+    CASE('LP')
+      I = 2
+      J = 21
+    CASE('QB')
+      I = 2
+      J = 22
+#endif
       !
       ! Group 3
       !
@@ -1087,6 +1095,23 @@ CONTAINS
     CASE('TOC')
       I = 6
       J = 13
+#ifdef W3_COAWST_MODEL
+    CASE('FDB')
+      I = 6
+      J = 14
+    CASE('FDW')
+      I = 6
+      J = 15
+    CASE('STK')
+      I = 6
+      J = 16
+    CASE('STU')
+      I = 6
+      J = 17
+    CASE('STV')
+      I = 6
+      J = 18
+#endif
       !
       ! Group 7
       !
@@ -1299,6 +1324,9 @@ CONTAINS
          ICPRT, DTPRT, WSCUT, NOSWLL, FLOGRD, FLOGR2,&
          NOGRP, NGRPP
     USE W3ADATMD, ONLY: NSEALM
+#ifdef W3_COAWST_MODEL
+    USE W3ADATMD, ONLY: WLP, STK_STOKES, STU_STOKES, STV_STOKES
+#endif
 #ifdef W3_S
     USE W3SERVMD, ONLY: STRACE
 #endif
@@ -1318,6 +1346,9 @@ CONTAINS
     INTEGER                 :: IK, ITH, JSEA, ISEA, IX, IY,         &
          IKP0(NSEAL), NKH(NSEAL),             &
          I, J, LKMS, HKMS, ITL
+#ifdef W3_COAWST_MODEL
+    INTEGER ISIGM
+#endif
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
@@ -1325,6 +1356,9 @@ CONTAINS
          AABS, UABS,                          &
          XL, XH, XL2, XH2, EL, EH, DENOM, KD, &
          M1, M2, MA, MB, MC, STEX, STEY, STED
+#ifdef W3_COAWST_MODEL
+    REAL DS, EMAX, ETD, ETOTX, ETOTY, ETOTXM1, ETOTYM1
+#endif
     REAL                    :: ET(NSEAL), EWN(NSEAL), ETR(NSEAL),   &
          ETX(NSEAL), ETY(NSEAL), AB(NSEAL),   &
          ETXX(NSEAL), ETYY(NSEAL), ETXY(NSEAL),&
@@ -1348,7 +1382,7 @@ CONTAINS
          T02P(NSEAL), NV(NSEAL), NS(NSEAL),   &
          NB(NSEAL), MODE(NSEAL),              &
          MU(NSEAL), NI(NSEAL), STMAXEL(NSEAL),&
-         PHI(21,NSEAL),PHIST(NSEAL),         &
+         PHI(21,NSEAL),PHIST(NSEAL),          &
          EBC(NK,NSEAL), ABP(NSEAL),           &
          STMAXDL(NSEAL), TLPHI(NSEAL),        &
          WL02X(NSEAL), WL02Y(NSEAL),          &
@@ -1462,6 +1496,9 @@ CONTAINS
     HMAXD = UNDEF
     QP    = UNDEF
     WBT    = UNDEF
+#ifdef W3_COAWST_MODEL
+    WLP    = UNDEF
+#endif
     !
     ! 2.  Integral over discrete part of spectrum ------------------------ *
     !
@@ -1668,7 +1705,62 @@ CONTAINS
 #endif
       !
     END DO
-
+#ifdef W3_COAWST_MODEL
+!
+!  Compute wlp, uss vss kss for stokes in ROMS
+!
+    DO JSEA=1, NSEAL
+      CALL INIT_GET_ISEA(ISEA, JSEA)
+      IX     = MAPSF(ISEA,1)
+      IY     = MAPSF(ISEA,2)
+      ETOTXM1 = 0.
+      ETOTYM1 = 0.
+      EMAX = 0.
+      ISIGM = -1
+!  wlp , assume peak wl is not the first bin
+      DO IK=2, NK
+        ETD = 0.
+        FACTOR = WN(IK,ISEA)*SIG(IK)*DTH/CG(IK,ISEA)
+        ETOTX = 0.
+        ETOTY = 0.
+        DO ITH=1, NTH
+          ETD = ETD + A(ITH,IK,JSEA)*FACTOR
+          ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
+          ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
+        ENDDO
+        IF (ETD.GT.EMAX) THEN
+          EMAX  = ETD
+          ISIGM = IK
+        ENDIF
+!  Convert from A(theta,k) to E(theta,freq)
+        ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)
+        ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)
+!
+        DS = SIG(IK) - SIG(IK-1)
+        STU_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTXM1*SIG(IK-1)**2.0)
+        STV_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
+     &                           +WN(IK-1,ISEA)*ETOTYM1*SIG(IK-1)**2.0)
+        ETOTXM1 = ETOTX
+        ETOTYM1 = ETOTY
+        STK_STOKES(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
+      END DO
+!
+!  Compute last freq.
+!
+      STU_STOKES(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTX*SIG(NK)**3.0
+      STV_STOKES(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTY*SIG(NK)**3.0
+      STK_STOKES(JSEA,NK) = WN(NK,ISEA)
+!
+!  Finish WLP
+!
+      IF (ISIGM.GT.0) THEN
+        WLP(JSEA) = 2.*PI/WN(ISIGM,ISEA)
+      ELSE
+        WLP(JSEA) = 0.
+      ENDIF
+    END DO
+#endif
     !
     ! Start of Space-Time Extremes Section
     IF ( ( STEXU .GT. 0. .AND. STEYU .GT. 0. ) &
@@ -2471,7 +2563,7 @@ CONTAINS
          PHS, PTP, PLP, PDIR, PSI, PWS,    &
          PWST, PNR, USERO, TUSX, TUSY, PRMS, TPMS,   &
          MSSX, MSSY, MSSD, MSCX, MSCY,   &
-         USS_COAWST, VSS_COAWST, KSS_COAWST,         &
+         STK_STOKES, STU_STOKES, STV_STOKES,         &
          MSCD, CHARN,                                &
          CGE, P2SMS, US3D, EF, TH1M, STH1M,          &
          TH2M, STH2M, HSIG, STMAXE, STMAXD,          &
@@ -2500,8 +2592,7 @@ CONTAINS
     !/
     INTEGER                 :: IK, ITH, JSEA, ISEA, IX, IY,         &
          IKP0(NSEAL),                                               &
-         I, J, LKMS, HKMS, ITL
-    INTEGER                 :: COAWST_YES, ISIGM
+         I, J, LKMS, HKMS, ITL, ISIGM
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
@@ -2545,7 +2636,6 @@ CONTAINS
     FXPMC  = 0.66 * GRAV / 28.
     HSMIN  = HSMIN
     FT1    =  0.3333 * SIG(NK)**2 * DTH * SIG(NK)
-    COAWST_YES=1
     !
     ! 1.  Initialize storage arrays -------------------------------------- *
     !
@@ -2564,9 +2654,9 @@ CONTAINS
     UBA    = 0.
     UBD    = 0.
     UBS    = 0.
-    USS_COAWST   = 0.
-    VSS_COAWST   = 0.
-    KSS_COAWST   = 0.
+    STK_STOKES   = 0.
+    STU_STOKES   = 0.
+    STV_STOKES   = 0.
     TUSX   = 0.
     TUSY   = 0.
     MSSX   = 0.
@@ -2695,7 +2785,6 @@ CONTAINS
 #endif
       !
     END DO
-#ifdef W3_COAWST_MODEL
 !
 !  Compute uss vss kss for stokes in ROMS
 !
@@ -2735,13 +2824,13 @@ CONTAINS
         ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)  !/TPI
 !
         DS = SIG(IK) - SIG(IK-1)
-        USS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
+        STU_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
      &                           +WN(IK-1,ISEA)*ETOTXM1*SIG(IK-1)**2.0)
-        VSS_COAWST(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
+        STV_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTY*SIG(IK)**2.0        &
      &                           +WN(IK-1,ISEA)*ETOTYM1*SIG(IK-1)**2.0)
         ETOTXM1 = ETOTX
         ETOTYM1 = ETOTY
-        KSS_COAWST(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
+        STK_STOKES(JSEA,IK-1) = 0.5*(WN(IK,ISEA)+WN(IK-1,ISEA))
       END DO
 !wlp
       IF (ISIGM.GT.0) THEN
@@ -2753,14 +2842,10 @@ CONTAINS
 !
 !  Compute last freq.
 !
-      USS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTX*SIG(NK)**3.0
-      VSS_COAWST(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTY*SIG(NK)**3.0
-      KSS_COAWST(JSEA,NK) = WN(NK,ISEA)
+      STU_STOKES(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTX*SIG(NK)**3.0
+      STV_STOKES(JSEA,NK) = 2.0*WN(NK,ISEA)*ETOTY*SIG(NK)**3.0
+      STK_STOKES(JSEA,NK) = WN(NK,ISEA)
     END DO
-#endif
-
-!    jcw removed space time extremes.
-
     !
     ! 3.  Finalize computation of mean parameters ------------------------ *
     !
@@ -2789,7 +2874,6 @@ CONTAINS
     !$OMP END PARALLEL DO
 #endif
     !
-    IF (COAWST_YES.eq.1) THEN
 #ifdef W3_OMPG
     !$OMP PARALLEL DO PRIVATE(JSEA,ISEA,IX,IY)
 #endif
@@ -3019,10 +3103,6 @@ CONTAINS
 #ifdef W3_OMPG
     !$OMP END PARALLEL DO
 #endif
-
-    END IF           !  CYES
-
-!   CALL CALC_U3STOKES(A,1)
     !
     RETURN
     !
@@ -3173,7 +3253,7 @@ CONTAINS
          WBT, WNMEAN
     USE W3ADATMD, ONLY: DTDYN, FCUT, ABA, ABD, UBA, UBD, SXX, SYY, SXY,&
          PHS, PTP, PLP, PDIR, PSI, PWS, PWST, PNR,    &
-         PTHP0, PQP, PPE, PGW, PSW, PTM1, PT1, PT2,  &
+         PTHP0, PQP, PPE, PGW, PSW, PTM1, PT1, PT2,   &
          PEP, USERO, TAUOX, TAUOY, TAUWIX, TAUWIY,    &
          PHIAW, PHIOC, TUSX, TUSY, PRMS, TPMS,        &
          USSX, USSY, MSSX, MSSY, MSSD, MSCX, MSCY,    &
@@ -3183,6 +3263,11 @@ CONTAINS
          TH1M, STH1M, TH2M, STH2M, HSIG, PHICE, TAUICE,&
          STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
          USSP, TAUOCX, TAUOCY
+#ifdef W3_COAWST_MODEL
+    USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY, PHICAPX, PHICAPY, &
+                        WLP, QB,                            &
+                        STK_STOKES, STU_STOKES, STV_STOKES
+#endif
     !/
     USE W3ODATMD, ONLY: NOGRP, NGRPP, IDOUT, UNDEF, NDST, NDSE,     &
          FLOGRD, IPASS => IPASS1, WRITE => WRITE1,   &
@@ -3461,6 +3546,10 @@ CONTAINS
           IF ( FLOGRD( 2,16) ) HCMAXD(ISEA) = UNDEF
           IF ( FLOGRD( 2,17) ) WBT   (ISEA) = UNDEF
           IF ( FLOGRD( 2,19) ) WNMEAN(ISEA) = UNDEF
+#ifdef W3_COAWST_MODEL
+          IF ( FLOGRD( 2,21) ) WLP(ISEA) = UNDEF
+          IF ( FLOGRD( 2,22) ) QB(ISEA)  = UNDEF
+#endif
           !
           IF ( FLOGRD( 3, 1) ) EF   (ISEA,:) = UNDEF
           IF ( FLOGRD( 3, 2) ) TH1M (ISEA,:) = UNDEF
@@ -3534,6 +3623,25 @@ CONTAINS
             TAUOCX(ISEA) = UNDEF
             TAUOCY(ISEA) = UNDEF
           END IF
+#ifdef W3_COAWST_MODEL
+          IF ( FLOGRD( 6, 14) ) THEN
+            PHIBRKX(ISEA) = UNDEF
+            PHIBRKY(ISEA) = UNDEF
+          END IF
+          IF ( FLOGRD( 6, 15) ) THEN
+            PHICAPX(ISEA) = UNDEF
+            PHICAPY(ISEA) = UNDEF
+          END IF
+          IF ( FLOGRD( 6, 16) ) THEN
+            STK_STOKES(ISEA,:) = UNDEF
+          END IF
+          IF ( FLOGRD( 6, 17) ) THEN
+            STU_STOKES(ISEA,:) = UNDEF
+          END IF
+          IF ( FLOGRD( 6, 18) ) THEN
+            STV_STOKES(ISEA,:) = UNDEF
+          END IF
+#endif
           !
           IF ( FLOGRD( 7, 1) ) THEN
             ABA   (ISEA) = UNDEF
@@ -3725,6 +3833,12 @@ CONTAINS
               WRITE ( NDSOG ) WBT(1:NSEA)
             ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 19 ) THEN
               WRITE ( NDSOG ) WNMEAN(1:NSEA)
+#ifdef W3_COAWST_MODEL
+            ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 21 ) THEN
+              WRITE ( NDSOG ) WLP(1:NSEA)
+            ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 22 ) THEN
+              WRITE ( NDSOG ) QB(1:NSEA)
+#endif
               !
               !     Section 3)
               !
@@ -3857,6 +3971,20 @@ CONTAINS
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 13 ) THEN
               WRITE ( NDSOG ) TAUOCX(1:NSEA)
               WRITE ( NDSOG ) TAUOCY(1:NSEA)
+#ifdef W3_COAWST_MODEL
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
+              WRITE ( NDSOG ) PHIBRKX(1:NSEA)
+              WRITE ( NDSOG ) PHIBRKY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+              WRITE ( NDSOG ) PHICAPX(1:NSEA)
+              WRITE ( NDSOG ) PHICAPY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
+              WRITE ( NDSOG ) STK_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
+              WRITE ( NDSOG ) STU_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+              WRITE ( NDSOG ) STV_STOKES(1:NSEA,1:NK)
+#endif
               !
               !     Section 7)
               !
@@ -4024,6 +4152,12 @@ CONTAINS
             ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 19 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    WNMEAN(1:NSEA)
+#ifdef W3_COAWST_MODEL
+            ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 21 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) WLP(1:NSEA)
+            ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 22 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) QB(1:NSEA)
+#endif
               !
               !     Section 3)
               !
@@ -4198,7 +4332,27 @@ CONTAINS
                    TAUOCX(1:NSEA)
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    TAUOCY(1:NSEA)
-
+#ifdef W3_COAWST_MODEL
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   PHIBRKX(1:NSEA)
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   PHIBRKY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   PHICAPX(1:NSEA)
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   PHICAPY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   STK_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   STU_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   STV_STOKES(1:NSEA,1:NK)
+#endif
               !
               !     Section 7)
               !

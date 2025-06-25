@@ -566,7 +566,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':TMBOT'
+      to_add=':ABOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -886,7 +886,7 @@
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA,            &
 # ifdef SPECTRUM_STOKES
-     &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
+     &                    USS_STOKES, VSS_STOKES, KSS_STOKES,           &
 # endif
      &                    THM, WLM, WLP, WBT, THS, QP,                  &
      &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY,             &
@@ -1258,7 +1258,7 @@
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "RTP",avdata)
 !-------------------------------------------------------------------
-!  TMBOT: Mean bottom period
+!  ABOT: Mean bottom period
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
@@ -1269,7 +1269,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=T0M1(i)
+        SND_BUF(IP)=ABA(i)
       END DO
 !
 !  Gather up all the data.
@@ -1286,7 +1286,7 @@
         avdata(IP)=REAL(RCV_BUF(i),m8)
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
-     &                             "TMBOT",avdata)
+     &                             "ABOT",avdata)
 !-------------------------------------------------------------------
 !  UBOT: bottom orbitral velocity
 !
@@ -1597,7 +1597,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=KSS_COAWST(i,IZ)
+          SND_BUF(IP)=KSS_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1632,7 +1632,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=USS_COAWST(i,IZ)
+          SND_BUF(IP)=USS_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1667,7 +1667,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=VSS_COAWST(i,IZ)
+          SND_BUF(IP)=VSS_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.

@@ -2149,8 +2149,9 @@ CONTAINS
          PTM1, PT1, PT2, PEP, WBT, CX, CY,         &
          TAUOCX, TAUOCY, WNMEAN
 # ifdef W3_COAWST_MODEL
-    USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY
-    USE W3ADATMD, ONLY: PHICAPX, PHICAPY
+    USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY,          &
+         PHICAPX, PHICAPY, WLP, QB,                &
+         STK_STOKES, STU_STOKES, STV_STOKES
 # endif
 #endif
 
@@ -2259,6 +2260,15 @@ CONTAINS
       IF ( FLGRDALL( 6,9)) NRQMAX = NRQMAX + P2MSF(3) - P2MSF(2) + 1
       IF ( FLGRDALL( 6, 8) ) NRQMAX = NRQMAX + 2*NK
       IF ( FLGRDALL( 6,12) ) NRQMAX = NRQMAX + 2*NK
+#ifdef W3_COAWST_MODEL
+      IF ( FLGRDALL( 2,21) ) NRQMAX = NRQMAX + 1
+      IF ( FLGRDALL( 2,22) ) NRQMAX = NRQMAX + 1
+      IF ( FLGRDALL( 6,14) ) NRQMAX = NRQMAX + 2
+      IF ( FLGRDALL( 6,15) ) NRQMAX = NRQMAX + 2
+      IF ( FLGRDALL( 6,16) ) NRQMAX = NRQMAX + NK
+      IF ( FLGRDALL( 6,17) ) NRQMAX = NRQMAX + NK
+      IF ( FLGRDALL( 6,18) ) NRQMAX = NRQMAX + NK
+#endif
       !
       IF ( NRQMAX .GT. 0 ) THEN
         ALLOCATE ( OUTPTS(IMOD)%OUT1%IRQGO(NRQMAX) )
@@ -2274,6 +2284,19 @@ CONTAINS
       IF ( IAPROC .LE. NAPROC ) THEN
         IT     = IT0
 #endif
+#ifdef W3_COAWST_MODEL
+      ! Force certain vars to be allocated to full size for his file.
+      FLOGRR(2,21)=.TRUE.                       !  WLP
+      FLOGRR(2,22)=.TRUE.                       !  QB
+      FLOGRR(6,13)=.TRUE.                       !  TAUOCX/Y
+      FLOGRR(6,14)=.TRUE.                       !  PHIBRKX/Y
+      FLOGRR(6,15)=.TRUE.                       !  PHICAPX/Y
+      FLOGRR(6,16)=.TRUE.                       !  STK stokes
+      FLOGRR(6,17)=.TRUE.                       !  STU stokes
+      FLOGRR(6,18)=.TRUE.                       !  STV stokes
+      FLOGRR(7, 4)=.TRUE.                       !  PHIBBL
+#endif
+
 #ifdef W3_MPIT
         WRITE (NDST,9010) '(SEND)'
 #endif
@@ -2508,6 +2531,34 @@ CONTAINS
 #ifdef W3_MPI
         END IF
         !
+#ifdef W3_COAWST_MODEL
+# endif
+# ifdef W3_MPI
+        !
+        IF ( FLGRDALL( 2, 21) ) THEN
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (WLP(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 2/21', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+        END IF
+        !
+        IF ( FLGRDALL( 2, 22) ) THEN
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (QB(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 2/22', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+        END IF
+#endif
         IF ( FLGRDALL( 3, 1) ) THEN
           DO IK=E3DF(2,1),E3DF(3,1)
             IH     = IH + 1
@@ -3214,6 +3265,94 @@ CONTAINS
 #endif
 #ifdef W3_MPI
         END IF
+#ifdef W3_COAWST_MODEL
+# endif
+# ifdef W3_MPI
+        !
+        IF ( FLGRDALL( 6, 14) ) THEN
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (PHIBRKX(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 6/14', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (PHIBRKY(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 6/14', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+        END IF
+        !
+        IF ( FLGRDALL( 6, 15) ) THEN
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (PHICAPX(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 6/15', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+          IH     = IH + 1
+          IT     = IT + 1
+          CALL MPI_SEND_INIT (PHICAPY(1),NSEALM , MPI_REAL, IROOT,   &
+               IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+          WRITE (NDST,9011) IH, ' 6/15', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+        END IF
+        !
+        IF ( FLGRDALL( 6, 16) ) THEN
+          DO IK=1,NK
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_SEND_INIT (STK_STOKES(1,IK),NSEALM , MPI_REAL, IROOT,  &
+                 IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, 'STK  ', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+          END DO
+        END IF
+        !
+        IF ( FLGRDALL( 6, 17) ) THEN
+          DO IK=1,NK
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_SEND_INIT (STU_STOKES(1,IK),NSEALM , MPI_REAL, IROOT,  &
+                 IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, 'STU  ', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+          END DO
+        END IF
+        !
+        IF ( FLGRDALL( 6, 18) ) THEN
+          DO IK=1,NK
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_SEND_INIT (STV_STOKES(1,IK),NSEALM , MPI_REAL, IROOT,  &
+                 IT, MPI_COMM_WAVE, IRQGO(IH), IERR)
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, 'STV  ', IROOT, IT, IRQGO(IH), IERR
+# endif
+# ifdef W3_MPI
+          END DO
+        END IF
+#endif
         !
         IF ( FLGRDALL( 7, 1) ) THEN
           IH     = IH + 1
@@ -3741,6 +3880,34 @@ CONTAINS
 #endif
 #ifdef W3_MPI
           END IF
+#ifdef W3_COAWST_MODEL
+# endif
+# ifdef W3_MPI
+          !
+          IF ( FLGRDALL( 2, 21) ) THEN
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (WLP(I0),1,WW3_FIELD_VEC, IFROM, IT, &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 2/21', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+          END IF
+          !
+          IF ( FLGRDALL( 2, 22) ) THEN
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (QB(I0),1,WW3_FIELD_VEC, IFROM, IT, &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 2/22', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+          END IF
+#endif
           !
           IF ( FLGRDALL( 3, 1) ) THEN
             DO IK=E3DF(2,1),E3DF(3,1)
@@ -4447,6 +4614,94 @@ CONTAINS
 #endif
 #ifdef W3_MPI
           END IF
+#ifdef W3_COAWST_MODEL
+# endif
+# ifdef W3_MPI
+          !
+          IF ( FLGRDALL( 6, 14) ) THEN
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (PHIBRKX(I0),1,WW3_FIELD_VEC, IFROM, IT,  &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 6/14', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (PHIBRKY(I0),1,WW3_FIELD_VEC, IFROM, IT,  &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 6/14', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+          END IF
+          !
+          IF ( FLGRDALL( 6, 15) ) THEN
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (PHICAPX(I0),1,WW3_FIELD_VEC, IFROM, IT,  &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 6/15', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+            IH     = IH + 1
+            IT     = IT + 1
+            CALL MPI_RECV_INIT (PHICAPY(I0),1,WW3_FIELD_VEC, IFROM, IT,  &
+                 MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+            WRITE (NDST,9011) IH, ' 6/15', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+          END IF
+          !
+          IF ( FLGRDALL( 6, 16) ) THEN
+            DO IK=1,NK
+              IH     = IH + 1
+              IT     = IT + 1
+              CALL MPI_RECV_INIT (STK_STOKES(I0,IK),1,WW3_FIELD_VEC, IFROM, IT, &
+                   MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+              WRITE (NDST,9011) IH, 'STK  ', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+            END DO
+          END IF
+          !
+          IF ( FLGRDALL( 6, 17) ) THEN
+            DO IK=1,NK
+              IH     = IH + 1
+              IT     = IT + 1
+              CALL MPI_RECV_INIT (STU_STOKES(I0,IK),1,WW3_FIELD_VEC, IFROM, IT, &
+                   MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+              WRITE (NDST,9011) IH, 'STU  ', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+            END DO
+          END IF
+          !
+          IF ( FLGRDALL( 6, 18) ) THEN
+            DO IK=1,NK
+              IH     = IH + 1
+              IT     = IT + 1
+              CALL MPI_RECV_INIT (STV_STOKES(I0,IK),1,WW3_FIELD_VEC, IFROM, IT, &
+                   MPI_COMM_WAVE, IRQGO2(IH), IERR )
+# endif
+# ifdef W3_MPIT
+              WRITE (NDST,9011) IH, 'STV  ', IFROM, IT, IRQGO2(IH), IERR
+# endif
+# ifdef W3_MPI
+            END DO
+          END IF
+#endif
           !
           IF ( FLGRDALL( 7, 1) ) THEN
             IH     = IH + 1

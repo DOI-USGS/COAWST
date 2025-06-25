@@ -969,7 +969,7 @@ CONTAINS
     SPEC3  = 0.
     VS3    = 0.
     VD3    = 0.
-    oDTG=1.0/DTG
+    oDTG   = 1.0/DTG
 #endif
     !
     DRAT  = DAIR / DWAT
@@ -1868,14 +1868,16 @@ CONTAINS
 #endif
         END DO
 #ifdef W3_COAWST_MODEL
+# ifdef W3_DB1
 !  Here we compute breaking stress in W/m2
         PHIBRKX = PHIBRKX + A1BAND
         PHIBRKY = PHIBRKY + B1BAND
-        PHICAPX = PHICAPX + A2BAND
-        PHICAPY = PHICAPY + B2BAND
 !  Here we compute breaking stress in N/m2
         TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
         TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
+# endif
+        PHICAPX = PHICAPX + A2BAND
+        PHICAPY = PHICAPY + B2BAND
 #endif
       END DO
       WHITECAP(3)=4.*SQRT(WHITECAP(3))
@@ -2043,15 +2045,15 @@ CONTAINS
       END DO
 #ifdef W3_COAWST_MODEL
      DO IK=NKH+1, NK
-#ifdef W3_ST2
+# ifdef W3_ST2
         FACDIA = MAX ( 0. , MIN ( 1., (SIG(IK)-FHTRAN)/DFH) )
         FACPAR = MAX ( 0. , 1.-FACDIA )
-#endif
+# endif
         DO ITH=1, NTH
           SPEC3(ITH+(IK-1)*NTH) = SPEC3(ITH+(IK-2)*NTH) * FACHFA         &
-#ifdef W3_ST2
+# ifdef W3_ST2
                * FACDIA + FACPAR * SPEC3(ITH+(IK-1)*NTH)            &
-#endif
+# endif
                + 0.
         END DO
       END DO
@@ -2153,8 +2155,6 @@ CONTAINS
     END DO
     !
     ! Transformation in momentum flux in m^2 / s^2
-
-#ifdef W3_COAWST_MODEL
     TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
     TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
     TAUWIX=TAUWIX*oDTG     
@@ -2162,34 +2162,20 @@ CONTAINS
     TAUWNX=TAUWNX*oDTG
     TAUWNY=TAUWNY*oDTG
     TAUBBL(:)=TAUBBL(:)*oDTG
-#else
-    TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))/DTG
-    TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))/DTG
-    TAUWIX=TAUWIX/DTG
-    TAUWIY=TAUWIY/DTG
-    TAUWNX=TAUWNX/DTG
-    TAUWNY=TAUWNY/DTG
-    TAUBBL(:)=TAUBBL(:)/DTG
-#endif
     TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX-TAUWIX)
     TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY-TAUWIY)
     !
     ! Transformation in wave energy flux in W/m^2=kg / s^3
     !
-#ifdef W3_COAWST_MODEL
     PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)*oDTG
     PHIAW =DWAT*GRAV*PHIAW *oDTG
     PHINL =DWAT*GRAV*PHINL *oDTG
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
+#ifdef W3_COAWST_MODEL
     PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
     PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
     PHICAPX=DWAT*GRAV*PHICAPX*oDTG
     PHICAPY=DWAT*GRAV*PHICAPY*oDTG
-#else
-    PHIOC =DWAT*GRAV*(EFINISH+PHIAW-PHIBBL)/DTG
-    PHIAW =DWAT*GRAV*PHIAW /DTG
-    PHINL =DWAT*GRAV*PHINL /DTG
-    PHIBBL=DWAT*GRAV*PHIBBL/DTG
 #endif
     !
     ! 10.1  Adds ice scattering and dissipation: implicit integration---------------- *

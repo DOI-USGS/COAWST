@@ -321,7 +321,11 @@ MODULE W3ODATMD
   INTEGER                 :: NOUTP = -1, IOUTP = -1, IOSTYP = 1
   !
   INTEGER, PARAMETER      :: NOGRP = 10
+#ifdef W3_COAWST_MODEL
+  INTEGER, PARAMETER      :: NGRPP = 22
+#else
   INTEGER, PARAMETER      :: NGRPP = 20
+#endif
   INTEGER, PARAMETER      :: DIMP = 15
   INTEGER                 :: NOGE(NOGRP)
   INTEGER                 :: NOTYPE
@@ -774,6 +778,9 @@ CONTAINS
 #ifdef W3_OASOCM
     NOGE(2) = 20
 #endif
+#ifdef W3_COAWST_MODEL
+    NOGE(2) = 22
+#endif
     !
     IDOUT( 2, 1)  = 'Wave height         '
     IDOUT( 2, 2)  = 'Mean wave length    '
@@ -796,6 +803,10 @@ CONTAINS
     IDOUT( 2, 19)  = 'Mean wave number   '
 #ifdef W3_OASOCM
     IDOUT( 2, 20) = 'Mean wave dir. norot'
+#endif
+#ifdef W3_COAWST_MODEL
+    IDOUT( 2, 21)  = 'Peak wave length'
+    IDOUT( 2, 22)  = 'Percent wave breaking'
 #endif
     !      IDOUT( 2,10)  = 'Mean wave dir. a2b2'
     !      IDOUT( 2,11)  = 'Mean dir. spr. a2b2'
@@ -870,6 +881,14 @@ CONTAINS
     IDOUT( 6,11)  = 'Wave-ice energy flux'
     IDOUT( 6,12)  = 'Split Surface Stokes'
     IDOUT( 6,13)  = 'Tot wav-ocn mom flux'
+#ifdef W3_COAWST_MODEL
+    NOGE(6) = 18
+    IDOUT( 6,14)  = 'Dissip brk depth lim'
+    IDOUT( 6,15)  = 'Dissip white capping'
+    IDOUT( 6,16)  = 'Stokes wave number'
+    IDOUT( 6,17)  = 'Stokes u-current'
+    IDOUT( 6,18)  = 'Stokes v-current'
+#endif
     !
     ! 7) Wave-bottom layer
     !

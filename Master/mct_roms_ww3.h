@@ -352,7 +352,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':TMBOT'
+      to_add=':ABOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -1209,11 +1209,6 @@
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
       real(r8) :: Dstp, sigma, waven
 
-#ifdef WAV2OCN_FLUXES
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taue
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taun
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: fac1
-#endif
       real(r8), dimension(2) :: range
       real(r8), pointer :: A(:)
       real(r8), pointer :: A1(:)
@@ -1617,35 +1612,6 @@
         write(stdout,40) 'WW3toROMS Min/Max RTP     (s):     ',         &
      &                    range(1),range(2)
       END IF
-!
-!  Bottom mean wave period.
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TMBOT",    &
-     &                           A, Asize)
-      range(1)= Large
-      range(2)=-Large
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
-          IF (iw.eq.1) THEN
-            FORCES(ng)%Pwave_bot(i,j)=cff
-          ELSE
-            FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
-     &                                cff
-          END IF
-          range(1)=MIN(range(1),cff)
-          range(2)=MAX(range(2),cff)
-        END DO
-      END DO
-# ifdef DISTRIBUTE
-      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
-# endif
-      IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'WW3toROMS Min/Max TMBOT   (s):     ',         &
-     &                    range(1),range(2)
-      END IF
 #if defined BBL_MODEL
 !
 !  Bottom orbital velocity (m/s).
@@ -1674,6 +1640,37 @@
 # endif
       IF (Myrank.eq.MyMaster) THEN
         write(stdout,40) 'WW3toROMS Min/Max UBOT    (ms-1):  ',         &
+     &                    range(1),range(2)
+      END IF
+!
+!  Compute bottom mean wave period.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "ABOT",    &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Pwave_bot(i,j)=2.0_r8*PI*cff/                    &
+     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+          ELSE
+            FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
+     &                                2.0_r8*PI*cff/                    &
+     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max TMBOT   (s):     ',         &
      &                    range(1),range(2)
       END IF
 #endif
