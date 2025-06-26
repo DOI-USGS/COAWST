@@ -884,9 +884,9 @@
       USE MCT_COUPLER_PARAMS
       USE CONSTANTS, ONLY: PI
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH
-      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA,            &
+      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA, ABA,       &
 # ifdef SPECTRUM_STOKES
-     &                    USS_STOKES, VSS_STOKES, KSS_STOKES,           &
+     &                    STK_STOKES, STU_STOKES, STV_STOKES,           &
 # endif
      &                    THM, WLM, WLP, WBT, THS, QP,                  &
      &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY,             &
@@ -1583,7 +1583,7 @@
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
 !
-!  KSS
+!  STK
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "KS0",IZ
@@ -1597,7 +1597,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=KSS_STOKES(i,IZ)
+          SND_BUF(IP)=STK_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1618,7 +1618,7 @@
      &                             SCODE,avdata)
       END DO
 !
-!  USS
+!  STU
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "US0",IZ
@@ -1632,7 +1632,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=USS_STOKES(i,IZ)
+          SND_BUF(IP)=STU_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1653,7 +1653,7 @@
      &                             SCODE,avdata)
       END DO
 !
-!  VSS
+!  STV
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "VS0",IZ
@@ -1667,7 +1667,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=VSS_STOKES(i,IZ)
+          SND_BUF(IP)=STV_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
