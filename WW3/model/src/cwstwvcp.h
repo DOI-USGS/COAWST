@@ -180,9 +180,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           run_couple=1
-!         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAV2OCN(Nwav_grids,1)).ne.0) run_couple=0
-!         IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
@@ -200,9 +198,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           run_couple=1
-!         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAVFOCN(Nwav_grids,1)).ne.0) run_couple=0
-!         IF (MOD(first, nWAVFOCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
@@ -221,13 +217,14 @@
 !
 !     Call to get data from atm model.
       DO iw=1,Nwav_grids
-!        CALL INIT_POINTERS(iw)
-!        CALL INIT_COUPLING_POINTERS(iw)
         DO ia=1,Natm_grids
           run_couple=1
-!          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAVFATM(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAVFATM(Natm_grids,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL W3SETW ( iw, MDSE, MDST )
             CALL WAVFATM_COUPLING (iw, ia)
           ELSE
             GOTO 55
@@ -238,13 +235,14 @@
 !
 !     Send data to atm model.
       DO iw=1,Nwav_grids
-!        CALL INIT_POINTERS(iw)
-!        CALL INIT_COUPLING_POINTERS(iw)
         DO ia=1,Natm_grids
           run_couple=1
-!          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAV2ATM(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAV2ATM(Natm_grids,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL W3SETW ( iw, MDSE, MDST )
             CALL WAV2ATM_COUPLING (iw, ia)
           ELSE
             GOTO 45
