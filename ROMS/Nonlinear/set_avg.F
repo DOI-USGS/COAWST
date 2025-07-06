@@ -3865,6 +3865,7 @@
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgAKr)
 #    endif
+            END IF
 #   endif
 #  endif
 
