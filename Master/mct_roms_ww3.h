@@ -711,14 +711,13 @@
       integer :: iveg
 #endif
 
-      real(r8) :: add_offset, scale
-      real(r8) :: cff, ramp
-      real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
+      real(dp) :: cff, ramp
+      real(dp) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v2wav
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: v2wav
 
-      real(r8), pointer :: A(:)
+      real(dp), pointer :: A(:)
 #if defined UV_BANIHASHEMI
       character (len=6) :: SCODE
 #endif
@@ -754,7 +753,7 @@
       Asize=GlobalSegMap_lsize (GlobalSegMap_G(ng)%GSMapROMS,           &
      &      OCN_COMM_WORLD)
       allocate ( A(Asize) )
-      A=0.0_r8
+      A=0.0_dp
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 !
@@ -768,7 +767,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          A(ij)=GRID(ng)%h(i,j)
+          A(ij)=REAL(GRID(ng)%h(i,j),dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "DEPTH",    &
@@ -781,9 +780,9 @@
         DO i=IstrR,IendR
           ij=ij+1
 #ifdef ZETA_CONST
-          A(ij)=0.0_r8
+          A(ij)=0.0_dp
 #else
-          A(ij)=OCEAN(ng)%zeta(i,j,knew(ng))
+          A(ij)=REAL(OCEAN(ng)%zeta(i,j,knew(ng)),dp)
 #endif
         END DO
       END DO
@@ -801,39 +800,40 @@
       DO j=JstrR,JendR
         DO i=Istr,Iend
 # ifdef UV_CONST
-          u2wav(i,j)=0.0_r8
+          u2wav(i,j)=0.0_dp
 # else
 #  ifdef SOLVE3D
 #   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
-          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
-          cff1=0.0_r8
-          cff2=2.0_r8*kwn*prof
-          IF (cff2.lt.700.0_r8) THEN
-            cff2=2.0_r8*kwn
+          kwn=2.0_dp*pi/REAL(FORCES(ng)%Lwave(i,j),dp)
+          prof=REAL(GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j),dp)
+          cff1=0.0_dp
+          cff2=2.0_dp*kwn*prof
+          IF (cff2.lt.700.0_dp) THEN
+            cff2=2.0_dp*kwn
           ELSE
-            cff2=700.0_r8/prof
+            cff2=700.0_dp/prof
           ENDIF
-          cff3=0.0_r8
+          cff3=0.0_dp
           DO k=1,N(ng)
-            u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
-     &                    OCEAN(ng)%u(i+1,j,k,NOUT))
-            cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*      &
-     &           GRID(ng)%Hz(i,j,k)
+            u_cff=0.5_dp*(REAL(OCEAN(ng)%u(i,  j,k,NOUT)+               &
+     &                    OCEAN(ng)%u(i+1,j,k,NOUT),dp))
+            cff4=DCOSH(cff2*REAL(GRID(ng)%h(i,j)+                       &
+     &                           GRID(ng)%z_r(i,j,k),dp))*              &
+     &           REAL(GRID(ng)%Hz(i,j,k),dp)
             cff1=cff1+cff4*u_cff
             cff3=cff3+cff4
           END DO
           u2wav(i,j)=cff1/cff3
 #   else
-          u2wav(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+             &
-     &                       OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+          u2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT)),dp)
 #   endif
 #  else
-          u2wav(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+                &
-     &                       OCEAN(ng)%ubar(i+1,j,KOUT))
+          u2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%ubar(i,  j,KOUT)+           &
+     &                            OCEAN(ng)%ubar(i+1,j,KOUT)),dp)
 #  endif
 # endif
         END DO
@@ -861,39 +861,40 @@
       DO j=Jstr,Jend
         DO i=IstrR,IendR
 # ifdef UV_CONST
-          v2wav(i,j)=0.0_r8
+          v2wav(i,j)=0.0_dp
 # else
 #  ifdef SOLVE3D
 #   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
-          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
-          cff1=0.0_r8
-          cff2=2.0_r8*kwn*prof
-          IF (cff2.lt.700.0_r8) THEN
-            cff2=2.0_r8*kwn
+          kwn=2.0_dp*pi/REAL(FORCES(ng)%Lwave(i,j),dp)
+          prof=REAL(GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j),dp)
+          cff1=0.0_dp
+          cff2=2.0_dp*kwn*prof
+          IF (cff2.lt.700.0_dp) THEN
+            cff2=2.0_dp*kwn
           ELSE
-            cff2=700.0_r8/prof
+            cff2=700.0_dp/prof
           ENDIF
-          cff3=0.0_r8
+          cff3=0.0_dp
           DO k=1,N(ng)
-             v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &
-     &                     OCEAN(ng)%v(i,j+1,k,NOUT))
-             cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*     &
-     &            GRID(ng)%Hz(i,j,k)
-             cff1=cff1+cff4*v_cff
-             cff3=cff3+cff4
+            v_cff=0.5_dp*(REAL(OCEAN(ng)%v(i,  j,k,NOUT)+               &
+     &                        OCEAN(ng)%v(i,j+1,k,NOUT),dp))
+            cff4=DCOSH(cff2*REAL(GRID(ng)%h(i,j)+                       &
+     &                           GRID(ng)%z_r(i,j,k),dp))*              &
+     &           REAL(GRID(ng)%Hz(i,j,k),dp)
+            cff1=cff1+cff4*v_cff
+            cff3=cff3+cff4
           END DO
           v2wav(i,j)=cff1/cff3
 #   else
-          v2wav(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+             &
-     &                       OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+          v2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT)),dp)
 #   endif
 #  else
-          v2wav(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+                &
-     &                       OCEAN(ng)%vbar(i,j+1,KOUT))
+          v2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%vbar(i,j  ,KOUT)+           &
+     &                            OCEAN(ng)%vbar(i,j+1,KOUT)),dp)
 #  endif
 # endif
         END DO
@@ -1030,6 +1031,7 @@
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
                 A(ij)=0.05_r8
 #endif
+          A(ij)=REAL(A(ij),dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
@@ -1046,7 +1048,7 @@
           DO iveg=1,NVEG
             cff=VEG(ng)%plant(i,j,iveg,pdens)+cff
           END DO
-          A(ij)=cff/NVEG
+          A(ij)=REAL(cff/NVEG,dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDENS",  &
@@ -1204,7 +1206,6 @@
 !     real(r8), parameter ::  Large = 1.0E+20_r8
       real(r8), parameter ::  eps = 1.0E-8_r8
 
-      real(r8) :: add_offset, scale
       real(r8) :: cff, fac, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
       real(r8) :: Dstp, sigma, waven

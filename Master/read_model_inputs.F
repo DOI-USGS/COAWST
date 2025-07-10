@@ -258,16 +258,17 @@
 !     Read WW3 input file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-#  ifdef NESTING
+#  if defined NESTING
       call get_numww3_grids (Wname(1))
-#  else
+#  endif
       iw=1
-      OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
+!     OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
+      OPEN (inp, FILE='ww3_grid.inp', FORM='formatted', STATUS='old',   &
      &      ERR=110)
       GO TO 130
- 110  WRITE (out,120) Wname(iw)
+ 110  WRITE (out,120) 'ww3_grid.inp'
       IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,         &
-     &                        TRIM(Wname(iw))
+     &                        'ww3_grid.inp'
       RETURN
  120  FORMAT (/,' READ MODEL INPUTS - Unable to open ww3 input file.',  &
      &        /,a80)
@@ -275,8 +276,10 @@
 !
 !  set number of WW3 grids to = 1 for non-nesting.
 !
+#  if !defined NESTING
       Nwav_grids=1
       allocate (dtwav(Nwav_grids))
+#  endif
 !
 !  now read the ww3_grid.inp file to get the dt
 !
@@ -296,13 +299,21 @@
           test=0
 ! get the number of freqs
           aline=ADJUSTL(line)
-          DO i=1,2
+          DO i=1,1
             indx=INDEX(aline,blank)
+            read(aline(1:indx),*) RXFR
+            aline=aline(indx+1:LEN(aline))
+            aline=ADJUSTL(aline)
+          END DO
+!
+          DO i=1,1
+            indx=INDEX(aline,blank)
+            read(aline(1:indx),*) RFR1
             aline=aline(indx+1:LEN(aline))
             aline=ADJUSTL(aline)
           END DO
           indx=INDEX(aline,blank)
-#  ifdef SPECTRUM_STOKES
+#  if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
           read(aline(1:indx),'(i2)') MSCs
 #  endif
         END IF
@@ -324,12 +335,11 @@
       aline=ADJUSTL(line)
       indx=INDEX(aline,blank)
       aline=aline(1:indx-1)
+#  if !defined NESTING
       read(aline,*) dtwav(iw)
 ! Set minimum 1 sec dt
       dtwav(iw)=MAX(dtwav(iw),1.0_m8)
-!
-!     write(*,*) 'ww3 dt is ', dtwav(iw)
-!
+#  endif
       test=1
       DO WHILE (test.eq.1)
 ! Read rest of file
@@ -340,7 +350,6 @@
       RETURN
  140  CLOSE (inp)
 !
-#  endif
 # endif
 # ifdef WRF_COUPLING
 !

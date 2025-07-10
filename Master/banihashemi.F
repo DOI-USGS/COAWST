@@ -145,12 +145,14 @@
       integer :: i, j, k, m, nn, count
       integer :: polycon, NDEG,IERR
       integer :: II, IK
-      real(r8) :: DIF, FD, FF, FR1, KK, KOLD, RDIF, RFR1, RXFR, SIGMA
+      real(r8) :: DIF, FD, FF, FR1, KK, KOLD, RDIF, SIGMA
       real(r8) :: W0, XFR, TPI
-      real(r8) :: cff, cff1, cff2, Dstp, fac1
+      real(dp) :: Dstp
+      real(r8) :: cff, cff1, cff2, fac1
       real(r8) :: FRINTF, SHIG, SLOW, SFAC, FRINTH
       real(r8) :: FRLOW, FRHIG, SND, SND2
-      real(r8) :: G1, dG, d2G, mu, dmu, d2mu
+      real(dp) :: G1
+      real(r8) :: dG, d2G, mu, dmu, d2mu
       real(r8) :: Ap, A1, A1k, B1, dB, B1u, B1v
       real(r8) :: C2u, C2v, Cg_KC2, dApu, dApv
       real(r8) :: dBp, dCp
@@ -159,8 +161,10 @@
 !     real(dp), parameter :: khmax = 15.0_dp
       real(r8), parameter :: eps = 1.0E-10_r8
 !
-      real(r8), dimension(N(ng)) :: X, Y, Wts, R
-      real(r8), dimension(MSCs) :: waven, owaven, dA, B2
+      real(dp), dimension(N(ng)) :: X, Y, Wts, R
+      real(dp), dimension(MSCs) :: kh
+      real(dp), dimension(MSCs) :: waven, owaven
+      real(r8), dimension(MSCs) :: dA, B2
       real(r8), dimension(MSCs) :: Au, Av, A1u, A1v, A1ku, A1kv
       real(r8), dimension(MSCs) :: dAu, dAv
       real(r8), dimension(MSCs) :: Apu, Apv
@@ -170,7 +174,7 @@
       real(r8), dimension(MSCs) :: dBu, dBv, dCu, dCv
       real(r8), dimension(MSCs) :: SPCSIG
       real(r8), dimension(MSCs) :: dUtdk2, dUtdk, dVtdk, dVtdk2
-      real(r8), dimension(MSCs) :: Cg_0, kh, c0
+      real(r8), dimension(MSCs) :: Cg_0, c0
 !
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2avg
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v2avg
@@ -178,12 +182,12 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: v2wav
 !
       real(r8), allocatable :: SIG(:)
-      real(r8), allocatable :: A(:)
-      real(r8), allocatable :: TC(:)
+      real(dp), allocatable :: A(:)
+      real(dp), allocatable :: TC(:)
       real(r8), allocatable :: A0u(:)
       real(r8), allocatable :: A0v(:)
       real(r8), allocatable :: I1(:,:)
-      real(r8), allocatable :: I2(:,:)
+      real(dp), allocatable :: I2(:,:)
       real(r8), allocatable :: K1(:,:)
       real(r8), allocatable :: K2(:,:)
       real(r8), allocatable :: HH(:,:)
@@ -196,7 +200,7 @@
       DO k=1,MSCs
         SPCSIG(k)=0.0_r8
         Cg_0(k)  =0.0_r8
-        kh(k)    =0.0_r8
+        kh(k)    =0.0_dp
         c0(k)    =0.0_r8
         dc0(k)   =0.0_r8
         Ut(k)    =0.0_r8
@@ -263,7 +267,7 @@
       END IF
       IF (.not.allocated(I2)) THEN
         allocate ( I2(2*polycon+1+2,MSCs) )
-        I2=0.0_r8
+        I2=0.0_dp
       END IF
       IF (.not.allocated(K1)) THEN
         allocate ( K1(polycon+1,MSCs) )
@@ -377,24 +381,18 @@
 !   w3gridmd Frequencies :
 !
       TPI=2.0_r8*pi
-      RXFR = 1.1_r8
-!     RFR1 = 0.04118_r8
-      RFR1 = 0.038_r8
       IF (.not.allocated(SIG)) THEN
         allocate ( SIG(0:MSCs+1) )
         SIG=0.0_r8
       END IF
-
+!
       XFR    = MAX ( RXFR , 1.00001 )
       FR1    = MAX ( RFR1 , 1.E-6_r8 )
-!
       SIGMA   = FR1 * TPI / XFR**2
-!     SXFR    = 0.5 * (XFR-1./XFR)
 !
       DO IK=0, MSCs+1
         SIGMA    = SIGMA * XFR
         SIG (IK) = SIGMA
-!       DSIP(IK) = SIGMA * SXFR
       END DO
 # endif
 !
@@ -405,7 +403,7 @@
 !
 !  Compute depth.
 !
-          Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+          Dstp=REAL(z_w(i,j,N(ng))-z_w(i,j,0),dp)
           fac1 = SQRT(Dstp/g)
 !
 # ifdef SWAN_MODEL
@@ -427,7 +425,7 @@
      &                                  -0.105*SND2**3+0.272*SND2**4)))
               waven(k)=SPCSIG(k)/cff
             ENDIF
-            owaven(k)=1.0_r8/(waven(k)+eps)
+            owaven(k)=1.0_dp/(waven(k)+eps)
           END DO
 # endif
 # ifdef WW3_MODEL
@@ -479,7 +477,7 @@
 100 CONTINUE
             IF (IK.gt.0) THEN
               waven(IK)=KK
-              owaven(IK)=1.0_r8/(waven(IK))
+              owaven(IK)=1.0_dp/(waven(IK))
             END IF
           END DO
 # endif
@@ -492,17 +490,17 @@
           X=-z_r(i,j,:)/z_w(i,j,0)
           Y=u2wav(i,j,:)
 !              DPOLFT (N,    X,Y,W  ,MAXDEG, NDEG, EPS,  R,IERR,A)
-          CALL DPOLFT (N(ng),X,Y,Wts,polycon,NDEG,0.0_r8,R,IERR,A)
+          CALL DPOLFT (N(ng),X,Y,Wts,polycon,NDEG,0.0_dp,R,IERR,A)
 !              DPCOEF (L,       C,  TC, A)
-          CALL DPCOEF (polycon, 0.0_r8, TC, A)
+          CALL DPCOEF (polycon, 0.0_dp, TC, A)
           A0u=TC
 !
 !
 !  Y-dir
 !         X=-z_r(i,j,:)/z_w(i,j,0)
           Y=v2wav(i,j,:)
-          CALL DPOLFT (N(ng),X,Y,Wts,polycon,NDEG,0.0_r8,R,IERR,A)
-          CALL DPCOEF (polycon, 0.0_r8, TC, A)
+          CALL DPOLFT (N(ng),X,Y,Wts,polycon,NDEG,0.0_dp,R,IERR,A)
+          CALL DPCOEF (polycon, 0.0_dp, TC, A)
           A0v=TC
 !
 !  Big k wavenumber loop.
@@ -517,38 +515,40 @@
 !  Compute G(k) as defined in paper (Eq10).
 !
 !           G1=2.0_r8*kh(k)/(DSINH(2.0_r8*kh(k)))                        !+eps)
-            G1=2.0_r8*waven(k)*Dstp/(DSINH(2.0_r8*kh(k)))
-            dG=G1*(1.0_r8-G1*dcosh(2.0_r8*kh(k)))*owaven(k)              !%dG/dk
-            d2G=G1**2*(G1+G1*(dcosh(2.0_r8*kh(k)))**2-                  &
-     &          2.0_r8*dcosh(2.0_r8*kh(k)))*owaven(k)*owaven(k)          !%d^2G/dk^2
+            G1=2.0_dp*waven(k)*Dstp/(DSINH(2.0_dp*kh(k)))
+            dG=G1*(1.0_r8-G1*DCOSH(2.0_dp*kh(k)))*owaven(k)              !%dG/dk
+            d2G=G1**2*(G1+G1*(DCOSH(2.0_dp*kh(k)))**2-                  &
+     &          2.0_r8*DCOSH(2.0_dp*kh(k)))*owaven(k)*owaven(k)          !%d^2G/dk^2
 !           mu=tanh(kh(k))/kh(k)                                         !%\mu(k) as defined in paper (Eq20)
-            mu=tanh(waven(k)*Dstp)/(waven(k)*Dstp)                       !%\mu(k) as defined in paper (Eq20)
+            mu=TANH(waven(k)*Dstp)/(waven(k)*Dstp)                       !%\mu(k) as defined in paper (Eq20)
             dmu=mu*(G1-1.0_r8)*owaven(k)                                 !%d \mu/dk
             d2mu=mu*((G1-1.0_r8)**2-G1+1.0_r8+                          &
      &           waven(k)*dG)*owaven(k)*owaven(k)                        !%d^2 \mu/dk^2
-            c0(k)=sqrt((g*tanh(waven(k)*Dstp))*owaven(k))                !%c0 (eq.6) 
+            c0(k)=sqrt((g*TANH(waven(k)*Dstp))*owaven(k))                !%c0 (eq.6) 
             dc0(k)=c0(k)*(G1-1.0_r8)*owaven(k)                           !% c0_k for group velocity calculation
             Cg_0(k)=0.5_r8*c0(k)*(1.0_r8+G1)                             !% group velocity for pure waves
+# ifdef BANIHASHEMI_HOTS
 !
 !  here we are calculating I1(0) in paper (A.14)
 !
-            I1(1,k)=0.5_r8*(dcosh(2.0_r8*kh(k))-1.0_r8)*owaven(k)        !%I1_{0}
-            I1(2,k)=0.5_r8*Dstp*owaven(k)-0.25_r8*dsinh(2.0_r8*kh(k))*  &
+            I1(1,k)=0.5_r8*(DCOSH(2.0_dp*kh(k))-1.0_r8)*owaven(k)        !%I1_{0}
+            I1(2,k)=0.5_r8*Dstp*owaven(k)-0.25_r8*DSINH(2.0_dp*kh(k))*  &
      &              owaven(k)*owaven(k)                                  !%I1_{1}
             DO m=2,2*polycon+2
               I1(m+1,k)=0.25_r8*(-2.0_r8*waven(k)*((-Dstp)**m)+         &
      &                  REAL(m,r8)*REAL((m-1),r8)*I1(m-1,k))*           &
      &                  owaven(k)*owaven(k)
             END DO
+# endif
 !
 ! % now I2(0) or J as in (A.4)
 !
-            I2(1,k)=0.5_r8*dsinh(2.0_r8*kh(k))*owaven(k)                 !%I_{2,0}
-            I2(2,k)=-0.25_r8*(dcosh(2.0_r8*kh(k))-1.0_r8)*              &
+            I2(1,k)=0.5_dp*DSINH(2.0_dp*kh(k))*owaven(k)                 !%I_{2,0}
+            I2(2,k)=-0.25_dp*(DCOSH(2.0_dp*kh(k))-1.0_dp)*              &
      &               owaven(k)*owaven(k)                                 !%I_{2,1}
             DO m=2,2*polycon+2
-             I2(m+1,k)=0.25_r8*REAL(m,r8)*((-Dstp)**(m-1)+              &
-     &                 REAL((m-1),r8)*I2(m-1,k))*owaven(k)*owaven(k)     !%I_{2,n}
+             I2(m+1,k)=0.25_dp*REAL(m,dp)*((-Dstp)**(m-1)+              &
+     &                 REAL((m-1),dp)*I2(m-1,k))*owaven(k)*owaven(k)     !%I_{2,n}
             END DO
 !
 ! %% Calculating \tilde{U}  equation(A.2)
@@ -645,9 +645,9 @@
 !            END DO
 !
             Au(k)=4.0_r8*waven(k)*A1u(k)-(1.0_r8+2.0_r8*                &
-     &                                   dcosh(2.0_r8*kh(k)))*Ut(k)
+     &                                   DCOSH(2.0_dp*kh(k)))*Ut(k)
             Av(k)=4.0_r8*waven(k)*A1v(k)-(1.0_r8+2.0_r8*                &
-     &                                   dcosh(2.0_r8*kh(k)))*Vt(k)
+     &                                   DCOSH(2.0_dp*kh(k)))*Vt(k)
           END DO
 !
 !  Calculate dAdk
@@ -673,7 +673,7 @@
 ! %% now B
 !
           DO k=1,MSCs
-            Bp(k)=waven(k)/c0(k)/dsinh(2.0_r8*kh(k))
+            Bp(k)=waven(k)/c0(k)/DSINH(2.0_dp*kh(k))
 !
             B1u=0.0_r8
             B1v=0.0_r8
@@ -774,11 +774,11 @@
           DO k=1,MSCs
 !
 ! cant use Cp, so make if cff
-            cff=4.0_r8*waven(k)*waven(k)/c0(k)/dsinh(2.0_r8*kh(k))
+            cff=4.0_r8*waven(k)*waven(k)/c0(k)/DSINH(2.0_dp*kh(k))
 !           cff1=csch(2.0_r8*kh(k))
-            cff1=1.0_r8/dsinh(2.0_r8*kh(k))
+            cff1=1.0_r8/DSINH(2.0_dp*kh(k))
 !           cff2=coth(2.0_r8*kh(k))
-            cff2=1.0_r8/tanh(2.0_r8*waven(k)*Dstp)
+            cff2=1.0_r8/TANH(2.0_r8*waven(k)*Dstp)
 
             C2u=Apu(k)*Au(k)+cff*Cu(k)+Bp(k)*Bu(k)                 !%A.12
             C2v=Apv(k)*Av(k)+cff*Cv(k)+Bp(k)*Bv(k)  !%A.12

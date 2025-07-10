@@ -193,6 +193,9 @@ PROGRAM W3OUNF
        STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
        P2SMS, EF, US3D, TH1M, STH1M, TH2M, STH2M,   &
        WN, USSP, WBT, WNMEAN
+#ifdef W3_CURSP
+  USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
 #ifdef W3_COAWST_MODEL
   USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY,             &
                       PHICAPX, PHICAPY, WLP, QB,    &
@@ -1205,11 +1208,35 @@ CONTAINS
 
             ! Surface current
           ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 2 ) THEN
+#ifdef W3_CURSP
+            ! Information for spectral
+            FLFRQ  = .TRUE.
+            I1F=1
+            I2F=NK
+            DO IK= I1F,I2F
+              !! Note - CXTH and CYTH read in from .ww3 file are X-Y vectors
+# ifdef W3_RTD
+               ! Rotate x,y vector back to standard pole
+              IF ( FLAGUNR ) CALL W3XYRTN(NSEA, CXTH(1:NSEA,IK), CYTH(1:NSEA,IK), AnglD)
+# endif
+              !
+              IF( .NOT. VECTOR ) THEN
+                CALL UV_TO_MAG_DIR(CXTH(1:NSEA,IK), CYTH(1:NSEA,IK), NSEA,  &
+                     TOLERANCE=0.05, CONV='O')
+              ENDIF
+              !
+              CALL S2GRID(CXTH(1:NSEA,IK), XX)
+              CALL S2GRID(CYTH(1:NSEA,IK), XY)
+              XXK(:,:,IK)=XX
+              XYK(:,:,IK)=XY
+            END DO
+            NFIELD=2
+#else
             !! Note - CX and CY read in from .ww3 file are X-Y vectors
-#ifdef W3_RTD
+# ifdef W3_RTD
             ! Rotate x,y vector back to standard pole
             IF ( FLAGUNR ) CALL W3XYRTN(NSEA, CX(1:NSEA), CY(1:NSEA), AnglD)
-#endif
+# endif
             !
             IF( .NOT. VECTOR ) THEN
               CALL UV_TO_MAG_DIR(CX(1:NSEA), CY(1:NSEA), NSEA,       &
@@ -1219,6 +1246,7 @@ CONTAINS
             CALL S2GRID(CX(1:NSEA), XX)
             CALL S2GRID(CY(1:NSEA), XY)
             NFIELD=2
+# endif
             !
             ! Wind
           ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 3 ) THEN
@@ -1913,10 +1941,6 @@ CONTAINS
             DO IK= I1F,I2F
               CALL S2GRID(STK_STOKES(:,IK), XX)
               XK(:,:,IK)=XX
-              IF (IK.eq.1) then
-               write(*,*) 'ww3_ounf writng STK for 1 ', XK(100:110,100,IK)
-              END IF
-
             END DO
           ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
             ! Information for spectral

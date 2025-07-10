@@ -3263,6 +3263,9 @@ CONTAINS
          TH1M, STH1M, TH2M, STH2M, HSIG, PHICE, TAUICE,&
          STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
          USSP, TAUOCX, TAUOCY
+#ifdef W3_CURSP
+    USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY, PHICAPX, PHICAPY, &
                         WLP, QB,                            &
@@ -3727,8 +3730,13 @@ CONTAINS
             IF ( IFI .EQ. 1 .AND. IFJ .EQ. 1 ) THEN
               WRITE ( NDSOG ) DW(1:NSEA)
             ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 2 ) THEN
+#ifdef W3_CURSP
+              WRITE ( NDSOG ) CXTH(1:NSEA,1:NK)
+              WRITE ( NDSOG ) CYTH(1:NSEA,1:NK)
+#else
               WRITE ( NDSOG ) CX(1:NSEA)
               WRITE ( NDSOG ) CY(1:NSEA)
+#endif
             ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 3 ) THEN
               DO ISEA=1, NSEA
 #ifdef W3_SMC
@@ -4070,8 +4078,13 @@ CONTAINS
             IF ( IFI .EQ. 1 .AND. IFJ .EQ. 1 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) DW(1:NSEA)
             ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 2 ) THEN
+#ifdef W3_CURSP
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) CXTH(1:NSEA,1:NK)
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) CYTH(1:NSEA,1:NK)
+#else
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) CX(1:NSEA)
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) CY(1:NSEA)
+#endif
             ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 3 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) UA(1:NSEA)
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) UD(1:NSEA)
