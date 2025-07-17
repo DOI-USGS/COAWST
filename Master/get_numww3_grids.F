@@ -280,7 +280,7 @@
         DEALLOCATE ( CLATS, CLATIS, CTHG0S )
 
 !  assign dtwav
-        dtwav(num)=DTCFL
+        dtwav(num)=DTMAX
 
       END DO
  140  CLOSE (inp)
