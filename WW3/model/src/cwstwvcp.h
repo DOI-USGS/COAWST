@@ -887,7 +887,7 @@
      &                    STK_STOKES, STU_STOKES, STV_STOKES,           &
 # endif
      &                    THM, WLM, WLP, WBT, THS, QP,                  &
-     &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY,             &
+     &                    PHIBRKX, PHIBRKY, TAUOSX, TAUOSY,             &
      &                    PHICAPX, PHICAPY
       USE W3ADATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
@@ -1522,7 +1522,7 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCX(i)
+        cff=TAUOSX(i)
         IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO
@@ -1555,7 +1555,7 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCY(i)
+        cff=TAUOSY(i)
         IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO

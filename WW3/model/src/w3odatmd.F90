@@ -882,12 +882,13 @@ CONTAINS
     IDOUT( 6,12)  = 'Split Surface Stokes'
     IDOUT( 6,13)  = 'Tot wav-ocn mom flux'
 #ifdef W3_COAWST_MODEL
-    NOGE(6) = 18
-    IDOUT( 6,14)  = 'Dissip brk depth lim'
-    IDOUT( 6,15)  = 'Dissip white capping'
-    IDOUT( 6,16)  = 'Stokes wave number'
-    IDOUT( 6,17)  = 'Stokes u-current'
-    IDOUT( 6,18)  = 'Stokes v-current'
+    NOGE(6) = 19
+    IDOUT( 6,14)  = 'Src wav-ocn mom flux'
+    IDOUT( 6,15)  = 'Dissip brk depth lim'
+    IDOUT( 6,16)  = 'Dissip white capping'
+    IDOUT( 6,17)  = 'Stokes wave number'
+    IDOUT( 6,18)  = 'Stokes u-current'
+    IDOUT( 6,19)  = 'Stokes v-current'
 #endif
     !
     ! 7) Wave-bottom layer

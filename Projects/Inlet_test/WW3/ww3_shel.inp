@@ -194,6 +194,13 @@ $  F  F  6     9   P2SMS      P2L   Micro seism  source term
 $  F  F  6    10   TAUICE     TWI   Wave to sea ice stress
 $  F  F  6    11   PHICE      FIC   Wave to sea ice energy flux
 $  F  F  6    12   USSP       USP   Partitioned surface Stokes drift
+$  F  F  6    13   TAUOC[X,Y] TOC   Total ocean momentum component
+$  F  F  6    14   TAUOS[X,Y] TOC   Source ocean momentum component
+$  F  F  6    15   PHIBRK[X,Y] FDB  Energy flux due to depth limited breaking
+$  F  F  6    16   PHICAP[X,Y] FDW  Energy flux due to whitecapping
+$  F  F  6    17   STK_STOKES STK   Wave number term for stokes drift
+$  F  F  6    18   STU_STOKES STU   East current term for stokes drift
+$  F  F  6    19   STV_STOKES STV   North current term for stokes drift
 $   -------------------------------------------------
 $        7                          Wave-bottom layer 
 $   -------------------------------------------------
@@ -254,8 +261,8 @@ $ UST CHA CGE FAW TAW TWA WCC WCF WCH WCM
   T   T   T   T   T   T   T   T   T   T
 $ (6) Wave-Ocean layer
   T
-$ SXY TWO BHD FOC TUS USS P2S USF P2L TWI FIC USP TAUOC(XY) FDB(XY) FDW(XY) STK STU STV
-  T   T   T   T   T   T   T   T   T   T   T    T     T        T       T     T   T   T
+$ SXY TWO BHD FOC TUS USS P2S USF P2L TWI FIC USP TAUOC(XY) TAUOS(XY) FDB(XY) FDW(XY) STK STU STV
+  T   T   T   T   T   T   T   T   T   T   T    T     T        T        T       T       T   T   T
 $ (7) Wave-bottom layer
   T
 $ ABR UBR BED FBB TBB

@@ -3771,6 +3771,30 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     ! IFI=6, IFJ=14
     META => GROUP(6)%FIELD(14)%META
+    META(1)%UNITS  = 'Pa'
+    META(1)%FSC    = 0.01
+    META(1)%ENAME  = '.soc'
+    META(1)%VMIN   = -320
+    META(1)%VMAX   =  320
+    META(1)%VARND  = DIRCOM
+
+    ! First component
+    META(1)%VARNM='usoc'
+    META(1)%VARNL='eastward total wave to ocean stres'
+    META(1)%VARNS=''
+    META(1)%VARNG=''
+    META(1)%VARNC='soc=sqrt(usoc**2+vsoc**2)'
+
+    ! Second component
+    META(2) = META(1)
+    META(2)%VARNM='vsoc'
+    META(2)%VARNL='northward total wave to ocean stres'
+    META(2)%VARNS=''
+    META(2)%VARNG=''
+    META(2)%VARNC='soc=sqrt(usoc**2+vsoc**2)'
+
+    ! IFI=6, IFJ=15
+    META => GROUP(6)%FIELD(15)%META
     META(1)%UNITS  = 'W m-2'
     META(1)%FSC    = 0.01
     META(1)%ENAME  = '.fdb'
@@ -3792,8 +3816,8 @@ CONTAINS
     META(2)%VARNS=''
     META(2)%VARNG=''
     META(2)%VARNC='fdb=sqrt(fdbx**2+fdby**2)'
-    ! IFI=6, IFJ=15
-    META => GROUP(6)%FIELD(15)%META
+    ! IFI=6, IFJ=16
+    META => GROUP(6)%FIELD(16)%META
     META(1)%UNITS  = 'W m-2'
     META(1)%FSC    = 0.01
     META(1)%ENAME  = '.fdw'
@@ -3816,8 +3840,8 @@ CONTAINS
     META(2)%VARNG=''
     META(2)%VARNC='fdw=sqrt(fdwx**2+fdwy**2)'
 
-    ! IFI=6, IFJ=16
-    META => GROUP(6)%FIELD(16)%META
+    ! IFI=6, IFJ=17
+    META => GROUP(6)%FIELD(17)%META
     META(1)%UNITS  = 'm-1'
     META(1)%FSC    = 0.01
     META(1)%ENAME  = '.stk'
@@ -3830,8 +3854,8 @@ CONTAINS
     META(1)%VARNG=''
     META(1)%VARNC='stk'
 
-    ! IFI=6, IFJ=17
-    META => GROUP(6)%FIELD(17)%META
+    ! IFI=6, IFJ=18
+    META => GROUP(6)%FIELD(18)%META
     META(1)%UNITS  = 'm s-1'
     META(1)%FSC    = 0.01
     META(1)%ENAME  = '.stu'
@@ -3844,8 +3868,8 @@ CONTAINS
     META(1)%VARNG=''
     META(1)%VARNC='stu'
 
-    ! IFI=6, IFJ=18
-    META => GROUP(6)%FIELD(18)%META
+    ! IFI=6, IFJ=19
+    META => GROUP(6)%FIELD(19)%META
     META(1)%UNITS  = 'm s-1'
     META(1)%FSC    = 0.01
     META(1)%ENAME  = '.stv'

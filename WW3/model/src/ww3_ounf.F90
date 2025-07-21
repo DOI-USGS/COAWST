@@ -199,7 +199,8 @@ PROGRAM W3OUNF
 #ifdef W3_COAWST_MODEL
   USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY,             &
                       PHICAPX, PHICAPY, WLP, QB,    &
-                      STK_STOKES, STU_STOKES, STV_STOKES
+                      STK_STOKES, STU_STOKES,       &
+                      STV_STOKES, TAUOSX, TAUOSY
 #endif
   USE W3ODATMD, ONLY: NDSO, NDSE, SCREEN, NOGRP, NGRPP, IDOUT,     &
        UNDEF, FLOGRD, FNMPRE, NOSWLL, NOGE
@@ -1899,7 +1900,25 @@ CONTAINS
             ENDIF ! SMCGRD
             NFIELD=2
 #ifdef W3_COAWST_MODEL
+            ! Total momentum to the ocean
           ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
+#ifdef W3_RTD
+            ! Rotate x,y vector back to standard pole
+            IF ( FLAGUNR ) CALL W3XYRTN(NSEA, TAUOSX(1:NSEA), TAUOSY(1:NSEA), AnglD)
+#endif
+            IF( SMCGRD ) THEN
+#ifdef W3_SMC
+              CALL W3S2XY_SMC( TAUOSX(1:NSEA), XX )
+              CALL W3S2XY_SMC( TAUOSY(1:NSEA), XY )
+#endif
+            ELSE
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, TAUOSX(1:NSEA)     &
+                   , MAPSF, XX )
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, TAUOSY(1:NSEA)     &
+                   , MAPSF, XY )
+            ENDIF ! SMCGRD
+            NFIELD=2
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
 # ifdef W3_RTD
             ! Rotate x,y vector back to standard pole
             IF ( FLAGUNR ) CALL W3XYRTN(NSEA, PHIBRKX(1:NSEA), PHIBRKY(1:NSEA), AnglD)
@@ -1916,7 +1935,7 @@ CONTAINS
                    , MAPSF, XY )
             ENDIF ! SMCGRD
             NFIELD=2
-          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
 # ifdef W3_RTD
             ! Rotate x,y vector back to standard pole
             IF ( FLAGUNR ) CALL W3XYRTN(NSEA, PHICAPX(1:NSEA), PHICAPY(1:NSEA), AnglD)
@@ -1933,7 +1952,7 @@ CONTAINS
                    , MAPSF, XY )
             ENDIF ! SMCGRD
             NFIELD=2
-          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
             ! Information for spectral
             FLFRQ  = .TRUE.
             I1F=1
@@ -1955,7 +1974,7 @@ CONTAINS
               CALL S2GRID(STU_STOKES(:,IK), XX)
               XK(:,:,IK)=XX
             END DO
-          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 19 ) THEN
             ! Information for spectral
             FLFRQ  = .TRUE.
             I1F=1

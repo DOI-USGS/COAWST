@@ -205,6 +205,7 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
        PHIBRKX, PHIBRKY, QB,                       &
        PHICAPX, PHICAPY,                           &
+       TAUOSX, TAUOSY,                             &
 #endif
        DAIR, COEF)
     !/
@@ -683,6 +684,7 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     REAL, INTENT(INOUT)     :: PHIBRKX, PHIBRKY, QB
     REAL, INTENT(INOUT)     :: PHICAPX, PHICAPY
+    REAL, INTENT(INOUT)     :: TAUOSX, TAUOSY
 #endif
     REAL, INTENT(OUT)       :: DTDYN, FCUT
     REAL, INTENT(IN)        :: COEF
@@ -744,6 +746,10 @@ CONTAINS
          FACTOR, FACTOR2, DRAT, TAUWAX, TAUWAY,    &
          MWXFINISH, MWYFINISH, A1BAND, B1BAND,     &
          COSI(2)
+#ifdef W3_COAWST_MODEL
+    REAL                    :: E3BAND, DIFF3, EFINISH3,                  &
+         MWXFINISH3, MWYFINISH3, A3BAND, B3BAND, TAUOX3, TAUOY3
+#endif
     REAL                    :: SPECINIT(NSPEC), SPEC2(NSPEC), FRLOCAL, JAC2
     REAL                    :: DAM (NSPEC), DAM2(NSPEC), WN2 (NSPEC),            &
          VSLN(NSPEC),                         &
@@ -1030,6 +1036,8 @@ CONTAINS
     PHICAPY = 0.
     TAUBRKX = 0.
     TAUBRKY = 0.
+    TAUOSX = 0.
+    TAUOSY = 0.
 #endif
     !
     ! TIME is updated in W3WAVEMD prior to the call of W3SCRE, we should
@@ -2130,23 +2138,42 @@ CONTAINS
       WRITE(740+IAPROC,*) '2 : sum(SPEC)=', sum(SPEC)
     END IF
 #endif
+#ifdef W3_COAWST_MODEL
+    EFINISH3  = 0.
+    MWXFINISH3  = 0.
+    MWYFINISH3  = 0.
+#endif
     EFINISH  = 0.
     MWXFINISH  = 0.
     MWYFINISH  = 0.
     DO IK=1, NK
+#ifdef W3_COAWST_MODEL
+      E3BAND = 0.
+      A3BAND = 0.
+      B3BAND = 0.
+#endif
       EBAND = 0.
       A1BAND = 0.
       B1BAND = 0.
       DO ITH=1, NTH
 #ifdef W3_COAWST_MODEL
-        DIFF = SPECINIT(ITH+(IK-1)*NTH)-SPEC3(ITH+(IK-1)*NTH)
-#else
-        DIFF = SPECINIT(ITH+(IK-1)*NTH)-SPEC(ITH+(IK-1)*NTH)
+        DIFF3 = SPECINIT(ITH+(IK-1)*NTH)-SPEC3(ITH+(IK-1)*NTH)
+        E3BAND = E3BAND + DIFF3
+        A3BAND = A3BAND + DIFF3*ECOS(ITH)
+        B3BAND = B3BAND + DIFF3*ESIN(ITH)
 #endif
+        DIFF = SPECINIT(ITH+(IK-1)*NTH)-SPEC(ITH+(IK-1)*NTH)
         EBAND = EBAND + DIFF
         A1BAND = A1BAND + DIFF*ECOS(ITH)
         B1BAND = B1BAND + DIFF*ESIN(ITH)
       END DO
+#ifdef W3_COAWST_MODEL
+      EFINISH3  = EFINISH3  + E3BAND * DDEN(IK) / CG1(IK)
+      MWXFINISH3  = MWXFINISH3  + A3BAND * DDEN(IK) / CG1(IK)        &
+           * WN1(IK)/SIG(IK)
+      MWYFINISH3  = MWYFINISH3  + B3BAND * DDEN(IK) / CG1(IK)        &
+           * WN1(IK)/SIG(IK)
+#endif
       EFINISH  = EFINISH  + EBAND * DDEN(IK) / CG1(IK)
       MWXFINISH  = MWXFINISH  + A1BAND * DDEN(IK) / CG1(IK)        &
            * WN1(IK)/SIG(IK)
@@ -2155,6 +2182,10 @@ CONTAINS
     END DO
     !
     ! Transformation in momentum flux in m^2 / s^2
+#ifdef W3_COAWST_MODEL
+    TAUOX3=(GRAV*MWXFINISH3+TAUWIX-TAUBBL(1))*oDTG
+    TAUOY3=(GRAV*MWYFINISH3+TAUWIY-TAUBBL(2))*oDTG
+#endif
     TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))*oDTG
     TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))*oDTG
     TAUWIX=TAUWIX*oDTG     
@@ -2164,6 +2195,10 @@ CONTAINS
     TAUBBL(:)=TAUBBL(:)*oDTG
     TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX-TAUWIX)
     TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY-TAUWIY)
+#ifdef W3_COAWST_MODEL
+    TAUOSX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX3-TAUWIX)
+    TAUOSY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY3-TAUWIY)
+#endif
     !
     ! Transformation in wave energy flux in W/m^2=kg / s^3
     !
@@ -2356,9 +2391,9 @@ CONTAINS
       CHARN = AALPHA
     ENDIF
 # ifdef W3_COAWST_MODEL
-! recompute the stresses for tranfer to ocean.
-    TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR)   ! + DWAT*(TAUOX-TAUWIX)
-    TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR)   ! + DWAT*(TAUOY-TAUWIY)
+!   recompute the stresses for tranfer to ocean.
+!   TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR)   ! + DWAT*(TAUOX-TAUWIX)
+!   TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR)   ! + DWAT*(TAUOY-TAUWIY)
 # endif
 #endif
 #ifdef W3_FLD2

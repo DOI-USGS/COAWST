@@ -3269,7 +3269,8 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY, PHICAPX, PHICAPY, &
                         WLP, QB,                            &
-                        STK_STOKES, STU_STOKES, STV_STOKES
+                        STK_STOKES, STU_STOKES, STV_STOKES, &
+                        TAUOSX, TAUOSY
 #endif
     !/
     USE W3ODATMD, ONLY: NOGRP, NGRPP, IDOUT, UNDEF, NDST, NDSE,     &
@@ -3628,20 +3629,24 @@ CONTAINS
           END IF
 #ifdef W3_COAWST_MODEL
           IF ( FLOGRD( 6, 14) ) THEN
+            TAUOSX(ISEA) = UNDEF
+            TAUOSY(ISEA) = UNDEF
+          END IF
+          IF ( FLOGRD( 6, 15) ) THEN
             PHIBRKX(ISEA) = UNDEF
             PHIBRKY(ISEA) = UNDEF
           END IF
-          IF ( FLOGRD( 6, 15) ) THEN
+          IF ( FLOGRD( 6, 16) ) THEN
             PHICAPX(ISEA) = UNDEF
             PHICAPY(ISEA) = UNDEF
           END IF
-          IF ( FLOGRD( 6, 16) ) THEN
+          IF ( FLOGRD( 6, 17) ) THEN
             STK_STOKES(ISEA,:) = UNDEF
           END IF
-          IF ( FLOGRD( 6, 17) ) THEN
+          IF ( FLOGRD( 6, 18) ) THEN
             STU_STOKES(ISEA,:) = UNDEF
           END IF
-          IF ( FLOGRD( 6, 18) ) THEN
+          IF ( FLOGRD( 6, 19) ) THEN
             STV_STOKES(ISEA,:) = UNDEF
           END IF
 #endif
@@ -3981,16 +3986,19 @@ CONTAINS
               WRITE ( NDSOG ) TAUOCY(1:NSEA)
 #ifdef W3_COAWST_MODEL
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
+              WRITE ( NDSOG ) TAUOSX(1:NSEA)
+              WRITE ( NDSOG ) TAUOSY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
               WRITE ( NDSOG ) PHIBRKX(1:NSEA)
               WRITE ( NDSOG ) PHIBRKY(1:NSEA)
-            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
               WRITE ( NDSOG ) PHICAPX(1:NSEA)
               WRITE ( NDSOG ) PHICAPY(1:NSEA)
-            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
-              WRITE ( NDSOG ) STK_STOKES(1:NSEA,1:NK)
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
-              WRITE ( NDSOG ) STU_STOKES(1:NSEA,1:NK)
+              WRITE ( NDSOG ) STK_STOKES(1:NSEA,1:NK)
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+              WRITE ( NDSOG ) STU_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 19 ) THEN
               WRITE ( NDSOG ) STV_STOKES(1:NSEA,1:NK)
 #endif
               !
@@ -4348,21 +4356,26 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   TAUOSX(1:NSEA)
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   TAUOSY(1:NSEA)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    PHIBRKX(1:NSEA)
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    PHIBRKY(1:NSEA)
-            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    PHICAPX(1:NSEA)
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    PHICAPY(1:NSEA)
-            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
-              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
-                   STK_STOKES(1:NSEA,1:NK)
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
-                   STU_STOKES(1:NSEA,1:NK)
+                   STK_STOKES(1:NSEA,1:NK)
             ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+              READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                   STU_STOKES(1:NSEA,1:NK)
+            ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 19 ) THEN
               READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                    STV_STOKES(1:NSEA,1:NK)
 #endif

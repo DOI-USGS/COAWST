@@ -304,6 +304,7 @@ CONTAINS
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY
     USE W3ADATMD, ONLY: PHICAPX, PHICAPY
+    USE W3ADATMD, ONLY: TAUOSX, TAUOSY
 #endif
     !/
     USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, NSPEC, MAPSTA, MAPST2, &
@@ -989,14 +990,14 @@ CONTAINS
           END DO
 #  endif
 !
-!  Write TAUOCX/Y into rst file
+!  Write TAUOSX/Y into rst file
 !
         DO IPART=1,NPART
           NREC  = NREC + 1
           RPOS  = 1_8 + LRECL*(NREC-1_8)
           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
-               (TAUOCX(ISEA),ISEA=1+(IPART-1)*NSIZE,               &
+               (TAUOSX(ISEA),ISEA=1+(IPART-1)*NSIZE,               &
                MIN(NSEA,IPART*NSIZE))
         END DO
         DO IPART=1,NPART
@@ -1004,7 +1005,7 @@ CONTAINS
           RPOS  = 1_8 + LRECL*(NREC-1_8)
           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR) WRITEBUFF
           WRITE (NDSR,POS=RPOS,ERR=803,IOSTAT=IERR)                   &
-               (TAUOCY(ISEA),ISEA=1+(IPART-1)*NSIZE,               &
+               (TAUOSY(ISEA),ISEA=1+(IPART-1)*NSIZE,               &
                MIN(NSEA,IPART*NSIZE))
         END DO
 !
@@ -1289,13 +1290,13 @@ CONTAINS
                (TMP2(ISEA),ISEA=1+(IPART-1)*NSIZE,                    &
                MIN(NSEA,IPART*NSIZE))
         END DO
-        TAUOCX = 0.
-        TAUOCY = 0.
+        TAUOSX = 0.
+        TAUOSY = 0.
         DO I=1, NSEALM
           J = IAPROC + (I-1)*NAPROC
           IF (J .LE. NSEA) THEN
-            TAUOCX(I) = TMP(J)
-            TAUOCY(I) = TMP2(J)
+            TAUOSX(I) = TMP(J)
+            TAUOSY(I) = TMP2(J)
           ENDIF
         ENDDO
 !
