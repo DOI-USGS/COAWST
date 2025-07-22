@@ -1961,7 +1961,7 @@ CONTAINS
               CALL S2GRID(STK_STOKES(:,IK), XX)
               XK(:,:,IK)=XX
             END DO
-          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
             ! Information for spectral
             FLFRQ  = .TRUE.
             I1F=1

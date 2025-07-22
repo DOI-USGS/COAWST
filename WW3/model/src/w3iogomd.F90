@@ -1096,21 +1096,24 @@ CONTAINS
       I = 6
       J = 13
 #ifdef W3_COAWST_MODEL
-    CASE('FDB')
+    CASE('SOC')
       I = 6
       J = 14
-    CASE('FDW')
+    CASE('FDB')
       I = 6
       J = 15
-    CASE('STK')
+    CASE('FDW')
       I = 6
       J = 16
-    CASE('STU')
+    CASE('STK')
       I = 6
       J = 17
-    CASE('STV')
+    CASE('STU')
       I = 6
       J = 18
+    CASE('STV')
+      I = 6
+      J = 19
 #endif
       !
       ! Group 7
