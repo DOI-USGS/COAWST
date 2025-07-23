@@ -514,6 +514,9 @@ CONTAINS
 #ifdef W3_REF1
     USE W3GDATMD, ONLY: IOBP, IOBPD, IOBDP, GTYPE, UNGTYPE, REFPARS
 #endif
+#ifdef W3_COAWST_MODEL
+    USE W3GDATMD, ONLY: RSTYPE
+#endif
     USE W3WDATMD, ONLY: TIME
     USE W3ODATMD, ONLY: NDSE, NDST, IAPROC
     USE W3IDATMD, ONLY: INFLAGS2, ICEP2
@@ -833,7 +836,8 @@ CONTAINS
     REAL                 :: PreVS, FAK, DVS, SIDT, FAKS, MAXDAC
 #endif
 #ifdef W3_COAWST_MODEL
-    REAL                    :: oDTG, TAUBRKX, TAUBRKY
+    REAL                    :: oDTG
+!   REAL                    :: TAUBRKX, TAUBRKY
     REAL                    :: A2BAND, B2BAND, Hmax_r
 #endif
 
@@ -1029,15 +1033,18 @@ CONTAINS
     TAUOCY = 0.
     WNMEAN = 0.
 #ifdef W3_COAWST_MODEL
-    PHIBRKX = 0.
-    PHIBRKY = 0.
-    QB      = 0.
-    PHICAPX = 0.
-    PHICAPY = 0.
-    TAUBRKX = 0.
-    TAUBRKY = 0.
-    TAUOSX = 0.
-    TAUOSY = 0.
+    !  if a 'HOT' rst, then dont overwrite these vals for first time step.
+    IF (RSTYPE.NE.2) THEN
+      PHIBRKX = 0.
+      PHIBRKY = 0.
+      QB      = 0.
+      PHICAPX = 0.
+      PHICAPY = 0.
+!     TAUBRKX = 0.
+!     TAUBRKY = 0.
+      TAUOSX = 0.
+      TAUOSY = 0.
+    END IF
 #endif
     !
     ! TIME is updated in W3WAVEMD prior to the call of W3SCRE, we should
@@ -1876,16 +1883,19 @@ CONTAINS
 #endif
         END DO
 #ifdef W3_COAWST_MODEL
+        IF (RSTYPE.NE.2) THEN
+!  if a 'HOT' rst, then dont overwrite these vals for first time step.
 # ifdef W3_DB1
 !  Here we compute breaking stress in W/m2
-        PHIBRKX = PHIBRKX + A1BAND
-        PHIBRKY = PHIBRKY + B1BAND
+          PHIBRKX = PHIBRKX + A1BAND
+          PHIBRKY = PHIBRKY + B1BAND
 !  Here we compute breaking stress in N/m2
-        TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
-        TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
+!         TAUBRKX=TAUBRKX + A1BAND * WN1(IK)/SIG(IK)
+!         TAUBRKY=TAUBRKY + B1BAND * WN1(IK)/SIG(IK)
 # endif
-        PHICAPX = PHICAPX + A2BAND
-        PHICAPY = PHICAPY + B2BAND
+          PHICAPX = PHICAPX + A2BAND
+          PHICAPY = PHICAPY + B2BAND
+        END IF
 #endif
       END DO
       WHITECAP(3)=4.*SQRT(WHITECAP(3))
@@ -2052,7 +2062,7 @@ CONTAINS
         END DO
       END DO
 #ifdef W3_COAWST_MODEL
-     DO IK=NKH+1, NK
+      DO IK=NKH+1, NK
 # ifdef W3_ST2
         FACDIA = MAX ( 0. , MIN ( 1., (SIG(IK)-FHTRAN)/DFH) )
         FACPAR = MAX ( 0. , 1.-FACDIA )
@@ -2196,8 +2206,11 @@ CONTAINS
     TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX-TAUWIX)
     TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY-TAUWIY)
 #ifdef W3_COAWST_MODEL
-    TAUOSX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX3-TAUWIX)
-    TAUOSY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY3-TAUWIY)
+    IF (RSTYPE.NE.2) THEN
+!     if a 'HOT' rst, then dont overwrite these vals for first time step.
+      TAUOSX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX3-TAUWIX)
+      TAUOSY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY3-TAUWIY)
+    ENDIF
 #endif
     !
     ! Transformation in wave energy flux in W/m^2=kg / s^3
@@ -2207,10 +2220,12 @@ CONTAINS
     PHINL =DWAT*GRAV*PHINL *oDTG
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
 #ifdef W3_COAWST_MODEL
-    PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
-    PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
-    PHICAPX=DWAT*GRAV*PHICAPX*oDTG
-    PHICAPY=DWAT*GRAV*PHICAPY*oDTG
+    IF (RSTYPE.NE.2) THEN
+      PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
+      PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
+      PHICAPX=DWAT*GRAV*PHICAPX*oDTG
+      PHICAPY=DWAT*GRAV*PHICAPY*oDTG
+    END IF
 #endif
     !
     ! 10.1  Adds ice scattering and dissipation: implicit integration---------------- *
