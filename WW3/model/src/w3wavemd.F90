@@ -2852,8 +2852,8 @@ CONTAINS
       IDACT  = '         '
       OUTID  = '           '
       FLACT  = .FALSE.
-#if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
-      ! jcw bottom of wavemd calling the coupler
+#if defined W3_COAWST_MODEL
+# if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
       !  IMOD is the grid number, ITIME is a bad counter. It steps for 
       !  updates to the forcings. So we made a clean counter.
       IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
@@ -2861,6 +2861,9 @@ CONTAINS
           CALL COAWST_CPL (ITIME_COAWST)
         END IF
       END IF
+# endif
+      ! reset RSTYPE to 0 in case it was a hot start. See usage in w3srcemd.
+      RSTYPE=0
 #endif
       !
       ! 6.  If time is not ending time, branch back to 2 ------------------- /
