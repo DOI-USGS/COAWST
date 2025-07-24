@@ -1,0 +1,83 @@
+***************************************************************************
+Field exchanges from WW3 to ROMS:
+
+Name in  | Name in  | Units in  | ww3_shel | Name in  | Name in      | Conversion from                     | Units  | Description
+WW3 code | WW3      | WW3       | out tag  | MCT      | ROMS         | WW3 to ROMS                         | in     | in ROMS
+         | outfile  | outfile   |          | coupler  |              |                                     | ROMS   |
+
+PHIBBL     fbb        W/m2        FBB 7,4    DISBOT     Dissip_fric    Dissip_fric=PHIBBL/rho0               m2/s2    Wave dissipation energy flux due to bottom friction
+
+PHIBRKX    fdbx       W/m2        FDB 6,15   DISSURFX   Dissip_breakx  Dissip_breakx=PHIBRKX/rho0            m2/s2    Wave dissiptaion energy flux due to depth limited breaking x-dir
+PHIBRKY    fdby       W/m2        FDB 6,15   DISSURFY   Dissip_breaky  Dissip_breaky=PHIBRKY/rho0            m2/s2    Wave dissipation energy flux due to depth limited breaking y-dir
+                                                                       Dissip_breakx=Dissip_breakx*cos(a)+
+                                                                                     Dissip_breaky*sin(a)    m2/s2    Rotated to roms grid x ('a' is roms grid angle)
+                                                                       Dissip_breaky=Dissip_breaky*cos(a)-
+                                                                                     Dissip_breakx*sin(a)    m2/s2    Rotated to roms grid y
+--         --          --         --         DISSURF    Dissip_break   Dissip_break=SQRT(Dissip_breakx**2+
+                                                                                         Dissip_breaky**2)   m2/s2    Wave dissipation energy flux due to depth limited breaking - total
+
+PHICAPX    fdwx       W/m2        FDW 6,16   DISWCAPX   Dissip_wcapx   Dissip_wcapx=PHICAPX/rho0             m2/s2    Wave dissiptaion energy flux due to whitecapping x-dir
+PHICAPY    fdwy       W/m2        FDW 6,16   DISWCAPY   Dissip_wcapy   Dissip_wcapy=PHICAPY/rho0             m2/s2    Wave dissipation energy flux due to whitecapping y-dir
+                                                                       Dissip_wcapx=Dissip_wcapx*cos(a)+
+                                                                                    Dissip_wcapy*sin(a)      m2/s2    Rotated to roms grid x
+                                                                       Dissip_wcapy=Dissip_wcapy*cos(a)-
+                                                                                    Dissip_wcapx*sin(a)      m2/s2    Rotated to roms grid y
+--          --              --           --  DISWCAP    Dissip_wcap    Dissip_wcap=SQRT(Dissip_wcapx**2+
+                                                                                        Dissip_wcapy**2)     m2/s2    Wave dissipation energy flux due to whitecapping - total
+
+HS         hs         m           HS 2,1     HSIGN      Hwave          Hwave=HS                              m        Significant wave height
+
+FP0        fp         1/s         FP 2,6     RTP        Pwave_top      Pwave_top=1.0/FP0                     s        Peak surface period
+
+UBA        uubr,vubr  m/s         UBR 7,2    UBOT       Uwave_rms      Uwave_rms=UBA                         m/s      Bottom orbital velocity.
+                                                                       UBA=sqrt(uubr.^2+vubr.^2)
+ABA        uabr,vabr  m           ABR 7,1    ABOT       --             Pwave_bot=2*PI*(ABA/UBA)              s        Mean bottom period
+                                                                       ABA=sqrt(uabr.^2+vabr.^2)
+ 
+THM        dir        deg         DIR 2,7    DIRE       --             cff=450.0*PI/180.0-(THM+PI)
+                                                                       DIRE=SIN(cff)
+THM        dir        deg         DIR 2,7    DIRN       --             cff=450.0*PI/180.0-(THM+PI)          
+                                                                       DIRN=COS(cff)
+--         --         --          --         --         Dwave          Dwave=ATAN2(DIRE,DIRN)                deg      Mean wave direction from
+
+WLM        lm         m           LM 2,2     WLEN       Lwave          Lwave=WLM                             m        Mean wave length
+
+WLP        lp         m           LP 2,21    WLENP      Lwavep         Lwavep=WLP                            m        Peak wave length
+
+QB         qb         %           QB 2,22    QB         Wave_break     Wave_break=QB                         %        percent wave breaking
+
+THS        spr        deg         SPR 2,8    WDSPR      Wave_ds        Wave_ds=THS                           deg      Wave direction spread
+
+QP         qp         --          QP 8,5     WQP        Wave_qp        Wave_qp=QP                            --       Goda wave spectrum peakedness parameter.
+
+TAUOSX     usoc       N/m2        SOC 6,14   TAUOCE     Tauocx         Tauocx=TAUOCX/rho0                    m2/s2 
+TAUOSY     vsoc       N/m2        SOC 6,14   TAUOCN     Tauocy         Tauocy=TAUOCN/rho0                    m2/s2 
+                                                                       sustr=Tauocx*cos(a)+Tauocy*sin(a)             Rotated to roms grid x-surface stress.
+                                                                       svstr=Tauocy*cos(a)-Tauocx*sin(a)             Rotated to roms grid y-surface stress.
+
+STK_STOKES stk        1/m         STK 6,17   KS00       spec_wn        spec_wn=STK_STOKES                    1/m      wave number for stokes computation
+STU_STOKES stu        m/s         STU 6,18   US00       spec_us        spec_us=STU_STOKES                    1/m      east component for stokes computation
+STV_STOKES stv        m/s         STV 6,19   VS00       spec_vs        spec_vs=STV_STOKES                    1/m      north component for stokes computation
+
+[DISVEG    disveg     W/m2        DISVEG 10,3 DISVEG     Dissip_veg    Dissip_veg=DISVEG                      W/m2    Wave dissipation due to vegetation     <--  not implemented yet]
+
+***************************************************************************
+Field exchanges from ROMS to WW3:
+
+Name in  | Name in  | Units in  | ww3_shel | Name in  | Name in      | Conversion from                     | Units  | Description
+WW3 code | WW3      | WW3       | tag      | MCT      | ROMS         | WW3 to ROMS                         | in     | in ROMS
+         | outfile  | outfile   |          | coupler  |              |                                     | ROMS   |
+
+DPT        dpt        m           DPT 1,1    DEPTH      h (bath)       h=DPT                                 m        Water depth below mean sea level.
+
+WLEV       wlv        m           WLV 1,5    WLEV       zeta           zeta=WLEV                             m        free surface elevation.
+
+CXTH       cxth       m/s         CX 1,2     VELX00     uwavek         uwavek=CXTH                           m/s      freqeuncy dependent x-current.        (uv_banihashemi)
+CYTH       cyth       m/s         CY 1,2     VELY00     vwavek         vwavek=CYTH                           m/s      freqeuncy dependent y-current.        (uv_banihashemi)
+CX         cx         m/s         CX 1,2     VELX       uwave          uwave =CX                             m/s      depth-integrated dependent x-current. (uv_kirby)
+CY         cy         m/s         CY 1,2     VELY       vwave          vwave =CY                             m/s      depth-integrated dependent y-current. (uv_kirby)
+
+GAMMA      z0         --          Z0         Z0         Z0             Z0=-GAMMA                             --       bottom roughness parameter.
+
+[VEGDENS                 <------------ VEG  is not fully coupled to WW3 yet]
+
