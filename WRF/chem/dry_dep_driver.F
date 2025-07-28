@@ -204,6 +204,9 @@ CONTAINS
    integer :: k_a, k_c, kmax, m_mam
    real, dimension( its:ite, jts:jte ) :: frac_removed
 
+   ! osipov add temproray aerosol indexer for for-loop
+   integer :: p_aer
+
 
 ! ..
 ! .. Intrinsic Functions ..
@@ -373,6 +376,26 @@ CONTAINS
                 enddo
            endif
 
+!           
+! osipovs, add the deposition diagnostics for RADM2 SORGAM cases
+! //TODO: check carefully the list of tracers, should match the registry.chem
+!
+! osipov debug this code should be removed
+!# if 0
+           if( config_flags%diagnostic_chem == DEPVEL1 .and. &
+              config_flags%chem_opt == RADM2SORG_KPP ) then
+               do j = jts,jte
+                  dvel(its:ite,1,j,p_dvel_o3) = m2cm*ddvel(its:ite,j,p_o3)
+                  dvel(its:ite,1,j,p_dvel_no) = m2cm*ddvel(its:ite,j,p_no)
+                  dvel(its:ite,1,j,p_dvel_no2) = m2cm*ddvel(its:ite,j,p_no2)
+                  dvel(its:ite,1,j,p_dvel_nh3) = m2cm*ddvel(its:ite,j,p_nh3)
+                  dvel(its:ite,1,j,p_dvel_so2) = m2cm*ddvel(its:ite,j,p_so2)
+                  dvel(its:ite,1,j,p_dvel_so4) = m2cm*ddvel(its:ite,j,p_sulf)
+                  dvel(its:ite,1,j,p_dvel_hno3) = m2cm*ddvel(its:ite,j,p_hno3)
+                enddo
+          endif
+!# endif
+
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,current_month,                                &
@@ -449,7 +472,7 @@ CONTAINS
        if( config_flags%diagnostic_dep == 1) then
        do i = its, ite
        do j = jts, jte
-       ddflx(i, j,1:numgas)=ddflx(i,j,1:numgas)+chem(i,kts,j,1:numgas)*p_phy(i,kts,j)/(RSI*t_phy(i,kts,j))*ddvel(i,j,1:numgas)*dtstep*1.E-6
+       ddflx(i,j,1:numgas)=ddflx(i,j,1:numgas)+chem(i,kts,j,1:numgas)*p_phy(i,kts,j)/(RSI*t_phy(i,kts,j))*ddvel(i,j,1:numgas)*dtstep*1.E-6
        enddo
        enddo
        end if
@@ -629,6 +652,25 @@ CONTAINS
              ddvel(:,:,numgas+1:num_chem) = min( 0.50, ddvel(:,:,numgas+1:num_chem) )
           end if
        end if
+
+       ! osipov, Add deposition diags for sorgam case. Calculations for gases are above
+       if( config_flags%diagnostic_dep == 1 .and.  &
+         config_flags%chem_opt == RACM_SOA_VBS_HET_KPP) then
+            ! diags for the surface level
+            k=kts
+            ! osipov, in principle this can be shorted via ddvel(:,:,numgas+1:num_chem)
+            ! print *,'osipov numgas=',numgas, ' num_chem=', num_chem, ' p_soila=', p_soila
+            do p_aer = numgas+1, num_chem  ! borrow variable from mam
+                ddflx(its:ite,jts:jte,p_aer)=ddflx(its:ite,jts:jte,p_aer)+chem(its:ite,k,jts:jte,p_aer)/alt(its:ite,k,jts:jte)*ddvel(its:ite,jts:jte,p_aer)*dtstep
+            enddo
+            ! or do everything by hand, see module_aerosols_sorgam.F
+!           ddflx(i,j,p_so4aj)=ddflx(i,j,p_so4aj)+chem(i,k,j,p_so4aj)/alt(i,k,j)*ddvel(i,j,VSO4AJ)*dtstep
+!           ddflx(i,j,p_so4ai)=ddflx(i,j,p_so4ai)+chem(i,k,j,p_so4ai)/alt(i,k,j)*ddvel(i,j,VSO4AI)*dtstepn of MPI call statistics,
+!           ...
+!           ddflx(i,j,p_nu0)=ddflx(i,j,p_nu0)+chem(i,k,j,p_nu0)/alt(i,k,j)*ddvel(i,j,VNU0)*dtstep
+!           ddflx(i,j,p_ac0)=ddflx(i,j,p_ac0)+chem(i,k,j,p_ac0)/alt(i,k,j)*ddvel(i,j,VAC0)*dtstep
+!           ddflx(i,j,p_corn)=ddflx(i,j,p_corn)+chem(i,k,j,p_corn)/alt(i,k,j)*ddvel(i,j,VCORN)*dtstep
+        end if
 
        !For MAM aersols dry deposition
        if ((aer_mech_id == 4)) then

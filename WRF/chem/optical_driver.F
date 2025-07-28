@@ -199,7 +199,7 @@
 !                 'jdf ', its, ite, jts, jte, kts, kte
 !                 call peg_message( lunerr, msg )
 
-        !BSINGH(PNNL)- The followingvariables had an undefined behavior at the boundaries.
+        !BSINGH(PNNL)- The following variables had an undefined behavior at the boundaries.
         tauaersw(:,:,:,:) = inf 
         extaersw(:,:,:,:) = inf
         gaersw(:,:,:,:)   = inf
