@@ -761,7 +761,7 @@
 #endif
 
       real(r8) :: add_offset, scale
-      real(r8) :: cff, ramp
+      real(r8) :: cff
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
@@ -1406,7 +1406,7 @@
 !  Set ramp coefficient.
 !
 #ifdef RAMP_WAVES
-      ramp=tanh(time(ng)/300.0_r8)
+      ramp=tanh((tdays(ng)-dstart)/0.01_r8)
 #else
       ramp=1.0_r8
 #endif
@@ -2181,7 +2181,7 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            cff=A(ij)
+            cff=A(ij)*ramp
             IF (iw.eq.1) THEN
               FORCES(ng)%spec_us(i,j,IZ)=cff
             ELSE
@@ -2214,7 +2214,7 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            cff=A(ij)
+            cff=A(ij)*ramp
             IF (iw.eq.1) THEN
               FORCES(ng)%spec_vs(i,j,IZ)=cff
             ELSE
