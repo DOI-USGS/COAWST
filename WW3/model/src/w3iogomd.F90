@@ -1730,14 +1730,14 @@ CONTAINS
           ETD = ETD + A(ITH,IK,JSEA)*FACTOR
           ETOTX = ETOTX + A(ITH,IK,JSEA)*ECOS(ITH)*DTH
           ETOTY = ETOTY + A(ITH,IK,JSEA)*ESIN(ITH)*DTH
-        ENDDO
+        END DO
         IF (ETD.GT.EMAX) THEN
           EMAX  = ETD
           ISIGM = IK
-        ENDIF
-!  Convert from A(theta,k) to E(theta,freq)
-        ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)
-        ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)
+        END IF
+!  Convert from A(theta,k) to N(theta,freq)
+        ETOTX = ETOTX/CG(IK,ISEA)
+        ETOTY = ETOTY/CG(IK,ISEA)
 !
         DS = SIG(IK) - SIG(IK-1)
         STU_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &
@@ -1761,7 +1761,7 @@ CONTAINS
         WLP(JSEA) = 2.*PI/WN(ISIGM,ISEA)
       ELSE
         WLP(JSEA) = 0.
-      ENDIF
+      END IF
     END DO
 #endif
     !
@@ -2822,9 +2822,9 @@ CONTAINS
           ISIGM = IK
         ENDIF
 !wlp end
-! Convert from A(theta,k) to E(theta,freq)
-        ETOTX = ETOTX*SIG(IK)/CG(IK,ISEA)  !/TPI
-        ETOTY = ETOTY*SIG(IK)/CG(IK,ISEA)  !/TPI
+! Convert from A(theta,k) to N(theta,freq)
+        ETOTX = ETOTX/CG(IK,ISEA)
+        ETOTY = ETOTY/CG(IK,ISEA)
 !
         DS = SIG(IK) - SIG(IK-1)
         STU_STOKES(JSEA,IK-1)=DS*(WN(IK,ISEA)*ETOTX*SIG(IK)**2.0        &

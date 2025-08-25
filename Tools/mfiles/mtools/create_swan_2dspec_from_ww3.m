@@ -21,6 +21,10 @@ spec_file='SWAN2D_sanible1.txt';
 %what point number do you want to use
 spec_pnt=1;
 
+disp('You may need to adjust directions so they all increase.')
+disp('If they go .... 20 10 0 350 340 ...')
+disp('You may need to make that be ...  380 370 360 350 340 ...')
+
 %%%%%%  end of user
 
 %create text for SWAN spec file
@@ -68,7 +72,8 @@ nline=['    ',NDIR,'                                  number of directions'];
   fprintf(fid,nline); 
   fprintf(fid,'\n');
 for mm=1:length(direction)
-  nline=['    ',num2str(direction(mm))];
+% nline=['    ',num2str(direction(mm))];
+  nline=['    ',num2str(direction(mm)+180)];
   fprintf(fid,nline); 
   fprintf(fid,'\n');
 end
