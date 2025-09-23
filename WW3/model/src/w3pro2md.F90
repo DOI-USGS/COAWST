@@ -1559,16 +1559,11 @@ CONTAINS
         END DO
 !
         FKD = ( CXTH(IP)*DDDX + CYTH(IP)*DDDY )
-        FKD0   = FKD / CG(IK) * DSDD(IK)
-        DO ITH=1, NTH
-          CFLK(IK+1,ITH) = FKD0 + WN(IK)*FKC(ITH)
-        END DO
-#else
-        FKD0   = FKD / CG(IK) * DSDD(IK)
-        DO ITH=1, NTH
-          CFLK(IK+1,ITH) = FKD0 + WN(IK)*FKC(ITH)
-        END DO
 #endif
+        FKD0   = FKD / CG(IK) * DSDD(IK)
+        DO ITH=1, NTH
+          CFLK(IK+1,ITH) = FKD0 + WN(IK)*FKC(ITH)
+        END DO
       END DO
       !
       ! 4.c Band widths

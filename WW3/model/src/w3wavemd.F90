@@ -1791,20 +1791,29 @@ CONTAINS
                     J = 1
                     !
 #ifdef W3_PR1
+# ifdef W3_CURSP
+                    CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR2
 # ifdef W3_CURSP
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
-                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),   &
-                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),                 &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -1816,6 +1825,15 @@ CONTAINS
 # endif
 #endif
 #ifdef W3_PR3
+# ifdef W3_CURSP
+                    CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
+                         CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# else
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
@@ -1823,6 +1841,7 @@ CONTAINS
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
                          CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# endif
 #endif
                     !
                   END IF  !!  GTYPE
@@ -2123,20 +2142,29 @@ CONTAINS
                   ELSE
                     J = 1
 #ifdef W3_PR1
+# ifdef W3_CURSP
+                    CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR2
 # ifdef W3_CURSP
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
-                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),       &
-                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),     &
-                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),           &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -2148,6 +2176,15 @@ CONTAINS
 # endif
 #endif
 #ifdef W3_PR3
+# ifdef W3_CURSP
+                    CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
+                         CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# else
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
@@ -2155,6 +2192,7 @@ CONTAINS
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
                          CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# endif
 #endif
                     !
                   END IF  !! GTYPE

@@ -315,6 +315,7 @@ CONTAINS
     !       CYTOT   R.A.
     !       VFLX    R.A.  Discrete fluxes between grid points in index space.
     !       VFLY    R.A.
+    !       CXL, CYL      Local copies of CX and CY modified by CURSP and MGP.
     !     ----------------------------------------------------------------
     !
     !  4. Subroutines used :
@@ -393,6 +394,9 @@ CONTAINS
          FLAGLL, DPDX, DPDY, DQDX, DQDY, GSQRT
     USE W3WDATMD, ONLY: TIME
     USE W3ADATMD, ONLY: CG, CX, CY, ATRNX, ATRNY, FACVX, FACVY
+#ifdef W3_CURSP
+    USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
     USE W3IDATMD, ONLY: FLCUR
     USE W3ODATMD, ONLY: NDST, FLBPI, NBI, TBPI0, TBPIN, ISBPI,      &
          BBPI0, BBPIN, NDSE, IAPROC, NAPERR
@@ -439,7 +443,8 @@ CONTAINS
     REAL                    :: VCY2D(NY+1,NX)
     REAL                    :: VFLX2D(1:NY,0:NX)
     REAL                    :: VFLY2D(NY,NX)
-
+    REAL                    :: CXL(1:NSEA)
+    REAL                    :: CYL(1:NSEA)
     !/
     !/ ------------------------------------------------------------------- /
     !/
@@ -458,14 +463,28 @@ CONTAINS
     CGL    = 0.575 * GRAV / SIG(IK)
     !
     IF ( FLCUR ) THEN
-      CGA    = SQRT(MAXVAL((CGL*ECOS(ITH)+CX(1:NSEA))**2          &
-           +(CGL*ESIN(ITH)+CY(1:NSEA))**2))
-      CC     = SQRT(MAXVAL(CX(1:NSEA)**2+CY(1:NSEA)**2))
-#ifdef W3_MGP
-      CGA    = SQRT(MAXVAL((CGL*ECOS(ITH)+CX(1:NSEA)-VGX)**2      &
-           +(CGL*ESIN(ITH)+CY(1:NSEA)-VGY)**2))
-      CC     = SQRT(MAXVAL((CX(1:NSEA)-VGX)**2+(CY(1:NSEA)-VGY)**2))
+#ifdef W3_CURSP
+      CXL(1:NSEA)=CXTH(1:NSEA,IK)
+      CYL(1:NSEA)=CXTH(1:NSEA,IK)
+#else
+      CXL(1:NSEA)=CX(1:NSEA)
+      CYL(1:NSEA)=CX(1:NSEA)
 #endif
+#ifdef W3_MGP
+      CXL(1:NSEA)=CXL(1:NSEA)-VGX
+      CYL(1:NSEA)=CYL(1:NSEA)-VGY
+#endif
+!     CGA    = SQRT(MAXVAL((CGL*ECOS(ITH)+CX(1:NSEA))**2          &
+!          +(CGL*ESIN(ITH)+CY(1:NSEA))**2))
+!     CC     = SQRT(MAXVAL(CX(1:NSEA)**2+CY(1:NSEA)**2))
+      CGA    = SQRT(MAXVAL((CGL*ECOS(ITH)+CXL(1:NSEA))**2         &
+           +(CGL*ESIN(ITH)+CYL(1:NSEA))**2))
+      CC     = SQRT(MAXVAL(CXL(1:NSEA)**2+CYL(1:NSEA)**2))
+!#ifdef W3_MGP
+!     CGA    = SQRT(MAXVAL((CGL*ECOS(ITH)+CX(1:NSEA)-VGX)**2      &
+!          +(CGL*ESIN(ITH)+CY(1:NSEA)-VGY)**2))
+!     CC     = SQRT(MAXVAL((CX(1:NSEA)-VGX)**2+(CY(1:NSEA)-VGY)**2))
+!#endif
     ELSE
       CGA    = CGL
 #ifdef W3_MGP
@@ -548,8 +567,10 @@ CONTAINS
           IX     = MAPSF(ISEA,1)
           IY     = MAPSF(ISEA,2)
 
-          CXTOT2D(IY,IX) = CXTOT2D(IY,IX) + CX(ISEA)/CLATS(ISEA)
-          CYTOT2D(IY,IX) = CYTOT2D(IY,IX) + CY(ISEA)
+!         CXTOT2D(IY,IX) = CXTOT2D(IY,IX) + CX(ISEA)/CLATS(ISEA)
+!         CYTOT2D(IY,IX) = CYTOT2D(IY,IX) + CY(ISEA)
+          CXTOT2D(IY,IX) = CXTOT2D(IY,IX) + CXL(ISEA)/CLATS(ISEA)
+          CYTOT2D(IY,IX) = CYTOT2D(IY,IX) + CYL(ISEA)
 
         END DO
       END IF
@@ -828,9 +849,15 @@ CONTAINS
     !/
   END SUBROUTINE W3XYP1
   !/ ------------------------------------------------------------------- /
+#ifdef W3_CURSP
   SUBROUTINE W3KTP1 ( ISEA, FACTH, FACK, CTHG0, CG, WN, DEPTH,    &
-       DDDX, DDDY, CX, CY, DCXDX, DCXDY, DCYDX,    &
+       DDDX, DDDY, CXTH, CYTH, DCXDXTH, DCXDYTH,                  &
+       DCYDXTH, DCYDYTH, DCDX, DCDY, VA )
+#else
+  SUBROUTINE W3KTP1 ( ISEA, FACTH, FACK, CTHG0, CG, WN, DEPTH,    &
+       DDDX, DDDY, CX, CY, DCXDX, DCXDY, DCYDX,                   &
        DCYDY, DCDX, DCDY, VA )
+#endif
     !/
     !/                  +-----------------------------------+
     !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -944,16 +971,22 @@ CONTAINS
     !/ Parameter list
     !/
     INTEGER, INTENT(IN)     :: ISEA
+#ifdef W3_CURSP
     REAL, INTENT(IN)        :: FACTH, FACK, CTHG0, CG(0:NK+1),      &
-         WN(0:NK+1), DEPTH, DDDX, DDDY,       &
+         WN(0:NK+1), DEPTH, DDDX, DDDY,                             &
+         CXTH(:), CYTH(:), DCXDXTH(:), DCXDYTH(:), DCYDXTH(:), DCYDYTH(:)
+#else
+    REAL, INTENT(IN)        :: FACTH, FACK, CTHG0, CG(0:NK+1),      &
+         WN(0:NK+1), DEPTH, DDDX, DDDY,                             &
          CX, CY, DCXDX, DCXDY, DCYDX, DCYDY
+#endif
     REAL, INTENT(IN)        :: DCDX(0:NK+1), DCDY(0:NK+1)
     REAL, INTENT(INOUT)     :: VA(NSPEC)
     !/
     !/ ------------------------------------------------------------------- /
     !/ Local parameters
     !/
-    INTEGER                 :: ITH, IK, ISP, ITH0
+    INTEGER                 :: ITH, IK, ISP, ITH0, IP
     REAL                    :: FDDMAX, FDG, DCYX, DCXXYY, DCXY,     &
          DCXX, DCXYYX, DCYY, FKD, FKD0, CTHB, &
          CWNB
@@ -1054,6 +1087,17 @@ CONTAINS
       !
       IF ( FLCUR ) THEN
         !
+#ifdef W3_CURSP
+        DO ISP=1, NSPEC
+          IK = 1 + (ISP-1)/NTH
+          DCYX   = FACTH *   DCYDXTH(IK)
+          DCXXYY = FACTH * ( DCXDXTH(IK) - DCYDYTH(IK) )
+          DCXY   = FACTH *   DCXDYTH(IK)
+        !
+          VCTH(ISP) = VCTH(ISP) + ES2(ISP)*DCYX                 &
+               + ESC(ISP)*DCXXYY - EC2(ISP)*DCXY
+        END DO
+#else
         DCYX   = FACTH *   DCYDX
         DCXXYY = FACTH * ( DCXDX - DCYDY )
         DCXY   = FACTH *   DCXDY
@@ -1063,6 +1107,7 @@ CONTAINS
                + ESC(ISP)*DCXXYY - EC2(ISP)*DCXY
         END DO
         !
+#endif
       END IF
       !
     END IF
@@ -1071,6 +1116,7 @@ CONTAINS
     !
     IF ( FLCK ) THEN
       !
+#if !defined W3_CURSP
       DCXX   =  - FACK *   DCXDX
       DCXYYX =  - FACK * ( DCXDY + DCYDX )
       DCYY   =  - FACK *   DCYDY
@@ -1080,9 +1126,29 @@ CONTAINS
         FKC(ITH) = EC2(ITH)*DCXX +                                &
              ESC(ITH)*DCXYYX + ES2(ITH)*DCYY
       END DO
+#endif
       !
       ISP    = -NTH
       DO IK=0, NK+1
+#if defined W3_CURSP
+        IF (IK.eq.0) THEN
+          IP = 1
+        ELSE IF (IK.EQ.NK+1) THEN
+          IP = NK
+        ELSE
+          IP = IK
+        END IF
+        DO ITH=1, NTH
+          DCXX   =  - FACK *   DCXDXTH(IP)
+          DCXYYX =  - FACK * ( DCXDYTH(IP) + DCYDXTH(IP) )
+          DCYY   =  - FACK *   DCYDYTH(IP)
+      !
+          FKC(ITH) = EC2(ITH)*DCXX +                             &
+                     ESC(ITH)*DCXYYX + ES2(ITH)*DCYY
+        END DO
+!
+        FKD = FACK * ( CXTH(IP)*DDDX + CYTH(IP)*DDDY )
+#endif
         FKD0   = FKD / CG(IK) * DSDD(IK)
         DO ITH=1, NTH
           ISP    = ISP + 1
