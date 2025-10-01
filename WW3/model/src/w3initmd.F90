@@ -2217,6 +2217,18 @@ CONTAINS
     ! 1.  Set-up for W3IOGO ---------------------------------------------- /
     !
 #ifdef W3_MPI
+#ifdef W3_COAWST_MODEL
+    ! Force certain vars to be allocated to full size for his file.
+    FLOGRR(2,21)=.TRUE.                       !  WLP
+    FLOGRR(2,22)=.TRUE.                       !  QB
+    FLOGRR(6,14)=.TRUE.                       !  TAUOSX/Y
+    FLOGRR(6,15)=.TRUE.                       !  PHIBRKX/Y
+    FLOGRR(6,16)=.TRUE.                       !  PHICAPX/Y
+    FLOGRR(6,17)=.TRUE.                       !  STK stokes
+    FLOGRR(6,18)=.TRUE.                       !  STU stokes
+    FLOGRR(6,19)=.TRUE.                       !  STV stokes
+    FLOGRR(7, 4)=.TRUE.                       !  PHIBBL
+#endif
     DO J=1, NOGRP
       DO K=1, NGRPP
         FLGRDALL (J,K) =  (FLOGRD(J,K) .OR. FLOGR2(J,K))
@@ -2291,18 +2303,6 @@ CONTAINS
       !
       IF ( IAPROC .LE. NAPROC ) THEN
         IT     = IT0
-#endif
-#ifdef W3_COAWST_MODEL
-      ! Force certain vars to be allocated to full size for his file.
-      FLOGRR(2,21)=.TRUE.                       !  WLP
-      FLOGRR(2,22)=.TRUE.                       !  QB
-      FLOGRR(6,14)=.TRUE.                       !  TAUOSX/Y
-      FLOGRR(6,15)=.TRUE.                       !  PHIBRKX/Y
-      FLOGRR(6,16)=.TRUE.                       !  PHICAPX/Y
-      FLOGRR(6,17)=.TRUE.                       !  STK stokes
-      FLOGRR(6,18)=.TRUE.                       !  STU stokes
-      FLOGRR(6,19)=.TRUE.                       !  STV stokes
-      FLOGRR(7, 4)=.TRUE.                       !  PHIBBL
 #endif
 
 #ifdef W3_MPIT
@@ -5043,7 +5043,7 @@ CONTAINS
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(34*NAPROC) )
       ELSE
 # ifdef W3_COAWST_MODEL
-        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(12*NAPROC) )
+        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(3*(NAPROC-1)+9*(NAPROC+1)) )
 # else
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(3*NAPROC) )
 # endif
