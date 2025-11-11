@@ -101,6 +101,7 @@ CONTAINS
   USE module_plumerise1
   USE module_aerosols_sorgam_vbs, only: sorgam_vbs_addemiss
   USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
+  USE module_aerosols_soa_vbs_het, only: soa_vbs_het_addemiss
   USE module_ghg_fluxes
   USE module_lightning_nox_driver
   USE module_cam_mam_addemiss, only: cam_mam_addemiss
@@ -1556,9 +1557,25 @@ CONTAINS
             its,ite, jts,jte, kts,kte                                   )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
-       call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+       call soa_vbs_addemiss(id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            ebu,                                                        &
+            slai,ust,smois,ivgtyp,isltyp,                               &
+            emis_ant,dust_emiss_active,                                 &
+            seasalt_emiss_active,config_flags%kemit,                    &
+            config_flags%biomass_burn_opt,                              &
+            config_flags%num_soil_layers,config_flags%emiss_opt,        &
+            config_flags%dust_opt,                                      &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+    CASE (RACM_SOA_VBS_HET_KPP)
+       call wrf_debug(15,'emissions_driver calling soa_vbs_het_addemiss')
+       ! osipov config_flags
+       call soa_vbs_het_addemiss(config_flags,                              &
+            id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
             slai,ust,smois,ivgtyp,isltyp,                               &
             emis_ant,dust_emiss_active,                                 &

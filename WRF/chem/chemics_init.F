@@ -37,6 +37,7 @@
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
+   USE module_aerosols_soa_vbs_het, only: aerosols_soa_vbs_het_init
    USE module_aerosols_sorgam_vbs, only: aerosols_sorgam_vbs_init
    USE module_dep_simple
    USE module_data_gocart_dust
@@ -303,6 +304,10 @@ call wrf_message("**************************************************************
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
          config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
          config_flags%chem_opt /= mozcart_kpp .and. &
+         ! osipov TODO: TUV is not compatible with chem_opt 106, produces too low OH
+         ! To make it work, I've added the tuv.map from Ravan Ahmadov & Jordan Schnell
+         ! config_flags%chem_opt /= radm2sorg_kpp .and. &
+         config_flags%chem_opt /= racm_soa_vbs_het_kpp .and. &
          config_flags%chem_opt /= t1_mozcart_kpp) THEN
        write(message_txt,'(''--- ERROR: chem_opt '',i3,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt
@@ -423,6 +428,12 @@ call wrf_message("**************************************************************
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
       write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
 !     call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      call wrf_error_fatal( trim(message_txt) )
+   endif
+
+   ! osipov check that ddflx & ddlen has correct dim size (chem_opt=106 and such)
+   if ( config_flags%diagnostic_dep .EQ. 1 .AND. config_flags%ne_area .LT. num_chem ) then
+      write(message_txt,'(''ERROR: SORGAM diagnostic_dep 1 requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
       call wrf_error_fatal( trim(message_txt) )
    endif
 
@@ -1847,7 +1858,7 @@ ENDIF ghg_block
         endif
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -1859,8 +1870,37 @@ ENDIF ghg_block
 
 !!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
        ! initialize pointers used by aerosol-cloud-interaction routines
-        call aerosols_soa_vbs_init_aercld_ptrs( &
-           num_chem, is_aerosol, config_flags )
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
+
+!...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kde-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
+                 enddo
+              enddo
+           enddo
+        enddo
+        endif
+        endif
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
+    CASE (RACM_SOA_VBS_HET_KPP)
+       CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
+
+       call aerosols_soa_vbs_het_init(chem,convfac,z_at_w,                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte, config_flags               )
+
+!!!TUCCELLA (BUG, before it was called in module_aerosols_soa_vbs.F)
+       ! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_soa_vbs_init_aercld_ptrs(num_chem, is_aerosol, config_flags )
 
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then

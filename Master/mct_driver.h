@@ -594,6 +594,8 @@
         END IF
 # endif
 # ifdef WRF_COUPLING
+        WRITE (stdout,84) MyRank
+ 84     FORMAT (/,' osipov mct_coupler - Rank before finalize_ocn2atm_coupling ' ,i5.5)
         IF (roms_exit.eq.NoError) THEN
           CALL finalize_ocn2atm_coupling
         ELSE
@@ -608,8 +610,15 @@
 !  Terminates all the mpi-processing and coupling.
 !-----------------------------------------------------------------------
 !
+
+      WRITE (stdout,85) MyRank
+ 85   FORMAT (/,' osipov mct_coupler - Rank before mpi_barrier ' ,i5.5)
       CALL mpi_barrier (MPI_COMM_WORLD, MyError)
+      WRITE (stdout,86) MyRank
+ 86   FORMAT (/,' osipov mct_coupler - Rank before MCTWorld_clean ' ,i5.5)
       CALL MCTWorld_clean ()
+      WRITE (stdout,87) MyRank
+ 87   FORMAT (/,' osipov mct_coupler - Rank before mpi_finalize ' ,i5.5)
       CALL mpi_finalize (MyError)
 
       STOP

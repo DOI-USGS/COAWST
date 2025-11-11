@@ -418,6 +418,22 @@
 !!$         enddo
 !!$       endif
 !!$  888  format(i3,9e12.5)
+! osipov debug Mie calculations
+#ifdef MIE_DEBUG
+      if(id.eq.1.and.iclm.eq.121.and.jclm.eq.255) then
+        print*,'jdf printout 1'
+        do isize = 1, nbin_o
+           write(*,888) isize,number_bin_col(isize,1),                &
+                  radius_wet_col(isize,1),radius_core_col(isize,1),   &
+                  real(swrefindx_col(isize,1,1)),                         &
+                  imag(swrefindx_col(isize,1,1)),                         &
+                  real(swrefindx_core_col(isize,1,1)),                    &
+                  imag(swrefindx_core_col(isize,1,1)),dz(1)
+        enddo
+      endif
+ 888  format(i3,9e12.5)
+#endif
+
 !
 ! Initialize LW vars as not all options compute it
        lwtauaer(:,:)=1.e-20
@@ -525,6 +541,24 @@
 !!$          write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
 !!$       endif
 !!$  889  format(4e12.5)
+! osipov, debug Mie
+#ifdef MIE_DEBUG
+      if(id.eq.1.and.iclm.eq.121.and.jclm.eq.255) then
+         write(*,889) swsizeaer(1,1),swsizeaer(2,1),swsizeaer(3,1),swsizeaer(4,1)
+         write(*,889) swextaer(1,1),swextaer(2,1),swextaer(3,1),swextaer(4,1)
+         write(*,889) swwaer(1,1),swwaer(2,1),swwaer(3,1),swwaer(4,1)
+         write(*,889) swgaer(1,1),swgaer(2,1),swgaer(3,1),swgaer(4,1)
+         write(*,889) swtauaer(1,1),swtauaer(2,1),swtauaer(3,1),swtauaer(4,1)
+         write(*,889) swbscoef(1,1),swbscoef(2,1),swbscoef(3,1),swbscoef(4,1)
+         write(*,889) l2(1,1),l2(2,1),l2(3,1),l2(4,1)
+         write(*,889) l3(1,1),l3(2,1),l3(3,1),l3(4,1)
+         write(*,889) l4(1,1),l4(2,1),l4(3,1),l4(4,1)
+         write(*,889) l5(1,1),l5(2,1),l5(3,1),l5(4,1)
+         write(*,889) l6(1,1),l6(2,1),l6(3,1),l6(4,1)
+         write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
+      endif
+ 889  format(4e12.5)
+#endif
      enddo
      enddo
 !
@@ -1147,7 +1181,7 @@
       dlo_um=0.0390625
       dhi_um=10.0
       drydens=1.8
-      iflag=2
+      iflag=3  ! osipov, new iflag is setup to compute factors for normalized input
       duma=1.0
       dgmin=1.0e-07 ! in (cm)
       dtemp=dlo_um
@@ -1689,15 +1723,13 @@
 !            RACM_SOA_VBS_KPP aerosol model 
 
 ! This subroutine computes volume-averaged refractive index and wet radius
-! needed 
-! by the mie calculations. Aerosol number is also passed into the mie
-! calculations
-! in terms of other units.
+! needed by the mie calculations. Aerosol number is also passed into the mie
+! calculations in terms of other units.
 !
   subroutine optical_prep_modal_soa_vbs(nbin_o, chem, alt,           &
 !       h2oai, h2oaj, refindx, radius_wet, number_bin,           &
 !       radius_core, refindx_core, refindx_shell,                &
-        h2oai, h2oaj, radius_core,radius_wet, number_bin,        &
+        h2oai, h2oaj, radius_core, radius_wet, number_bin,       &
         swrefindx, swrefindx_core, swrefindx_shell,              &
         lwrefindx, lwrefindx_core, lwrefindx_shell,              &
         ids,ide, jds,jde, kds,kde,                               &
@@ -1815,7 +1847,7 @@ COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nswbands),      &
       dlo_um=0.0390625
       dhi_um=10.0
       drydens=1.8
-      iflag=2
+      iflag=3  ! osipov, new iflag is setup to compute factors for normalized input
       duma=1.0
       dgmin=1.0e-07 ! in (cm)
       dtemp=dlo_um
@@ -2052,7 +2084,7 @@ COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nswbands),      &
         l=lptr_asoa1_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_asoa1j= chem(i,k,j,l)*conv1a
         l=lptr_asoa2_aer(isize,itype,iphase)
-if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
+        if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
         l=lptr_asoa3_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_asoa3j= chem(i,k,j,l)*conv1a
         l=lptr_asoa4_aer(isize,itype,iphase)
@@ -2150,6 +2182,7 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
         l=numptr_aer(isize,itype,iphase)
         if (l .ge. p1st)  num_ac= chem(i,k,j,l)*conv1b
 
+        ! TODO: osipov, K (potassium) is missing here
 
         vol_ai = (mass_so4i/dens_so4) + (mass_no3i/dens_no3)  + &
                  (mass_nh4i/dens_nh4) + (mass_oini/dens_oin)  + &
@@ -2189,18 +2222,33 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
         ss2=exp(ss1*ss1*36.0/8.0)
         ss3=(sixpi*vol_ai/(num_ai*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
+#ifdef MIE_DEBUG
+      if(i.eq.121.and.j.eq.255.and.k.eq.1) then
+        print*,'osipov dgnum_um i', dgnum_um
+      endif
+#endif
         call sect02(dgnum_um,sginin,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_secti,xmas_secti)
         ss1=alog(sginia)
         ss2=exp(ss1*ss1*36.0/8.0)
         ss3=(sixpi*vol_aj/(num_aj*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
+#ifdef MIE_DEBUG
+      if(i.eq.121.and.j.eq.255.and.k.eq.1) then
+        print*,'osipov dgnum_um j', dgnum_um
+      endif
+#endif
         call sect02(dgnum_um,sginia,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectj,xmas_sectj)
         ss1=alog(sginic)
         ss2=exp(ss1*ss1*36.0/8.0)
         ss3=(sixpi*vol_ac/(num_ac*ss2))**0.3333333
         dgnum_um=amax1(dgmin,ss3)*1.0e+04
+#ifdef MIE_DEBUG
+      if(i.eq.121.and.j.eq.255.and.k.eq.1) then
+        print*,'osipov dgnum_um c', dgnum_um
+      endif
+#endif
         call sect02(dgnum_um,sginic,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectc,xmas_sectc)
 
@@ -2214,6 +2262,8 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !jdfcz    mass_dust= mass_dusti*xmas_secti(isize) + mass_dustj*xmas_sectj(isize)
 !+ &
 !jdfcz               mass_soil*xmas_sectc(isize)
+!osipov coarse dust mass (soil) was lost resulting in the wrong wet radius and size parameter for Mie
+          mass_dust = mass_soil*xmas_sectc(isize)
           !mass_oc = (mass_pai+mass_aro1i+mass_aro2i+mass_alk1i+mass_ole1i+ &
           !           mass_ba1i+mass_ba2i+mass_ba3i+mass_ba4i)*xmas_secti(isize)
           !           + &
@@ -2232,6 +2282,8 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
           vol_nh4 = mass_nh4 / dens_nh4
           vol_oin = mass_oin / dens_oin
 !jdfcz    vol_dust = mass_dust / dens_dust
+! osipov, fix the missing soila
+          vol_dust = mass_dust / dens_dust
           vol_oc  = mass_oc  / dens_oc
           vol_bc  = mass_bc  / dens_bc
           vol_na  = mass_na  / dens_na
@@ -2250,17 +2302,34 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !!$            print*,'cl ',mass_cl,vol_cl
 !!$            print*,'h2o',mass_h2o,vol_h2o
 !!$          endif
+! osipov debug Mie calculations
+#ifdef MIE_DEBUG
+      if(i.eq.121.and.j.eq.255.and.k.eq.1) then
+            print*,'osipov print composition bin',isize
+            print*,'so4',mass_so4,vol_so4
+            print*,'no3',mass_no3,vol_no3
+            print*,'nh4',mass_nh4,vol_nh4
+            print*,'oin',mass_oin,vol_oin
+            print*,'dust',mass_dust,vol_dust
+            print*,'oc ',mass_oc,vol_oc
+            print*,'bc ',mass_bc,vol_bc
+            print*,'na ',mass_na,vol_na
+            print*,'cl ',mass_cl,vol_cl
+            print*,'h2o',mass_h2o,vol_h2o
+      endif
+#endif
           mass_dry_a = mass_so4 + mass_no3 + mass_nh4 + mass_oin + &
-!jdfcz                 mass_oc  + mass_bc  + mass_na  + mass_cl  + mass_dust
-                       mass_oc  + mass_bc  + mass_na  + mass_cl
+! osipov bring back (uncomment) the coarse dust
+                       mass_oc  + mass_bc  + mass_na  + mass_cl  + mass_dust
+!                       mass_oc  + mass_bc  + mass_na  + mass_cl
           mass_wet_a = mass_dry_a + mass_h2o
           vol_dry_a  = vol_so4  + vol_no3  + vol_nh4  + vol_oin  + &
-!jdfcz                 vol_oc   + vol_bc   + vol_na   + vol_cl   + vol_dust
-                       vol_oc   + vol_bc   + vol_na   + vol_cl
+! osipov bring back (uncomment) the coarse dust
+                       vol_oc   + vol_bc   + vol_na   + vol_cl   + vol_dust
+!                       vol_oc   + vol_bc   + vol_na   + vol_cl
           vol_wet_a  = vol_dry_a + vol_h2o
           vol_shell  = vol_wet_a - vol_bc
-          !num_a      = vol_wet_a /
-          !(0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
+          !num_a      = vol_wet_a /(0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
           !czhao 
           num_a      = num_ai*xnum_secti(isize)+num_aj*xnum_sectj(isize)+num_ac*xnum_sectc(isize)
 
@@ -2274,10 +2343,11 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns)   * mass_dust / dens_dust) +  &
                        (swref_index_dust(ns)   * mass_oin / dens_dust)  +  &
+! osipov coarse dust (oin is dust from p25j, this is soila contribution)
+                       (swref_index_dust(ns)   * mass_dust / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
-
-(swref_index_nacl(ns)   * mass_na  / dens_na) +   &
+                       (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
                        (swref_index_h2o(ns)    * mass_h2o / dens_h2o)
 !
@@ -2301,6 +2371,8 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns)   * mass_dust / dens_dust) +  &
                        (swref_index_dust(ns)   * mass_oin / dens_dust)  +  &
+! osipov coarse dust (oin is dust from p25j, this is soila contribution)
+                       (swref_index_dust(ns)   * mass_dust / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -2314,7 +2386,7 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
             swrefindx_core(i,k,j,isize,ns) = ref_index_bc
             swrefindx_shell(i,k,j,isize,ns) = ref_index_oin
           elseif(num_a .lt. 1.e-20 .or. vol_shell .lt. 1.0e-20) then
-swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
+            swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
             radius_core(i,k,j,isize) =0.0
@@ -2340,6 +2412,8 @@ swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
 !jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
                        (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
+! osipov coarse dust (oin is dust from p25j, this is soila contribution)
+                       (lwref_index_dust(ns)    * mass_dust / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
@@ -2351,7 +2425,7 @@ swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
 !
           IF(num_a .lt. 1.0e-20 .or. vol_wet_a .lt. 1.0e-20) then
             dp_dry_a   = xdia_cm(isize)
-dp_wet_a   = xdia_cm(isize)
+            dp_wet_a   = xdia_cm(isize)
             dp_bc_a    = xdia_cm(isize)
             ri_ave_a   = 0.0
             ri_dum     = 0.0
@@ -2366,6 +2440,8 @@ dp_wet_a   = xdia_cm(isize)
 !jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
                        (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
+! osipov coarse dust (oin is dust from p25j, this is soila contribution)
+                       (lwref_index_dust(ns)    * mass_dust / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -2394,6 +2470,41 @@ dp_wet_a   = xdia_cm(isize)
             lwrefindx_shell(i,k,j,isize,ns) =ri_dum/vol_shell
           endif
         enddo  ! ns longwave
+
+! osipov debug Mie calculations
+#ifdef MIE_DEBUG
+      if(i.eq.121.and.j.eq.255.and.k.eq.1) then
+        print*,' '
+        print*,'osipov printout moments for bin', isize
+        print*,'vol_a ijc', vol_ai,vol_aj,vol_ac
+        print*,'num_a ijc', num_ai,num_aj,num_ac
+        print*,'xmas_ ijc', xmas_secti(isize),xmas_sectj(isize),xmas_sectc(isize)
+        print*,'xnum_ ijc', xnum_secti(isize),xnum_sectj(isize),xnum_sectc(isize)
+        print*,'r_wet[cm] radius_wet[cm]', dp_wet_a/2.0,radius_wet(i,k,j,isize)
+        print*,'vol_wet, vol_dry, vol_h2o', vol_wet_a,vol_dry_a,vol_h2o
+        print*,'num_a', num_a
+        print*,'ri real, ri, imag, core real, core imag',   &
+                real(swrefindx(i,k,j,isize,ns)),             &
+                imag(swrefindx(i,k,j,isize,ns)),                         &
+                real(swrefindx_core(i,k,j,isize,ns)),                    &
+                imag(swrefindx_core(i,k,j,isize,ns))
+
+        print*,'osipov printout components '
+            print*,'jdf print bin ',isize
+            print*,'so4 ',mass_so4,vol_so4
+            print*,'no3 ',mass_no3,vol_no3
+            print*,'nh4 ',mass_nh4,vol_nh4
+            print*,'oin ',mass_oin,vol_oin
+            print*,'dust',mass_dust,vol_dust
+            print*,'oc  ',mass_oc,vol_oc
+            print*,'bc  ',mass_bc,vol_bc
+            print*,'na  ',mass_na,vol_na
+            print*,'cl  ',mass_cl,vol_cl
+            print*,'h2o ',mass_h2o,vol_h2o
+      endif
+      890  format(i3,4e12.5)
+      891  format(5e12.5)
+#endif
 
 !          refr=real(refindx(i,k,j,isize))
 
@@ -2521,7 +2632,7 @@ END subroutine optical_prep_modal_soa_vbs
       dlo_um=0.0390625
       dhi_um=10.0
       drydens=1.8
-      iflag=2
+      iflag=3  ! osipov, new iflag is setup to compute factors for normalized input
       duma=1.0
       dgmin=1.0e-07 ! in (cm)
       dtemp=dlo_um
@@ -3149,7 +3260,7 @@ END subroutine optical_prep_modal_soa_vbs
       dlo_um=0.0390625
       dhi_um=10.0
       drydens=1.8
-      iflag=2
+      iflag=3  ! osipov, new iflag is setup to compute factors for normalized input
       duma=1.0
       dgmin=1.0e-07 ! in (cm)
       dtemp=dlo_um
@@ -3673,7 +3784,7 @@ END subroutine optical_prep_modal_soa_vbs
       dlo_um=0.0390625
       dhi_um=10.0
       drydens=1.8
-      iflag=2
+      iflag=3  ! osipov, new iflag is setup to compute factors for normalized input
       duma=1.0
       dgmin=1.0e-07 ! in (cm)
       dtemp=dlo_um
@@ -4762,6 +4873,14 @@ END subroutine optical_prep_modal_soa_vbs
                      pext=pext+ch(nc)*cext(nc)
                   enddo
                   pext=exp(pext)
+
+! osipov, debug Mie
+#ifdef MIE_DEBUG
+      if(id.eq.1.and.iclm.eq.121.and.jclm.eq.255.and.klevel.eq.1) then
+         print*, 'osipov m,nbin_a,pext,wl,rwet,xrad'
+         print*, m,nbin_a,pext,wavmidsw(ns),radius_wet_col(m,klevel)*10**4,xrad
+      endif
+#endif
         
 ! JCB 2004/02/09 -- for scattering efficiency
                   pscat=0.5*cscat(1)
@@ -6846,6 +6965,14 @@ END subroutine optical_prep_modal_soa_vbs
 !   user specifies a single log-normal mode and a set of section boundaries
 !   prog calculates mass and number for each section
 !
+!   osipov
+!   Logic depends on iflag
+!   iflag==1: user provided 0th moment & sg, dg. Other moments will be derived
+!   iflag==2: user provided mass (m3), m0 will be derived
+!   iflag==3: user needs just coefficients, assume that both m0 and m3 equal to 1, ignore duma
+!
+!   #TODO: iflag needs to be changed in all other optical_prep*, where they use duma=1
+!
         implicit none
         REAL, DIMENSION(nbin), INTENT(OUT) :: xnum_sect, xmas_sect
         integer iflag, n, nbin 
@@ -6859,26 +6986,37 @@ END subroutine optical_prep_modal_soa_vbs
 !       real erfc_num_recipes
         real pi
         parameter (pi = 3.1415926536)
-!
+
+! osipov
+! original code was designed to compute the mapped concentration for different input parameter duma
+! iflag 1 is for m0 or number concentration
+! iflag 2 is for m3 or mass concentration
+! remaining parameter were derived
+! czhao needed only scaling factors when both m0 and m3 are normalized to 1 (broke the iflag2 case)
+! We are going to fix original code and dedicate iflag 3 for the normalized input
         if (iflag .le. 1) then
             xntot = duma
-        else
+        else if (iflag.eq.2) then
             xmtot = duma
-            xntot = duma   !czhao
+        else
+            xvtot = 1.0
+            xmtot = 1.0
+            xntot = 1.0
         end if
 !   compute total volume and number for mode
-!       dgnum = dgnum_um*1.0e-4
-!       sx = log( sigmag )
-!       x0 = log( dgnum )
-!       x3 = x0 + 3.*sx*sx
-!       dstar = dgnum * exp(1.5*sx*sx)
-!       if (iflag .le. 1) then
-!           xvtot = xntot*(pi/6.0)*dstar*dstar*dstar
-!           xmtot = xvtot*drydens*1.0e12
-!       else
-!           xvtot = xmtot/(drydens*1.0e12)
-!           xntot = xvtot/((pi/6.0)*dstar*dstar*dstar)
-!       end if
+       dgnum = dgnum_um*1.0e-4
+       sx = log( sigmag )
+       x0 = log( dgnum )
+       x3 = x0 + 3.*sx*sx
+       dstar = dgnum * exp(1.5*sx*sx)
+       if (iflag .le. 1) then
+           xvtot = xntot*(pi/6.0)*dstar*dstar*dstar
+           xmtot = xvtot*drydens*1.0e12
+       else if (iflag.eq.2) then
+           xvtot = xmtot/(drydens*1.0e12)
+           xntot = xvtot/((pi/6.0)*dstar*dstar*dstar)
+!      else  ! do nothing
+       end if
 !   compute section boundaries
         dlo = dlo_um*1.0e-4
         dhi = dhi_um*1.0e-4
@@ -6907,12 +7045,11 @@ END subroutine optical_prep_modal_soa_vbs
         sumnum = 0.
         summas = 0.
 !       write(22,*)
-!       write(22,*) 'dgnum_um, sigmag = ', dgnum_um, sigmag
-!       write(22,*) 'drydens =', drydens
-!       write(22,*) 'ntot (#/cm3), mtot (ug/m3) = ', xntot, xmtot
+!       write(22,*) 'dgnum_um, sigmag, iflag = ', dgnum_um, sigmag, iflag
+!       write(22,*) 'drydens, dstar (cm) =', drydens, dstar
+!       write(22,*) 'ntot (#/cm3), mtot (ug/m3), vtot (cm3/cm3) = ', xntot, xmtot, xvtot
 !        write(22,9220)
-!9220    format( /   &
-!        '  n   dlo(um)   dhi(um)       number         mass' / )
+!9220    format( / '  n   dlo(um)   dhi(um)       number         mass' / )
 !9225    format(   i3, 2f10.6, 2(1pe13.4) )
 !9230    format( / 'sum over all sections  ', 2(1pe13.4) )
 !9231    format(   'modal totals           ', 2(1pe13.4) )
@@ -7069,10 +7206,12 @@ END subroutine optical_prep_modal_soa_vbs
       real ratio
 !
 	real,save ::rmin,rmax  ! min, max aerosol size bin
-!       data rmin /0.005e-04/   ! rmin in cm, 5e-3 microns min allowable size
-!       data rmax /50.0e-04/    ! rmax in cm. 50 microns, big particle, max allowable size
-	data rmin /0.010e-04/   ! rmin in cm, 5e-3 microns min allowable size
-	data rmax /7.0e-04/    ! rmax in cm. 50 microns, big particle, max allowable size
+!   data rmin /0.005e-04/   ! rmin in cm, 5e-3 microns min allowable size
+	data rmin /0.010e-04/   ! rmin in cm, 10e-3 microns min allowable size
+
+! osipov, bring max size back to 50 instead of 7
+!	data rmax /7.0e-04/    ! rmax in cm. 7 microns, big particle, max allowable size
+    data rmax /50.0e-04/    ! rmax in cm. 50 microns, big particle, max allowable size
 ! diagnostic declarations
 	integer, save :: kcallmieaer2
         data  kcallmieaer2 / 0 /
@@ -7196,6 +7335,15 @@ END subroutine optical_prep_modal_soa_vbs
 !   	write(6,*)qextc,qscatc,gscac,extc,scatc
 !	write(6,*)
 !
+
+! osipov, debug Mie
+#ifdef MIE_DEBUG
+      if(id.eq.1.and.iclm.eq.121.and.jclm.eq.255.and.klevel.eq.1) then
+         print*, 'osipov mieaer_sc qextc,extc,vlambc,dp_wet_a*10**4'
+         print*, qextc,extc,vlambc,dp_wet_a*10**4
+      endif
+#endif
+
 	weighte=extc*1.0e-08 ! extinction cross section, converted to cm^2
 	weights=scatc*1.0e-08 ! scattering cross section, converted to cm^2
        	tauaer(ns,klevel)=tauaer(ns,klevel)+weighte* &

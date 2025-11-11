@@ -699,8 +699,10 @@ state    real  erup_beg     ij      misc        1         -      i{13}    "ERUP_
 state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
 # following used for output to look at all kinds of stuff
-state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
+# TODO: osipov nc name for dep_vel_o3 conflicts with dep_vel (general array)
+state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL_O3"            "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
+
 
 # Tendency diagnostics for chemistry (chemdiag)
 #
@@ -1129,6 +1131,13 @@ state    real  pm10           ikj     misc        1         -      h        "pm1
 state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
 state    real  tcosz          ij      misc        1         -      -        "TCOSZ "               "daily average cossza"                   "?"
 state    real  ttday          ij      misc        1         -      -        "TTDAY "               ""                   "?"
+
+# osipov aerosol ph, can't use the name pH because it is taken by the "pertubation height"
+# instead of ph I used the full name denoting the "potential of hydrogen"
+state    real  pot_hyd_ph      ikj     misc        1         -      rh       "potential_of_hydrogen_pH"             "aerosol potential of hydrogen (pH)"              ""
+# osipov flag to activate the effect of the dust crustal material on thermodynamics
+rconfig   logical     do_crustal          namelist,chem          1             .false.  rh    "activates the effects of crustal material"            "true activates cations from dust"      ""
+rconfig   real        crustal_mobility    namelist,chem          max_domains    0.05    rh    "mobility of the dust cations"      ""      ""
 
 #soa diagnostic
 state    real  tsoa           ikj     misc        1         -      r        "TSOA"                 "soa dry mass"              "ug m^-3"
@@ -3887,6 +3896,11 @@ rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      
 
 # additional namelist variables to control deposition of the organic condensable vapors
 rconfig   real        depo_fact           namelist,chem          max_domains    0.25       rh    "deposition factor for SOA vapors"      ""      ""
+# osipov parametrize fine and coarse dust fraction in the emitted size distribution (for GOCART). NOTE: that coarse mode is derived as 1 - dust_i_fraction
+rconfig   real        dust_i_fraction     namelist,chem          max_domains    0.001      rh    "fraction of the emitted dust allocated to the accumulation mode"      ""      ""
+# osipov multiplicative parameter to tune dust emissions (dust emissions *= dust_emis_sensitivity)
+rconfig   real        dust_emis_sensitivity     namelist,chem          max_domains    1.0      rh    "multiplicative parameter to tune overall dust emissions"      ""      ""
+
 
 # track input
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
@@ -3904,8 +3918,8 @@ rconfig   integer   mosaic_aerchem_optaa  namelist,chem          1              
 rconfig   real        af_lambda_start     namelist,chem          max_domains    200.    rh    "start wavelength for AF output" "nm"      ""
 rconfig   real        af_lambda_end       namelist,chem          max_domains    340.    rh    "end   wavelength for AF output" "nm"      ""
 # Control for ISORROPIA in MADE/SORGAM schemes
-rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"
-rconfig   logical     do_n2o5het          namelsit,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"
+rconfig   logical     do_isorropia        namelist,chem          1              .false. rh    "flag to use ISORROPIA"      ""      ""
+rconfig   logical     do_n2o5het          namelist,chem          1              .false. rh    "flag to do n2o5 heterogenous chemistry via chlorine pathway"      ""      ""
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
