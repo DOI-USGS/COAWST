@@ -1973,6 +1973,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
             got_var(idFsur)=.TRUE.
             STA(ng)%Vid(idFsur)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idbath))) THEN
+            got_var(idbath)=.TRUE.
+            STA(ng)%Vid(idbath)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
             got_var(idUbar)=.TRUE.
             STA(ng)%Vid(idUbar)=var_id(i)
@@ -2365,6 +2368,12 @@
         END IF
         IF (.not.got_var(idFsur).and.Sout(idFsur,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idFsur)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idbath).and.Sout(idbath,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idbath)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

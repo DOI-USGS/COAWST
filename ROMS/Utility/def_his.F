@@ -4377,6 +4377,11 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idOvel))) THEN
             got_var(idOvel)=.TRUE.
             HIS(ng)%Vid(idOvel)=var_id(i)
+# if defined OMEGA_IMPLICIT
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idOvil))) THEN
+            got_var(idOvil)=.TRUE.
+            HIS(ng)%Vid(idOvil)=var_id(i)
+# endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idDano))) THEN
             got_var(idDano)=.TRUE.
             HIS(ng)%Vid(idDano)=var_id(i)
@@ -5056,6 +5061,14 @@
           exit_flag=3
           RETURN
         END IF
+# if defined OMEGA_IMPLICIT
+        IF (.not.got_var(idOvil).and.Hout(idOvel,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idOvil)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
         IF (.not.got_var(idDano).and.Hout(idDano,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idDano)),          &
      &                                  TRIM(ncname)

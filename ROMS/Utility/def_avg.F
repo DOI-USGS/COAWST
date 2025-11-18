@@ -4060,7 +4060,6 @@
           exit_flag=3
           RETURN
         END IF
-            AVG(ng)%Vid(idWlen)=var_id(i)
 # endif
 # ifdef WAVES_LENGTHP
         IF (.not.got_var(idWlep).and.Aout(idWlep,ng)) THEN
@@ -8976,7 +8975,6 @@
           exit_flag=3
           RETURN
         END IF
-            AVG(ng)%Vid(idWlen)=var_id(i)
 # endif
 # ifdef WAVES_LENGTHP
         IF (.not.got_var(idWlep).and.Aout(idWlep,ng)) THEN
