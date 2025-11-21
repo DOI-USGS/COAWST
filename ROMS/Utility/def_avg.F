@@ -3361,7 +3361,8 @@
              AVG(ng)%Tid(itrc)=var_id(i)
             END IF
           END DO
-          DO itrc=1,NAT
+!         DO itrc=1,NAT
+          DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,iHUTav(itrc)))) THEN
               got_var(iHUTav(itrc))=.TRUE.
               AVG(ng)%Vid(iHUTav(itrc))=var_id(i)
@@ -4177,7 +4178,8 @@
             RETURN
           END IF
         END DO
-        DO itrc=1,NAT
+!       DO itrc=1,NAT
+        DO itrc=1,NT(ng)
           IF (.not.got_var(iHUTav(itrc)).and.Aout(iHUTav(itrc),ng)) THEN
             IF (Master) WRITE (stdout,60) TRIM(Vname(1,iHUTav(itrc))),  &
      &                                    TRIM(ncname)
