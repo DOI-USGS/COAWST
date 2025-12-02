@@ -2089,7 +2089,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idPair,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
-# if defined BULK_FLUXES
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM2OCN_FLUXES
             CASE ('Hout(idTair)')
               IF (idTair.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idTair'
@@ -6280,7 +6280,7 @@
      &         'Hout(idPair)',                                          &
      &         'Write out surface air pressure.'
 # endif
-# if defined BULK_FLUXES
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM2OCN_FLUXES
             IF (Hout(idTair,ng)) WRITE (out,170) Hout(idTair,ng),       &
      &         'Hout(idTair)',                                          &
      &         'Write out surface air temperature.'

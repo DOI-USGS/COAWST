@@ -588,7 +588,7 @@
       cid=cid+cad
 #  endif
 !
-#  if defined BULK_FLUXES || defined ECOSIM || \
+#  if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
       to_add=':RELH'
       cad=LEN_TRIM(to_add)
@@ -1287,7 +1287,7 @@
       CALL AttrVect_importRAttr (AttrVect_O(ia,io)%atm2ocn_AV, "MSLP",  &
      &                           AA, Asize)
 #  endif
-#  if defined BULK_FLUXES || defined ECOSIM || \
+#  if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
      (defined SHORTWAVE && defined ANA_SRFLUX)
 !-----------------------------------------------------------------------
 !     RELH       Surface air relative humidity (-).
@@ -1305,7 +1305,8 @@
 !         2-m pressure.
 !
           rnum = grid%Q2(i,j)*cff1
-          rden  = (grid%Q2(i,j)*(1.-0.622)+0.622)
+!         rden  = (grid%Q2(i,j)*(1.-0.622)+0.622)
+          rden  = grid%Q2(i,j)+0.622
           cff2 = rnum/rden
 !
 !         Compute saturation specific humidity using Bolton equation 10.

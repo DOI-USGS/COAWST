@@ -386,7 +386,7 @@
       cid=cid+cad
 #endif
 !
-#if defined BULK_FLUXES || defined ECOSIM || \
+#if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
       to_add=':RELH'
       cad=LEN_TRIM(to_add)
@@ -1180,7 +1180,7 @@
      &                    range(1),range(2)
       END IF
 #endif
-#if defined BULK_FLUXES || defined ECOSIM || \
+#if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
 !
 !  Surface air relative humidity (-)
@@ -1440,7 +1440,7 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          FORCES(ng)%Pair)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -1503,7 +1503,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Pair)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     (defined SHORTWAVE && defined ANA_SRFLUX)
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

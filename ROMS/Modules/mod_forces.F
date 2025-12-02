@@ -393,7 +393,7 @@
       defined AIR_OCEAN)
           real(r8), pointer :: lrflxG(:,:,:)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM ||  \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
           real(r8), pointer :: Hair(:,:)
 #  ifndef ANA_HUMIDITY
@@ -876,7 +876,7 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       allocate ( FORCES(ng) % Hair(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -1466,7 +1466,7 @@
      &                 __LINE__, 'FORCES(ng)%lrflxG')) RETURN
 #  endif
 
-# if defined BULK_FLUXES || defined ECOSIM ||  \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       IF (.not.destroy(ng, FORCES(ng)%Hair, MyFile,                     &
      &                 __LINE__, 'FORCES(ng)%Hair')) RETURN
@@ -2049,7 +2049,7 @@
             FORCES(ng) % lrflx(i,j) = IniVal
             FORCES(ng) % shflx(i,j) = IniVal
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
             FORCES(ng) % Hair(i,j) = IniVal
             FORCES(ng) % Tair(i,j) = IniVal
@@ -2080,7 +2080,7 @@
             FORCES(ng) % HairG(i,j,2) = IniVal
 #  endif
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
 #  ifndef ANA_TAIR
             FORCES(ng) % TairG(i,j,1) = IniVal

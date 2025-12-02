@@ -1583,7 +1583,7 @@
         END IF
       END IF
 # endif
-# if defined BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN || defined ECOSIM
 !
 !  Write out surface air temperature.
 !
