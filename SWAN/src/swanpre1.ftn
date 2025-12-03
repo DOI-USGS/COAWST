@@ -1553,6 +1553,19 @@
 !         fluid mud layer                                                 40.59
           IGRD = 13                                                       40.59
           PSNAME = 'MUDLGRID'                                             40.59
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME)
+          IF (JMUDL2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JMUDL2 = MCMVAR - 1                                             40.55
+            JMUDL3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%MUDLF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%MUDLF_G(MXG(IGR1)*MYG(IGR1)))
+          MUDLF=>M_GENARR_MOD(ng)%MUDLF_G
+          MUDLF=0.
+#endif
         ELSE IF (KEYWIS ('AICE')) THEN                                    41.75
 !         ice concentration (as a fraction)                               41.75
           IGRD = 14                                                       41.75
@@ -4900,6 +4913,11 @@
          ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
          TURBF=>M_GENARR_MOD(ng)%TURBF_G
          CALL SWCOPR( TARR, TURBF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.13) THEN                                           40.59
+         DEALLOCATE(M_GENARR_MOD(ng)%MUDLF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%MUDLF_G(MXG(IGR1)*MYG(IGR1)))
+         MUDLF=>M_GENARR_MOD(ng)%MUDLF_G
+         CALL SWCOPR( TARR, MUDLF, MXG(IGR1)*MYG(IGR1) )                  40.31
       ELSE IF (IGR1.EQ.18) THEN                                           40.55
          DEALLOCATE(M_GENARR_MOD(ng)%NPHTF_G)
          ALLOCATE (M_GENARR_MOD(ng)%NPHTF_G(MXG(IGR1)*MYG(IGR1)))
