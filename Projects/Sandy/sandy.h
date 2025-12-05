@@ -115,3 +115,7 @@
 # undef DIAGNOSTICS_UV
 # undef DIAGNOSTICS_TS
 #endif
+
+#define FLOATS
+#define FLOATS_STOKES
+#define FLOATS_WINDS
