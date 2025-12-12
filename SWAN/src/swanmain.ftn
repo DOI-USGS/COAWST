@@ -8123,6 +8123,9 @@
 #ifdef NESTING
       USE M_SREFINED
 #endif
+#ifdef SWAN_NS_PERIODIC
+      USE mct_coupler_params
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -8208,7 +8211,7 @@
 ! i   XYTST : test points
 !
 #if defined SWAN_MODEL
-      INTEGER offset, spcount, IX, IY
+      INTEGER offset, spcount, IX, IY, INDXGR
 # ifdef NESTING
       INTEGER, intent(in) :: ngp, ITjcw
       REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng),2)
@@ -8290,8 +8293,19 @@
       INTEGER     IERR
       REAL        TSTVAL(10)                                              40.00
 #ifdef NESTING
-      REAL        fac, fac1, fac2, fac3
       INTEGER     TIDX1, TIDX2
+      REAL        fac, fac1, fac2, fac3
+#endif
+#if defined SWAN_NS_PERIODIC
+      INTEGER     I, J, istart, iend, jstart, jend, INDX1, MyError
+      REAL, ALLOCATABLE :: AC_north(:)
+      REAL, ALLOCATABLE :: AC_south(:)
+      REAL, ALLOCATABLE :: ACrecv_north(:)
+      REAL, ALLOCATABLE :: ACrecv_south(:)
+      REAL, ALLOCATABLE :: AC_west(:)
+      REAL, ALLOCATABLE :: AC_east(:)
+      REAL, ALLOCATABLE :: ACrecv_west(:)
+      REAL, ALLOCATABLE :: ACrecv_east(:)
 #endif
       TYPE(BSPCDAT), POINTER :: CURBFL                                    40.31
       LOGICAL LPB                                                         40.80
@@ -8373,6 +8387,339 @@
              END IF
            END DO
         END IF
+# if defined SWAN_NS_PERIODIC
+!
+!     Exchange north-south boundary AC data.
+!
+        ALLOCATE(AC_north(MDC*MSC*MXCGL))             ! data on each tile
+        ALLOCATE(AC_south(MDC*MSC*MXCGL))             ! data on each tile
+        ALLOCATE(AC_west(MDC*MSC*MYCGL))              ! data on each tile
+        ALLOCATE(AC_east(MDC*MSC*MYCGL))              ! data on each tile
+        ALLOCATE(ACrecv_north(MDC*MSC*MXCGL))         ! global data
+        ALLOCATE(ACrecv_south(MDC*MSC*MXCGL))         ! global data
+        ALLOCATE(ACrecv_west(MDC*MSC*MYCGL))          ! global data
+        ALLOCATE(ACrecv_east(MDC*MSC*MYCGL))          ! global data
+!
+        INDX1=MDC*MSC*MXCGL
+        DO I = 1, INDX1
+          AC_north(I)=0.
+          AC_south(I)=0.
+          ACrecv_north(I)=0.
+          ACrecv_south(I)=0.
+        END DO
+        INDX1=MDC*MSC*MYCGL
+        DO I = 1, INDX1
+          AC_west(I)=0.
+          AC_east(I)=0.
+          ACrecv_west(I)=0.
+          ACrecv_east(I)=0.
+        END DO
+!
+!  here we fill the AC_north and AC_south arrays with data from global AC.
+!  Need 2 indices: one (offset) for my global 1:MXCGL along top and bottom,
+!                  one (INDX  ) for the KGRPNT arrays local on each tile.
+!
+        IF (NPROC.gt.1) THEN
+          IF (MXCGL.gt.MYCGL) THEN                 ! tiled in x-direction
+!
+!           For north and south data
+!
+            IF (MXF.eq.1) THEN
+              istart=MXF
+            ELSE
+              istart=MXF+IHALOX
+            END IF
+            IF (MXL.eq.MXCGL) THEN
+              iend=MXL
+            ELSE
+              iend=MXL-IHALOX
+            END IF
+            DO I=istart,iend
+              IX=I-MXF+1
+              IY=I-MYF+1
+              INDX1=KGRPNT(IX,IY)                 ! along south
+              IY=MYL
+              INDX2=KGRPNT(IX,IY)                 ! along north
+              DO ID = 1, MDC
+                DO ISIGM = 1, MSC
+                  offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                  AC_south(offset)=AC2(ID,ISIGM,INDX1)
+                  AC_north(offset)=AC2(ID,ISIGM,INDX2)
+                END DO
+              END DO
+            END DO
+!
+!           For west and east data
+!
+            IF (MXF.eq.1) THEN
+              DO J=1,MYCGL
+                INDX1=KGRPNT(1,j)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                    AC_west(offset)=AC2(ID,ISIGM,INDX1)
+                  END DO
+                END DO
+              END DO
+            ELSEIF (MXL.eq.MXCGL) THEN
+              DO J=1,MYCGL
+                INDX1=KGRPNT(MXCGL,j)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                    AC_east(offset)=AC2(ID,ISIGM,INDX1)
+                  END DO
+                END DO
+              END DO
+            END IF
+          ELSE                                    ! tiled in y-direction
+!
+!           For north and south data
+!
+            IF (MYF.eq.1) THEN
+              DO I=1,MXCGL
+                INDX1=KGRPNT(I,1)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                    AC_south(offset)=AC2(ID,ISIGM,INDX1)
+                  END DO
+                END DO
+              END DO
+            ELSEIF (MYL.eq.MYCGL) THEN
+              DO I=1,MXCGL
+              IX=I-MXF+1                  !here MXF=1
+              IY=MYCGL-MYF+1
+              INDX1=KGRPNT(IX,IY)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                    AC_north(offset)=AC2(ID,ISIGM,INDX1)
+                  END DO
+                END DO
+              END DO
+            END IF
+!
+!           For west and east data
+!
+            IF (MYF.eq.1) THEN
+              jstart=MYF
+            ELSE
+              jstart=MYF+IHALOY
+            END IF
+            IF (MYL.eq.MYCGL) THEN
+              jend=MYL
+            ELSE
+              jend=MYL-IHALOY
+            END IF
+            DO J=jstart,jend
+              IY=j-MYF+1
+              INDX1=KGRPNT(1,IY)                  ! along west
+              INDX2=KGRPNT(MXL,IY)                ! along east
+              DO ID = 1, MDC
+                DO ISIGM = 1, MSC
+                  offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                  AC_west(offset)=AC2(ID,ISIGM,INDX1)
+                  AC_east(offset)=AC2(ID,ISIGM,INDX2)
+                END DO
+              END DO
+            END DO
+          END IF
+        ELSE                                     ! only 1 tile
+!
+!           For north and south data
+!
+          DO i=1,MXCGL
+            INDX1=KGRPNT(i,1)
+            INDX2=KGRPNT(i,MYCGL)
+            DO ID = 1, MDC
+              DO ISIGM = 1, MSC
+                offset=MSC*MDC*(i-1)+(ISIGM-1)*MDC+ID
+                AC_south(offset)=AC2(ID,ISIGM,INDX1)
+                AC_north(offset)=AC2(ID,ISIGM,INDX2)
+              END DO
+            END DO
+          END DO
+!
+!           For west and east data
+!
+          DO j=1,MYCGL
+            INDX1=KGRPNT(1,j)
+            INDX2=KGRPNT(MXCGL,j)
+            DO ID = 1, MDC
+              DO ISIGM = 1, MSC
+                offset=MSC*MDC*(j-1)+(ISIGM-1)*MDC+ID
+                AC_west(offset)=AC2(ID,ISIGM,INDX1)
+                AC_east(offset)=AC2(ID,ISIGM,INDX2)
+              END DO
+            END DO
+          END DO
+        END IF
+!
+!       Here all the nodes participate in the gather. If a processor is 
+!       not on the bndry, then its values are zero for the summation.
+!
+        INDX1=MSC*MDC*MXCGL
+        CALL MPI_ALLREDUCE(AC_north, ACrecv_north, INDX1, SWREAL,       &
+     &                     MPI_SUM, WAV_COMM_WORLD, MyError)
+        CALL MPI_ALLREDUCE(AC_south, ACrecv_south, INDX1, SWREAL,       &
+     &                     MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+        INDX1=MSC*MDC*MYCGL
+        CALL MPI_ALLREDUCE(AC_west, ACrecv_west, INDX1, SWREAL,         &
+     &                     MPI_SUM, WAV_COMM_WORLD, MyError)
+        CALL MPI_ALLREDUCE(AC_east, ACrecv_east, INDX1, SWREAL,         &
+     &                     MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+        CALL SWSYNC
+!
+!  Repalce the global AC data from the exchanged AC_north and AC_south arrays.
+!  For N-S periodic, we add the west data to the east, and add east data to the west.
+!
+        IF (NPROC.gt.1) THEN
+          IF (MXCGL.gt.MYCGL) THEN                 ! tiled in x-direction
+!
+!           For north and south data
+!
+            IF (MXF.eq.1) THEN
+              istart=MXF
+            ELSE
+              istart=MXF+IHALOX
+            END IF
+            IF (MXL.eq.MXCGL) THEN
+              iend=MXL
+            ELSE
+              iend=MXL-IHALOX
+            END IF
+            DO I=istart,iend
+              IX=I-MXF+1
+              INDX1=KGRPNT(IX,1)                 ! along south
+              INDX2=KGRPNT(IX,MYL)                ! along north
+              DO ID = 1, MDC
+                DO ISIGM = 1, MSC
+                  offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                  AC2(ID,ISIGM,INDX1)=ACrecv_north(offset)
+                  AC2(ID,ISIGM,INDX2)=ACrecv_south(offset)
+                END DO
+              END DO
+            END DO
+!
+!           For west and east data
+!
+            IF (MXF.eq.1) THEN
+              DO J=1,MYCGL
+                INDX1=KGRPNT(1,J)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                    AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
+     &                                  ACrecv_east(offset)                   !west side
+                  END DO
+                END DO
+              END DO
+            ELSEIF (MXL.eq.MXCGL) THEN
+              DO J=1,MYCGL
+                INDX1=KGRPNT(MXCGL,J)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                    AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
+     &                                  ACrecv_west(offset)                    !east side
+                  END DO
+                END DO
+              END DO
+            END IF
+          ELSE                                    ! tiled in y-direction
+            IF (MYF.eq.1) THEN
+!
+!           For north and south data
+!
+              DO I=1,MXCGL
+                INDX1=KGRPNT(I,1)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                    AC2(ID,ISIGM,INDX1)=ACrecv_north(offset)  ! set south edge to equal north
+                  END DO
+                END DO
+              END DO
+            ELSEIF (MYL.eq.MYCGL) THEN
+              DO I=1,MXCGL
+                IY=MYCGL-MYF+1
+                INDX1=KGRPNT(I,IY)
+                DO ID = 1, MDC
+                  DO ISIGM = 1, MSC
+                    offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                    AC2(ID,ISIGM,INDX1)=ACrecv_south(offset)  ! set north edge to equal south
+                  END DO
+                END DO
+              END DO
+            END IF
+!
+!           For west and east data
+!
+            IF (MYF.eq.1) THEN
+              jstart=MYF
+            ELSE
+              jstart=MYF+IHALOY
+            END IF
+            IF (MYL.eq.MYCGL) THEN
+              jend=MYL
+            ELSE
+              jend=MYL-IHALOY
+            END IF
+            DO J=jstart,jend
+              IY=J-MYF+1
+              INDX1=KGRPNT(1,IY)                  ! along west
+              INDX2=KGRPNT(MXL,IY)                ! along east
+              DO ID = 1, MDC
+                DO ISIGM = 1, MSC
+                  offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                  AC2(ID,ISIGM,INDX1)=ACrecv_east(offset)                    !replace west with east data
+!                  AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+              &
+!     &                                ACrecv_east(offset)                    !add east data to west
+!                  AC2(ID,ISIGM,INDX2)=AC2(ID,ISIGM,INDX2)+              &
+!     &                                ACrecv_west(offset)                   !add west data to east
+                END DO
+              END DO
+            END DO
+          END IF
+        ELSE                                     ! only 1 tile
+!
+!           For north and south data
+!
+          DO I=1,MXCGL
+            INDX1=KGRPNT(I,1)
+            INDX2=KGRPNT(I,MYCGL)
+            DO ID = 1, MDC
+              DO ISIGM = 1, MSC
+                offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
+                AC2(ID,ISIGM,INDX1)=ACrecv_north(offset)  !put north data on south
+                AC2(ID,ISIGM,INDX2)=ACrecv_south(offset)  !put south data on north
+              END DO
+            END DO
+          END DO
+!
+!           For west and east data
+!
+          DO J=1,MYCGL
+            INDX1=KGRPNT(1,J)
+            INDX2=KGRPNT(MXCGL,J)
+            DO ID = 1, MDC
+              DO ISIGM = 1, MSC
+                offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
+                AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+                &
+     &                              ACrecv_east(offset)                         !add east data to west
+                AC2(ID,ISIGM,INDX2)=AC2(ID,ISIGM,INDX2)+                &
+     &                              ACrecv_west(offset)                         !add west data to east
+              END DO
+            END DO
+          END DO
+        END IF
+!
+        deallocate (AC_north, AC_south, ACrecv_north, ACrecv_south)
+        deallocate (AC_west, AC_east, ACrecv_west, ACrecv_east)
+# endif
 # ifdef NESTING
       ELSE
 !
