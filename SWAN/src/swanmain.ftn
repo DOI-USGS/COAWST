@@ -8393,10 +8393,10 @@
 !
         ALLOCATE(AC_north(MDC*MSC*MXCGL))             ! data on each tile
         ALLOCATE(AC_south(MDC*MSC*MXCGL))             ! data on each tile
-        ALLOCATE(AC_west(MDC*MSC*MYCGL))              ! data on each tile
-        ALLOCATE(AC_east(MDC*MSC*MYCGL))              ! data on each tile
         ALLOCATE(ACrecv_north(MDC*MSC*MXCGL))         ! global data
         ALLOCATE(ACrecv_south(MDC*MSC*MXCGL))         ! global data
+        ALLOCATE(AC_west(MDC*MSC*MYCGL))              ! data on each tile
+        ALLOCATE(AC_east(MDC*MSC*MYCGL))              ! data on each tile
         ALLOCATE(ACrecv_west(MDC*MSC*MYCGL))          ! global data
         ALLOCATE(ACrecv_east(MDC*MSC*MYCGL))          ! global data
 !
@@ -8436,10 +8436,8 @@
             END IF
             DO I=istart,iend
               IX=I-MXF+1
-              IY=I-MYF+1
-              INDX1=KGRPNT(IX,IY)                 ! along south
-              IY=MYL
-              INDX2=KGRPNT(IX,IY)                 ! along north
+              INDX1=KGRPNT(IX,1)                 ! along south
+              INDX2=KGRPNT(IX,MYL)               ! along north
               DO ID = 1, MDC
                 DO ISIGM = 1, MSC
                   offset=MSC*MDC*(I-1)+(ISIGM-1)*MDC+ID
@@ -8463,7 +8461,8 @@
               END DO
             ELSEIF (MXL.eq.MXCGL) THEN
               DO J=1,MYCGL
-                INDX1=KGRPNT(MXCGL,j)
+                IX=MXL-MXF+1
+                INDX1=KGRPNT(IX,j)
                 DO ID = 1, MDC
                   DO ISIGM = 1, MSC
                     offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
@@ -8612,19 +8611,21 @@
                 DO ID = 1, MDC
                   DO ISIGM = 1, MSC
                     offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
-                    AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
-     &                                  ACrecv_east(offset)                   !west side
+!                   AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
+!    &                                  ACrecv_east(offset)                   !west side
+!                   AC2(ID,ISIGM,INDX1)=ACrecv_east(offset)                   !replace west with east data
                   END DO
                 END DO
               END DO
             ELSEIF (MXL.eq.MXCGL) THEN
               DO J=1,MYCGL
-                INDX1=KGRPNT(MXCGL,J)
+                IX=MXL-MXF+1
+                INDX1=KGRPNT(IX,J)
                 DO ID = 1, MDC
                   DO ISIGM = 1, MSC
                     offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
-                    AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
-     &                                  ACrecv_west(offset)                    !east side
+!                    AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+            &
+!     &                                  ACrecv_west(offset)                    !east side
                   END DO
                 END DO
               END DO
@@ -8675,7 +8676,7 @@
               DO ID = 1, MDC
                 DO ISIGM = 1, MSC
                   offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
-                  AC2(ID,ISIGM,INDX1)=ACrecv_east(offset)                    !replace west with east data
+!                  AC2(ID,ISIGM,INDX1)=ACrecv_east(offset)                    !replace west with east data
 !                  AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+              &
 !     &                                ACrecv_east(offset)                    !add east data to west
 !                  AC2(ID,ISIGM,INDX2)=AC2(ID,ISIGM,INDX2)+              &
@@ -8708,10 +8709,11 @@
             DO ID = 1, MDC
               DO ISIGM = 1, MSC
                 offset=MSC*MDC*(J-1)+(ISIGM-1)*MDC+ID
-                AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+                &
-     &                              ACrecv_east(offset)                         !add east data to west
-                AC2(ID,ISIGM,INDX2)=AC2(ID,ISIGM,INDX2)+                &
-     &                              ACrecv_west(offset)                         !add west data to east
+!                AC2(ID,ISIGM,INDX1)=ACrecv_east(offset)                    !replace west with east data
+!                AC2(ID,ISIGM,INDX1)=AC2(ID,ISIGM,INDX1)+                &
+!     &                              ACrecv_east(offset)                         !add east data to west
+!                AC2(ID,ISIGM,INDX2)=AC2(ID,ISIGM,INDX2)+                &
+!     &                              ACrecv_west(offset)                         !add west data to east
               END DO
             END DO
           END DO
