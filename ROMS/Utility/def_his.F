@@ -4439,6 +4439,20 @@
             got_var(idMtls)=.TRUE.
             HIS(ng)%Vid(idMtls)=var_id(i)
 # endif
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUair))) THEN
+            got_var(idUair)=.TRUE.
+            HIS(ng)%Vid(idUair)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVair))) THEN
+            got_var(idVair)=.TRUE.
+            HIS(ng)%Vid(idVair)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUairE))) THEN
+            got_var(idUairE)=.TRUE.
+            HIS(ng)%Vid(idUairE)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVairN))) THEN
+            got_var(idVairN)=.TRUE.
+            HIS(ng)%Vid(idVairN)=var_id(i)
+# endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
   || defined ATM2OCN_FLUXES
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idPair))) THEN
@@ -4464,7 +4478,7 @@
             got_var(idaoCd)=.TRUE.
             HIS(ng)%Vid(idaoCd)=var_id(i)
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLhea))) THEN
             got_var(idLhea)=.TRUE.
             HIS(ng)%Vid(idLhea)=var_id(i)
