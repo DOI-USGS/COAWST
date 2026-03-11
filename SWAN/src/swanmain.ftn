@@ -6133,6 +6133,12 @@
         IF (JVY1.GT.1) COMPDA(1,JVY1) = 0.                                40.00
         IF (JVX3.GT.1) COMPDA(1,JVX3) = 0.                                40.00
         IF (JVY3.GT.1) COMPDA(1,JVY3) = 0.                                40.00
+#ifdef UV_BANIHASHEMI
+        IF (JVX1.GT.1) COMPDA(1:MCGRD,JVX1:JVX1+MSC-1) = 0.                                40.00
+        IF (JVY1.GT.1) COMPDA(1:MCGRD,JVY1:JVY1+MSC-1) = 0.                                40.00
+        IF (JVX2.GT.1) COMPDA(1:MCGRD,JVX2:JVX2+MSC-1) = 0.                                40.00
+        IF (JVY2.GT.1) COMPDA(1:MCGRD,JVY2:JVY2+MSC-1) = 0.                                40.00
+#endif
       ENDIF
       IF (VARFR) THEN
         COMPDA(1,JFRC2) = 0.                                              40.00

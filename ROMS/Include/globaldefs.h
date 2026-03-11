@@ -915,12 +915,11 @@
 
 #if defined WEC
 # if defined SWAN_COUPLING || defined WW3_COUPLING
+#  if !defined BULK_STOKES
 #   define SPECTRUM_STOKES
-# else
-#   define BULK_STOKES
+#  endif
 # endif
 #endif
-
 
 /*
 ** Activate internal switch for imposing REFDIF as a

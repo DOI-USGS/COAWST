@@ -3324,7 +3324,13 @@
 !TIMG          CALL SWTSTA(111)                                                40.23
           CALL SPROXY (CAX1            ,
      &                 CAY1           ,CGO            ,SPCDIR(1,2)    ,   33.08
-     &                 SPCDIR(1,3)    ,COMPDA(1,JVX1) ,COMPDA(1,JVY1) ,   33.08
+     &                 SPCDIR(1,3)    , 
+#ifdef UV_BANIHASHEMI
+     &                 COMPDA(1:MCGRD,JVX2:JVX2+MSC-1),
+     &                 COMPDA(1:MCGRD,JVY2:JVY2+MSC-1),
+#else
+     &                 COMPDA(1,JVX1) ,COMPDA(1,JVY1) ,                   33.08
+#endif
      &                 SWPDIR
      &                                                              )     33.08
 !TIMG          CALL SWTSTO(111)                                                40.23
@@ -3347,7 +3353,13 @@
 !TIMG      CALL SWTSTA(111)                                                    40.23
       CALL SPROXY (CAX            ,
      &             CAY            ,CGO            ,SPCDIR(1,2)    ,
-     &             SPCDIR(1,3)    ,COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+     &             SPCDIR(1,3)    , 
+#ifdef UV_BANIHASHEMI
+     &             COMPDA(1:MCGRD,JVX2:JVX2+MSC-1),
+     &             COMPDA(1:MCGRD,JVY2:JVY2+MSC-1),
+#else
+     &             COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+#endif
      &             SWPDIR
      &                                                            )
 !TIMG      CALL SWTSTO(111)                                                    40.23
@@ -3369,7 +3381,12 @@
      &                              ISCMIN           ,                    40.00
      &             ISCMAX          ,IDTOT            ,ISTOT         ,
      &             IDDLOW          ,IDDTOP           ,ISSTOP        ,
-     &             COMPDA(1,JDP2)  ,COMPDA(1,JVX2)   ,COMPDA(1,JVY2),
+     &             COMPDA(1,JDP2)  ,
+#ifdef UV_BANIHASHEMI
+     &             COMPDA(1,JVX2+MSC-1), COMPDA(1,JVY2+MSC-1),
+#else
+     &             COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+#endif
      &             SPCDIR          ,RDX              ,RDY           ,     40.41 30.72
      &             KGRPNT                                                 40.13
      &                                                              )
@@ -3381,7 +3398,13 @@
         CALL SPROSD (SPCSIG         ,KWAVE          ,CAS            ,     40.03
      &               CAD            ,CGO            ,                     30.80
      &               COMPDA(1,JDP2) ,COMPDA(1,JDP1) ,SPCDIR(1,2)    ,
-     &               SPCDIR(1,3)    ,COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+     &               SPCDIR(1,3)    ,
+#ifdef UV_BANIHASHEMI
+     &               COMPDA(1:MCGRD,JVX2:JVX2+MSC-1),
+     &               COMPDA(1:MCGRD,JVY2:JVY2+MSC-1),
+#else
+     &               COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
+#endif
      &               SPCDIR(1,4)    ,SPCDIR(1,6)    ,SPCDIR(1,5)    ,     30.80
      &               RDX            ,RDY            ,                     30.80
      &               CAX            ,CAY            ,                     40.02
@@ -3422,7 +3445,11 @@
      &                 FPM        ,UFRIC      ,
      &                 COMPDA(1,JWX2) ,COMPDA(1,JWY2) ,
      &                 ANYWND     ,SPCDIR     ,                           40.00
+#ifdef UV_BANIHASHEMI
+     &                 COMPDA(1,JVX2+MSC-1) ,COMPDA(1,JVY2+MSC-1),
+#else
      &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2),
+#endif
 #ifdef SWAN_MODEL
      &                 COMPDA(1,JUSTAR),COMPDA(1,JCDRAG), 
 #endif
@@ -3535,8 +3562,13 @@
      &  SPCDIR(1,2)         ,SPCDIR(1,3)         ,AC2                 ,
      &  COMPDA(1,JDP2)      ,SWMATR(1,1,JMATD)   ,SWMATR(1,1,JMATR)   ,
      &  ABRBOT              ,KMESPC              ,SMESPC              ,
-     &  COMPDA(1,JUBOT)     ,UFRIC               ,COMPDA(1,JVX2)      ,
-     &  COMPDA(1,JVY2)      ,IDCMIN              ,IDCMAX              ,
+     &  COMPDA(1,JUBOT)     ,UFRIC               ,
+#ifdef UV_BANIHASHEMI
+     &  COMPDA(1,JVX2+MSC-1),COMPDA(1,JVY2+MSC-1),
+#else
+     &  COMPDA(1,JVX2)      ,COMPDA(1,JVY2)      ,
+#endif
+     &  IDCMIN              ,IDCMAX              ,
      &  IDDLOW              ,IDDTOP              ,IDWMIN              ,
      &  IDWMAX              ,ISSTOP              ,SWTSDA(1,1,1,JPWNDS),
      &  SWTSDA(1,1,1,JPWNDD),SWTSDA(1,1,1,JPWCAP),SWTSDA(1,1,1,JPBTFR),

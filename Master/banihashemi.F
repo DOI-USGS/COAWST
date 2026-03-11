@@ -290,13 +290,12 @@
 !  Average u and v to rho points.
 !
       DO k=1,N(ng)
-        DO j=Jstr-1,Jend+1
-          DO i=Istr-1,Iend+1
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
             u2wav(i,j,k)=0.5_r8*(u(i,j,k,nnew)+u(i+1,j,k,nnew))
             v2wav(i,j,k)=0.5_r8*(v(i,j,k,nnew)+v(i,j+1,k,nnew))
           END DO
         END DO
-
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=Jstr,Jend
             u2wav(Istr-1,j,k)=u2wav(Istr,j,k)

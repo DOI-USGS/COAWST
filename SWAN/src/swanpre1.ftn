@@ -1412,6 +1412,15 @@
             JVX2   = MCMVAR - 1
             JVY2   = MCMVAR
           ENDIF
+# ifdef UV_BANIHASHEMI
+          IF (JVX2.GT.0) THEN
+            JVX2=MCMVAR+1
+            JVY2=MCMVAR+1+MSC
+            MCMVAR=MCMVAR+2*MSC   !  add indices for velx vely for each wave number.
+            ! these are JVX2:JVX2+MSC for velx
+            ! these are JVY2:JVY2+MSC for vely
+          ENDIF
+# endif
           ALLOCATE (M_GENARR_MOD(ng)%UXB_G(MXG(IGR1)*MYG(IGR1)))
           UXB=>M_GENARR_MOD(ng)%UXB_G
           UXB=0.

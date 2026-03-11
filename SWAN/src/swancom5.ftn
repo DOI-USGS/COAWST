@@ -1,3 +1,4 @@
+#include "swancpp.h"
 !
 !     SWAN/COMPU    file 5 of 5
 !
@@ -1047,8 +1048,13 @@
      &         CGO(MSC,ICMAX)              ,
      &         ECOS(MDC)                   ,
      &         ESIN(MDC)                   ,
-     &         UX2(MCGRD)                ,
+#ifdef UV_BANIHASHEMI
+     &         UX2(MCGRD,MSC)              ,
+     &         UY2(MCGRD,MSC)
+#else
+     &         UX2(MCGRD)                  ,
      &         UY2(MCGRD)
+#endif
 !
       SAVE IENT
       DATA IENT/0/
@@ -1090,8 +1096,13 @@
           IF (ICUR.EQ.1)  THEN                                            40.13
              DO 110 IS = 1, MSC
                 DO 100 ID = 1, MDC
+#ifdef UV_BANIHASHEMI
+                   CAX(ID,IS,IC) = CAX(ID,IS,IC) + UX2(KCGRD(IC),IS)
+                   CAY(ID,IS,IC) = CAY(ID,IS,IC) + UY2(KCGRD(IC),IS)
+#else
                    CAX(ID,IS,IC) = CAX(ID,IS,IC) + UX2(KCGRD(IC))
                    CAY(ID,IS,IC) = CAY(ID,IS,IC) + UY2(KCGRD(IC))
+#endif
 100             CONTINUE
 110          CONTINUE
           END IF
@@ -1102,8 +1113,13 @@
 !
         IF ( IC .EQ. 1 .AND. TESTFL .AND. ITEST .GE. 120 ) THEN
           DO IP = 1, ICMAX
+#ifdef UV_BANIHASHEMI
+            WRITE(PRINTF,6018) IP,KCGRD(IP),
+     &                         UX2(KCGRD(IP),1),UY2(KCGRD(IP),1)
+#else
             WRITE(PRINTF,6018) IP,KCGRD(IP),
      &                         UX2(KCGRD(IP)),UY2(KCGRD(IP))
+#endif
           ENDDO
  6018     FORMAT(' SPROXY: IC INDEX UX2 UY2       :', 2I5,
      &           '  UX,UY:', 2(1X,E12.4))
@@ -1291,9 +1307,14 @@
      &         SINCOS(MDC)
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: KWAVE(MSC,MICMAX)                                          40.22
+#ifdef UV_BANIHASHEMI
+      REAL  :: UX2(MCGRD,MSC)              ,
+     &         UY2(MCGRD,MSC)
+#else
       REAL  :: UX2(MCGRD)                  ,
-     &         UY2(MCGRD)                  ,
-     &         RDX(MICMAX)                 ,                              40.08
+     &         UY2(MCGRD)
+#endif
+      REAL  :: RDX(MICMAX)                 ,                              40.08
      &         RDY(MICMAX)                                                40.08
 !
 !     variables from common
@@ -1442,6 +1463,7 @@
       DLOC4 = DEP2(KCG4)                                                  40.02
       DLOC5 = DEP2(KCG5)                                                  40.02
 
+#if !defined UV_BANIHASHEMI
       IF ( ICUR .EQ. 1 ) THEN
 
          UXLOC1 = UX2(KCG1)
@@ -1457,6 +1479,7 @@
          UYLOC5 = UY2(KCG5)
 
       ENDIF
+#endif
 !
 !     *** test output ***
 !
@@ -1488,6 +1511,7 @@
 !      DHDY = 1.0*RDY(1) * (DLOC1-DLOC2) + 1.0*RDY(2) * (DLOC1-DLOC3) ! upwind scheme
       DHDY = 0.5*RDY(1) * (DLOC5-DLOC2) + 0.5*RDY(2) * (DLOC4-DLOC3) ! centered scheme       40.59
 
+#if !defined UV_BANIHASHEMI
       IF ( ICUR .EQ. 1 .AND. IQCM.EQ.0 ) THEN  !           *** current is on ***
 !
 !     *** @Ux/@X ***
@@ -1524,6 +1548,7 @@
          CAST4 = 0.
 
       ENDIF
+#endif
 !
 !      *** test output ***
 !
@@ -1549,6 +1574,53 @@
       ENDIF
 
       DO IS = 1, MSC
+
+#if defined UV_BANIHASHEMI
+        IF ( ICUR .EQ. 1 ) THEN
+
+           UXLOC1 = UX2(KCG1,IS)
+           UXLOC2 = UX2(KCG2,IS)
+           UXLOC3 = UX2(KCG3,IS)
+           UXLOC4 = UX2(KCG4,IS)
+           UXLOC5 = UX2(KCG5,IS)
+
+           UYLOC1 = UY2(KCG1,IS)
+           UYLOC2 = UY2(KCG2,IS)
+           UYLOC3 = UY2(KCG3,IS)
+           UYLOC4 = UY2(KCG4,IS)
+           UYLOC5 = UY2(KCG5,IS)
+
+        ENDIF
+
+        IF ( ICUR .EQ. 1 .AND. IQCM.EQ.0 ) THEN  !           *** current is on ***
+!
+!       *** @Ux/@X ***
+           DUXDX = 0.5*RDX(1) * (UXLOC5 - UXLOC2) +
+     &             0.5*RDX(2) * (UXLOC4 - UXLOC3)                           40.59
+!       *** @Ux/@Y ***
+           DUXDY = 0.5*RDY(1) * (UXLOC5 - UXLOC2) +
+     &             0.5*RDY(2) * (UXLOC4 - UXLOC3)                           40.59
+!       *** @Uy/@X ***
+           DUYDX = 0.5*RDX(1) * (UYLOC5 - UYLOC2) +
+     &             0.5*RDX(2) * (UYLOC4 - UYLOC3)                           40.59
+!       *** @Uy/@Y ***
+           DUYDY = 0.5*RDY(1) * (UYLOC5 - UYLOC2) +
+     &             0.5*RDY(2) * (UYLOC4 - UYLOC3)                           40.59
+
+         CAST3 = UXLOC1 * DHDX
+         CAST4 = UYLOC1 * DHDY
+
+        ELSE     !           *** current is off ***
+
+           DUXDX = 0.
+           DUXDY = 0.
+           DUYDX = 0.
+           DUYDY = 0.
+           CAST3 = 0.
+           CAST4 = 0.
+
+        ENDIF
+#endif
 
         KLOC1=KWAVE(IS,1)
         KLOC2=KWAVE(IS,2)
