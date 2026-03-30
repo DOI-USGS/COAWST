@@ -98,10 +98,7 @@
       USE mod_scalars
       USE dpolft_mod, ONLY      : DPOLFT, DPCOEF
 !
-      USE exchange_3d_mod, ONLY : exchange_w3d_tile
-# ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
-# endif
+      USE bc_3d_mod,       ONLY : bc_r3d_tile
 !
 !  Imported variable declarations.
 !
@@ -296,63 +293,6 @@
             v2wav(i,j,k)=0.5_r8*(v(i,j,k,nnew)+v(i,j+1,k,nnew))
           END DO
         END DO
-        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-          DO j=Jstr,Jend
-            u2wav(Istr-1,j,k)=u2wav(Istr,j,k)
-            v2wav(Istr-1,j,k)=v2wav(Istr,j,k)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
-          DO j=Jstr,Jend
-            u2wav(Iend+1,j,k)=u2wav(Iend,j,k)
-            v2wav(Iend+1,j,k)=v2wav(Iend,j,k)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-          DO i=Istr,Iend
-            u2wav(i,Jstr-1,k)=u2wav(i,Jstr,k)
-            v2wav(i,Jstr-1,k)=v2wav(i,Jstr,k)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
-          DO i=Istr,Iend
-            u2wav(i,Jend+1,k)=u2wav(i,Jend,k)
-            v2wav(i,Jend+1,k)=v2wav(i,Jend,k)
-          END DO
-        END IF
-        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-          u2wav(Istr-1,Jstr-1,k)=0.5_r8*                                  &
-     &                         (u2wav(Istr  ,Jstr-1,k)+                   &
-     &                          u2wav(Istr-1,Jstr  ,k))
-          v2wav(Istr-1,Jstr-1,k)=0.5_r8*                                  &
-     &                         (v2wav(Istr  ,Jstr-1,k)+                   &
-     &                          v2wav(Istr-1,Jstr  ,k))
-        END IF
-        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-          u2wav(Iend+1,Jstr-1,k)=0.5_r8*                                  &
-     &                         (u2wav(Iend  ,Jstr-1,k)+                   &
-     &                          u2wav(Iend+1,Jstr  ,k))
-          v2wav(Iend+1,Jstr-1,k)=0.5_r8*                                  &
-     &                         (v2wav(Iend  ,Jstr-1,k)+                   &
-     &                          v2wav(Iend+1,Jstr  ,k))
-        END IF
-        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-          u2wav(Istr-1,Jend+1,k)=0.5_r8*                                  &
-     &                         (u2wav(Istr  ,Jend+1,k)+                   &
-     &                          u2wav(Istr-1,Jend  ,k))
-          v2wav(Istr-1,Jend+1,k)=0.5_r8*                                  &
-     &                         (v2wav(Istr  ,Jend+1,k)+                   &
-     &                          v2wav(Istr-1,Jend  ,k))
-        END IF
-        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          u2wav(Iend+1,Jend+1,k)=0.5_r8*                                  &
-     &                         (u2wav(Iend  ,Jend+1,k)+                   &
-     &                          u2wav(Iend+1,Jend  ,k))
-          v2wav(Iend+1,Jend+1,k)=0.5_r8*                                  &
-     &                         (v2wav(Iend  ,Jend+1,k)+                   &
-     &                          v2wav(Iend+1,Jend  ,k))
-        END IF
-
       END DO
 !
 !  Compute wavenumbers. at some point we need diff of k 
@@ -397,8 +337,8 @@
 !
 !  Start long J loop.
 !
-      DO j=Jstr-1,Jend+1
-        DO i=Istr-1,Iend+1
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
 !
 !  Compute depth.
 !
@@ -483,7 +423,11 @@
 !
 !  Compute polynomial fit coeffs TC for the velocity profile.
 !         TC -     Vector containing the first LL+1 Taylor coefficients
-!                  P(X) = TC(1)*(X-C)**N + ... + TC(N)*(X-C) + TC(N+1)
+!         Here we set n=6, and N is the number of vertical levels in the model.
+!         For each level, we can use
+!                  U(N)=TC(1)*X(N)^0+TC(2)*X(N)^1+TC(3)*X(N)^2+TC(4)*X(N)^3+
+!                       TC(5)*X(N)^4+TC(6)*X(N)^5+TC(7)*X(N)^6
+!                  The TC's are set to be A0u and A0v = the a sub ns.
 !  X-dir
 !
           X=-z_r(i,j,:)/z_w(i,j,0)
@@ -526,19 +470,6 @@
             c0(k)=sqrt((g*TANH(waven(k)*Dstp))*owaven(k))                !%c0 (eq.6) 
             dc0(k)=c0(k)*(G1-1.0_r8)*owaven(k)                           !% c0_k for group velocity calculation
             Cg_0(k)=0.5_r8*c0(k)*(1.0_r8+G1)                             !% group velocity for pure waves
-# ifdef BANIHASHEMI_HOTS
-!
-!  here we are calculating I1(0) in paper (A.14)
-!
-            I1(1,k)=0.5_r8*(DCOSH(2.0_dp*kh(k))-1.0_r8)*owaven(k)        !%I1_{0}
-            I1(2,k)=0.5_r8*Dstp*owaven(k)-0.25_r8*DSINH(2.0_dp*kh(k))*  &
-     &              owaven(k)*owaven(k)                                  !%I1_{1}
-            DO m=2,2*polycon+2
-              I1(m+1,k)=0.25_r8*(-2.0_r8*waven(k)*((-Dstp)**m)+         &
-     &                  REAL(m,r8)*REAL((m-1),r8)*I1(m-1,k))*           &
-     &                  owaven(k)*owaven(k)
-            END DO
-# endif
 !
 ! % now I2(0) or J as in (A.4)
 !
@@ -554,7 +485,7 @@
 !
             Ut(k)=0.0_r8
             Vt(k)=0.0_r8
-            DO m=1,7
+            DO m=1,polycon+1    !7
               cff=1.0_r8/(Dstp**(m))
               Ut(k)=Ut(k)+A0u(m)*I2(m,k)*G1*cff
               Vt(k)=Vt(k)+A0v(m)*I2(m,k)*G1*cff
@@ -591,12 +522,13 @@
             uwavek(i,j,k)=uwavek(i,j,k)*rmask_wet(i,j)
             vwavek(i,j,k)=vwavek(i,j,k)*rmask_wet(i,j)
 #  endif
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!jcw
-!
+          END DO
 # ifdef BANIHASHEMI_HOTS
-! %Calculating dU^2/dk^2 equation (A.24)
+#  ifdef BANIHASHEMI_HOTS_NOTUSED
+!    Calculating dU^2/dk^2 equation (A.24)
+!    This is Taylor expansion option.
 !
+          DO k=1,MSCs
             K2(1,k)=0                                                      !%{GI_20}_kk
             K2(2,k)=-0.5_r8*(Dstp**2)*d2mu                                 !%{GI_21}_kk
             DO m=2,polycon
@@ -616,18 +548,32 @@
               dUtdk2(k)=dUtdk2(k)+A0u(m+1)*K2(m+1,k)/(Dstp**(m+1))
               dVtdk2(k)=dVtdk2(k)+A0v(m+1)*K2(m+1,k)/(Dstp**(m+1))
             END DO
-# endif
           END DO
-# ifdef BANIHASHEMI_HOTS
+#  endif
 !
 !  %% Now we calculate c_2 as in equation (A.12)
 !  %  C2=Ap*A+Bp*B+Cp*C
 !  %  first A:
 !
+!  here we are calculating I1(0) in paper (A.15)
+!
+          DO k=1,MSCs
+            I1(1,k)=0.5_r8*(DCOSH(2.0_dp*kh(k))-1.0_r8)*owaven(k)        !%I1_{0}
+            I1(2,k)=0.5_r8*Dstp*owaven(k)-0.25_r8*DSINH(2.0_dp*kh(k))*  &
+     &              owaven(k)*owaven(k)                                  !%I1_{1}
+            DO m=2,2*polycon+2
+              I1(m+1,k)=0.25_r8*(-2.0_r8*waven(k)*((-Dstp)**m)+         &
+     &                  REAL(m,r8)*REAL((m-1),r8)*I1(m-1,k))*           &
+     &                  owaven(k)*owaven(k)
+            END DO
+          END DO
+!
+!         first part of (A.11)
           DO k=1,MSCs
             Apu(k)=0.5_r8*Ut(k)/c0(k)
             Apv(k)=0.5_r8*Vt(k)/c0(k)
 !
+!           (A.14)
             A1u(k)=0.0_r8
             A1v(k)=0.0_r8
             DO m=0,polycon
@@ -801,21 +747,19 @@
 !
 !         % Cg_2= C2+k*(dAp*A + dA*Ap + dBp*B + dB*Bp + dCp*C + dC*Cp)
 !
-
-!           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
-!     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
-
+           Cg_KC2=C2u+waven(k)*(dApu*Au(k)+dAu(k)*Apu(k)+              &
+     &                 dBp*Bu(k)+dBu(k)*Bp(k)+dCp*Cu(k)+dCu(k)*cff)      !A.23
 !           Total final group vel is
 !           Cg_2u total = Cg_0(k)+Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
 !           We send the additional terms after Cg_0 to wave model
-            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)  !+Cg_KC2
+            uwavek(i,j,k)=Ut(k)+waven(k)*dUtdk(k)+Cg_KC2
 !
             Cg_KC2=C2v+waven(k)*(dApv*Av(k)+dAv(k)*Apv(k)+              &
      &                 dBp*Bv(k)+dBv(k)*Bp(k)+dCp*Cv(k)+dCv(k)*cff)      !A.23
 !           Total final group vel is
 !           Cg_2v total = Cg_0(k)+Vt(k)+waven(k)*dVtdk(k)+Cg_KC2
 !           We send the additional terms after Cg_0 to wave model
-            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)  !+Cg_KC2
+            vwavek(i,j,k)=Vt(k)+waven(k)*dVtdk(k)+Cg_KC2
 !
 !jcw limiter
             uwavek(i,j,k)=MIN(ABS(uwavek(i,j,k)),3.0_r8)*               &
@@ -831,37 +775,23 @@
         END DO
       END DO
 !
-!  Do horiz avg.
-!
-      DO k=1,MSCs
-        DO j=Jstr-1,Jend
-          DO i=Istr-1,Iend
-            u2avg(i,j)=0.25_r8*(uwavek(i,j  ,k)+uwavek(i+1,j  ,k)+      &
-     &                          uwavek(i,j+1,k)+uwavek(i+1,j+1,k))
-            v2avg(i,j)=0.25_r8*(vwavek(i,j  ,k)+vwavek(i+1,j  ,k)+      &
-     &                          vwavek(i,j+1,k)+vwavek(i+1,j+1,k))
-          END DO
-        END DO
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            uwavek(i,j,k)=0.25_r8*(u2avg(i,j  )+u2avg(i-1,j  )+         &
-     &                             u2avg(i,j-1)+u2avg(i-1,j-1))
-            vwavek(i,j,k)=0.25_r8*(v2avg(i,j  )+v2avg(i-1,j  )+         &
-     &                             v2avg(i,j-1)+v2avg(i-1,j-1))
-          END DO
-        END DO
-      END DO
-!
       deallocate ( A, TC, A0u, A0v )
       deallocate ( I1, I2, K1, K2 )
       deallocate ( H, HH )
 # ifdef WW3_MODEL
       deallocate ( SIG )
 # endif
-
+!
+!  Apply boundary conditions.
+!
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, MSCs,                    &
+     &                  uwavek)
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, MSCs,                    &
+     &                  vwavek)
       RETURN
       END SUBROUTINE banihashemi_tile
-
 #endif
       END MODULE banihashemi_mod
 
