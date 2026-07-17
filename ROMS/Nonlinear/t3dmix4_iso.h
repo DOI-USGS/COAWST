@@ -1,11 +1,10 @@
       MODULE t3dmix4_mod
 !
 !git $Id$
-!svn $Id: t3dmix4_iso.h 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2025 The ROMS Group                              !
 !    Licensed under a MIT/X style license                              !
-!    See License_ROMS.txt                           Hernan G. Arango   !
+!    See License_ROMS.md                            Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine computes horizontal biharmonic mixing of tracers    !
@@ -59,6 +58,7 @@
      &                       GRID(ng) % vmask,                          &
 #endif
 #ifdef WET_DRY
+     &                       GRID(ng) % rmask_wet,                      &
      &                       GRID(ng) % umask_wet,                      &
      &                       GRID(ng) % vmask_wet,                      &
 #endif
@@ -102,7 +102,7 @@
      &                             umask, vmask,                        &
 #endif
 #ifdef WET_DRY
-     &                             umask_wet, vmask_wet,                &
+     &                             rmask_wet, umask_wet, vmask_wet,     &
 #endif
      &                             om_v, on_u, pm, pn,                  &
      &                             Hz, z_r,                             &
@@ -142,6 +142,7 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
 # ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 # endif
@@ -175,6 +176,7 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 # endif
@@ -366,6 +368,9 @@
 #else
                 cff1=MAX(pden(i,j,k)-pden(i,j,k+1),eps)
                 cff=-1.0_r8/cff1
+#endif
+#ifdef WET_DRY
+                cff=cff*rmask_wet(i,j)
 #endif
 #if defined TS_MIX_STABILITY
                 dTdr(i,j,k2)=cff*(0.75_r8*(t(i,j,k+1,nrhs,itrc)-        &
@@ -684,6 +689,9 @@
 #else
                 cff1=MAX(pden(i,j,k)-pden(i,j,k+1),eps)
                 cff=-1.0_r8/cff1
+#endif
+#ifdef WET_DRY
+                cff=cff*rmask_wet(i,j)
 #endif
                 dTdr(i,j,k2)=cff*(LapT(i,j,k+1)-                        &
      &                            LapT(i,j,k  ))

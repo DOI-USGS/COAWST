@@ -3,11 +3,10 @@
 #if defined NONLINEAR && defined GLS_MIXING && defined SOLVE3D
 !
 !git $Id$
-!svn $Id: gls_prestep.F 1151 2023-02-09 03:08:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2023 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2025 The ROMS Group                              !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
-!    See License_ROMS.txt                   Alexander F. Shchepetkin   !
+!    See License_ROMS.md                    Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
 !                                                                      !
 !  This routine perfoms the predictor step for turbulent kinetic       !
@@ -146,6 +145,7 @@
       integer :: i, indx, j, k
 
       real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
+      real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
 
@@ -161,6 +161,8 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXL
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: XF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curvL
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradL
 
@@ -180,6 +182,9 @@
 !
 ! Either centered fourth-order accurate or standard second order
 ! accurate versions are supported.
+!
+! Adding support U3, because it is the default in gls_corstep.
+! (RRH, Jan 2025)
 !
 ! At the same time prepare for corrector step for tke,gls: set tke,
 ! gls(:,:,:,nnew) to  tke,gls(:,:,:,nstp) multiplied by the
@@ -214,7 +219,8 @@
         END DO
 # else
 !
-!  Fourth-order, centered differences advection.
+!  Fourth-order, centered differences advections OR Third-order,
+!  upstream bias advection with velocity dependent hyperdiffusion.
 !
         DO j=Jstr,Jend
           DO i=Istrm1,Iendp2
@@ -244,6 +250,10 @@
             END DO
           END IF
         END IF
+#  ifdef K_C4ADVECTION
+!
+!  Fourth-order, centered differences advection.
+!
         cff=1.0_r8/6.0_r8
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
@@ -256,7 +266,34 @@
      &                       cff*(gradL(i+1,j)-gradL(i-1,j)))
           END DO
         END DO
+#  else
 !
+!  Third-order, upstream bias advection with velocity dependent
+!  hyperdiffusion.
+!
+        DO j=Jstr,Jend
+          DO i=Istr-1,Iend+1
+            curv(i,j)=grad(i+1,j)-grad(i,j)
+            curvL(i,j)=gradL(i+1,j)-gradL(i,j)
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+            XF(i,j)=0.5_r8*(Huon(i,j,k)+Huon(i,j,k+1))
+            IF (XF(i,j).gt.0.0_r8) THEN
+              cff1=curv(i-1,j)
+              cff2=curvL(i-1,j)
+            ELSE
+              cff1=curv(i,j)
+              cff2=curvL(i,j)
+            END IF
+            FX(i,j)=XF(i,j)*0.5_r8*(tke(i-1,j,k,nstp)+tke(i,j,k,nstp)-  &
+     &                              Gadv*cff1)
+            FXL(i,j)=XF(i,j)*0.5_r8*(gls(i-1,j,k,nstp)+gls(i,j,k,nstp)- &
+     &                               Gadv*cff2)
+          END DO
+        END DO
+#  endif
         DO j=Jstrm1,Jendp2
           DO i=Istr,Iend
             grad (i,j)=(tke(i,j,k,nstp)-tke(i,j-1,k,nstp))
@@ -285,6 +322,10 @@
             END DO
           END IF
         END IF
+#  ifdef K_C4ADVECTION
+!
+!  Fourth-order, centered differences advection.
+!
         cff=1.0_r8/6.0_r8
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
@@ -297,6 +338,34 @@
      &                       cff*(gradL(i,j+1)-gradL(i,j-1)))
           END DO
         END DO
+#  else
+!
+!  Third-order, upstream bias advection with velocity dependent
+!  hyperdiffusion.
+!
+        DO j=Jstr-1,Jend+1
+          DO i=Istr,Iend
+            curv(i,j)=grad(i,j+1)-grad(i,j)
+            curvL(i,j)=gradL(i,j+1)-gradL(i,j)
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+            EF(i,j)=0.5_r8*(Hvom(i,j,k)+Hvom(i,j,k+1))
+            IF (EF(i,j).gt.0.0_r8) THEN
+              cff1=curv(i,j-1)
+              cff2=curvL(i,j-1)
+            ELSE
+              cff1=curv(i,j)
+              cff2=curvL(i,j)
+            END IF
+            FE(i,j)=EF(i,j)*0.5_r8*(tke(i,j-1,k,nstp)+tke(i,j,k,nstp)-  &
+     &                              Gadv*cff1)
+            FEL(i,j)=EF(i,j)*0.5_r8*(gls(i,j-1,k,nstp)+gls(i,j,k,nstp)- &
+     &                               Gadv*cff2)
+          END DO
+        END DO
+#  endif
 # endif
 !
 !  Time-step horizontal advection.

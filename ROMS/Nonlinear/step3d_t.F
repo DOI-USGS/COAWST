@@ -1973,16 +1973,30 @@
       END DO
 # ifdef TS_VAR
 !
-!  Compute tracer variance.
+!  Compute numerical and physical destruction of tracer variance.
 !
       itrc=inert(1)
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           DO k=1,N(ng)
-#  if !defined SPLINES_VDIFF || defined TS_MPDATA
+#  if !defined SPLINES_VDIFF
+!
+!  Multiply by oHz to convert to Tunits.
+!
             t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
             t(i,j,k,nnew,itrc+1)=t(i,j,k,nnew,itrc+1)*oHz(i,j,k)
-#  endif
+#  else
+!
+!  Multiply by oHz to convert to Tunits. Only necessary for MPDATA.
+!
+            IF ((Hadvection(itrc,ng)%MPDATA)) THEN
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
+              t(i,j,k,nnew,itrc+1)=t(i,j,k,nnew,itrc+1)*oHz(i,j,k)
+            END IF
+# endif
+!
+!  Compute numerical mixing: mnum = ( A{c^2} - (A{c})^2 ) / dt.
+!
             t(i,j,k,nnew,itrc+2)=(t(i,j,k,nnew,itrc+1)-                 &
      &                           t(i,j,k,nnew,itrc)*t(i,j,k,nnew,itrc))/&
      &                           dt(ng)
@@ -1990,6 +2004,10 @@
           DO k=1,N(ng)-1
             cff=(t(i,j,k+1,nnew,isalt)-t(i,j,k,nnew,isalt))/            &
      &                         (z_r(i,j,k+1)-z_r(i,j,k))
+!
+!  Compute destruction of vertical salinity variance, 
+!  mphy = 2*kappa_v*(ds/dz)^2
+!
             AKr(i,j,k)=2.0_r8*cff*cff*(Akt(i,j,k,itemp)-                &
      &                                 Akt_bak(itemp,ng))
           END DO

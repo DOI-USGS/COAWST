@@ -303,6 +303,8 @@
 # if defined DISSIP_BREAK_DIR
           real(r8), pointer :: Dissip_breakx(:,:)
           real(r8), pointer :: Dissip_breaky(:,:)
+          real(r8), pointer :: Dissip_wcapx(:,:)
+          real(r8), pointer :: Dissip_wcapy(:,:)
 # endif
           real(r8), pointer :: Dissip_wcap(:,:)
 # ifndef ANA_WWAVE
@@ -324,7 +326,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
           real(r8), pointer :: wave_break(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: wave_breakG(:,:,:)
@@ -391,7 +393,7 @@
       defined AIR_OCEAN)
           real(r8), pointer :: lrflxG(:,:,:)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM ||  \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
           real(r8), pointer :: Hair(:,:)
 #  ifndef ANA_HUMIDITY
@@ -739,6 +741,10 @@
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Dissip_breaky(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % Dissip_wcapx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % Dissip_wcapy(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -768,7 +774,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
       allocate ( FORCES(ng) % wave_break(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
@@ -870,7 +876,7 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       allocate ( FORCES(ng) % Hair(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -1329,6 +1335,10 @@
      &                 __LINE__, 'FORCES(ng)%Dissip_breakx')) RETURN
       IF (.not.destroy(ng, FORCES(ng)%Dissip_breaky, MyFile,            &
      &                 __LINE__, 'FORCES(ng)%Dissip_breaky')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcapx, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcapx')) RETURN
+      IF (.not.destroy(ng, FORCES(ng)%Dissip_wcapy, MyFile,             &
+     &                 __LINE__, 'FORCES(ng)%Dissip_wcapy')) RETURN
 #  endif
       IF (.not.destroy(ng, FORCES(ng)%Dissip_wcap, MyFile,              &
      &                 __LINE__, 'FORCES(ng)%Dissip_wcap')) RETURN
@@ -1361,7 +1371,7 @@
 #  endif
 # endif
 
-# if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
       IF (.not.destroy(ng, FORCES(ng)%wave_break, MyFile,               &
      &                 __LINE__, 'FORCES(ng)%wave_break')) RETURN
 #  ifndef ANA_WWAVE
@@ -1456,7 +1466,7 @@
      &                 __LINE__, 'FORCES(ng)%lrflxG')) RETURN
 #  endif
 
-# if defined BULK_FLUXES || defined ECOSIM ||  \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       IF (.not.destroy(ng, FORCES(ng)%Hair, MyFile,                     &
      &                 __LINE__, 'FORCES(ng)%Hair')) RETURN
@@ -1945,6 +1955,8 @@
 # if defined DISSIP_BREAK_DIR
             FORCES(ng) % Dissip_breakx(i,j) = IniVal
             FORCES(ng) % Dissip_breaky(i,j) = IniVal
+            FORCES(ng) % Dissip_wcapx(i,j) = IniVal
+            FORCES(ng) % Dissip_wcapy(i,j) = IniVal
 # endif
             FORCES(ng) % Dissip_wcap(i,j) = IniVal
 # ifndef ANA_WWAVE
@@ -1970,7 +1982,7 @@
 # endif
 #endif
 
-#if defined ROLLER_SVENDSEN
+#if defined ROLLER_SVENDSEN || defined WW3_MODEL
             FORCES(ng) % Wave_break(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Wave_breakG(i,j,1) = IniVal
@@ -2037,7 +2049,7 @@
             FORCES(ng) % lrflx(i,j) = IniVal
             FORCES(ng) % shflx(i,j) = IniVal
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
             FORCES(ng) % Hair(i,j) = IniVal
             FORCES(ng) % Tair(i,j) = IniVal
@@ -2068,7 +2080,7 @@
             FORCES(ng) % HairG(i,j,2) = IniVal
 #  endif
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || \
+# if defined BULK_FLUXES || defined ECOSIM || defined AIR_OCEAN || \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
 #  ifndef ANA_TAIR
             FORCES(ng) % TairG(i,j,1) = IniVal

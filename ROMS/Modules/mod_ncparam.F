@@ -411,6 +411,8 @@
       integer  :: idWdir        ! wind-induced mean wave direction
       integer  :: idWdis        ! wind-induced wave roller dissipation
       integer  :: idWdiw        ! wave dissipation from white capping
+      integer  :: idWcpx        ! wave dissipation from white capping x-dir
+      integer  :: idWcpy        ! wave dissipation from white capping y-dir
       integer  :: idWlen        ! wind-induced mean wave length
       integer  :: idWlep        ! wind-induced peak wave length
 !?    integer  :: idWmsk        ! wet-dry mask
@@ -1730,6 +1732,10 @@
             idWdip=varid
           CASE ('idWdiw')
             idWdiw=varid
+          CASE ('idWcpx')
+            idWcpx=varid
+          CASE ('idWcpy')
+            idWcpy=varid
           CASE ('idWztw')
             idWztw=varid
           CASE ('idWqsp')
