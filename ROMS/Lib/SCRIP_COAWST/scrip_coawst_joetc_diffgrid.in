@@ -1,0 +1,60 @@
+$INPUTS
+!
+!  Input file for scrip_coawst.
+!  The $INPUTS line is required at the top of this file. 
+!  Edit this file to enter the correct information below.
+!  Then run this program as "scrip_coawst scrip_coawst_joe_tc_diffgrid.in"
+!
+! 1) Enter name of output netcdf4 file
+!
+OUTPUT_NCFILE='scrip_joe_tc_diffgrid.nc'
+
+! 2) Enter total number of ROMS, SWAN, WW3, and WRF grids:
+!
+NGRIDS_ROMS=1,
+NGRIDS_SWAN=1,
+NGRIDS_WW3=0,
+NGRIDS_WRF=1,
+NGRIDS_HYD=0,
+
+! 3) Enter name of the ROMS grid file(s):
+!
+ROMS_GRIDS(1)='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_grd.nc',
+
+! 4) Enter SWAN information:
+!    -the name(s) of the SWAN grid file(s) for coords and bathy.
+!    -the size of the SWAN grids (full number of center points), and 
+!    -if the swan grids are Spherical(set cartesian=0) or
+!                           Cartesian(set cartesian=1).
+!
+SWAN_COORD(1)='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_grid_coord.grd',
+SWAN_BATH(1) ='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_bathy.bot',
+SWAN_NUMX(1)=100,
+SWAN_NUMY(1)=75,
+CARTESIAN(1)=0,
+
+! 5) Enter WW3 information
+!    -the name(s) of the WW3 grid file(s) for x- y- coords and bathy.
+!    -the size of the WW3 grids (full number of grid center points). 
+!
+WW3_XCOORD(1)=' ',
+WW3_YCOORD(1)='',
+WW3_BATH(1)='',
+WW3_NUMX(1)=1,
+WW3_NUMY(1)=1,
+
+! 6) Enter the name of the WRF input grid(s). If the grid is a 
+!    moving child nest then enter that grid name as 'moving'.
+!    Also provide the grid ratio, this is used for a moving nest.
+!
+WRF_GRIDS(1)='../../Projects/JOE_TC/wrfinput_d01',
+PARENT_GRID_RATIO(1)=1,
+PARENT_ID(1)=0
+! 7) Enter the name of the WRF Hydro input grid(s).
+!
+HYDRO_GRIDS(1)='../../WRF_hydro/forcings/WRF-Hydro/DOMAIN/Fulldom_hires.nc',
+
+!
+!  The $END statement below is required
+!
+$END 

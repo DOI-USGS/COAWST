@@ -1,0 +1,66 @@
+$INPUTS
+!
+!  Input file for scrip_coawst.
+!  The $INPUTS line is required at the top of this file. 
+!  Edit this file to enter the correct information below.
+!  Then run this program as "scrip_coawst scrip_coawst_sandy.in"
+!
+! 1) Enter name of output netcdf4 file
+!
+OUTPUT_NCFILE='scrip_florence_2romshydro.nc'
+
+! 2) Enter total number of ROMS, SWAN, WW3, and WRF grids:
+!
+NGRIDS_ROMS=2,
+NGRIDS_SWAN=0,
+NGRIDS_WW3=0,
+NGRIDS_WRF=0,
+NGRIDS_HYD=1,
+
+! 3) Enter name of the ROMS grid file(s):
+!
+ROMS_GRIDS(1)='../../../grids/USEast_grd31.nc',
+ROMS_GRIDS(2)='../../../grids/Carolinas_grd10.nc',
+
+! 4) Enter SWAN information:
+!    -the name(s) of the SWAN grid file(s) for coords and bathy.
+!    -the size of the SWAN grids (full number of center points), and 
+!    -if the swan grids are Spherical(set cartesian=0) or
+!                           Cartesian(set cartesian=1).
+!
+SWAN_COORD(1)='../../Projects/Sandy/Sandy_swan_coord.grd',
+SWAN_BATH(1)='../../Projects/Sandy/Sandy_swan_bathy.bot',
+SWAN_NUMX(1)=87,
+SWAN_NUMY(1)=65,
+CARTESIAN(1)=0,
+
+! 5) Enter WW3 information
+!    -the name(s) of the WW3 grid file(s) for x- y- coords and bathy.
+!    -the size of the WW3 grids (full number of grid center points). 
+!
+WW3_XCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_xcoord.dat',
+WW3_YCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_ycoord.dat',
+WW3_BATH(1)='../../Projects/Sandy/WW3/ww3_sandy_bathy.bot',
+WW3_NUMX(1)=87,
+WW3_NUMY(1)=65,
+
+! 6) Enter the name of the WRF input grid(s). If the grid is a 
+!    moving child nest then enter that grid name as 'moving'.
+!    Also provide the grid ratio, this is used for a moving nest.
+!
+WRF_GRIDS(1)='../../Projects/Sandy/wrfinput_d01',
+WRF_GRIDS(2)='../../Projects/Sandy/wrfinput_d02',
+!WRF_GRIDS(2)='moving',
+PARENT_GRID_RATIO(1)=1,
+PARENT_GRID_RATIO(2)=3,
+PARENT_ID(1)=0
+PARENT_ID(2)=1
+
+! 7) Enter the name of the WRF Hydro input grid(s).
+!
+HYDRO_GRIDS(1)='../../WRF_hydro/forcings/WRF-Hydro/DOMAIN/Fulldom_hires.nc',
+
+!
+!  The $END statement below is required
+!
+$END 
