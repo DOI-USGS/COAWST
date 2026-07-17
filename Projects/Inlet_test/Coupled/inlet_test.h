@@ -32,11 +32,13 @@
 #undef  WEC_MELLOR
 #define WEC_VF
 #define WDISS_WAVEMOD
-#define UV_KIRBY
-#undef  UV_BANIHASHEMI
+#undef  UV_KIRBY
+#define UV_BANIHASHEMI
 #define SWAN_SINGLESPEC
 #undef  WAVE_PARTITION
 #define ROLLER_RENIERS
+#undef  BULK_STOKES
+#define SPECTRUM_STOKES
 
 #define ANA_INITIAL
 #define ANA_SMFLUX
