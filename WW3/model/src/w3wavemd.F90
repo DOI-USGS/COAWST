@@ -1578,7 +1578,9 @@ CONTAINS
                  PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),             &
                  TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),          &
 #ifdef W3_COAWST_MODEL
-                 PHIBRKX(JSEA), PHIBRKY(JSEA),                      &
+                 PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),            &
+                 PHICAPX(JSEA), PHICAPY(JSEA),                      &
+                 TAUOSX(JSEA), TAUOSY(JSEA),                        &
 #endif
                  RHOAIR(ISEA), ASF(ISEA))
             IF (.not. LSLOC) THEN
@@ -1789,20 +1791,29 @@ CONTAINS
                     J = 1
                     !
 #ifdef W3_PR1
+# ifdef W3_CURSP
+                    CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR2
 # ifdef W3_CURSP
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
-                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),   &
-                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),                 &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -1814,6 +1825,15 @@ CONTAINS
 # endif
 #endif
 #ifdef W3_PR3
+# ifdef W3_CURSP
+                    CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
+                         CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# else
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
@@ -1821,6 +1841,7 @@ CONTAINS
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
                          CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# endif
 #endif
                     !
                   END IF  !!  GTYPE
@@ -2121,20 +2142,29 @@ CONTAINS
                   ELSE
                     J = 1
 #ifdef W3_PR1
+# ifdef W3_CURSP
+                    CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# else
                     CALL W3KTP1 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
                          CY(ISEA), DCXDX(IY,IXrel), DCXDY(IY,IXrel),     &
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
+# endif
 #endif
 #ifdef W3_PR2
 # ifdef W3_CURSP
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
-                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),       &
-                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),     &
-                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),           &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA))
 # else
                     CALL W3KTP2 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
@@ -2146,6 +2176,15 @@ CONTAINS
 # endif
 #endif
 #ifdef W3_PR3
+# ifdef W3_CURSP
+                    CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
+                         CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
+                         DDDX(IY,IXrel), DDDY(IY,IXrel), CXTH(ISEA,:),   &
+                         CYTH(ISEA,:), DCXDXTH(IY,IXrel,:), DCXDYTH(IY,IXrel,:),&
+                         DCYDXTH(IY,IXrel,:), DCYDYTH(IY,IXrel,:),       &
+                         DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
+                         CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# else
                     CALL W3KTP3 ( ISEA, FACTH, FACK, CTHG0S(ISEA),       &
                          CG(:,ISEA), WN(:,ISEA), DEPTH,                  &
                          DDDX(IY,IXrel), DDDY(IY,IXrel), CX(ISEA),       &
@@ -2153,6 +2192,7 @@ CONTAINS
                          DCYDX(IY,IXrel), DCYDY(IY,IXrel),               &
                          DCDX(:,IY,IXrel), DCDY(:,IY,IXrel), VA(:,JSEA), &
                          CFLTHMAX(JSEA), CFLKMAX(JSEA) )
+# endif
 #endif
                     !
                   END IF  !! GTYPE
@@ -2273,7 +2313,9 @@ CONTAINS
                        PHIBBL(JSEA), TMP3, TMP4, PHICE(JSEA),            &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
 #ifdef W3_COAWST_MODEL
-                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+                       PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),           &
+                       PHICAPX(JSEA), PHICAPY(JSEA),                     &
+                       TAUOSX(JSEA), TAUOSY(JSEA),                       &
 #endif
                        RHOAIR(ISEA), ASF(ISEA))
                 ELSE
@@ -2302,7 +2344,9 @@ CONTAINS
                        PHIBBL(JSEA), TMP3, TMP4 , PHICE(JSEA),           &
                        TAUOCX(JSEA), TAUOCY(JSEA), WNMEAN(JSEA),         &
 #ifdef W3_COAWST_MODEL
-                       PHIBRKX(JSEA), PHIBRKY(JSEA),                     &
+                       PHIBRKX(JSEA), PHIBRKY(JSEA), QB(JSEA),           &
+                       PHICAPX(JSEA), PHICAPY(JSEA),                     &
+                       TAUOSX(JSEA), TAUOSY(JSEA),                       &
 #endif
                        RHOAIR(ISEA), ASF(ISEA))
 #ifdef W3_PDLIB
@@ -2846,8 +2890,8 @@ CONTAINS
       IDACT  = '         '
       OUTID  = '           '
       FLACT  = .FALSE.
-#if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
-      ! jcw bottom of wavemd calling the coupler
+#if defined W3_COAWST_MODEL
+# if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
       !  IMOD is the grid number, ITIME is a bad counter. It steps for 
       !  updates to the forcings. So we made a clean counter.
       IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
@@ -2855,6 +2899,9 @@ CONTAINS
           CALL COAWST_CPL (ITIME_COAWST)
         END IF
       END IF
+# endif
+      ! reset RSTYPE to 0 in case it was a hot start. See usage in w3srcemd.
+      RSTYPE=0
 #endif
       !
       ! 6.  If time is not ending time, branch back to 2 ------------------- /

@@ -47,7 +47,9 @@ target_include_directories(ww3_lib
 
 # Set compiler flags.
 if(CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel)$")
-  set(compile_flags -no-fma -ip -g -traceback -i4 -real-size 32 -fp-model precise
+  #set(compile_flags -no-fma -ip -g -traceback -i4 -real-size 32 -fp-model precise
+  #  -assume byterecl -fno-alias -fno-fnalias)
+  set(compile_flags -no-fma -ip -traceback -i4 -real-size 32 -fp-model precise
     -assume byterecl -fno-alias -fno-fnalias)
   # -sox only works on Linux
   if(LINUX)

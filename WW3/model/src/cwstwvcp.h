@@ -180,9 +180,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           run_couple=1
-!         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAV2OCN(Nwav_grids,1)).ne.0) run_couple=0
-!         IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
@@ -200,9 +198,7 @@
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           run_couple=1
-!         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAVFOCN(Nwav_grids,1)).ne.0) run_couple=0
-!         IF (MOD(first, nWAVFOCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL W3SETG ( iw, MDSE, MDST )
             CALL W3SETI ( iw, MDSE, MDST )
@@ -221,13 +217,14 @@
 !
 !     Call to get data from atm model.
       DO iw=1,Nwav_grids
-!        CALL INIT_POINTERS(iw)
-!        CALL INIT_COUPLING_POINTERS(iw)
         DO ia=1,Natm_grids
           run_couple=1
-!          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAVFATM(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAVFATM(Natm_grids,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL W3SETW ( iw, MDSE, MDST )
             CALL WAVFATM_COUPLING (iw, ia)
           ELSE
             GOTO 55
@@ -238,13 +235,14 @@
 !
 !     Send data to atm model.
       DO iw=1,Nwav_grids
-!        CALL INIT_POINTERS(iw)
-!        CALL INIT_COUPLING_POINTERS(iw)
         DO ia=1,Natm_grids
           run_couple=1
-!          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(first, nWAV2ATM(1,1)).ne.0) run_couple=0
+          IF (MOD(first, nWAV2ATM(Natm_grids,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
+            CALL W3SETG ( iw, MDSE, MDST )
+            CALL W3SETI ( iw, MDSE, MDST )
+            CALL W3SETA ( iw, MDSE, MDST )
+            CALL W3SETW ( iw, MDSE, MDST )
             CALL WAV2ATM_COUPLING (iw, ia)
           ELSE
             GOTO 45
@@ -540,6 +538,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DISWCAPX'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAPY'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 #  endif
       to_add=':DISWCAP'
       cad=LEN_TRIM(to_add)
@@ -556,7 +564,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':TMBOT'
+      to_add=':ABOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -874,13 +882,14 @@
       USE MCT_COUPLER_PARAMS
       USE CONSTANTS, ONLY: PI
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH
-      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA,            &
+      USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA, ABA,       &
 # ifdef SPECTRUM_STOKES
-     &                    USS_COAWST, VSS_COAWST, KSS_COAWST,           &
+     &                    STK_STOKES, STU_STOKES, STV_STOKES,           &
 # endif
-	&                    THM, WLM, WLP, WBT, THS, QP,                  &
-     &                    PHIBRKX, PHIBRKY, TAUOCX, TAUOCY
-!     USE W3ODATMD, ONLY: QB
+     &                    THM, WLM, WLP, WBT, THS, QP,                  &
+     &                    PHIBRKX, PHIBRKY, TAUOSX, TAUOSY,             &
+     &                    PHICAPX, PHICAPY
+      USE W3ADATMD, ONLY: QB
       USE W3WDATMD, ONLY: VA, UST, USTDIR, RHOAIR
       USE W3IOGOMD
 !
@@ -1003,7 +1012,7 @@
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
         cff=PHIBRKX(i)**2+PHIBRKY(i)**2
-        IF (cff.ge.1000.0) cff=0.
+        IF (cff.ge.10000.0) cff=0.
         SND_BUF(IP)=SQRT(cff)
       END DO
 !
@@ -1035,7 +1044,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        cff=MAX(PHIBRKX(i), 0.0)
+        cff=PHIBRKX(i)
+        IF (cff.le.-998.0) cff=0.0
         SND_BUF(IP)=cff
       END DO
 !
@@ -1066,7 +1076,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        cff=MAX(PHIBRKY(i), 0.0)
+        cff=PHIBRKY(i)
+        IF (cff.le.-998.0) cff=0.0
         SND_BUF(IP)=cff
       END DO
 !
@@ -1085,8 +1096,72 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "DISSURFY",avdata)
-# endif
-!-------------------------------------------------------------------
+!
+!  DISSURF: Dissipation white capping x-dir
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        IP=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(IP,1)
+        IY     = MAPSF(IP,2)
+        IP=(IY-1)*NX+IX
+        cff=PHICAPX(i)
+        IF (cff.le.-998.0) cff=0.0
+        SND_BUF(IP)=cff
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                             "DISWCAPX",avdata)
+!
+!  DISSURF: Dissipation white capping y-dir
+!
+!  Fill wet parts of array SND_BUF that is NXxNY length.
+!  The local variable is only 1:NSEAL(M) long.
+!
+      SND_BUF=0.0
+      DO i=1,NSEAL
+        IP=(MyRank+1)+(i-1)*Nprocs
+        IX     = MAPSF(IP,1)
+        IY     = MAPSF(IP,2)
+        IP=(IY-1)*NX+IX
+        cff=PHICAPY(i)
+	IF (cff.le.-998.0) cff=0.0
+        SND_BUF(IP)=cff
+      END DO
+!
+!  Gather up all the data.
+!
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+!
+!  Now extract the section of data from this tile
+!  and fill the mct array.
+!
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        avdata(IP)=REAL(RCV_BUF(i),m8)
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
+     &                             "DISWCAPY",avdata)
+#endif
+!
 !  DISWCAP: Dissipation white capping
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
@@ -1098,7 +1173,9 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=PHIOC(i)*0.        ! jcw need this
+        cff=PHICAPX(i)**2+PHICAPY(i)**2
+        IF (cff.ge.10000.0) cff=0.
+        SND_BUF(IP)=SQRT(cff)
       END DO
 !
 !  Gather up all the data.
@@ -1179,7 +1256,7 @@
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                             "RTP",avdata)
 !-------------------------------------------------------------------
-!  TMBOT: Mean bottom period
+!  ABOT: Mean bottom period
 !
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
@@ -1190,7 +1267,7 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=T0M1(i)
+        SND_BUF(IP)=ABA(i)
       END DO
 !
 !  Gather up all the data.
@@ -1207,7 +1284,7 @@
         avdata(IP)=REAL(RCV_BUF(i),m8)
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
-     &                             "TMBOT",avdata)
+     &                             "ABOT",avdata)
 !-------------------------------------------------------------------
 !  UBOT: bottom orbitral velocity
 !
@@ -1353,7 +1430,8 @@
         IX     = MAPSF(IP,1)
         IY     = MAPSF(IP,2)
         IP=(IY-1)*NX+IX
-        SND_BUF(IP)=WBT(i)
+!       SND_BUF(IP)=WBT(i)
+        SND_BUF(IP)=QB(i)
       END DO
 !
 !  Gather up all the data.
@@ -1444,7 +1522,7 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCX(i)
+        cff=TAUOSX(i)
         IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO
@@ -1477,7 +1555,7 @@
         IX     = MAPSF(ISEA,1)
         IY     = MAPSF(ISEA,2)
         IP=(IY-1)*NX+IX
-        cff=TAUOCY(i)
+        cff=TAUOSY(i)
         IF (cff.le.-900.0) cff=0.
         SND_BUF(IP)=cff
       END DO
@@ -1503,7 +1581,7 @@
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
 !
-!  KSS
+!  STK
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "KS0",IZ
@@ -1517,7 +1595,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=KSS_COAWST(i,IZ)
+          SND_BUF(IP)=STK_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1538,7 +1616,7 @@
      &                             SCODE,avdata)
       END DO
 !
-!  USS
+!  STU
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "US0",IZ
@@ -1552,7 +1630,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=USS_COAWST(i,IZ)
+          SND_BUF(IP)=STU_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -1573,7 +1651,7 @@
      &                             SCODE,avdata)
       END DO
 !
-!  VSS
+!  STV
       DO IZ=1,NK
         IF (IZ.LT.10) THEN
           WRITE(SCODE,"(A3,I1)") "VS0",IZ
@@ -1587,7 +1665,7 @@
           IX     = MAPSF(IP,1)
           IY     = MAPSF(IP,2)
           IP=(IY-1)*NX+IX
-          SND_BUF(IP)=VSS_COAWST(i,IZ)
+          SND_BUF(IP)=STV_STOKES(i,IZ)
         END DO
 !
 !  Gather up all the data.
@@ -2126,8 +2204,14 @@
             IP=(IY-1)*NX+IX
             IF (io.eq.1) THEN
               CXTH(i,IZ)=RCV_BUF(IP)
+              IF (IZ.eq.NK) THEN
+                CX(i)=RCV_BUF(IP)
+              END IF
             ELSE
               CXTH(i,IZ)=CXTH(i,IZ)+RCV_BUF(IP)
+              IF (IZ.eq.NK) THEN
+                CX(i)=CX(i)+RCV_BUF(IP)
+              END IF
             END IF
           END DO
         END DO
@@ -2174,8 +2258,14 @@
             IP=(IY-1)*NX+IX
             IF (io.eq.1) THEN
               CYTH(i,IZ)=RCV_BUF(IP)
+              IF (IZ.eq.NK) THEN
+                CY(i)=RCV_BUF(IP)
+              END IF
             ELSE
               CYTH(i,IZ)=CYTH(i,IZ)+RCV_BUF(IP)
+              IF (IZ.eq.NK) THEN
+                CY(i)=CY(i)+RCV_BUF(IP)
+              END IF
             END IF
           END DO
         END DO

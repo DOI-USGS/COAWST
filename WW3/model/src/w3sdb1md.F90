@@ -104,6 +104,7 @@ CONTAINS
     !       FMEAN   Real  I   Mean wave frequency.
     !       WNMEAN  Real  I   Mean wave number.
     !       DEPTH   Real  I   Mean water depth.
+    !       QB      Real  O   Percent wave break 0-1.
     !       S       R.A.  O   Source term (1-D version).
     !       D       R.A.  O   Diagonal term of derivative (1-D version).
     !     ----------------------------------------------------------------
@@ -144,6 +145,7 @@ CONTAINS
     USE W3ODATMD, ONLY: NDST
     USE W3GDATMD, ONLY: SIG
     USE W3ODATMD, only : IAPROC
+!   USE W3ADATMD, ONLY: QB
 #ifdef W3_S
     USE W3SERVMD, ONLY: STRACE
 #endif
@@ -175,6 +177,7 @@ CONTAINS
     INTEGER, SAVE           :: IENT = 0
 #endif
     REAL*8                    :: HM, BB, ARG, Q0, QB, B, CBJ, HRMS, EB(NK)
+!   REAL*8                    :: HM, BB, ARG, Q0, B, CBJ, HRMS, EB(NK)
     REAL*8                    :: AUX, CBJ2, RATIO, S0, S1, THR, BR1, BR2, FAK
     REAL                      :: ETOT, FMEAN2
 #ifdef W3_T0

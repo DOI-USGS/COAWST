@@ -193,6 +193,15 @@ PROGRAM W3OUNF
        STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
        P2SMS, EF, US3D, TH1M, STH1M, TH2M, STH2M,   &
        WN, USSP, WBT, WNMEAN
+#ifdef W3_CURSP
+  USE W3ADATMD, ONLY: CXTH, CYTH
+#endif
+#ifdef W3_COAWST_MODEL
+  USE W3ADATMD, ONLY: PHIBRKX, PHIBRKY,             &
+                      PHICAPX, PHICAPY, WLP, QB,    &
+                      STK_STOKES, STU_STOKES,       &
+                      STV_STOKES, TAUOSX, TAUOSY
+#endif
   USE W3ODATMD, ONLY: NDSO, NDSE, SCREEN, NOGRP, NGRPP, IDOUT,     &
        UNDEF, FLOGRD, FNMPRE, NOSWLL, NOGE
   !
@@ -1200,11 +1209,35 @@ CONTAINS
 
             ! Surface current
           ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 2 ) THEN
+#ifdef W3_CURSP
+            ! Information for spectral
+            FLFRQ  = .TRUE.
+            I1F=1
+            I2F=NK
+            DO IK= I1F,I2F
+              !! Note - CXTH and CYTH read in from .ww3 file are X-Y vectors
+# ifdef W3_RTD
+               ! Rotate x,y vector back to standard pole
+              IF ( FLAGUNR ) CALL W3XYRTN(NSEA, CXTH(1:NSEA,IK), CYTH(1:NSEA,IK), AnglD)
+# endif
+              !
+              IF( .NOT. VECTOR ) THEN
+                CALL UV_TO_MAG_DIR(CXTH(1:NSEA,IK), CYTH(1:NSEA,IK), NSEA,  &
+                     TOLERANCE=0.05, CONV='O')
+              ENDIF
+              !
+              CALL S2GRID(CXTH(1:NSEA,IK), XX)
+              CALL S2GRID(CYTH(1:NSEA,IK), XY)
+              XXK(:,:,IK)=XX
+              XYK(:,:,IK)=XY
+            END DO
+            NFIELD=2
+#else
             !! Note - CX and CY read in from .ww3 file are X-Y vectors
-#ifdef W3_RTD
+# ifdef W3_RTD
             ! Rotate x,y vector back to standard pole
             IF ( FLAGUNR ) CALL W3XYRTN(NSEA, CX(1:NSEA), CY(1:NSEA), AnglD)
-#endif
+# endif
             !
             IF( .NOT. VECTOR ) THEN
               CALL UV_TO_MAG_DIR(CX(1:NSEA), CY(1:NSEA), NSEA,       &
@@ -1214,6 +1247,7 @@ CONTAINS
             CALL S2GRID(CX(1:NSEA), XX)
             CALL S2GRID(CY(1:NSEA), XY)
             NFIELD=2
+# endif
             !
             ! Wind
           ELSE IF ( IFI .EQ. 1 .AND. IFJ .EQ. 3 ) THEN
@@ -1401,6 +1435,16 @@ CONTAINS
             ELSE
               CALL W3S2XY ( NSEA, NSEA, NX+1, NY, WNMEAN, MAPSF, X1 )
             END IF
+#ifdef W3_COAWST_MODEL
+            !
+            ! Peak wave length
+          ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 21 ) THEN
+            CALL S2GRID(WLP, X1)
+            !
+            ! Percent wave breaking
+          ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 22 ) THEN
+            CALL S2GRID(QB, X1)
+#endif
             !
             ! Wave elevation spectrum
           ELSE IF ( IFI .EQ. 3 .AND. IFJ .EQ. 1 ) THEN
@@ -1855,6 +1899,95 @@ CONTAINS
                    , MAPSF, XY )
             ENDIF ! SMCGRD
             NFIELD=2
+#ifdef W3_COAWST_MODEL
+            ! Total momentum to the ocean
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 14 ) THEN
+#ifdef W3_RTD
+            ! Rotate x,y vector back to standard pole
+            IF ( FLAGUNR ) CALL W3XYRTN(NSEA, TAUOSX(1:NSEA), TAUOSY(1:NSEA), AnglD)
+#endif
+            IF( SMCGRD ) THEN
+#ifdef W3_SMC
+              CALL W3S2XY_SMC( TAUOSX(1:NSEA), XX )
+              CALL W3S2XY_SMC( TAUOSY(1:NSEA), XY )
+#endif
+            ELSE
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, TAUOSX(1:NSEA)     &
+                   , MAPSF, XX )
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, TAUOSY(1:NSEA)     &
+                   , MAPSF, XY )
+            ENDIF ! SMCGRD
+            NFIELD=2
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 15 ) THEN
+# ifdef W3_RTD
+            ! Rotate x,y vector back to standard pole
+            IF ( FLAGUNR ) CALL W3XYRTN(NSEA, PHIBRKX(1:NSEA), PHIBRKY(1:NSEA), AnglD)
+# endif
+            IF( SMCGRD ) THEN
+# ifdef W3_SMC
+              CALL W3S2XY_SMC( PHIBRKX(1:NSEA), XX )
+              CALL W3S2XY_SMC( PHIBRKY(1:NSEA), XY )
+# endif
+            ELSE
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PHIBRKX(1:NSEA)     &
+                   , MAPSF, XX )
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PHIBRKY(1:NSEA)     &
+                   , MAPSF, XY )
+            ENDIF ! SMCGRD
+            NFIELD=2
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 16 ) THEN
+# ifdef W3_RTD
+            ! Rotate x,y vector back to standard pole
+            IF ( FLAGUNR ) CALL W3XYRTN(NSEA, PHICAPX(1:NSEA), PHICAPY(1:NSEA), AnglD)
+# endif
+            IF( SMCGRD ) THEN
+# ifdef W3_SMC
+              CALL W3S2XY_SMC( PHICAPX(1:NSEA), XX )
+              CALL W3S2XY_SMC( PHICAPY(1:NSEA), XY )
+# endif
+            ELSE
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PHICAPX(1:NSEA)     &
+                   , MAPSF, XX )
+              CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PHICAPY(1:NSEA)     &
+                   , MAPSF, XY )
+            ENDIF ! SMCGRD
+            NFIELD=2
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 17 ) THEN
+            ! Information for spectral
+            FLFRQ  = .TRUE.
+            I1F=1
+            I2F=NK
+            DO IK= I1F,I2F
+              CALL S2GRID(STK_STOKES(:,IK), XX)
+              XK(:,:,IK)=XX
+            END DO
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 18 ) THEN
+            ! Information for spectral
+            FLFRQ  = .TRUE.
+            I1F=1
+            I2F=NK
+            DO IK= I1F,I2F
+# ifdef W3_RTD
+              ! Rotate direction back to standard pole
+              IF ( FLAGUNR ) CALL W3THRTN(NSEA, STU_STOKES(:,IK), AnglD, .FALSE.)
+# endif
+              CALL S2GRID(STU_STOKES(:,IK), XX)
+              XK(:,:,IK)=XX
+            END DO
+          ELSE IF ( IFI .EQ. 6 .AND. IFJ .EQ. 19 ) THEN
+            ! Information for spectral
+            FLFRQ  = .TRUE.
+            I1F=1
+            I2F=NK
+            DO IK= I1F,I2F
+# ifdef W3_RTD
+              ! Rotate direction back to standard pole
+              IF ( FLAGUNR ) CALL W3THRTN(NSEA, STV_STOKES(:,IK), AnglD, .FALSE.)
+# endif
+              CALL S2GRID(STV_STOKES(:,IK), XX)
+              XK(:,:,IK)=XX
+            END DO
+#endif
             !
             ! RMS of bottom displacement amplitude
           ELSE IF ( IFI .EQ. 7 .AND. IFJ .EQ. 1 ) THEN
@@ -3373,8 +3506,9 @@ CONTAINS
 
           ! updates the variable index
           IVAR1=IVAR1+NFIELD
-
-
+          ! jcw - this was needed to get all the time steps written to disk.
+          IRET = NF90_SYNC(NCID)
+          CALL CHECK_ERR(IRET)
           ! Loops over IPART for partition variables
           ! ChrisBunney: Don't loop IPART for last two entries in section 4
           ! (16: total wind sea fraction, 17: number of parts) as these fields
