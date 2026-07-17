@@ -159,6 +159,7 @@
 # endif
 # if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
       integer :: MSCs
+      real(m8) :: RFR1, RXFR
 # endif
 # if defined WAVE_PARTITION
       integer :: ND

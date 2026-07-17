@@ -326,6 +326,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DISWCAPX'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':DISWCAPY'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 #endif
       to_add=':DISWCAP'
       cad=LEN_TRIM(to_add)
@@ -342,7 +352,7 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-      to_add=':TMBOT'
+      to_add=':ABOT'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -701,14 +711,13 @@
       integer :: iveg
 #endif
 
-      real(r8) :: add_offset, scale
-      real(r8) :: cff, ramp
-      real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
+      real(dp) :: cff
+      real(dp) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v2wav
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: u2wav
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: v2wav
 
-      real(r8), pointer :: A(:)
+      real(dp), pointer :: A(:)
 #if defined UV_BANIHASHEMI
       character (len=6) :: SCODE
 #endif
@@ -744,7 +753,7 @@
       Asize=GlobalSegMap_lsize (GlobalSegMap_G(ng)%GSMapROMS,           &
      &      OCN_COMM_WORLD)
       allocate ( A(Asize) )
-      A=0.0_r8
+      A=0.0_dp
 !
       CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
 !
@@ -758,7 +767,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          A(ij)=GRID(ng)%h(i,j)
+          A(ij)=REAL(GRID(ng)%h(i,j),dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "DEPTH",    &
@@ -771,9 +780,9 @@
         DO i=IstrR,IendR
           ij=ij+1
 #ifdef ZETA_CONST
-          A(ij)=0.0_r8
+          A(ij)=0.0_dp
 #else
-          A(ij)=OCEAN(ng)%zeta(i,j,knew(ng))
+          A(ij)=REAL(OCEAN(ng)%zeta(i,j,knew(ng)),dp)
 #endif
         END DO
       END DO
@@ -791,39 +800,40 @@
       DO j=JstrR,JendR
         DO i=Istr,Iend
 # ifdef UV_CONST
-          u2wav(i,j)=0.0_r8
+          u2wav(i,j)=0.0_dp
 # else
 #  ifdef SOLVE3D
 #   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
-          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
-          cff1=0.0_r8
-          cff2=2.0_r8*kwn*prof
-          IF (cff2.lt.700.0_r8) THEN
-            cff2=2.0_r8*kwn
+          kwn=2.0_dp*pi/REAL(FORCES(ng)%Lwave(i,j),dp)
+          prof=REAL(GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j),dp)
+          cff1=0.0_dp
+          cff2=2.0_dp*kwn*prof
+          IF (cff2.lt.700.0_dp) THEN
+            cff2=2.0_dp*kwn
           ELSE
-            cff2=700.0_r8/prof
+            cff2=700.0_dp/prof
           ENDIF
-          cff3=0.0_r8
+          cff3=0.0_dp
           DO k=1,N(ng)
-            u_cff=0.5_r8*(OCEAN(ng)%u(i,  j,k,NOUT)+                    &
-     &                    OCEAN(ng)%u(i+1,j,k,NOUT))
-            cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*      &
-     &           GRID(ng)%Hz(i,j,k)
+            u_cff=0.5_dp*(REAL(OCEAN(ng)%u(i,  j,k,NOUT)+               &
+     &                    OCEAN(ng)%u(i+1,j,k,NOUT),dp))
+            cff4=DCOSH(cff2*REAL(GRID(ng)%h(i,j)+                       &
+     &                           GRID(ng)%z_r(i,j,k),dp))*              &
+     &           REAL(GRID(ng)%Hz(i,j,k),dp)
             cff1=cff1+cff4*u_cff
             cff3=cff3+cff4
           END DO
           u2wav(i,j)=cff1/cff3
 #   else
-          u2wav(i,j)=0.5_r8*(OCEAN(ng)%u(i,  j,N(ng),NOUT)+             &
-     &                       OCEAN(ng)%u(i+1,j,N(ng),NOUT))
+          u2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%u(i,  j,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%u(i+1,j,N(ng),NOUT)),dp)
 #   endif
 #  else
-          u2wav(i,j)=0.5_r8*(OCEAN(ng)%ubar(i,  j,KOUT)+                &
-     &                       OCEAN(ng)%ubar(i+1,j,KOUT))
+          u2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%ubar(i,  j,KOUT)+           &
+     &                            OCEAN(ng)%ubar(i+1,j,KOUT)),dp)
 #  endif
 # endif
         END DO
@@ -851,39 +861,40 @@
       DO j=Jstr,Jend
         DO i=IstrR,IendR
 # ifdef UV_CONST
-          v2wav(i,j)=0.0_r8
+          v2wav(i,j)=0.0_dp
 # else
 #  ifdef SOLVE3D
 #   ifdef UV_KIRBY
 !
 ! Compute the coupling current according to Kirby and Chen (1989).
 !
-          kwn=2.0_r8*pi/FORCES(ng)%Lwave(i,j)
-          prof=GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j)
-          cff1=0.0_r8
-          cff2=2.0_r8*kwn*prof
-          IF (cff2.lt.700.0_r8) THEN
-            cff2=2.0_r8*kwn
+          kwn=2.0_dp*pi/REAL(FORCES(ng)%Lwave(i,j),dp)
+          prof=REAL(GRID(ng)%h(i,j)+COUPLING(ng)%Zt_avg1(i,j),dp)
+          cff1=0.0_dp
+          cff2=2.0_dp*kwn*prof
+          IF (cff2.lt.700.0_dp) THEN
+            cff2=2.0_dp*kwn
           ELSE
-            cff2=700.0_r8/prof
+            cff2=700.0_dp/prof
           ENDIF
-          cff3=0.0_r8
+          cff3=0.0_dp
           DO k=1,N(ng)
-             v_cff=0.5_r8*(OCEAN(ng)%v(i,  j,k,NOUT)+                   &
-     &                     OCEAN(ng)%v(i,j+1,k,NOUT))
-             cff4=cosh(cff2*(GRID(ng)%h(i,j)+GRID(ng)%z_r(i,j,k)))*     &
-     &            GRID(ng)%Hz(i,j,k)
-             cff1=cff1+cff4*v_cff
-             cff3=cff3+cff4
+            v_cff=0.5_dp*(REAL(OCEAN(ng)%v(i,  j,k,NOUT)+               &
+     &                        OCEAN(ng)%v(i,j+1,k,NOUT),dp))
+            cff4=DCOSH(cff2*REAL(GRID(ng)%h(i,j)+                       &
+     &                           GRID(ng)%z_r(i,j,k),dp))*              &
+     &           REAL(GRID(ng)%Hz(i,j,k),dp)
+            cff1=cff1+cff4*v_cff
+            cff3=cff3+cff4
           END DO
           v2wav(i,j)=cff1/cff3
 #   else
-          v2wav(i,j)=0.5_r8*(OCEAN(ng)%v(i,j  ,N(ng),NOUT)+             &
-     &                       OCEAN(ng)%v(i,j+1,N(ng),NOUT))
+          v2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%v(i,j  ,N(ng),NOUT)+        &
+     &                            OCEAN(ng)%v(i,j+1,N(ng),NOUT)),dp)
 #   endif
 #  else
-          v2wav(i,j)=0.5_r8*(OCEAN(ng)%vbar(i,j  ,KOUT)+                &
-     &                       OCEAN(ng)%vbar(i,j+1,KOUT))
+          v2wav(i,j)=0.5_dp*REAL((OCEAN(ng)%vbar(i,j  ,KOUT)+           &
+     &                            OCEAN(ng)%vbar(i,j+1,KOUT)),dp)
 #  endif
 # endif
         END DO
@@ -1020,6 +1031,7 @@
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
                 A(ij)=0.05_r8
 #endif
+          A(ij)=REAL(A(ij),dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
@@ -1036,7 +1048,7 @@
           DO iveg=1,NVEG
             cff=VEG(ng)%plant(i,j,iveg,pdens)+cff
           END DO
-          A(ij)=cff/NVEG
+          A(ij)=REAL(cff/NVEG,dp)
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDENS",  &
@@ -1194,16 +1206,10 @@
 !     real(r8), parameter ::  Large = 1.0E+20_r8
       real(r8), parameter ::  eps = 1.0E-8_r8
 
-      real(r8) :: add_offset, scale
       real(r8) :: cff, fac, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
       real(r8) :: Dstp, sigma, waven
 
-#ifdef WAV2OCN_FLUXES
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taue
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: taun
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: fac1
-#endif
       real(r8), dimension(2) :: range
       real(r8), pointer :: A(:)
       real(r8), pointer :: A1(:)
@@ -1301,7 +1307,7 @@
 !  Set ramp coefficient.
 !
 #ifdef RAMP_WAVES
-      ramp=tanh(time(ng)/300.0_r8)
+      ramp=tanh((tdays(ng)-dstart)/0.01_r8)
 #else
       ramp=1.0_r8
 #endif
@@ -1385,7 +1391,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          cff=A(ij)*ramp*fac
           IF (iw.eq.1) THEN
             FORCES(ng)%Dissip_breakx(i,j)=cff
           ELSE
@@ -1415,7 +1421,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          cff=A(ij)*ramp*fac
           IF (iw.eq.1) THEN
             FORCES(ng)%Dissip_breaky(i,j)=cff
           ELSE
@@ -1433,6 +1439,66 @@
         write(stdout,40) 'WW3toROMS Min/Max DISSURFY (Wm-2):  ',        &
      &                    range(1),range(2)
       END IF
+!  Get x and y dirs.  Rotate after surface streesses.
+!  Wave dissipation due white capping x-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAPX", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=A(ij)*ramp*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_wcapx(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_wcapx(i,j)=FORCES(ng)%Dissip_wcapx(i,j)+  &
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISWCAPX (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  Wave dissipation due to white capping y-dir.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAPY", &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=A(ij)*ramp*fac
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dissip_wcapy(i,j)=cff
+          ELSE
+            FORCES(ng)%Dissip_wcapy(i,j)=FORCES(ng)%Dissip_wcapy(i,j)+  &
+     &                                    cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+#  ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+#  endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max DISWCAPY (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #  ifdef CURVGRID
 !
 !  Waited until we used the stresses in N and E above before we
@@ -1445,8 +1511,14 @@
      &           FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%SinAngler(i,j)
             cff2=FORCES(ng)%Dissip_breaky(i,j)*GRID(ng)%CosAngler(i,j)- &
      &           FORCES(ng)%Dissip_breakx(i,j)*GRID(ng)%SinAngler(i,j)
+            cff3=FORCES(ng)%Dissip_wcapx(i,j)*GRID(ng)%CosAngler(i,j)+ &
+     &           FORCES(ng)%Dissip_wcapy(i,j)*GRID(ng)%SinAngler(i,j)
+            cff4=FORCES(ng)%Dissip_wcapy(i,j)*GRID(ng)%CosAngler(i,j)- &
+     &           FORCES(ng)%Dissip_wcapx(i,j)*GRID(ng)%SinAngler(i,j)
             FORCES(ng)%Dissip_breakx(i,j)=cff1
             FORCES(ng)%Dissip_breaky(i,j)=cff2
+            FORCES(ng)%Dissip_wcapx(i,j)=cff3
+            FORCES(ng)%Dissip_wcapy(i,j)=cff4
           END DO
         END DO
       END IF
@@ -1541,35 +1613,6 @@
         write(stdout,40) 'WW3toROMS Min/Max RTP     (s):     ',         &
      &                    range(1),range(2)
       END IF
-!
-!  Bottom mean wave period.
-!
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TMBOT",    &
-     &                           A, Asize)
-      range(1)= Large
-      range(2)=-Large
-      ij=0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          ij=ij+1
-          cff=MAX(0.0_r8,A(ij))
-          IF (iw.eq.1) THEN
-            FORCES(ng)%Pwave_bot(i,j)=cff
-          ELSE
-            FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
-     &                                cff
-          END IF
-          range(1)=MIN(range(1),cff)
-          range(2)=MAX(range(2),cff)
-        END DO
-      END DO
-# ifdef DISTRIBUTE
-      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
-# endif
-      IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'WW3toROMS Min/Max TMBOT   (s):     ',         &
-     &                    range(1),range(2)
-      END IF
 #if defined BBL_MODEL
 !
 !  Bottom orbital velocity (m/s).
@@ -1598,6 +1641,37 @@
 # endif
       IF (Myrank.eq.MyMaster) THEN
         write(stdout,40) 'WW3toROMS Min/Max UBOT    (ms-1):  ',         &
+     &                    range(1),range(2)
+      END IF
+!
+!  Compute bottom mean wave period.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "ABOT",    &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Pwave_bot(i,j)=2.0_r8*PI*cff/                    &
+     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+          ELSE
+            FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
+     &                                2.0_r8*PI*cff/                    &
+     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WW3toROMS Min/Max TMBOT   (s):     ',         &
      &                    range(1),range(2)
       END IF
 #endif
@@ -1693,7 +1767,7 @@
       END IF
 #endif
 !
-#ifdef ROLLER_SVENDSEN
+!#ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
 !
@@ -1723,7 +1797,7 @@
         write(stdout,40) 'WW3toROMS Min/Max QB      (%):     ',         &
      &                    range(1),range(2)
       END IF
-#endif
+!#endif
 #ifdef WAVES_DSPR
 !
 !  wave directional spreading
@@ -1955,7 +2029,7 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            cff=A(ij)
+            cff=A(ij)*ramp
             IF (iw.eq.1) THEN
               FORCES(ng)%spec_us(i,j,IZ)=cff
             ELSE
@@ -1988,7 +2062,7 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             ij=ij+1
-            cff=A(ij)
+            cff=A(ij)*ramp
             IF (iw.eq.1) THEN
               FORCES(ng)%spec_vs(i,j,IZ)=cff
             ELSE
@@ -2045,6 +2119,12 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  FORCES(ng)%Dissip_breaky)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_wcapx)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  FORCES(ng)%Dissip_wcapy)
 #endif
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -2063,6 +2143,12 @@
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Dissip_breaky)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_wcapx)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dissip_wcapy)
 # endif
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -2095,11 +2181,11 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwavep)
 # endif
-# ifdef ROLLER_SVENDSEN
+!# ifdef ROLLER_SVENDSEN
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_break)
-# endif
+!# endif
 # ifdef WAVES_DSPR
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -2134,12 +2220,14 @@
      &                    FORCES(ng)%Dissip_fric,                       &
      &                    FORCES(ng)%Dissip_wcap)
 # ifdef DISSIP_BREAK_DIR
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Dissip_breakx,                     &
-     &                    FORCES(ng)%Dissip_breaky)
+     &                    FORCES(ng)%Dissip_breaky,                     &
+     &                    FORCES(ng)%Dissip_wcapx,                      &
+     &                    FORCES(ng)%Dissip_wcapy)
 # endif
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -2166,13 +2254,13 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Lwavep)
 # endif
-# ifdef ROLLER_SVENDSEN
+!# ifdef ROLLER_SVENDSEN
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_break)
-# endif
+!# endif
 # ifdef WAV2OCN_FLUXES
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
