@@ -8,4 +8,7 @@ Users need to be aware that this is a major update, and requires use of new:
 - makefile
 - Compilers files
 
+# [COAWST Wiki](https://github.com/DOI-USGS/COAWST/wiki)
+- [COAWST Trainings](https://github.com/DOI-USGS/COAWST/wiki/COAWST-Trainings)
+- [Publications](https://github.com/DOI-USGS/COAWST/wiki/Publications)
 
