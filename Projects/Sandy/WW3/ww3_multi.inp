@@ -127,7 +127,7 @@ $ file for a full documentation of field output options. Namelist type
 $ selection is used here (for alternative F/T flags, see ww3_shel.inp).
 $
   N
-  DPT CUR WND HS T0M1 FP DP PHS PTP PDIR UST WLV T01 SPR MSS USS
+  DPT CUR WND HS T0M1 FP DP PHS PTP PDIR UST WLV T01 SPR MSS USS DIR LM ABR UBR SOC QP FBB FDB FDW LP QB STK STU STV
 $
 $----------------------------------------------------------------
 $
@@ -145,7 +145,7 @@ $  track output
     20121028 120000  0  20121030 120000
 $
 $  restart files
-    20121028 120000  0  20121030 120000
+    20121028 120000  3600  20121030 120000
 $
 $  boundary output
     20121028 120000  0  20121030 120000

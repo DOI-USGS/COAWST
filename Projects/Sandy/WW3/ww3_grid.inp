@@ -27,8 +27,8 @@ $ - Time step information (this information is always read)
 $     maximum global time step, maximum CFL time step for x-y and
 $     k-theta, minimum source term time step (all in seconds).
 $
-   180. 180. 180. 180.
-$    60. 60. 60. 60.
+   150. 150. 150. 150.
+$    50. 50. 50. 50.
 $
 $ Start of namelist input section ------------------------------------ $
 $   Starting with WAVEWATCH III version 2.00, the tunable parameters
