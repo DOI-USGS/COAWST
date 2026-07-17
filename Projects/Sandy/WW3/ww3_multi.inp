@@ -18,7 +18,7 @@ $   4) Output server type as in ww3_shel.inp
 $   5) Flag for dedicated process for unified point output.
 $   6) Flag for grids sharing dedicated output processes.
 $
-  2 2 F 1 F F
+  3 3 F 1 F F
 $
 $ -------------------------------------------------------------------- $
 $ If there are input data grids defined ( NRINP > 0 ), then these
@@ -27,12 +27,22 @@ $ model grids using the file mod_def.MODID. Each grid is defined on
 $ a separate input line with MODID, and eight input flags identifying
 $ the presence of 1) water levels 2) currents 3) winds 4) ice and
 $ 5-7) assimilation data as in the file ww3_shel.inp.
-$   THere should be 9 entries after the '' name.
- 'grd1' T T T F F F F F F
- 'grd2' T T T F F F F F F
 $
+$ There should be 9 entries after the '' name.
+$ The first 3 Ts are to use water levels, currents, and winds,
+$ either from coupled or from a file.
+$
+$ These next 3 lines are for WW3 not coupled to roms but using a wind
+$ forcing file, or not coupled to roms but coupled to wrf.
 $ 'grd1' F F T F F F F F F
 $ 'grd2' F F T F F F F F F
+$ 'grd3' F F T F F F F F F
+$
+$ These next 3 lines are for WW3 coupled to roms and using a wind
+$ forcing file, or coupled to roms and wrf.
+ 'grd1' T T T F F F F F F
+ 'grd2' T T T F F F F F F
+ 'grd3' T T T F F F F F F
 $
 $ In this example, we need the file mod_def.input to define the grid
 $ and the file wind.input to provide the corresponding wind data.
@@ -77,14 +87,24 @@ $          non-equal rank) is not generally recommended.
 $    13)   Flag identifying dumping of boundary data used by this
 $          grid. If true, the file nest.MODID is generated.
 $
-$   There should be 9 entries after the 'gomsb'; and before teh 1
+$   There should be 9 entries after the 'grd1' inside '' marks.
+$    1           2            3          4      5    6    7    8    9
+$  'grd#'   'water lev'  'currents'   'winds' 'ice' ''   ''   ''   ''
 $
+$   The next 3 lines are for Sandy case with just WW3. Winds read from a file.
+$   'grd1'     'no'         'no'     'native' 'no' 'no' 'no' 'no' 'no' 'no' 1  1  0.00 1.00  F
+$   'grd2'     'no'         'no'     'native' 'no' 'no' 'no' 'no' 'no' 'no' 2  1  0.00 1.00  F
+$   'grd3'     'no'         'no'     'native' 'no' 'no' 'no' 'no' 'no' 'no' 3  1  0.00 1.00  F
 $
-   'grd1'  'CPL:native' 'CPL:native' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 1  1  0.00 1.00  F
-   'grd2'  'CPL:native' 'CPL:native' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 2  1  0.00 1.00  F
+$   The next 3 lines are for Sandy case with ROMS+WW3. Winds read from a file.
+$    'grd1'  'CPL:native' 'CPL:native' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 1  1  0.00 1.00  F
+$    'grd2'  'CPL:native' 'CPL:native' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 2  1  0.00 1.00  F
+$    'grd3'  'CPL:native' 'CPL:native' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 3  1  0.00 1.00  F
 $
-$   'grd1'  'no' 'no' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 1  1  0.00 1.00  F
-$   'grd2'  'no' 'no' 'native' 'no' 'no' 'no' 'no' 'no' 'no' 2  1  0.00 1.00  F
+$   The next 3 lines are for Sandy case with ROMS+WW3+WRF coupled.
+  'grd1'  'CPL:native' 'CPL:native' 'CPL:native' 'no' 'no' 'no' 'no' 'no' 'no' 1  1  0.00 1.00  F
+  'grd2'  'CPL:native' 'CPL:native' 'CPL:native' 'no' 'no' 'no' 'no' 'no' 'no' 2  1  0.00 1.00  F
+  'grd3'  'CPL:native' 'CPL:native' 'CPL:native' 'no' 'no' 'no' 'no' 'no' 'no' 3  1  0.00 1.00  F
 $
 $ In this example three grids are used requiring the files
 $ mod_def.grdN. All files get their winds from the grid 'input'

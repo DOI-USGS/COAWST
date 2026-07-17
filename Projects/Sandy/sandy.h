@@ -14,20 +14,29 @@
 #define ROMS_MODEL
 #define NESTING
 #define WRF_MODEL
-#define SWAN_MODEL
-#undef  WW3_MODEL
+#undef  SWAN_MODEL
+#define WW3_MODEL
 #define MCT_LIB
 #define MCT_INTERP_OC2AT
 #define MCT_INTERP_WV2AT
 #define MCT_INTERP_OC2WV
 
-#if defined WRF_MODEL && (defined SWAN_MODEL || defined WW3_MODEL)
-# define DRAGLIM_DAVIS
-# define COARE_TAYLOR_YELLAND
+#if defined WRF_MODEL && (defined WW3_MODEL || defined SWAN_MODEL)
+# undef DRAGLIM_DAVIS
+# undef COARE_TAYLOR_YELLAND
+# undef DRENNAN
+# undef COARE_OOST
+# define Z0_WAV_SIN
+# undef Z0_PORCHETTA
 #endif
 
 #if defined SWAN_MODEL
 # define SWAN_SINGLESPEC
+#endif
+
+#if defined ROMS_MODEL && defined WW3_MODEL
+# define WAV2OCN_FLUXES
+# define DISSIP_BREAK_DIR
 #endif
 
 #ifdef ROMS_MODEL
@@ -47,6 +56,10 @@
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
 #  define SSW_LOGINT
+#  undef  SSW_FORM_DRAG_COR
+#  undef  SSW_ZOBL
+#  undef  SSW_ZORIP
+#  undef  SSW_ZOBIO
 /*  define one of these 2 */
 #  define SSW_LOGINT_WBL
 #  undef  SSW_LOGINT_DIRECT
@@ -82,6 +95,7 @@
 # else
 #  define BULK_FLUXES
 # endif
+# define WIND_MINUS_CURRENT
 # define ANA_NUDGCOEF
 # define ATM_PRESS
 # define ANA_BTFLUX

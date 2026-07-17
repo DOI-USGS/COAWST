@@ -53,30 +53,37 @@
   TI_OCN2HYD =     0.0d0              ! ocean to hydro coupling interval
   TI_HYD2OCN =     0.0d0              ! hydro to ocean coupling interval
 
-! Enter names of Atm, Wav, and Ocn input files.
-! The Wav program needs multiple input files, one for each grid.
-
-   ATM_name = namelist.input                            ! atmospheric model
-   WAV_name = Projects/Sandy/swan_sandy.in \
-              Projects/Sandy/swan_sandy_ref3.in         ! wave model
-!  WAV_name = ww3_grid.inp
-   OCN_name = Projects/Sandy/ocean_sandy.in             ! ocean model
-   HYD_name = hydro.namelist                            ! hydro model
-
-! Sparse matrix interpolation weights files. You have 2 options:
-! Enter "1" for option 1, or "2" for option 2, and then list the 
-! weight file(s) for that option.
-
-   SCRIP_WEIGHT_OPTION = 1
+! Enter names of ATM, WAV, OCN, and SCRIP input files.
 !
-! Option 1: IF you set "SCRIP_WEIGHT_OPTION = 1", then enter name 
-!           of the single netcdf file containing all the exchange
-!           weights. This file is created using the code in
-!           Lib/SCRIP_COAWST/scrip_coawst[.exe]
-
-!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
-   SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
-!  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
+! 1) uncomment this next line for WRF. The namelist.input should be
+!    in the same location as coawstM.
+  ATM_name = namelist.input
+!
+! 2) uncomment these next lines for SWAN. 
+!    if swan has nesting, then use the backslash symbol to make a new line for each grid.
+!  WAV_name = Projects/Sandy/SWAN/swan_sandy.in \
+!             Projects/Sandy/SWAN/swan_sandy_child1.in \
+!             Projects/Sandy/SWAN/swan_sandy_child2.in
+!
+! uncomment this next line for WW3 no NESTING.
+! WAV_name = ww3_grid.inp
+!
+! uncomment this next line for WW3 yes NESTING.
+  WAV_name = ww3_multi.inp
+!
+! 3) uncomment this next line for ROMS.
+  OCN_name = Projects/Sandy/ROMS/ocean_sandy.in
+!
+! uncomment this next line for Hydrology model.
+! HYD_name = hydro.namelist
+!
+! Sparse matrix interpolation weights files.
+! Required if any model has more than 2 grids (ie nesting), or
+! if you have only 1 grid per model but they are different spatial coverage.
+! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_wrf_moving_roms_ww3_3grids.nc
+  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_wrf_static_roms_ww3_3grids.nc
+! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_roms_swan_3grids.nc
+! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_roms_ww3_3grids.nc
 
 !
 !  GLOSSARY:
@@ -116,10 +123,5 @@
 ! Sparse matrix interpolation weights files.
 !------------------------------------------------------------------------------
 !
-! W2ONAME      Wave to ocean netcdf sparse matrix grid files.
-! W2ANAME      Wave to atmosphere netcdf sparse matrix grid files.
-! A2ONAME      Atmosphere to ocean netcdf sparse matrix grid files.
-! A2WNAME      Atmosphere to wave netcdf sparse matrix grid files.
-! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid files.
-! O2WNAME      Ocean to wave netcdf sparse matrix grid files.
+! SCRIP_COAWST_NAME   name of the file containing interpolation weights.
 !

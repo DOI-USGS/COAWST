@@ -3,7 +3,7 @@ $ WAVEWATCH III Initial conditions input file                          $
 $--------------------------------------------------------------------- $
 $ type of initial field ITYPE .
 $
-    1
+    3
 $
 $ ITYPE = 1 ---------------------------------------------------------- $
 $ Gaussian in frequency and space, cos type in direction.
