@@ -1423,7 +1423,7 @@
 !  Imported variable declarations.
 !
       integer :: ng, io
-      integer :: IP, IX, IY
+      integer :: IP, IX, IY, IS
 
       real :: COMPDA(MCGRD,MCMVAR)
 !
@@ -2154,7 +2154,10 @@
 #  endif
                   COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
 #  if defined UV_BANIHASHEMI
-
+                  DO IS=0,MSC-1
+                    COMPDA(INDX,JVX2+IS)=TEMPMCT(IP,idvkx(IS+1))
+                    COMPDA(INDX,JVY2+IS)=TEMPMCT(IP,idvky(IS+1))
+                  END DO
 #  else
                   COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
