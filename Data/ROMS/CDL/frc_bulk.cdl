@@ -1,0 +1,58 @@
+netcdf frc_bulk {
+
+dimensions:
+	xi_rho = 111 ;
+	eta_rho = 241 ;
+	xi_u = 110 ;
+	eta_u = 241 ;
+	xi_v = 111 ;
+	eta_v = 240 ;
+	time = UNLIMITED ; // (0 currently)
+
+variables:
+	double time(time) ;
+		time:long_name = "atmospheric forcing time" ;
+		time:units = "modified Julian day" ;
+	float Uwind(time, eta_rho, xi_rho) ;
+		Uwind:long_name = "surface u-wind component" ;
+		Uwind:units = "meter second-1" ;
+		Uwind:time = "time" ;
+	float Vwind(time, eta_rho, xi_rho) ;
+		Vwind:long_name = "surface v-wind component" ;
+		Vwind:units = "meter second-1" ;
+		Vwind:time = "time" ;
+	float Pair(time, eta_rho, xi_rho) ;
+		Pair:long_name = "surface air pressure" ;
+		Pair:units = "millibar" ;
+		Pair:time = "time" ;
+	float Tair(time, eta_rho, xi_rho) ;
+		Tair:long_name = "surface air temperature" ;
+		Tair:units = "Celsius" ;
+		Tair:time = "time" ;
+	float Qair(time, eta_rho, xi_rho) ;
+		Qair:long_name = "surface air relative humidity" ;
+		Qair:units = "percentage" ;
+		Qair:time = "time" ;
+	float rain(time, eta_rho, xi_rho) ;
+		rain:long_name = "rain fall rate" ;
+		rain:units = "kilogram meter-2 second-1" ;
+		rain:time = "time" ;
+	float swrad(time, eta_rho, xi_rho) ;
+		swrad:long_name = "solar shortwave radiation" ;
+		swrad:units = "Watts meter-2" ;
+		swrad:positive_value = "downward flux, heating" ;
+		swrad:negative_value = "upward flux, cooling" ;
+		swrad:time = "time" ;
+	float lwrad(time, eta_rho, xi_rho) ;
+		lwrad:long_name = "net longwave radiation flux" ;
+		lwrad:units = "Watts meter-2" ;
+		lwrad:positive_value = "downward flux, heating" ;
+		lwrad:negative_value = "upward flux, cooling" ;
+		lwrad:time = "time" ;
+
+// global attributes:
+		:type = "FORCING file" ;
+                :title = "NJB COAMPS Atmospheric Fields" ;
+		:history = "FORCING file, 1.0, Thursday - July 12, 2001 - 10:55:42.8034 AM" ;
+
+}

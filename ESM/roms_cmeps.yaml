@@ -1,0 +1,448 @@
+# ROMS Coupling Component Import/Export Fields Metadata
+#
+#git $Id$
+#========================================================== Hernan G. Arango ==#
+#  Copyright (c) 2002-2026 The ROMS Group                                      #
+#    Licensed under a MIT/X style license                                      #
+#    See License_ROMS.md                                                       #
+#==============================================================================#
+#
+#  Coupler:    Community Mediator for Earth Prediction Systems (CMEPS)
+#  Components: Atmosphere-Ocean
+#
+#    linked_grid:          ROMS linked/coupled nested grid number
+#
+#    CouplingType:         [1] Explicit
+#                          [2] Semi-Implicit: ROMS -> ATM  is explicit
+#                                             ATM  -> ROMS is implicit
+#
+#    PETlayoutOption:      [0] Sequential, components run on all specified PETs
+#                          [1] concurrent, components tun on non-overlapping set
+#                              of PETs
+#
+#    DebugLevel:           [0] no debugging
+#                          [1] reports informative messages
+#                          [2] <1> and coupled components RunSequence
+#                          [3] <2> and writes exchange fields into NetCDF files
+#                          [4] <3> and writes grid information in VTK format
+#
+#    TraceLevel:           [0] no tracing
+#                          [1] reports the sequence of coupling subroutine calls
+#                          [2] <1> writes voluminous ESMF tracing information
+#
+#  Field Metadata Keywords:
+#
+#    standard_name         Field standard name. Need to use NEMS values!
+#    long_name             Field long descriptive name
+#    short_name            Field short name private to NUOPC 'cap' module
+#    data_variables        DATA component NetCDF field and time variable names
+#    source_units          Field source units
+#    destination_units     Field destination units
+#    source_grid           Field source grid-cell location
+#    destination_grid      Field destination grid-cell location
+#    add_offset            Value to add to exchanged field
+#    scale                 Scale to convert data from source to destination
+#    debug_write           Switch to write out exchanged field, if DebugLevel>2
+#    connected_to          Source component to which field is connected
+#    map_type              CMEPS regridding flag from source to destination
+#    map_norm              CMEPS mapping normalization flag
+#
+#  CMEPS exchange fields information:
+#
+#  * map_type: determines how the fields are mapped from its source to
+#              target destinations (string value):
+#
+#      mapbilnr         bilinear mapping
+#      mapconsd         first order conservative mapping with
+#                        normalization type of conservative destination.
+#      mapconsf         first order conservative mapping with
+#                        normalization type of conservative fraction.
+#      mappatch         patch mapping
+#      mapfcopy         copy and redistribute, no mapping
+#      mapnstod         nearest source to destination mapping
+#      mapnstod_consd   nearest source to destination followed by
+#                        conservative destination
+#      mapnstod_consf   nearest source to destination followed by
+#                        conservative fraction
+#
+#  * map_norm: determines the mapping normalization (string value):
+#
+#      unset            no normalization is set, should only be used
+#                        if map_type is 'mapfcopy'
+#      none             no normalization is done, should only be used
+#                        if map_type is not 'mapfcopy'
+#      one              normalize by 1
+#      lfrin            normalize by the 'lfrin' field in FBFrac(complnd).
+#                        Used to map lnd->atm
+#      ifrac            normalize by the 'ifrac' field in FBFrac(compice).
+#                        Used to map ice->atm
+#      ofrac            normalize by the 'ofrac' field in FBFrac(compocn).
+#                        Used to map ice->atm
+#      custom           custom mapping and normalization will be done in
+#                        the prep phase for the corresponding field
+#                        (used to map glc->lnd).
+
+
+convention: CF
+
+project: UFS Costal ROMS Coupling
+
+title:   Hurricane Dorian Test
+
+date: 2019-08-29T00:00:00Z                   # Starting date, Hurricane Dorian
+
+forecast_length: &ForecastLength PT96H       # 6 hours (ISO 8601)
+
+coupling_step: &dt 180.0d0                   # 3 minutes (PT180S)
+
+linked_grid:     1                           # linked ROMS nested grid number
+
+ATM_component:   &ATM FV3
+DATA_component:  data.nc
+OCN_component:   &OCN ROMS
+
+CoupledSet:      ESM_01
+ExportState:     Export_ESM_01
+ImportState:     Import_ESM_01
+
+PETlayoutOption: 0
+
+CouplingType:    2                           # semi-implicit
+
+DebugLevel:      1
+TraceLevel:      0
+
+standard_input:
+  OCN_component: roms_watl.in
+  ATM_component: namelist
+
+import_variables: [dLWrad, SWrad, Pair, Tair, Qair, rain, Uwind, Vwind]
+
+export_variables: [cpl_scalars, mask_rho, SSH, Usur, Vsur, SST]
+
+################################
+### Exported Fields Metadata ###
+################################
+
+export:
+
+  - standard_name:       sea_surface_height_above_sea_level
+    long_name:           sea surface height
+    short_name:          SSH                                    # So_h
+    data_variables:      [SSH, time]                            # zeta
+    source_units:        meter
+    destination_units:   meter
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapnstod
+    map_norm:            none
+
+  - standard_name:       ocn_current_zonal
+    long_name:           surface eastward momentum component
+    short_name:          Usur                                   # So_u
+    data_variables:      [Usur, time]                           # u
+    source_units:        meter second-1
+    destination_units:   meter second-1
+    source_grid:         left_right_edge
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       ocn_current_merid
+    long_name:           surface northward momentum component
+    short_name:          Vsur                                   # So_v
+    data_variables:      [Vsur, time]                           # v
+    source_units:        meter second-1
+    destination_units:   meter second-1
+    source_grid:         lower_upper_edge
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       sea_surface_temperature
+    long_name:           sea surface temperature
+    short_name:          SST                                    # So_t
+    data_variables:      [temperature, time]                    # t(:,:,:,itemp)
+    source_units:        C
+    destination_units:   K
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          273.15d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapnstod
+    map_norm:            none
+
+  - standard_name:       ocean_mask
+    long_name:           mask on RHO-points
+    short_name:          mask_rho                               # So_omask
+    data_variables:      [msk, time]
+    source_units:        nondimensional
+    destination_units:   nondimensional
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapnstod
+    map_norm:            none
+
+  - standard_name:       cpl_scalars
+    long_name:           CMEPS
+    short_name:          cpl_scalars
+    data_variables:      [cpl_scalars, time]
+    source_units:        nondimensional
+    destination_units:   nondimensional
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        CMEPS
+    map_type:            mapfcopy
+    map_norm:            none
+
+################################
+### Imported Fields Metadata ###
+################################
+
+import:
+
+  - standard_name:       inst_down_lw_flx
+    long_name:           surface downward longwave radiation flux
+    short_name:          dLWrad                                 # Faxa_lwdn
+    data_variables:      [lwrad_down, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       surface_net_longwave_flux
+    long_name:           surface net longwave radiation flux
+    short_name:          LWrad
+    data_variables:      [lwrad, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_net_sw_flx
+    long_name:           surface net shortwave radiation flux
+    short_name:          SWrad                                  # Faxa_swnet
+    data_variables:      [swrad_daily, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       net_averaged_shortwave_flux_at_sea_water_surface
+    long_name:           surface net averaged shortwave radiation flux
+    short_name:          SWrad_daily
+    data_variables:      [swrad_daily, time]
+    source_units:        W m-2
+    destination_units:   W m-2
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_pres_height_surface
+    long_name:           surface air pressure
+    short_name:          Pair                                   # Sa_pslv
+    data_variables:      [Pair, time]
+    source_units:        mb
+    destination_units:   mb
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_temp_height2m
+    long_name:           surface (2m) air temperature
+    short_name:          Tair                                   # Sa_t2m
+    data_variables:      [Tair, time]
+    source_units:        K
+    destination_units:   C
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          -273.15d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_spec_humid_height2m
+    long_name:           surface relative humidity
+    short_name:          Qair                                   # Sa_q2m
+    data_variables:      [Qair, time]
+    source_units:        percent
+    destination_units:   fraction
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               0.01d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_prec_rate
+    long_name:           precipitation rate
+    short_name:          rain                                   # Faxa_rain
+    data_variables:      [rain, time]
+    source_units:        kg m-2 s-1
+    destination_units:   kg m-2 s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_zonal_wind_height10m
+    long_name:           surface eastward wind at 10m
+    short_name:          Uwind                                  # Sa_u10m
+    data_variables:      [Uwind, time]
+    source_units:        m s-1
+    destination_units:   m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       inst_merid_wind_height10m
+    long_name:           surface northward wind at 10m
+    short_name:          Vwind                                  # Sa_v10m
+    data_variables:      [Vwind, time]
+    source_units:        m s-1
+    destination_units:   m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *DATA
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       surface_downward_heat_flux_in_sea_water
+    long_name:           surface net heat flux
+    short_name:          shflux
+    data_variables:      [shflux, time]
+    source_units:        W m-2
+    destination_units:   Celsius m s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       surface_upward_water_flux
+    long_name:           surface freshwater flux (E-P)
+    short_name:          swflux
+    data_variables:      [swflux, time]
+    source_units:        kg m-2 s-1
+    destination_units:   kg m-2 s-1
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       surface_downward_x_stress
+    long_name:           surface eastward wind stress
+    short_name:          sustr
+    data_variables:      [sustr, time]
+    source_units:        N m-2
+    destination_units:   m-2 s-2
+    source_grid:         cell_center
+    destination_grid:    left_right_edge
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       surface_downward_y_stress
+    long_name:           surface northward wind stress
+    short_name:          svstr
+    data_variables:      [svstr, time]
+    source_units:        N m-2
+    destination_units:   m-2 s-2
+    source_grid:         cell_center
+    destination_grid:    lower_upper_edge
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none
+
+  - standard_name:       atmosphere_boundary_layer_thickness
+    long_name:           atmosphere boundary layer thickness
+    short_name:          pblh
+    data_variables:      [pblh, time]
+    source_units:        m
+    destination_units:   m
+    source_grid:         cell_center
+    destination_grid:    cell_center
+    add_offset:          0.0d0
+    scale:               1.0d0
+    debug_write:         false
+    connected_to:        *ATM
+    map_type:            mapbilnr
+    map_norm:            none

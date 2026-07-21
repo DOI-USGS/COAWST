@@ -1,0 +1,36 @@
+netcdf frc_uvstress {
+
+dimensions:
+	xi_rho = 386 ;
+	xi_u = 385 ;
+	xi_v = 386 ;
+	eta_rho = 130 ;
+	eta_u = 130 ;
+	eta_v = 129 ;
+	sms_time = UNLIMITED ; // (0 currently)
+
+variables:
+	float sms_time(sms_time) ;
+		sms_time:long_name = "surface momentum stress time" ;
+		sms_time:units = "days since 1992-01-01 00:00:00" ;
+		sms_time:interval = "367 daily data" ;
+		sms_time:start_date = "01-Jan-1993" ;
+		sms_time:end_date = "07-Jan-1994" ;
+	short sustr(sms_time, eta_u, xi_u) ;
+		sustr:long_name = "surface u-momentum stress" ;
+		sustr:units = "Newton meter-2" ;
+		sustr:time = "sms_time" ;
+		sustr:scale_factor = 0.0005 ;
+	short svstr(sms_time, eta_v, xi_v) ;
+		svstr:long_name = "surface v-momentum stress" ;
+		svstr:units = "Newton meter-2 * 1000" ;
+		svstr:time = "sms_time" ;
+		svstr:scale_factor = 0.0005 ;
+
+// global attributes:
+		:type = "ROMS FORCING file" ;
+		:title = "NCEP/NCAR Global Atmospheric Re-analyses v4/97" ;
+		:grd_file = "roms_nena_grid_3.nc" ;
+		:source_file = "../natl/ncepflx1_NATL1993.nc" ;
+		:source_file_history = "extraction from grib files using NCEP_GRBdaily - 27-Mar-2002 17:08:28" ;
+}

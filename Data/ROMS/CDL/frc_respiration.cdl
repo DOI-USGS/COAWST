@@ -1,0 +1,78 @@
+netcdf frc_respiration {
+
+dimensions:
+	xi_rho = 100 ;
+	xi_u = 99 ;
+	xi_v = 100 ;
+	eta_rho = 150 ;
+	eta_u = 150 ;
+	eta_v = 149 ;
+	s_rho = 20 ;
+	s_w = 21 ;
+	respiration_time = UNLIMITED ; // (0 currently)
+
+variables:
+        int spherical ;
+                spherical:long_name = "grid type logical switch" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
+        int Vtransform ;
+                Vtransform:long_name = "vertical terrain-following transformation equation" ;
+        int Vstretching ;
+                Vstretching:long_name = "vertical terrain-following stretching function" ;
+	double theta_s ;
+		theta_s:long_name = "S-coordinate surface control parameter" ;
+	double theta_b ;
+		theta_b:long_name = "S-coordinate bottom control parameter" ;
+	double Tcline ;
+		Tcline:long_name = "S-coordinate surface/bottom layer width" ;
+		Tcline:units = "meter" ;
+	double hc ;
+		hc:long_name = "S-coordinate parameter, critical depth" ;
+		hc:units = "meter" ;
+	double s_rho(s_rho) ;
+		s_rho:long_name = "S-coordinate at RHO-points" ;
+		s_rho:valid_min = -1. ;
+		s_rho:valid_max = 0. ;
+                s_rho:positive = "up" ;
+                s_rho:standard_name = "ocean_s_coordinate_g1" ;
+                s_rho:formula_terms = "s: s_rho C: Cs_r eta: zeta depth: h depth_c: hc" ;
+	double s_w(s_w) ;
+		s_w:long_name = "S-coordinate at W-points" ;
+		s_w:valid_min = -1. ;
+		s_w:valid_max = 0. ;
+                s_w:positive = "up" ;
+                s_w:standard_name = "ocean_s_coordinate_g1" ;
+                s_w:formula_terms = "s: s_w C: Cs_w eta: zeta depth: h depth_c: hc" ;
+	double Cs_r(s_rho) ;
+		Cs_r:long_name = "S-coordinate stretching curves at RHO-points" ;
+		Cs_r:valid_min = -1. ;
+		Cs_r:valid_max = 0. ;
+	double Cs_w(s_w) ;
+		Cs_w:long_name = "S-coordinate stretching curves at W-points" ;
+		Cs_w:valid_min = -1. ;
+		Cs_w:valid_max = 0. ;
+        double h(eta_rho, xi_rho) ;
+                h:long_name = "bathymetry at RHO-points" ;
+                h:units = "meter" ;
+                h:coordinates = "lon_rho lat_rho" ;
+	double lon_rho(eta_rho, xi_rho) ;
+		lon_rho:long_name = "longitude of RHO-points" ;
+		lon_rho:units = "degree_east" ;
+                lon_rho:standard_name = "longitude" ;
+	double lat_rho(eta_rho, xi_rho) ;
+		lat_rho:long_name = "latitude of RHO-points" ;
+		lat_rho:units = "degree_north" ;
+                lat_rho:standard_name = "latitude" ;
+	double respiration_time(respiration_time) ;
+		respiration_time:long_name = "respiration date time" ;
+		respiration_time:units = "days since 2001-01-01 00:00:00" ;
+	double respiration(respiration_time, s_rho, eta_rho, xi_rho) ;
+		respiration:long_name = "respiration rate" ;
+		respiration:units = "millimole_oxygen meter-3 day-1" ;
+		respiration:time = "respiration_time" ;
+
+// global attributes:
+		:type = "ROMS FORCING file" ;
+		:title = "Total Respiration Rate for Hypoxia" ;
+}
