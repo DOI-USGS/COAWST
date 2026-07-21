@@ -1,0 +1,148 @@
+!  Vegetation Model Parameters.
+!
+!svn $Id$
+!========================================================= J.C. Warner=========
+!========================================================= T.S. Kalra==========
+!========================================================= N.K. Ganju==========
+!========================================================= A.Beudin============
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+    NVEG   == 1
+
+    CD_VEG == 1.0d0
+
+    E_VEG == 1.0d9
+
+    VEG_MASSDENS  == 700.0d0
+
+    VEGHMIXCOEF == 0.1d0
+
+    KFAC_MARSH == 0.6d-9
+
+    SCARP_HGHT == 0.27d0
+
+    NTIMES_MARSH == 30
+
+    PAR_FAC1 == -0.7372d0
+ 
+    PAR_FAC2 == 0.092d0
+
+    TDAYS_MARSH_GROWTH == 180
+
+    NUGP == 0.0138d0
+ 
+    BMAX == 2.5d0
+
+    CHIREF == 0.158d0
+
+    ALPHA_PDENS == 250.0d0
+ 
+    BETA_PDENS == 0.3032d0
+ 
+    ALPHA_PHGHT == 0.0609d0
+
+    BETA_PHGHT == 0.1876d0
+
+    ALPHA_PDIAM == 0.0006d0
+
+    BETA_PDIAM == 0.3d0 
+
+! Logical switches (TRUE/FALSE) to activate writing of vegetation fields
+! into HISTORY output file: [1:NVEG,Ngrids].
+
+Hout(ipdens)   == T       ! Plant_density      Density of the plant for each vegetation
+Hout(iphght)   == T       ! Plant_height       Height of the plant for each vegetation
+Hout(ipdiam)   == T       ! Plant_diameter     Diameter of the plant for each vegetation
+Hout(ipthck)   == T       ! Plant_thickness    Thickness of the plant for each vegetation
+Hout(ipagbm)   == F       ! Plant_agb          Above ground plant biomass
+Hout(ipbgbm)   == F       ! Plant_bgb          Below ground plant biomass
+Hout(idWdvg)   == T       ! Dissip_veg         Wave dissipation due to vegetation
+!
+Hout(idTims)   == F       ! marsh_mask         Store masking marsh from marsh cells
+Hout(idTtot)   == F       ! Thrust_total       Total thrust from all direction due to waves
+Hout(idTmfo)   == F       ! marsh_flux_out     Marsh sediment flux out from marsh cells
+Hout(idTmmr)   == F       ! marsh_retreat      Amount of marsh retreat from all directions
+
+Hout(idTmtr)   == F       ! marsh_tidal_range  Tidal range for vertical growth for marsh cells
+Hout(idTmhw)   == F       ! marsh_high_water   Mean high water for marsh cells
+Hout(idTmvg)   == F       ! marsh_vert         Amount of vertical growth for marsh cells
+Hout(idTmbp)   == F       ! marsh_biomass_peak Amount of marsh biomass peak
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+!
+!  NVEG           Number of submerged aquatic vegetation types. 
+!
+!  CD_VEG         Drag coefficient for each vegetation type.
+!
+!  E_VEG          Young's Modulus for each vegetation type.
+!
+!  VEG_MASSDENS   Mass density for each vegetation type.
+!
+!  VEGHMIXCOEF    Additional horizontal viscosity coefficient at the edge of a vegetation patch.
+!
+!  KFAC_MARSH     Marsh sediment erodibility coefficient (s/m).
+! 
+!  SCARP_HGHT     Scarp height after which marsh mask converts from 1 to 0 (m). 
+! 
+!  NTIMES_MARSH   Number of days to record mean high water for marsh vertical growth (typically 30 days).
+!
+!  PAR_FAC1       Marsh parabolic curve growth parameter 1.
+! 
+!  PAR_FAC2       Marsh parabolic curve growth parameter 2. 
+!
+!TDAYS_MARSH_GROWTH Growing number of days for marsh.
+!
+!  NUGP           Fraction of below ground biomass. 
+!  
+!  BMAX           Peak biomass, kg/m2.
+!
+!  CHIREF         Fraction of recalcitrant Carbon. 
+!
+!  ALPHA_PDENS    Marsh vegetation growth parameter 1 for density.
+! 
+!  BETA_PDENS     Marsh vegetation growth parameter 2 for density.
+! 
+!  ALPHA_PHGHT    Marsh vegetation growth parameter 1 for height.
+! 
+!  BETA_PHGHT     Marsh vegetation growth parameter 2 for height.
+! 
+!  ALPHA_PDIAM    Marsh vegetation growth parameter 1 for diameter.
+! 
+!  BETA_PDIAM     Marsh vegetation growth parameter 2 for diameter.

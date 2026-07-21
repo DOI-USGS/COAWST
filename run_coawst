@@ -1,0 +1,24 @@
+#!/bin/bash
+### Job name
+#PBS -N cwstv3
+### Number of nodes
+#PBS -l nodes=1:ppn=8,walltime=120:00:00
+### Mail to user
+#PBS -m ae
+#PBS -M user@mywork.edu
+### Out files
+###PBS -e isabel_105.err
+###PBS -o isabel_105.out
+### PBS queue
+###PBS -q standard
+
+umask 0002
+
+echo "this job is running on:"
+cat $PBS_NODEFILE
+
+NPROCS=`wc -l < $PBS_NODEFILE`
+
+cd /peach/data0/jcwarner/Models/COAWST_regress
+
+mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/coupling_sandy.in > cwstv3.out

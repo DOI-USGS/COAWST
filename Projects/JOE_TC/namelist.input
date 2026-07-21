@@ -1,0 +1,125 @@
+ &time_control
+ run_days                            = 0,
+ run_hours                           = 120,
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 2005, 2000, 2000,
+ start_month                         = 09,   01,   01,
+ start_day                           = 01,   24,   24,
+ start_hour                          = 00,   12,   12,
+ start_minute                        = 00,   00,   00,
+ start_second                        = 00,   00,   00,
+ end_year                            = 2005, 2000, 2000,
+ end_month                           = 09,   01,   01,
+ end_day                             = 06,   25,   25,
+ end_hour                            = 00,   12,   12,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
+ interval_seconds                    = 86400
+ input_from_file                     = .true.,.false.,.false.,
+ history_interval                    = 60,  60,   60,
+ frames_per_outfile                  = 10000000, 1000, 1000,
+ restart                             = .false.,
+ restart_interval                    = 10000000,
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_input                       = 2
+ io_form_boundary                    = 2
+ io_form_auxinput4                   = 2
+ debug_level                         = 0
+ auxinput4_inname                    = "wrflowinp_d<domain>"
+ auxinput4_interval                  = 360, 360, 360,
+ force_use_old_data                  = .true.
+ /
+
+ &domains
+ time_step                           = 25,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 200,    112,   94,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 150,    97,    91,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 31,    28,    28,
+ num_metgrid_levels                  = 31
+ dx                                  = 12000, 10000,  3333,
+ dy                                  = 12000, 10000,  3333,
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     31,    30,
+ j_parent_start                      = 0,     17,    30,
+ parent_grid_ratio                   = 1,     3,     3,
+ parent_time_step_ratio              = 1,     3,     3,
+ feedback                            = 1,
+ smooth_option                       = 0
+ nproc_x                             = 1
+ nproc_y                             = 1
+ /
+
+ &physics
+ mp_physics                          = 2,     3,     3,
+ ra_lw_physics                       = 1,     1,     1,
+ ra_sw_physics                       = 1,     1,     1,
+ radt                                = 10,    30,    30,
+ sf_sfclay_physics                   = 2,     1,     1,
+ sf_surface_physics                  = 2,     1,     1,
+ bl_pbl_physics                      = 2,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 0,     1,     0,
+ cudt                                = 5,     5,     5,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 5,
+ num_land_cat                        = 24,
+ sf_urban_physics                    = 0,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ sst_update                          = 0,
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ w_damping                           = 0,
+ diff_opt                            = 1,
+ km_opt                              = 4,
+ diff_6th_opt                        = 0,
+ diff_6th_factor                     = 0.12,
+ base_temp                           = 290.
+ damp_opt                            = 0,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ non_hydrostatic                     = .true., .true., .true.,
+ moist_adv_opt                       = 1,1,1,
+ scalar_adv_opt                      = 1,1,1,,
+ use_baseparam_fr_nml                = .true.,
+ use_theta_m                         = 0,
+ hybrid_opt                          = 0
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
+ specified                           = .true., .false.,.false.,
+ nested                              = .false., .true., .true.,
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 0,
+ /

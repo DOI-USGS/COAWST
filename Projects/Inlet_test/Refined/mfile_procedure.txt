@@ -1,0 +1,9 @@
+
+% for inlet test refined we use location of child grid at:
+% Istr=24; Iend=54; Jstr=40; Jend=56; 
+
+F=coarse2fine('inlet_test_grid.nc','inlet_test_grid_ref3.nc',3,24,54,40,56);
+Gnames={'inlet_test_grid.nc','inlet_test_grid_ref3.nc'}
+[S,G]=contact(Gnames,'inlet_test_contact_ref3.nc');
+
+
