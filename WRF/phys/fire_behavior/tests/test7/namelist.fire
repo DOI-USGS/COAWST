@@ -1,0 +1,42 @@
+ &time
+ start_year = 2012
+ start_month = 6
+ start_day = 25
+ start_hour = 18
+ start_minute = 0
+ start_second = 0
+ end_year = 2012
+ end_month = 6
+ end_day = 25
+ end_hour = 18
+ end_minute = 0
+ end_second = 10
+ dt = 0.5
+ interval_output = 1
+ num_tiles = 16,
+/
+
+ &atm
+ interval_atm = 1
+ kde = 45
+ /
+
+ &fire
+ fire_num_ignitions = 1,
+ fire_ignition_ros1 =   12.55,
+ fire_ignition_start_lat1 = 39.685,
+ fire_ignition_start_lon1 = -103.585,
+ fire_ignition_end_lat1 = 39.674,
+ fire_ignition_end_lon1 = -103.575,
+ fire_ignition_radius1 = 1000.0,
+ fire_ignition_start_time1 = 0.0,
+ fire_ignition_end_time1 = 300.0,
+ fire_wind_height = 1.0,           ! height to interpolate winds to for calculating fire spread rate 
+ fire_print_msg = 1,               ! 1 print fire debugging messages
+ fire_atm_feedback = 1.0,          ! real, multiplier for heat fluxes, 1.=normal, 0.=turn off two-way coupling 
+ fire_viscosity = 0.4,             ! artificial viscosity in level set method (max 1, needed with fire_upwinding=0)
+ fire_upwinding = 9,               ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
+ wind_vinterp_opt = 0,
+ reinit_pseudot_coef = 0.0001
+/
+

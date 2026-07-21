@@ -1,0 +1,326 @@
+   Entering subroutine Read_namelist
+   Leaving subroutine Read_namelist
+ 
+ ids =            1 ide =           20
+ jds =            1 jde =           20
+ kds =            1 kde =           45
+ ims =           -4 ime =           25
+ jms =           -4 jme =           25
+ kms =            1 kme =           45
+ ips =            1 ipe =           20
+ jps =            1 jpe =           20
+ kps =            1 kpe =           45
+ its =            1 ite =           20
+ jts =            1 jte =           20
+ kts =            1 kte =           45
+ 
+   Entering subroutine Init_state
+ 
+ ifds =            1 ifde =           80
+ jfds =            1 jfde =           80
+ kfds =            1 kfde =           45
+ ifms =          -19 ifme =          100
+ jfms =          -19 jfme =          100
+ kfms =            1 kfme =           45
+ ifts =            1 ifte =           80
+ jfts =            1 jfte =           80
+ kfts =            1 kfte =           45
+ 
+ Using real ignition coordinates, longitude and latitude
+ Updating wrfdata...
+ 2012-06-25_18:00:00   0.00000000    
+ FIRE:fire_driver_em_init: FIRE initialization start
+ FIRE:Reading file namelist.fire
+ FIRE:File namelist.fire not found, using defaults
+ 
+   Leaving subroutine Init_state
+ 
+   Entering Advance_state... 
+ FIRE:Time       0.500 s Average wind           0.325E+01 m/s
+ FIRE:Time       0.500 s Maximum wind           0.360E+01 m/s
+ FIRE:Time       0.500 s Fire area              0.000E+00 m^2
+ FIRE:Time       0.500 s Heat output            0.000E+00 W
+ FIRE:Time       0.500 s Max heat flux          0.000E+00 W/m^2
+ FIRE:Time       0.500 s Latent heat output     0.000E+00 W
+ FIRE:Time       0.500 s Max latent heat flux   0.000E+00 W/m^2
+ 2012-06-25_18:00:00  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       1.000 s Average wind           0.325E+01 m/s
+ FIRE:Time       1.000 s Maximum wind           0.360E+01 m/s
+ FIRE:Time       1.000 s Fire area              0.155E+03 m^2
+ FIRE:Time       1.000 s Heat output            0.127E+08 W
+ FIRE:Time       1.000 s Max heat flux          0.202E+05 W/m^2
+ FIRE:Time       1.000 s Latent heat output     0.106E+07 W
+ FIRE:Time       1.000 s Max latent heat flux   0.170E+04 W/m^2
+ 2012-06-25_18:00:01   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:01   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       1.500 s Average wind           0.331E+01 m/s
+ FIRE:Time       1.500 s Maximum wind           0.571E+01 m/s
+ FIRE:Time       1.500 s Fire area              0.626E+03 m^2
+ FIRE:Time       1.500 s Heat output            0.122E+09 W
+ FIRE:Time       1.500 s Max heat flux          0.161E+06 W/m^2
+ FIRE:Time       1.500 s Latent heat output     0.102E+08 W
+ FIRE:Time       1.500 s Max latent heat flux   0.134E+05 W/m^2
+ 2012-06-25_18:00:01  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       2.000 s Average wind           0.331E+01 m/s
+ FIRE:Time       2.000 s Maximum wind           0.571E+01 m/s
+ FIRE:Time       2.000 s Fire area              0.142E+04 m^2
+ FIRE:Time       2.000 s Heat output            0.396E+09 W
+ FIRE:Time       2.000 s Max heat flux          0.359E+06 W/m^2
+ FIRE:Time       2.000 s Latent heat output     0.332E+08 W
+ FIRE:Time       2.000 s Max latent heat flux   0.300E+05 W/m^2
+ 2012-06-25_18:00:02   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:02   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       2.500 s Average wind           0.387E+01 m/s
+ FIRE:Time       2.500 s Maximum wind           0.833E+01 m/s
+ FIRE:Time       2.500 s Fire area              0.234E+04 m^2
+ FIRE:Time       2.500 s Heat output            0.565E+09 W
+ FIRE:Time       2.500 s Max heat flux          0.261E+06 W/m^2
+ FIRE:Time       2.500 s Latent heat output     0.474E+08 W
+ FIRE:Time       2.500 s Max latent heat flux   0.219E+05 W/m^2
+ 2012-06-25_18:00:02  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       3.000 s Average wind           0.387E+01 m/s
+ FIRE:Time       3.000 s Maximum wind           0.833E+01 m/s
+ FIRE:Time       3.000 s Fire area              0.352E+04 m^2
+ FIRE:Time       3.000 s Heat output            0.859E+09 W
+ FIRE:Time       3.000 s Max heat flux          0.249E+06 W/m^2
+ FIRE:Time       3.000 s Latent heat output     0.720E+08 W
+ FIRE:Time       3.000 s Max latent heat flux   0.208E+05 W/m^2
+ 2012-06-25_18:00:03   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:03   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       3.500 s Average wind           0.396E+01 m/s
+ FIRE:Time       3.500 s Maximum wind           0.839E+01 m/s
+ FIRE:Time       3.500 s Fire area              0.462E+04 m^2
+ FIRE:Time       3.500 s Heat output            0.125E+10 W
+ FIRE:Time       3.500 s Max heat flux          0.341E+06 W/m^2
+ FIRE:Time       3.500 s Latent heat output     0.105E+09 W
+ FIRE:Time       3.500 s Max latent heat flux   0.286E+05 W/m^2
+ 2012-06-25_18:00:03  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       4.000 s Average wind           0.396E+01 m/s
+ FIRE:Time       4.000 s Maximum wind           0.839E+01 m/s
+ FIRE:Time       4.000 s Fire area              0.598E+04 m^2
+ FIRE:Time       4.000 s Heat output            0.163E+10 W
+ FIRE:Time       4.000 s Max heat flux          0.311E+06 W/m^2
+ FIRE:Time       4.000 s Latent heat output     0.137E+09 W
+ FIRE:Time       4.000 s Max latent heat flux   0.260E+05 W/m^2
+ 2012-06-25_18:00:04   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:04   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       4.500 s Average wind           0.352E+01 m/s
+ FIRE:Time       4.500 s Maximum wind           0.678E+01 m/s
+ FIRE:Time       4.500 s Fire area              0.737E+04 m^2
+ FIRE:Time       4.500 s Heat output            0.175E+10 W
+ FIRE:Time       4.500 s Max heat flux          0.277E+06 W/m^2
+ FIRE:Time       4.500 s Latent heat output     0.147E+09 W
+ FIRE:Time       4.500 s Max latent heat flux   0.232E+05 W/m^2
+ 2012-06-25_18:00:04  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       5.000 s Average wind           0.352E+01 m/s
+ FIRE:Time       5.000 s Maximum wind           0.678E+01 m/s
+ FIRE:Time       5.000 s Fire area              0.894E+04 m^2
+ FIRE:Time       5.000 s Heat output            0.231E+10 W
+ FIRE:Time       5.000 s Max heat flux          0.341E+06 W/m^2
+ FIRE:Time       5.000 s Latent heat output     0.193E+09 W
+ FIRE:Time       5.000 s Max latent heat flux   0.286E+05 W/m^2
+ 2012-06-25_18:00:05   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:05   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       5.500 s Average wind           0.334E+01 m/s
+ FIRE:Time       5.500 s Maximum wind           0.583E+01 m/s
+ FIRE:Time       5.500 s Fire area              0.107E+05 m^2
+ FIRE:Time       5.500 s Heat output            0.297E+10 W
+ FIRE:Time       5.500 s Max heat flux          0.342E+06 W/m^2
+ FIRE:Time       5.500 s Latent heat output     0.249E+09 W
+ FIRE:Time       5.500 s Max latent heat flux   0.287E+05 W/m^2
+ 2012-06-25_18:00:05  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       6.000 s Average wind           0.334E+01 m/s
+ FIRE:Time       6.000 s Maximum wind           0.583E+01 m/s
+ FIRE:Time       6.000 s Fire area              0.127E+05 m^2
+ FIRE:Time       6.000 s Heat output            0.335E+10 W
+ FIRE:Time       6.000 s Max heat flux          0.364E+06 W/m^2
+ FIRE:Time       6.000 s Latent heat output     0.282E+09 W
+ FIRE:Time       6.000 s Max latent heat flux   0.306E+05 W/m^2
+ 2012-06-25_18:00:06   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:06   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       6.500 s Average wind           0.379E+01 m/s
+ FIRE:Time       6.500 s Maximum wind           0.735E+01 m/s
+ FIRE:Time       6.500 s Fire area              0.150E+05 m^2
+ FIRE:Time       6.500 s Heat output            0.417E+10 W
+ FIRE:Time       6.500 s Max heat flux          0.539E+06 W/m^2
+ FIRE:Time       6.500 s Latent heat output     0.353E+09 W
+ FIRE:Time       6.500 s Max latent heat flux   0.478E+05 W/m^2
+ 2012-06-25_18:00:06  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       7.000 s Average wind           0.379E+01 m/s
+ FIRE:Time       7.000 s Maximum wind           0.735E+01 m/s
+ FIRE:Time       7.000 s Fire area              0.171E+05 m^2
+ FIRE:Time       7.000 s Heat output            0.516E+10 W
+ FIRE:Time       7.000 s Max heat flux          0.955E+06 W/m^2
+ FIRE:Time       7.000 s Latent heat output     0.439E+09 W
+ FIRE:Time       7.000 s Max latent heat flux   0.848E+05 W/m^2
+ 2012-06-25_18:00:07   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:07   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       7.500 s Average wind           0.421E+01 m/s
+ FIRE:Time       7.500 s Maximum wind           0.102E+02 m/s
+ FIRE:Time       7.500 s Fire area              0.194E+05 m^2
+ FIRE:Time       7.500 s Heat output            0.656E+10 W
+ FIRE:Time       7.500 s Max heat flux          0.164E+07 W/m^2
+ FIRE:Time       7.500 s Latent heat output     0.562E+09 W
+ FIRE:Time       7.500 s Max latent heat flux   0.146E+06 W/m^2
+ 2012-06-25_18:00:07  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       8.000 s Average wind           0.421E+01 m/s
+ FIRE:Time       8.000 s Maximum wind           0.102E+02 m/s
+ FIRE:Time       8.000 s Fire area              0.218E+05 m^2
+ FIRE:Time       8.000 s Heat output            0.777E+10 W
+ FIRE:Time       8.000 s Max heat flux          0.163E+07 W/m^2
+ FIRE:Time       8.000 s Latent heat output     0.668E+09 W
+ FIRE:Time       8.000 s Max latent heat flux   0.144E+06 W/m^2
+ 2012-06-25_18:00:08   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:08   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       8.500 s Average wind           0.366E+01 m/s
+ FIRE:Time       8.500 s Maximum wind           0.782E+01 m/s
+ FIRE:Time       8.500 s Fire area              0.246E+05 m^2
+ FIRE:Time       8.500 s Heat output            0.916E+10 W
+ FIRE:Time       8.500 s Max heat flux          0.159E+07 W/m^2
+ FIRE:Time       8.500 s Latent heat output     0.790E+09 W
+ FIRE:Time       8.500 s Max latent heat flux   0.141E+06 W/m^2
+ 2012-06-25_18:00:08  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time       9.000 s Average wind           0.366E+01 m/s
+ FIRE:Time       9.000 s Maximum wind           0.782E+01 m/s
+ FIRE:Time       9.000 s Fire area              0.274E+05 m^2
+ FIRE:Time       9.000 s Heat output            0.997E+10 W
+ FIRE:Time       9.000 s Max heat flux          0.141E+07 W/m^2
+ FIRE:Time       9.000 s Latent heat output     0.859E+09 W
+ FIRE:Time       9.000 s Max latent heat flux   0.125E+06 W/m^2
+ 2012-06-25_18:00:09   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:09   0.00000000    
+ 
+   Entering Advance_state... 
+ FIRE:Time       9.500 s Average wind           0.321E+01 m/s
+ FIRE:Time       9.500 s Maximum wind           0.492E+01 m/s
+ FIRE:Time       9.500 s Fire area              0.304E+05 m^2
+ FIRE:Time       9.500 s Heat output            0.112E+11 W
+ FIRE:Time       9.500 s Max heat flux          0.143E+07 W/m^2
+ FIRE:Time       9.500 s Latent heat output     0.969E+09 W
+ FIRE:Time       9.500 s Max latent heat flux   0.127E+06 W/m^2
+ 2012-06-25_18:00:09  0.500000000    
+ 
+   Leaving Advance_state... 
+fire-atmosphere feedback scaling  1.000
+ 
+   Entering Advance_state... 
+ FIRE:Time      10.000 s Average wind           0.321E+01 m/s
+ FIRE:Time      10.000 s Maximum wind           0.492E+01 m/s
+ FIRE:Time      10.000 s Fire area              0.336E+05 m^2
+ FIRE:Time      10.000 s Heat output            0.128E+11 W
+ FIRE:Time      10.000 s Max heat flux          0.173E+07 W/m^2
+ FIRE:Time      10.000 s Latent heat output     0.111E+10 W
+ FIRE:Time      10.000 s Max latent heat flux   0.154E+06 W/m^2
+ 2012-06-25_18:00:10   0.00000000    
+ 
+   Leaving Advance_state... 
+ Writing output...
+fire-atmosphere feedback scaling  1.000
+ Updating wrfdata...
+ 2012-06-25_18:00:10   0.00000000    

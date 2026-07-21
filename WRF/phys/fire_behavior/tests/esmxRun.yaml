@@ -1,0 +1,36 @@
+####################################################
+####  WRF-Data -> fire_behavior Configuration  #####
+####################################################
+
+ESMX:
+  App:
+    globalResourceControl:  true
+    logKindFlag:            ESMF_LOGKIND_Multi
+    logAppendFlag:          false
+    logFlush:               true
+    fieldDictionary:        ./fd_fire.yaml
+    startTime:              2012-06-25T18:00:00
+    stopTime:               2012-06-25T18:00:10
+  Driver:
+    componentList:          [FIRE, WRF]
+    attributes:
+      Verbosity: low
+    runSequence: |
+      @1
+        WRF -> FIRE
+        FIRE -> WRF
+        FIRE
+        WRF
+      @
+
+FIRE:
+  model: fire_behavior
+  petList:          [0]
+  attributes:
+    Verbosity: high
+
+WRF:
+  model: wrfdata
+  petList:          [0]
+  attributes:
+    Verbosity: high

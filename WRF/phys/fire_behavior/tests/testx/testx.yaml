@@ -1,0 +1,64 @@
+#####################################################
+####  ESMX_Data -> fire_behavior Configuration  #####
+#####################################################
+
+ESMX:
+  App:
+    globalResourceControl:  true
+    logKindFlag:            ESMF_LOGKIND_Multi
+    logAppendFlag:          false
+    logFlush:               true
+    fieldDictionary:        ./fd_fire.yaml
+    startTime:              2012-06-25T18:00:00
+    stopTime:               2012-06-25T18:00:10
+  Driver:
+    componentList:          [FIRE, ATMD]
+    attributes:
+      Verbosity: low
+    runSequence: |
+      @1
+        ATMD -> FIRE
+        FIRE -> ATMD
+        FIRE
+        ATMD
+      @
+
+FIRE:
+  model: fire_behavior
+  petList:          [0]
+  attributes:
+    Verbosity: high
+
+ATMD:
+  model: ESMX_Data
+  petList:          [0]
+  attributes:
+    Verbosity: high
+  output:
+    write_final: true
+  geom:
+    nx: 207
+    ny: 197
+    nz: 44
+    minx: -109.370
+    miny:   36.279
+    maxx: -101.948
+    maxy:   41.619
+  importFields:
+    hflx_fire:                {dim: 2, min: -999999, max: 99999999999}
+    evap_fire:                {dim: 2, min: -999999, max: 99999999999}
+  exportFields:
+    inst_zonal_wind_levels:   {dim: 3, val: 1}
+    inst_merid_wind_levels:   {dim: 3, val: 3}
+    inst_geop_levels:         {dim: 3, val: 15046.8}
+    inst_pres_levels:         {dim: 3, val: 85000}
+    inst_surface_roughness:   {dim: 2, val: 0.12}
+    mean_prec_rate:           {dim: 2, val: 0}
+    inst_spec_humid_height2m: {dim: 2, val: 0.005}
+    inst_pres_height_surface: {dim: 2, val: 85000}
+    inst_temp_height2m:       {dim: 2, val: 310}
+    inst_pres_height_lowest_from_phys:        {dim: 2, val: 85000}
+    inst_spec_humid_height_lowest_from_phys:  {dim: 2, val: 0.005}
+    inst_temp_height_lowest_from_phys:        {dim: 2, val: 310}
+    inst_zonal_wind_height10m:                {dim: 2, val: 1}
+    inst_merid_wind_height10m:                {dim: 2, val: 3}

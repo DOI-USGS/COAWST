@@ -1,0 +1,3 @@
+sphinx-rtd-theme==2.0.0
+sphinxcontrib-bibtex==2.6.2
+

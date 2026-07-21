@@ -1,0 +1,13 @@
+application:
+  exe_name: esmx_fire
+
+components:
+  fire_behavior:
+    build_type: none
+    libraries: fire_behavior_nuopc
+    fort_module: fire_behavior_nuopc.mod
+
+  wrfdata:
+    build_type:  none
+    libraries: fire_behavior_wrfnuopc
+    fort_module: wrf_nuopc.mod

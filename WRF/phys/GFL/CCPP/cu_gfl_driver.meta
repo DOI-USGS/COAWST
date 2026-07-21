@@ -1,0 +1,689 @@
+[ccpp-table-properties]
+  name = cu_gfl_driver
+  type = scheme
+  dependencies = ../../hooks/machine.F
+  dependencies = module_cu_gfl_deep.F90,module_cu_gfl_sh.F90,module_cu_gfl_common.F90
+
+########################################################################
+[ccpp-arg-table]
+  name = cu_gfl_driver_init
+  type = scheme
+[imfshalcnv]
+  standard_name = control_for_shallow_convection_scheme
+  long_name = flag for mass-flux shallow convection scheme
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[imfshalcnv_gf]
+  standard_name = identifier_for_grell_freitas_shallow_convection
+  long_name = flag for Grell-Freitas shallow convection scheme
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[imfdeepcnv]
+  standard_name = control_for_deep_convection_scheme
+  long_name = flag for mass-flux deep convection scheme
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[imfdeepcnv_gf]
+  standard_name = identifier_for_grell_freitas_deep_convection
+  long_name = flag for Grell-Freitas deep convection scheme
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[mpirank]
+  standard_name = mpi_rank
+  long_name = current MPI-rank
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[mpiroot]
+  standard_name = mpi_root
+  long_name = master MPI-rank
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+[errflg]
+  standard_name = ccpp_error_code
+  long_name = error code for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+########################################################################
+[ccpp-arg-table]
+  name = cu_gfl_driver_run
+  type = scheme
+[ntracer]
+  standard_name = number_of_tracers
+  long_name = number of tracers
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[garea]
+  standard_name = cell_area
+  long_name = grid cell area
+  units = m2
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[im]
+  standard_name = horizontal_loop_extent
+  long_name = horizontal loop extent
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[km]
+  standard_name = vertical_layer_dimension
+  long_name = vertical layer dimension
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[dt]
+  standard_name = timestep_for_physics
+  long_name = physics time step
+  units = s
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[flag_init]
+  standard_name = flag_for_first_timestep
+  long_name = flag signaling first time step for time integration loop
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[flag_restart]
+  standard_name = flag_for_restart
+  long_name = flag for restart (warmstart) or coldstart
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[cactiv]
+  standard_name = counter_for_grell_freitas_convection
+  long_name = convective activity memory
+  units = none
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = inout
+  optional = True
+[cactiv_m]
+  standard_name = counter_for_grell_freitas_mid_level_convection
+  long_name = mid-level cloud convective activity memory
+  units = none
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = inout
+  optional = True
+[g]
+  standard_name = gravitational_acceleration
+  long_name = gravitational acceleration
+  units = m s-2
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[cp]
+  standard_name = specific_heat_of_dry_air_at_constant_pressure
+  long_name = specific heat !of dry air at constant pressure
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[xlv]
+  standard_name = latent_heat_of_vaporization_of_water_at_0C
+  long_name = latent heat of evaporation/sublimation
+  units = J kg-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[r_v]
+  standard_name = gas_constant_water_vapor
+  long_name = ideal gas constant for water vapor
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[forcet]
+  standard_name = tendency_of_air_temperature_due_to_nonphysics
+  long_name = temperature tendency due to dynamics only
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = True
+[forceqv_spechum]
+  standard_name = tendendy_of_specific_humidity_due_to_nonphysics
+  long_name = moisture tendency due to dynamics only
+  units = kg kg-1 s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = True
+[phil]
+  standard_name = geopotential
+  long_name = layer geopotential
+  units = m2 s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[raincv]
+  standard_name = lwe_thickness_of_deep_convective_precipitation_amount
+  long_name = deep convective rainfall amount on physics timestep
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = out
+[qv_spechum]
+  standard_name = specific_humidity_of_new_state
+  long_name = water vapor specific humidity updated by physics
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[t]
+  standard_name = air_temperature_of_new_state
+  long_name = updated temperature
+  units = K
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[cld1d]
+  standard_name = cloud_work_function
+  long_name = cloud work function
+  units = m2 s-2
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = out
+[us]
+  standard_name = x_wind_of_new_state
+  long_name = updated x-direction wind
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[vs]
+  standard_name = y_wind_of_new_state
+  long_name = updated y-direction wind
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[t2di]
+  standard_name = air_temperature
+  long_name = mid-layer temperature
+  units = K
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[w]
+  standard_name = lagrangian_tendency_of_air_pressure
+  long_name = layer mean vertical velocity
+  units = Pa s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[qv2di_spechum]
+  standard_name = specific_humidity
+  long_name = water vapor specific humidity
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[p2di]
+  standard_name = air_pressure
+  long_name = mean layer pressure
+  units = Pa
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[psuri]
+  standard_name = surface_air_pressure
+  long_name = surface pressure
+  units = Pa
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[hbot]
+  standard_name = vertical_index_at_cloud_base
+  long_name = index for cloud base
+  units = index
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = out
+[htop]
+  standard_name = vertical_index_at_cloud_top
+  long_name = index for cloud top
+  units = index
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = out
+[kcnv]
+  standard_name = flag_deep_convection
+  long_name = deep convection: 0=no, 1=yes
+  units = flag
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = out
+[xland]
+  standard_name = sea_land_ice_mask
+  long_name = landmask: sea/land/ice=0/1/2
+  units = flag
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = in
+[hfx2]
+  standard_name = kinematic_surface_upward_sensible_heat_flux_reduced_by_surface_roughness_and_vegetation
+  long_name = kinematic surface upward sensible heat flux reduced by surface roughness and vegetation
+  units = K m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[qfx2]
+  standard_name = surface_upward_specific_humidity_flux
+  long_name = kinematic surface upward latent heat flux
+  units = kg kg-1 m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[aod_gf]
+  standard_name = aerosol_optical_depth_for_grell_freitas_deep_convection
+  long_name = aerosol optical depth used in Grell-Freitas Convective Parameterization
+  units = none
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[cliw]
+  standard_name = ice_water_mixing_ratio_convective_transport_tracer
+  long_name = ratio of mass of ice water to mass of dry air plus vapor (without condensates) in the convectively transported tracer array
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[clcw]
+  standard_name = cloud_condensed_water_mixing_ratio_convective_transport_tracer
+  long_name = ratio of mass of cloud water to mass of dry air plus vapor (without condensates) in the convectively transported tracer array
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[pbl]
+  standard_name = atmosphere_boundary_layer_thickness
+  long_name = PBL thickness
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[ud_mf]
+  standard_name = instantaneous_atmosphere_updraft_convective_mass_flux
+  long_name = (updraft mass flux) * delt
+  units = kg m-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+  optional = True
+[dd_mf]
+  standard_name = instantaneous_atmosphere_downdraft_convective_mass_flux
+  long_name = (downdraft mass flux) * delt
+  units = kg m-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[dt_mf]
+  standard_name = instantaneous_atmosphere_detrainment_convective_mass_flux
+  long_name = (detrainment mass flux) * delt
+  units = kg m-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[cnvw_moist]
+  standard_name = convective_cloud_water_mixing_ratio
+  long_name = moist convective cloud water mixing ratio
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[cnvc]
+  standard_name = convective_cloud_cover
+  long_name = convective cloud cover
+  units = frac
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[imfshalcnv]
+  standard_name = control_for_shallow_convection_scheme
+  long_name = flag for mass-flux shallow convection scheme
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[flag_for_scnv_generic_tend]
+  standard_name = flag_for_generic_tendency_due_to_shallow_convection
+  long_name = true if GFS_SCNV_generic should calculate tendencies
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[flag_for_dcnv_generic_tend]
+  standard_name = flag_for_generic_tendency_due_to_deep_convection
+  long_name = true if GFS_DCNV_generic should calculate tendencies
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[dtend]
+  standard_name = cumulative_change_of_state_variables
+  long_name = diagnostic tendencies for state variables
+  units = mixed
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,cumulative_change_of_state_variables_outer_index_max)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[dtidx]
+  standard_name = cumulative_change_of_state_variables_outer_index
+  long_name = index of state-variable and process in last dimension of diagnostic tendencies array AKA cumulative_change_index
+  units = index
+  dimensions = (number_of_tracers_plus_one_hundred,number_of_cumulative_change_processes)
+  type = integer
+  intent = in
+[ntqv]
+  standard_name = index_of_specific_humidity_in_tracer_concentration_array
+  long_name = tracer index for water vapor (specific humidity)
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[ntcw]
+  standard_name = index_of_cloud_liquid_water_mixing_ratio_in_tracer_concentration_array
+  long_name = tracer index for cloud condensate (or liquid water)
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[ntiw]
+  standard_name = index_of_cloud_ice_mixing_ratio_in_tracer_concentration_array
+  long_name = tracer index for  ice water
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_temperature]
+  standard_name = index_of_temperature_in_cumulative_change_index
+  long_name = index of temperature in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_x_wind]
+  standard_name = index_of_x_wind_in_cumulative_change_index
+  long_name = index of x-wind in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_y_wind]
+  standard_name = index_of_y_wind_in_cumulative_change_index
+  long_name = index of x-wind in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_process_scnv]
+  standard_name = index_of_shallow_convection_process_process_in_cumulative_change_index
+  long_name = index of shallow convection process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_process_dcnv]
+  standard_name = index_of_deep_convection_process_process_in_cumulative_change_index
+  long_name = index of deep convection process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[dfi_radar_max_intervals]
+  standard_name = maximum_number_of_radar_derived_temperature_or_convection_suppression_intervals
+  long_name = maximum allowed number of time ranges with radar-derived microphysics temperature tendencies or radar-derived convection suppression
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ldiag3d]
+  standard_name = flag_for_diagnostics_3D
+  long_name = flag for 3d diagnostic fields
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[qci_conv]
+  standard_name = convective_cloud_condesate_after_rainout
+  long_name = convective cloud condesate after rainout
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[fhour]
+  standard_name = forecast_time
+  long_name = current forecast time
+  units = h
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[do_cap_suppress]
+  standard_name = flag_for_radar_derived_convection_suppression
+  long_name = flag for radar-derived convection suppression
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[fh_dfi_radar]
+  standard_name = forecast_lead_times_bounding_radar_derived_temperature_or_convection_suppression_intervals
+  long_name = forecast lead times bounding radar derived temperature or convection suppression intervals
+  units = h
+  dimensions = (maximum_number_of_radar_derived_temperature_or_convection_suppression_intervals_plus_one)
+  type = real
+  kind = kind_phys
+  intent = in
+[ix_dfi_radar]
+  standard_name = indices_with_radar_derived_temperature_or_convection_suppression_data
+  long_name = indices with radar derived temperature or convection suppression data
+  units = index
+  dimensions = (maximum_number_of_radar_derived_temperature_or_convection_suppression_intervals)
+  type = integer
+  intent = in
+[num_dfi_radar]
+  standard_name = number_of_radar_derived_temperature_or_convection_suppression_intervals
+  long_name = number of time ranges with radar-derived microphysics temperature tendencies or radar-derived convection suppression
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[cap_suppress]
+  standard_name = radar_derived_convection_suppression
+  long_name = radar-derived convection suppression
+  units = unitless
+  dimensions = (horizontal_loop_extent,number_of_radar_derived_temperature_or_convection_suppression_intervals)
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = True
+[maxupmf]
+  standard_name = maximum_convective_updraft_mass_flux
+  long_name = maximum convective updraft mass flux within a column
+  units = m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = out
+  optional = True
+[maxMF]
+  standard_name = maximum_mass_flux
+  long_name = maximum mass flux within a column
+  units = m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = True
+[do_mynnedmf]
+  standard_name = flag_for_mellor_yamada_nakanishi_niino_pbl_scheme
+  long_name = flag to activate MYNN-EDMF
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[ichoice_in]
+  standard_name = identifier_for_c3_or_gf_deep_convection_closure
+  long_name = flag for C3 or GF deep convection closure
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[ichoicem_in]
+  standard_name = identifier_for_c3_or_gf_mid_convection_closure
+  long_name = flag for C3 or GF mid convection closure
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[ichoice_s_in]
+  standard_name = identifier_for_c3_or_gf_shallow_convection_closure
+  long_name = flag for C3 or GF shallow convection closure
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[spp_wts_cu_deep]
+  standard_name = spp_weights_for_cu_deep_scheme
+  long_name = spp weights for cu deep scheme
+  units = 1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = True
+[spp_cu_deep]
+  standard_name = control_for_deep_convection_spp_perturbations
+  long_name = control for deep convection spp perturbations
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[nchem]
+  standard_name = number_of_chemical_species_vertically_mixed
+  long_name = number of chemical species vertically mixed
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[chem3d]
+  standard_name = chem3d_mynn_pbl_transport
+  long_name = mynn pbl transport of smoke and dust
+  units = various
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_chemical_species_vertically_mixed)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[fscav]
+  standard_name = smoke_dust_conv_wet_coef
+  long_name = smoke dust convetive wet scavanging coefficents
+  units = none
+  dimensions = (3)
+  type = real
+  kind = kind_phys
+  intent = in
+[do_smoke_transport]
+  standard_name = do_smoke_conv_transport
+  long_name = flag for rrfs smoke convective transport
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[wetdpc_deep]
+  standard_name = conv_wet_deposition_smoke_dust
+  long_name = convective wet removal of smoke and dust
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_species_vertically_mixed)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[kdt]
+  standard_name = index_of_timestep
+  long_name = current forecast iteration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+[errflg]
+  standard_name = ccpp_error_code
+  long_name = error code for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
