@@ -1,0 +1,2630 @@
+!> @file
+!> @brief Process point output.
+!>
+!> @author H. L. Tolman  @date 05-Jun-2018
+!>
+
+#include "w3macros.h"
+#define nf90_err(ncerr) nf90_err_check(ncerr, __LINE__)
+!/ ------------------------------------------------------------------- /
+!>
+!> @brief Process point output.
+!>
+!> @details Allocation of allocatable arrays takes place at different
+!>  places throughout the code, in W3IOPP on write, and in W3IOPO on
+!>  read.
+!>
+!> @author H. L. Tolman  @date 05-Jun-2018
+!>
+MODULE W3IOPOMD
+  !/
+  !/                  +-----------------------------------+
+  !/                  | WAVEWATCH III           NOAA/NCEP |
+  !/                  |           H. L. Tolman            |
+  !/                  |                        FORTRAN 90 |
+  !/                  | Last update :         05-Jun-2018 |
+  !/                  +-----------------------------------+
+  !/
+  !/    25-Jan-2001 : Origination.                        ( version 2.00 )
+  !/    24-Jan-2001 : Flat grid version.                  ( version 2.06 )
+  !/    11-Jun-2001 : Clean-up.                           ( version 2.11 )
+  !/    10-Nov-2004 : Multiple grid version.              ( version 3.06 )
+  !/    27-Jun-2006 : Adding file name preamble.          ( version 3.09 )
+  !/    25-Jul-2006 : Adding grid ID per point.           ( version 3.10 )
+  !/    01-May-2007 : Move O7a output from W3INIT.        ( version 3.11 )
+  !/    29-May-2009 : Preparing distribution version.     ( version 3.14 )
+  !/    30-Oct-2009 : Implement run-time grid selection.  ( version 3.14 )
+  !/                  (W. E. Rogers & T. J. Campbell, NRL)
+  !/    30-Oct-2009 : Implement curvilinear grid type.    ( version 3.14 )
+  !/                  (W. E. Rogers & T. J. Campbell, NRL)
+  !/    29-Oct-2010 : Implement unstructured grid         ( version 3.14.4 )
+  !/                  (A. Roland and F. Ardhuin)
+  !/    06-Dec-2010 : Change from GLOBAL (logical) to ICLOSE (integer) to
+  !/                  specify index closure for a grid.   ( version 3.14 )
+  !/                  (T. J. Campbell, NRL)
+  !/    12-Jun-2012 : Add /RTD option or rotated grid option.
+  !/                  (Jian-Guo Li)                       ( version 4.06 )
+  !/    02-Sep-2012 : Clean up of open BC for UG grids    ( version 4.07 )
+  !/    25-Feb-2013 : ITOUT=0 bug correction for UG grids ( version 4.08 )
+  !/    11-Nov-2013 : SMC and rotated grid incorporated in the main
+  !/                  trunk                               ( version 4.13 )
+  !/    05-Jun-2018 : Add SETUP                           ( version 6.04 )
+  !/    04-Oct-2019 : Optional one file per output stride ( version 7.00 )
+  !/                  (R. Padilla-Hernandez & J.H. Alves)
+  !/    04-Jul-2025 : Remove labelled statements          ( version X.XX )
+  !/
+  !/    Copyright 2009 National Weather Service (NWS),
+  !/       National Oceanic and Atmospheric Administration.  All rights
+  !/       reserved.  WAVEWATCH III is a trademark of the NWS.
+  !/       No unauthorized use without permission.
+  !/
+  !  1. Purpose :
+  !
+  !     Process point output.
+  !
+  !  2. Variables and types :
+  !
+  !      Name      Type  Scope    Description
+  !     ----------------------------------------------------------------
+  !      VEROPT    C*10  Private  Point output file version number.
+  !      IDSTR     C*31  Private  Point output file ID string.
+  !     ----------------------------------------------------------------
+  !
+  !  3. Subroutines and functions :
+  !
+  !      Name      Type  Scope    Description
+  !     ----------------------------------------------------------------
+  !      W3IOPP    Subr. Public   Preprocessing of point output req.
+  !      W3IOPE    Subr. Public   Extract point data from grid.
+  !      W3IOPO    Subr. Public   Point data IO.
+  !     ----------------------------------------------------------------
+  !
+  !  4. Subroutines and functions used :
+  !
+  !      Name      Type  Module   Description
+  !     ----------------------------------------------------------------
+  !      W3SETO    Subr. W3ODATMD Data structure management.
+  !      W3SETG    Subr. W3GDATMD Data structure management.
+  !      W3SETW    Subr. W3WDATMD Data structure management.
+  !      W3DMO2    Subr. W3ODATMD Data structure management.
+  !      STRACE    Subr. W3SERVMD Subroutine tracing.
+  !      EXTIOF    Subr. W3SERVMD Abort if error when I/O file.
+  !      EXTOPN    Subr. W3SERVMD Abort if error when opening file.
+  !      EXTCDE    Subr. W3SERVMD Program abort with exit code.
+  !      MPI_STARTALL, MPIWAITALL
+  !                Subr.          MPI persistent communication routines.
+  !     ----------------------------------------------------------------
+  !
+  !  5. Remarks :
+  !
+  !     - Allocation of allocatable arrays takes place at different
+  !       places throughout the code, in W3IOPP on write, and in
+  !       W3IOPO on read.
+  !
+  !  6. Switches :
+  !
+  !       !/S     Enable subroutine tracing.
+  !       !/T     Enable test output.
+  !
+  !       !/SHRD  Switch for shared / distributed memory architecture.
+  !       !/DIST  Id.
+  !       !/MPI   MPI message passing.
+  !
+  !       !/O7a   Diagnostic output for output points.
+  !
+  !  7. Source code :
+  !
+  !/ ------------------------------------------------------------------- /
+  PUBLIC
+  !/
+  !/ Private parameter statements (ID strings)
+  !/
+  CHARACTER(LEN=10), PARAMETER, PRIVATE :: VEROPT = '2021-04-06'
+  CHARACTER(LEN=31), PARAMETER, PRIVATE ::                        &
+       IDSTR = 'WAVEWATCH III POINT OUTPUT FILE'
+
+  !> Dimension name for the netCDF point output file, for NOPTS, the
+  !> Number of Output Points.
+  character(*), parameter, private :: DNAME_NOPTS = 'NOPTS'
+
+  !> Dimension name for the netCDF point output file, for NSPEC.
+  character(*), parameter, private :: DNAME_NSPEC = 'NSPEC'
+
+  !> Dimension name for the netCDF point output file, for VSIZE. This
+  !> is for the vector size for points, which is 2.
+  character(*), parameter, private :: DNAME_VSIZE = 'VSIZE'
+
+  !> Dimension name for the netCDF point output file, for
+  !> NAMELEN. This is the length of the PTNME strings, which contains
+  !> the names of the points.
+  character(*), parameter, private :: DNAME_NAMELEN = 'NAMELEN'
+
+  !> Dimension name for the netCDF point output file, for GRDIDLEN,
+  !> this is the length of the GRDID character array.
+  character(*), parameter, private :: DNAME_GRDIDLEN = 'GRDIDLEN'
+
+  !> Dimension name for the netCDF point output file, for TIME
+  character(*), parameter, private :: DNAME_TIME = 'TIME'
+
+  !> Dimension name for the netCDF point output file, for WW3TIME
+  character(*), parameter, private :: DNAME_WW3TIME = 'WW3TIME'
+
+  !> Dimension name for the netCDF point weight file, WGHTLEN
+  !> This is 4 the dimension of weights 
+  character(*), parameter, private ::  DNAME_WGHTLEN = 'WGHTLEN'
+
+  !> Variable name for the netCDF point output file, for NK.
+  character(*), parameter, private :: VNAME_NK = 'NK'
+
+  !> Variable name for the netCDF point output file, for MTH.
+  character(*), parameter, private :: VNAME_NTH = 'NTH'
+
+  !> Variable name for the netCDF point output file, for PTLOC.
+  character(*), parameter, private :: VNAME_PTLOC = 'PTLOC'
+
+  !> Variable name for the netCDF point output file, for PTNME.
+  character(*), parameter, private :: VNAME_PTNME = 'PTNME'
+
+  !> Variable name for the netCDF point weight file, for IPTINT
+  character(*), parameter, private :: VNAME_IPTINT = 'IPTINT'
+
+  !> Variable name for the netCDF point weight file, for PTIFAC
+  character(*), parameter, private :: VNAME_PTIFAC = 'PTIFAC'
+
+  !> Variable name for the netCDF point output file, for TIME. 
+  character(*), parameter, private :: VNAME_TIME = 'TIME'
+
+  !> Variable name for the netCDF point output file, for WW3TIME.
+  character(*), parameter, private :: VNAME_WW3TIME = 'WW3TIME'
+
+  !> Variable name for the netCDF point output file, for DPO.
+  character(*), parameter, private :: VNAME_DPO = 'DPO'
+
+  !> Variable name for the netCDF point output file, for WAO.
+  character(*), parameter, private :: VNAME_WAO = 'WAO'
+
+  !> Variable name for the netCDF point output file, for WDO.
+  character(*), parameter, private :: VNAME_WDO = 'WDO'
+
+  !> Variable name for the netCDF point output file, for TAUAO.
+  character(*), parameter, private :: VNAME_TAUAO = 'TAUAO'
+
+  !> Variable name for the netCDF point output file, for TAUDO.
+  character(*), parameter, private :: VNAME_TAUDO = 'TAUDO'
+
+  !> Variable name for the netCDF point output file, for DAIRO.
+  character(*), parameter, private :: VNAME_DAIRO = 'DAIRO'
+
+  !> Variable name for the netCDF point output file, for ZET_SETO.
+  character(*), parameter, private :: VNAME_ZET_SETO = 'ZET_SETO'
+
+  !> Variable name for the netCDF point output file, for ASO.
+  character(*), parameter, private :: VNAME_ASO = 'ASO'
+
+  !> Variable name for the netCDF point output file, for CAO.
+  character(*), parameter, private :: VNAME_CAO = 'CAO'
+
+  !> Variable name for the netCDF point output file, for CDO.
+  character(*), parameter, private :: VNAME_CDO = 'CDO'
+
+  !> Variable name for the netCDF point output file, for ICEO.
+  character(*), parameter, private :: VNAME_ICEO = 'ICEO'
+
+  !> Variable name for the netCDF point output file, for ICEHO.
+  character(*), parameter, private :: VNAME_ICEHO = 'ICEHO'
+
+  !> Variable name for the netCDF point output file, for ICEFO.
+  character(*), parameter, private :: VNAME_ICEFO = 'ICEFO'
+
+  !> Variable name for the netCDF point output file, for GRDID.
+  character(*), parameter, private :: VNAME_GRDID = 'GRDID'
+
+  !> Variable name for the netCDF point output file, for SPCO.
+  character(*), parameter, private :: VNAME_SPCO = 'SPCO'
+
+  !/
+CONTAINS
+  !/ ------------------------------------------------------------------- /
+  !>
+  !> @brief Preprocessing of point output.
+  !>
+  !> @details Check location of points in grid and calculate interpolation
+  !>  factors.
+  !>
+  !> @param[in]    NPT     Number of output points in input.
+  !> @param[inout] XPT     X (longitude) coordinates of output points.
+  !> @param[inout] YPT     Y (latitude) coordinates of output points.
+  !> @param[in]    PNAMES  Names of output points.
+  !> @param[in]    IMOD    Grid ID number.
+  !>
+  !> @author H. L. Tolman  @date 02-Sep-2012
+  !>
+  SUBROUTINE W3IOPP ( NPT, XPT, YPT, PNAMES, IMOD, MPI_COMM_IOPP )
+    !/
+    !/                  +-----------------------------------+
+    !/                  | WAVEWATCH III           NOAA/NCEP |
+    !/                  |           H. L. Tolman            |
+    !/                  |                        FORTRAN 90 |
+    !/                  | Last update :         02-Sep-2012 |
+    !/                  +-----------------------------------+
+    !/
+    !/    14-Jan-1999 : Distributed FORTRAN 77 version.     ( version 1.18 )
+    !/    30-Dec-1999 : Upgrade to FORTRAN 90               ( version 2.00 )
+    !/                  Major changes to logistics.
+    !/    24-Jan-2001 : Flat grid version.                  ( version 2.06 )
+    !/    09-Nov-2004 : Multiple grid version.              ( version 3.06 )
+    !/    25-Jul-2006 : Adding grid ID per point.           ( version 3.10 )
+    !/    01-May-2007 : Move O7a output from W3INIT.        ( version 3.11 )
+    !/    30-Oct-2009 : Implement run-time grid selection.  ( version 3.14 )
+    !/                  (W. E. Rogers & T. J. Campbell, NRL)
+    !/    30-Oct-2009 : Implement curvilinear grid type.    ( version 3.14 )
+    !/                  (W. E. Rogers & T. J. Campbell, NRL)
+    !/    06-Dec-2010 : Change from GLOBAL (logical) to ICLOSE (integer) to
+    !/                  specify index closure for a grid.   ( version 3.14 )
+    !/                  (T. J. Campbell, NRL)
+    !/    12-Jun-2012 : Add /RTD option or rotated grid option.
+    !/                  (Jian-Guo Li)                       ( version 4.06 )
+    !/    02-Sep-2012 : Clean up of open BC for UG grids    ( version 4.07 )
+    !/    01-Mar-2018 : Add option to unrotate spectra      ( version 6.02 )
+    !/                  from RTD grid models
+    !/
+    !  1. Purpose :
+    !
+    !     Preprocessing of point output.
+    !
+    !  2. Method :
+    !
+    !     Check location of points in grid and calculate interpolation
+    !     factors.
+    !
+    !  3. Parameters :
+    !
+    !     Parameter list
+    !     ----------------------------------------------------------------
+    !       NPT     Int.   I   Number of output points in input.
+    !       XPT     R.A.  I/O  X (longitude) coordinates of output points.
+    !       YPT     R.A.  I/O  Id. Y.
+    !       PNAMES  C*40   I   Names of output points.
+    !       IMOD    Int.   I   Grid ID number.
+    !     ----------------------------------------------------------------
+    !
+    !     Local data
+    !     ----------------------------------------------------------------
+    !       ACC     Real  "Accuracy" factor to determine if output point
+    !                     is grid point.
+    !     ----------------------------------------------------------------
+    !
+    !  4. Subroutines used :
+    !
+    !     See module documentation.
+    !
+    !  5. Called by :
+    !
+    !      Name      Type  Module   Description
+    !     ----------------------------------------------------------------
+    !      W3INIT    Subr. W3INITMD Wave model initialization routine.
+    !     ----------------------------------------------------------------
+    !
+    !  6. Error messages :
+    !
+    !     - Warnings for points out of the grid or on land.
+    !
+    !  7. Remarks :
+    !
+    !     - The output points are obtained by bi-linear interpolation from
+    !       the spectra at the grid points. Given the possibility of ice
+    !       coverage, the actual interpolation factors can only be
+    !       determined at the actual output time. Hence only the basic
+    !       bilinear interpolation factors are stored.
+    !     - Implementation of the /O7a diagnostic output section is
+    !       currently incomplete and non-functional for curvilinear grids
+    !       and/or tripole grids
+    !
+    !  8. Structure :
+    !
+    !     -------------------------------------------
+    !      Determine grid range
+    !      do for all defined points
+    !      -----------------------------------------
+    !        Check if point within grid
+    !        Calculate interpolation data
+    !        Check if point not on land
+    !        Store interpolation data
+    !     -------------------------------------------
+    !
+    !  9. Switches :
+    !
+    !       !/S     Enable subroutine tracing.
+    !       !/T     Test output.
+    !
+    !       !/O7a   Diagnostic output for output points.
+    !
+    ! 10. Source code :
+    !
+    !/ ------------------------------------------------------------------- /
+    USE NETCDF
+    USE W3GSRUMD, ONLY: W3GRMP
+    USE W3GDATMD, ONLY: GSU, RLGTYPE, CLGTYPE, UNGTYPE, GTYPE, FLAGLL,   &
+         ICLOSE_NONE, ICLOSE_SMPL, ICLOSE_TRPL, MAPSTA, FILEXT
+#ifdef W3_RTD
+    !!  Use rotated N-Pole lat/lon and conversion sub.  JGLi12Jun2012
+    USE W3GDATMD, ONLY: PoLat, PoLon, FLAGUNR, X0
+    USE W3SERVMD, ONLY: W3LLTOEQ
+#endif
+    USE W3ODATMD, ONLY: W3DMO2
+    USE W3ODATMD, ONLY: NDSE, NDST, IAPROC, NAPERR,     &
+         NOPTS, PTLOC, PTNME, GRDID, IPTINT, PTIFAC
+    USE W3SERVMD, ONLY: EXTOPN, EXTIOF
+#ifdef W3_S
+    USE W3SERVMD, ONLY: STRACE
+#endif
+    USE W3TRIAMD, ONLY: IS_IN_UNGRID 
+    USE W3GDATMD, ONLY: FILEXT 
+#ifdef W3_O7a
+    USE W3GDATMD, ONLY: NX, NY, ICLOSE, MAPFS, ZB, TRNX, TRNY
+    USE W3ODATMD, ONLY: NAPOUT, SCREEN
+#endif
+    !
+#ifdef W3_MPI
+    use mpi_f08
+#endif
+    IMPLICIT NONE
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Parameter list
+    !/
+    INTEGER, INTENT(IN)          :: NPT, IMOD
+#ifdef W3_MPI
+    TYPE(MPI_COMM), INTENT(IN)   :: MPI_COMM_IOPP
+#else
+    INTEGER, INTENT(IN)          :: MPI_COMM_IOPP
+#endif
+    REAL, INTENT(INOUT)          :: XPT(NPT), YPT(NPT)
+    CHARACTER(LEN=40),INTENT(IN) :: PNAMES(NPT)
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Local parameters
+    !/
+    LOGICAL                 :: INGRID
+    INTEGER                 :: IPT, K
+#ifdef W3_S
+    INTEGER, SAVE           :: IENT = 0
+#endif
+    INTEGER                 :: IX(4), IY(4)   ! Indices of points used in interp.
+    REAL                    :: RD(4)          ! Interpolation coefficient
+    REAL, PARAMETER         :: ACC = 0.05
+    REAL                    :: FACTOR
+    INTEGER                 :: ITOUT          ! Triangle index in unstructured grids
+#ifdef W3_O7a
+    INTEGER                 :: IX0, IXN, IY0, IYN, NNX,         &
+         KX, KY, JX, IIX, IX2, IY2, IS1, J, IX1, IY1
+    REAL                    :: RD1, RD2, RDTOT, ZBOX(4), DEPTH
+    CHARACTER(LEN=1)         :: SEA(5), LND(5), OUT(5)
+    CHARACTER(LEN=9)         :: PARTS
+    CHARACTER(LEN=1), ALLOCATABLE :: STRING(:), LINE1(:), LINE2(:)
+    !
+    DATA SEA / ' ', 's', 'e', 'a', ' ' /
+    DATA LND / ' ', 'l', 'n', 'd', ' ' /
+    DATA OUT / ' ', 'x', 'x', 'x', ' ' /
+#endif
+    !/
+#ifdef W3_RTD
+    !!  Declare a few temporary variables for rotated grid.  JGLi12Jun2012
+    REAL, ALLOCATABLE :: EquLon(:),EquLat(:),StdLon(:),StdLat(:),AnglPT(:)
+#endif
+    ! Variables for NetCDF weights file for points
+    character(len = 124) :: filename, filenameout
+    logical :: pnt_wght_exists, pnt_wght_write
+    integer :: ncerr, fh
+    integer :: d_nopts, d_namelen, d_vsize, d_wghtlen
+    integer :: d_nopts_len, d_vsize_len,d_namelen_len,d_wghtlen_len
+    integer :: v_ptloc, v_ptnme, v_iptint, v_ptifac
+#ifdef W3_MPI
+    integer :: IERR_MPI
+#endif 
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/
+#ifdef W3_S
+    CALL STRACE (IENT, 'W3IOPP')
+#endif
+    !
+    IF ( FLAGLL ) THEN
+      FACTOR = 1.
+    ELSE
+      FACTOR = 1.E-3
+    END IF
+    !
+    CALL W3DMO2 ( IMOD, NDSE, NDST, NPT )
+    GRDID  = FILEXT
+    !
+    NOPTS  = 0
+    !
+#ifdef W3_RTD
+    !!   Convert standard lon/lat to rotated lon/lat  JGLi12Jun2012
+    ALLOCATE( EquLon(NPT), EquLat(NPT),                 &
+         &          StdLon(NPT), StdLat(NPT), AnglPT(NPT) )
+
+    StdLon = XPT
+    StdLat = YPT
+
+    CALL W3LLTOEQ ( StdLat, StdLon, EquLat, EquLon,     &
+         &                AnglPT, PoLat, PoLon, NPT )
+
+    XPT = EquLon
+    YPT = EquLat
+
+#endif
+    !
+    !If unstructured grid, check to see if a netcdf point weight file exists:
+    filename = 'pnt_wght.'//FILEXT(:LEN_TRIM(FILEXT))//'.nc'
+    IF (GTYPE .NE. UNGTYPE) THEN 
+      !skipping weights file for non-unstructured grids. 
+      !likely could be used after proper testing if initialization time is long
+      pnt_wght_exists = .FALSE.
+      pnt_wght_write = .FALSE.
+    ELSE
+      !for unstructured grid, use saved weights file if exists: 
+      INQUIRE(FILE=filename, EXIST=pnt_wght_exists)
+      pnt_wght_write = .NOT. pnt_wght_exists 
+    ENDIF   
+    !
+    ! Loop over output points if saved weights do not exist 
+    !
+    IF (.NOT. pnt_wght_exists) THEN        
+      DO IPT=1, NPT
+        !
+#ifdef W3_T
+        WRITE (NDST,9010) IPT, XPT(IPT), YPT(IPT), PNAMES(IPT)
+#endif
+        !
+#ifdef W3_RTD
+        !!   Need to wrap rotated Elon values greater than X0.  JGLi12Jun2012
+        XPT(IPT) = MOD( EquLon(IPT)+360.0, 360.0 )
+        IF( XPT(IPT) .LT. X0 )  XPT(IPT) = XPT(IPT) + 360.0
+#endif
+        !
+        !     Check if point within grid and compute interpolation weights
+        !
+        IF (GTYPE .NE. UNGTYPE) THEN
+          INGRID = W3GRMP( GSU, XPT(IPT), YPT(IPT), IX, IY, RD )
+        ELSE
+          CALL IS_IN_UNGRID(IMOD, DBLE(XPT(IPT)), DBLE(YPT(IPT)), itout, IX, IY, RD)
+          INGRID = (ITOUT.GT.0)
+        END IF
+        !
+        IF ( .NOT.INGRID ) THEN
+          IF ( IAPROC .EQ. NAPERR ) THEN
+            IF ( FLAGLL ) THEN
+              WRITE (NDSE,1000) XPT(IPT), YPT(IPT), PNAMES(IPT)
+            ELSE
+              WRITE (NDSE,1001) XPT(IPT), YPT(IPT), PNAMES(IPT)
+            END IF
+          END IF
+          CYCLE
+        END IF
+        !
+#ifdef W3_T
+        DO K = 1,4
+          WRITE (NDST,9012) IX(K), IY(K), RD(K)
+        END DO
+#endif
+        !
+        !     Check if point not on land
+        !
+        IF ( MAPSTA(IY(1),IX(1)) .EQ. 0 .AND. &
+             MAPSTA(IY(2),IX(2)) .EQ. 0 .AND. &
+             MAPSTA(IY(3),IX(3)) .EQ. 0 .AND. &
+             MAPSTA(IY(4),IX(4)) .EQ. 0 ) THEN
+          IF ( IAPROC .EQ. NAPERR ) THEN
+            IF ( FLAGLL ) THEN
+              WRITE (NDSE,1002) XPT(IPT), YPT(IPT), PNAMES(IPT)
+            ELSE
+              WRITE (NDSE,1003) XPT(IPT), YPT(IPT), PNAMES(IPT)
+            END IF
+          END IF
+          CYCLE
+        END IF
+        !
+        !     Store interpolation data
+        !
+        NOPTS  = NOPTS + 1
+        !
+        PTLOC (1,NOPTS) = XPT(IPT)
+        PTLOC (2,NOPTS) = YPT(IPT)
+#ifdef W3_RTD
+        !!   Store the standard lon/lat in PTLOC for output purpose, assuming
+        !!   they are not used for any inside calculation.  JGLi12Jun2012
+        PTLOC (1,NOPTS) = StdLon(IPT)
+        PTLOC (2,NOPTS) = StdLat(IPT)
+#endif
+        !
+        DO K = 1,4
+          IPTINT(1,K,NOPTS) = IX(K)
+          IPTINT(2,K,NOPTS) = IY(K)
+          PTIFAC(K,NOPTS) = RD(K)
+        END DO
+
+        PTNME(NOPTS) = PNAMES(IPT)
+        !
+      END DO ! End loop over output points (IPT).
+    ELSE 
+      ! Saved weight file exists, read weights from file 
+      IF ( IAPROC .EQ. 1 ) THEN
+        ! Open the netCDF file.
+        ncerr = nf90_open(filename, NF90_NOWRITE, fh)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Read the dimension information for NOPTS.
+        ncerr = nf90_inq_dimid(fh, DNAME_NOPTS, d_nopts)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inquire_dimension(fh, d_nopts, len = d_nopts_len)
+        if (nf90_err(ncerr) .ne. 0) return
+        NOPTS=d_nopts_len
+
+        ! Read the dimension information for VSIZE.
+        ncerr = nf90_inq_dimid(fh, DNAME_VSIZE, d_vsize)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inquire_dimension(fh, d_vsize, len = d_vsize_len)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Read the dimension information for NAMELEN.
+        ncerr = nf90_inq_dimid(fh, DNAME_NAMELEN, d_namelen)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inquire_dimension(fh, d_namelen, len = d_namelen_len)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Read the dimension information for WGHTLEN.
+        ncerr = nf90_inq_dimid(fh, DNAME_WGHTLEN, d_wghtlen)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inquire_dimension(fh, d_wghtlen, len = d_wghtlen_len)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Read vars 
+        ncerr = nf90_inq_varid(fh, VNAME_PTLOC, v_ptloc)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_ptloc, PTLOC, start = (/ 1, 1/), &
+          count = (/ d_vsize_len, d_nopts_len /))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ncerr = nf90_inq_varid(fh, VNAME_PTNME, v_ptnme)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_ptnme, PTNME, start = (/ 1, 1/), &
+          count = (/ d_namelen_len, d_nopts_len /))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ncerr = nf90_inq_varid(fh, VNAME_IPTINT, v_iptint)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_iptint, IPTINT, start = (/ 1, 1/), &
+          count = (/ d_vsize_len, d_wghtlen_len, d_nopts_len /))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ncerr = nf90_inq_varid(fh, VNAME_PTIFAC, v_ptifac)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_ptifac, PTIFAC, start = (/ 1, 1/), &
+          count = (/ d_wghtlen_len, d_nopts_len /))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Close the file.
+        ncerr = nf90_close(fh)
+        if (nf90_err(ncerr) .ne. 0) return
+
+      END IF 
+
+#ifdef W3_MPI
+      ! Broadcast weight info to all MPI tasks:
+
+      !First broadcast NOPTS, used in the next calls:
+      CALL MPI_BCAST(NOPTS,1,MPI_INTEGER,0,MPI_COMM_IOPP,IERR_MPI)
+      CALL MPI_Barrier(MPI_COMM_IOPP,IERR_MPI)
+
+      CALL MPI_BCAST(PTLOC,2*NPT,MPI_REAL,0,MPI_COMM_IOPP,IERR_MPI)
+      CALL MPI_BCAST(PTIFAC,4*NPT,MPI_REAL,0,MPI_COMM_IOPP,IERR_MPI)
+      CALL MPI_BCAST(IPTINT(:,:,1:NOPTS),2*4*NOPTS,MPI_INTEGER,0,MPI_COMM_IOPP,IERR_MPI)
+
+      !Send point names individually
+      DO IPT=1, NOPTS
+        CALL MPI_BCAST(PTNME(IPT),40,MPI_CHARACTER,0,MPI_COMM_IOPP,IERR_MPI)
+      ENDDO
+
+      CALL MPI_Barrier(MPI_COMM_IOPP,IERR_MPI)
+#endif
+    ENDIF  !end if point weight file exists       
+
+    !Create a weights file if there are output points:
+    IF ( pnt_wght_write .AND. (NOPTS > 0) ) THEN 
+      IF ( IAPROC .EQ. 1 ) THEN
+        ! Create the netCDF file.
+        filenameout = 'out.pnt_wght.'//FILEXT(:LEN_TRIM(FILEXT))//'.nc'
+        ncerr = nf90_create(filenameout, NF90_NETCDF4, fh)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Define dimensions.
+        ncerr = nf90_def_dim(fh, DNAME_NOPTS, NOPTS, d_nopts)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_dim(fh, DNAME_NAMELEN, 40, d_namelen)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_dim(fh, DNAME_VSIZE, 2, d_vsize)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_dim(fh, DNAME_WGHTLEN, 4, d_wghtlen)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Define vars with nopts as a dimension. Point location and name
+        ncerr = nf90_def_var(fh, VNAME_PTLOC, NF90_FLOAT, (/d_vsize, d_nopts/), v_ptloc)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_var(fh, VNAME_PTNME, NF90_CHAR, (/d_namelen, d_nopts/), v_ptnme)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_var(fh, VNAME_IPTINT, NF90_FLOAT, (/d_vsize, d_wghtlen, d_nopts/), v_iptint)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_def_var(fh, VNAME_PTIFAC, NF90_FLOAT, (/d_wghtlen, d_nopts/), v_ptifac)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! End of all variable definitions 
+        ncerr = nf90_enddef(fh)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        !write variables to file
+        ncerr = nf90_put_var(fh, v_ptloc, PTLOC(:,1:NOPTS))
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_put_var(fh, v_ptnme, PTNME(1:NOPTS))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ncerr = nf90_put_var(fh, v_iptint, IPTINT(:,:,1:NOPTS))
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_put_var(fh, v_ptifac, PTIFAC(:,1:NOPTS))
+        if (nf90_err(ncerr) .ne. 0) return
+
+        ! Close the file.
+        ncerr = nf90_close(fh)
+        if (nf90_err(ncerr) .ne. 0) return
+
+      END IF   
+    ENDIF 
+    !
+#ifdef W3_RTD
+    DEALLOCATE( EquLon, EquLat, StdLon, StdLat, AnglPT )
+#endif
+    !
+    ! Diagnostic output
+    !
+#ifdef W3_O7a
+    IF ( IAPROC .EQ. NAPOUT ) THEN
+      WRITE (SCREEN,940) NOPTS
+      DO J=1, NOPTS
+        !
+        WRITE (SCREEN,941) PTNME(J), PTLOC(:,J)*FACTOR
+        IX(:) = IPTINT(1,:,J)
+        IY(:) = IPTINT(2,:,J)
+        RD(:) = PTIFAC(:,J)
+        WRITE (SCREEN,942) (IX(K),IY(K),RD(K),K=1,4)
+        !
+        ZBOX   = 0.
+        RDTOT  = 0.
+        DO K = 1,4
+          IF ( MAPFS(IY(K),IX(K)) .GT. 0 ) THEN
+            ZBOX(K) = ZB(IX(K))
+            RDTOT   = RDTOT + RD(K)
+          END IF
+        END DO
+        RDTOT  = MAX ( 1.E-7 , RDTOT )
+        !
+        DEPTH  = - ( RD(1)*ZBOX(1) + &
+             RD(2)*ZBOX(2) + &
+             RD(3)*ZBOX(3) + &
+             RD(4)*ZBOX(4) ) / RDTOT
+        WRITE (SCREEN,943) DEPTH
+        !
+        ! *** implementation of O7a option with curvilinear grids is incomplete ***
+        !
+        IF ( RD1 .LT. 0.05 ) IX2 = IX1
+        IF ( RD1 .GT. 0.95 ) IX1 = IX2
+        IF ( RD2 .LT. 0.05 ) IY2 = IY1
+        IF ( RD2 .GT. 0.95 ) IY1 = IY2
+        IX0    = IX1 - 1
+        IXN    = IX2 + 1
+        IY0    = MAX ( 1 , IY1 - 1 )
+        IYN    = MIN ( IY2 + 1 , NY )
+        NNX    = 13 * ( IXN - IX0 + 1 )
+        !
+        ALLOCATE ( STRING(NNX), LINE1(NNX), LINE2(NNX) )
+        DO KX=1, NNX
+          LINE1(KX) = ' '
+          LINE2(KX) = '-'
+        END DO
+        DO KX=7, NNX, 13
+          LINE1(KX) = '|'
+          LINE2(KX) = '+'
+        END DO
+        !
+        IF ( ICLOSE.NE.ICLOSE_NONE ) THEN
+          WRITE (SCREEN,945) (1+MOD(KX+NX-1,NX),KX=IX0,IXN)
+        ELSE
+          WRITE (SCREEN,945) (KX,KX=IX0,IXN)
+        END IF
+        WRITE (SCREEN,946) LINE1
+        !
+        DO KY=IYN, IY0, -1
+          !
+          STRING  = LINE1
+          DO KX=IX0, IXN
+            IF ( ICLOSE.NE.ICLOSE_NONE .OR. (KX.GE.1 .AND. KX.LE.NX) ) THEN
+              IIX    = 1 + MOD(KX-1+NX,NX)
+              IS1    = MAPFS(KY,IIX)
+              IF ( MAPSTA(KY,IIX) .NE. 0 ) THEN
+                WRITE (PARTS,'(F8.1,1X)') -ZB(IS1)
+                NNX    = 2 + (KX-IX0)*13
+                DO JX=1, 9
+                  STRING(NNX+JX:NNX+JX) = PARTS(JX:JX)
+                END DO
+              ENDIF
+            END IF
+          END DO
+          WRITE (SCREEN,946) STRING
+          !
+          STRING = LINE2
+          DO KX=IX0, IXN
+            NNX    = 5 + (KX-IX0)*13
+            IF ( ICLOSE.EQ.ICLOSE_NONE .AND. (KX.LT.1.OR.KX.GT.NX) ) THEN
+              STRING(NNX:NNX+4) = OUT
+            ELSE
+              IIX    = 1 + MOD(KX-1+NX,NX)
+              IF ( MAPSTA(KY,IIX) .EQ. 0 ) THEN
+                STRING(NNX:NNX+4) = LND
+              ELSE
+                STRING(NNX:NNX+4) = SEA
+              END IF
+            END IF
+          END DO
+          WRITE (SCREEN,947) KY, STRING
+          !
+          STRING  = LINE1
+          DO KX=IX0, IXN
+            IF ( ICLOSE.NE.ICLOSE_NONE .OR. (KX.GE.1 .AND. KX.LE.NX) ) THEN
+              IS1    = MAPFS(KY,KX)
+              IIX    = 1 + MOD(KX-1+NX,NX)
+              IF ( MAPSTA(KY,IIX) .NE. 0 ) THEN
+                WRITE (PARTS,'(I4,1A,I4)')               &
+                     NINT(1000.*TRNX(KY,IIX)),         &
+                     '|', NINT(1000.*TRNY(KY,IIX))
+                NNX    = 2 + (KX-IX0)*13
+                DO JX=1, 9
+                  STRING(NNX+JX:NNX+JX) = PARTS(JX:JX)
+                END DO
+              ENDIF
+            END IF
+          END DO
+          WRITE (SCREEN,946) STRING
+          WRITE (SCREEN,946) LINE1
+          !
+        END DO
+        !
+        IF ( ICLOSE.NE.ICLOSE_NONE ) THEN
+          WRITE (SCREEN,945) (1+MOD(KX+NX-1,NX),KX=IX0,IXN)
+        ELSE
+          WRITE (SCREEN,945) (KX,KX=IX0,IXN)
+        END IF
+        DEALLOCATE ( STRING, LINE1, LINE2 )
+
+      END DO
+      WRITE (SCREEN,*)
+      WRITE (SCREEN,*)
+    END IF
+#endif
+    !
+    RETURN
+    !
+    ! Formats
+    !
+#ifdef W3_O7a
+940 FORMAT (/' Diagnostic output for output points [',I3,'] :'/&
+         '--------------------------------------------'/  &
+         '    Bottom level in m above grid point'/        &
+         '    X/Y transparency in thousands below')
+941 FORMAT (/'    Point ',A,' at ',2F8.2,' (degr or km)'/    &
+         '    -------------------------------------------------')
+942 FORMAT ( '       Interp. cell :',4(' (',2I5,F4.2,')'))
+943 FORMAT ( '       Depth (water level = 0)  :',F10.1,' m'/)
+945 FORMAT ( '          IX =  ',4I13)
+946 FORMAT ( '                     ',52A1)
+947 FORMAT ( '          IY =',I5,2X,52A1)
+#endif
+    !
+1000 FORMAT (/' *** WAVEWATCH-III WARNING :'/                   &
+         '     OUTPUT POINT OUT OF GRID : ',2F10.3,2X,A/   &
+         '     POINT SKIPPPED '/)
+1001 FORMAT (/' *** WAVEWATCH-III WARNING :'/                   &
+         '     OUTPUT POINT OUT OF GRID : ',2E10.3,2X,A/   &
+         '     POINT SKIPPPED '/)
+    !
+1002 FORMAT (/' *** WAVEWATCH-III WARNING :'/                   &
+         '     OUTPUT POINT ON LAND : ',2F10.3,2X,A/       &
+         '     POINT SKIPPPED '/)
+1003 FORMAT (/' *** WAVEWATCH-III WARNING :'/                   &
+         '     OUTPUT POINT ON LAND : ',2E10.3,2X,A/       &
+         '     POINT SKIPPPED '/)
+    !
+#ifdef W3_T
+9010 FORMAT (' TEST W3IOPP : INPUT  : ',I4,2F12.2,2X,A)
+9011 FORMAT ('               CORR.  :     ',2F12.2)
+9012 FORMAT (' TEST W3IOPP : INT. DATA: ',2I6,1F8.2)
+9013 FORMAT (' TEST W3IOPP : INT. DATA B): ',4I4,2F8.2)
+9020 FORMAT (' TEST W3IOPP : PREPROCESSED DATA',I4,2X,A,2X,2F12.2, &
+         4(/'             ',2I5,2F6.3))
+9021 FORMAT (' TEST W3IOPP : PREPROCESSED DATA',I4,2X,A,2X,2F12.2, &
+         4(/'             ',2I5,F6.3))
+#endif
+    !/
+    !/ End of W3IOPP ----------------------------------------------------- /
+    !/
+  END SUBROUTINE W3IOPP
+  !/ ------------------------------------------------------------------- /
+  !>
+  !> @brief Extract point output data and store in output COMMONs.
+  !>
+  !> @details This action is taken from an earlier version of W3IOPO
+  !>  so that the point output postprocessor does not need the full
+  !>  sea-point grid to be able to run.  Note that the output spectrum
+  !>  is F(f,theta). Interpolation is performed for this spectrum.
+  !>
+  !> @param[in] A  Action spectra on storage grid.
+  !>
+  !> @author H. L. Tolman  @date 12-Jun-2012
+  !>
+  SUBROUTINE W3IOPE ( A )
+    !/
+    !/                  +-----------------------------------+
+    !/                  | WAVEWATCH III           NOAA/NCEP |
+    !/                  |           H. L. Tolman            |
+    !/                  |                        FORTRAN 90 |
+    !/                  | Last update :         12-Jun-2012 |
+    !/                  +-----------------------------------+
+    !/
+    !/    12-Jan-1999 : Distributed FORTRAN 77 version.     ( version 1.18 )
+    !/    25-Jan-2000 : Upgrade to FORTRAN 90               ( version 2.00 )
+    !/                  Major changes to logistics.
+    !/    11-Jun-2001 : Clean-up.                           ( version 2.11 )
+    !/    09-Nov-2004 : Multiple grid version.              ( version 3.06 )
+    !/    30-Oct-2009 : Implement curvilinear grid type.    ( version 3.14 )
+    !/                  (W. E. Rogers & T. J. Campbell, NRL)
+    !/    29-Oct-2010 : Implement unstructured grids        ( version 3.14.4 )
+    !/                  (A. Roland and F. Ardhuin)
+    !/    12-Jun-2012 : Add /RTD option or rotated grid option.
+    !/                  (Jian-Guo Li)                       ( version 4.06 )
+    !/    01-Mar-2018 : Add option to unrotate spectra      ( version 6.02 )
+    !/                  from RTD grid models
+    !/    19-Jul-2021 : Momentum and air density support    ( version 7.14 )
+    !/
+    !  1. Purpose :
+    !
+    !     Extract point output data and store in output COMMONs. This
+    !     action is taken from an earlier version of W3IOPO so that the
+    !     point output postprocessor does not need the full sea-point
+    !     grid to be able to run.
+    !       Note that the output spectrum is F(f,theta). Interpolation
+    !     is performed for this spectrum.
+    !
+    !  3. Parameters :
+    !
+    !     Parameter list
+    !     ----------------------------------------------------------------
+    !       A       R.A.   I   Action spectra on storage grid.
+    !     ----------------------------------------------------------------
+    !
+    !  4. Subroutines used :
+    !
+    !     See module documentation.
+    !
+    !  5. Called by :
+    !
+    !      Name      Type  Module   Description
+    !     ----------------------------------------------------------------
+    !      W3WAVE    Subr. W3WAVEMD Actual wave model routine.
+    !     ----------------------------------------------------------------
+    !
+    !  6. Error messages :
+    !
+    !       None.
+    !
+    !  7. Remarks :
+    !
+    !     - To allow for dynamic ice edges, interpolation factors are
+    !       calculated for every time step separately.
+    !     - Wind current and depth data are interpolated ignoring ice,
+    !       spectrum is interpolated removing ice points.
+    !     - Spectra are left in par list to allow for change of shape of
+    !       arrays.
+    !     - IMOD is not passed to this routine. Since it is used only
+    !       in W3WAVE, it is assumed that the pointer are set
+    !       appropriately outside this routine.
+    !
+    !  8. Structure :
+    !
+    !     See source code.
+    !
+    !  9. Switches :
+    !
+    !     !/SHRD  Switch for shared / distributed memory architecture.
+    !     !/DIST  Id.
+    !     !/MPI   Switch for message passing method.
+    !
+    !     !/S     Enable subroutine tracing.
+    !     !/T     Test output.
+    !
+    ! 10. Source code :
+    !
+    !/ ------------------------------------------------------------------- /
+    USE CONSTANTS
+    USE W3GDATMD, ONLY: NK, NTH, SIG, NSEAL, MAPSTA, MAPFS
+#ifdef W3_RTD
+    !!   Use spectral rotation sub and angle.  JGLi12Jun2012
+    USE W3GDATMD, ONLY: NSPEC, AnglD, FLAGUNR
+    USE W3SERVMD, ONLY: W3ACTURN
+#endif
+    USE W3WDATMD, ONLY: ICE, ICEH, ICEF
+#ifdef W3_FLX5
+    USE W3WDATMD, ONLY: RHOAIR
+#endif
+    USE W3ADATMD, ONLY: CG, DW, UA, UD, AS, CX, CY,                 &
+         SP => SPPNT
+#ifdef W3_FLX5
+    USE W3ADATMD, ONLY: TAUA, TAUADIR
+#endif
+    USE W3ODATMD, ONLY: NOPTS, IPTINT, PTIFAC, IL, IW, II,          &
+         DPO, WAO, WDO, ASO, CAO, CDO, ICEO, ICEHO, ICEFO, SPCO
+#ifdef W3_FLX5
+    USE W3ODATMD, ONLY: TAUAO, TAUDO, DAIRO
+#endif
+#ifdef W3_SETUP
+    USE W3WDATMD, ONLY: ZETA_SETUP
+    USE W3ODATMD, ONLY: ZET_SETO
+#endif
+#ifdef W3_MPI
+    USE W3ODATMD, ONLY: IRQPO2
+#endif
+#ifdef W3_S
+    USE W3SERVMD, ONLY: STRACE
+#endif
+#ifdef W3_T
+    USE W3ARRYMD, ONLY: PRT2DS
+    USE W3ODATMD, ONLY: NDST
+#endif
+#ifdef W3_DIST
+    USE W3ODATMD, ONLY: NAPROC
+#endif
+    !
+#ifdef W3_MPI
+    use mpi_f08
+#endif
+    IMPLICIT NONE
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Parameter list
+    !/
+    REAL, INTENT(IN)        :: A(NTH,NK,0:NSEAL)
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Local parameters
+    !/
+    INTEGER                 :: I, IX(4), IY(4), J, IS(4), IM(4), IK, ITH, ISP
+#ifdef W3_MPI
+    INTEGER                 :: IOFF, IERR_MPI
+    type(MPI_STATUS)        :: STAT(4*NOPTS)
+#endif
+#ifdef W3_S
+    INTEGER, SAVE           :: IENT = 0
+#endif
+    REAL                    :: RD(4), RDS, RDI, FACRD,              &
+         WNDX, WNDY, CURX, CURY, FAC1(NK),    &
+         FAC2(NK), FAC3(NK), FAC4(NK)
+#ifdef W3_FLX5
+    REAL                    :: TAUX, TAUY
+#endif
+    INTEGER                 :: JSEA, ISEA
+#ifdef W3_T
+    INTEGER                 :: IX1, IY1
+    REAL                    :: SPTEST(NK,NTH)
+#endif
+#ifdef W3_RTD
+    REAL :: Spectr(NSPEC), AnglDIS
+    INTEGER :: IROT
+#endif
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/
+#ifdef W3_S
+    CALL STRACE (IENT, 'W3IOPE')
+#endif
+    !
+    CX(0)  = 0.
+    CY(0)  = 0.
+    !
+    ! Loop over spectra -------------------------------------------------- *
+    !
+    DO I=1, NOPTS
+      !
+#ifdef W3_T
+      WRITE (NDST,9000) I
+#endif
+      !
+      ! Unpack interpolation data
+      !
+      IX(:)  = IPTINT(1,:,I)
+      IY(:)  = IPTINT(2,:,I)
+      RD(:)  = PTIFAC(:,I)
+      !
+#ifdef W3_T
+      !        WRITE (NDST,9001) IX1, IY1, IX(2)
+#endif
+      !
+      !
+      ! Correct for land and ice and get sea point counters
+      !
+      IL(I)  = 0
+      IW(I)  = 0
+      II(I)  = 0
+      RDS    = 0.
+      RDI    = 0.
+      !
+      DO J=1, 4
+        IS(J)  = MAPFS (IY(J),IX(J))
+        IM(J)  = MAPSTA(IY(J),IX(J))
+        IF ( IM(J).GT.0 ) THEN
+          IW(I)  = IW(I) + 1
+          RDS    = RDS + RD(J)
+#ifdef W3_RTD
+          IROT   = IS(J) ! For rotation angle
+#endif
+        ELSE
+          IF ( IM(J).LT.0 ) THEN
+            II(I)  = II(I) + 1
+            RDI    = RDI + RD(J)
+          ELSE
+            IL(I)  = IL(I) + 1
+            RD(J)  = 0.
+          END IF
+        END IF
+      END DO
+      !
+      ! Depth, wind and current, ignore ice
+      !
+      IF ( RDS+RDI .GT. 1.E-7 ) THEN
+        FACRD  = 1. / (RDS+RDI)
+        RD     = RD * FACRD
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9002) (IS(J),J=1,4), (IM(J),J=1,4), (RD(J),J=1,4)
+#endif
+      !
+      ! Interpolate ice depth, wind, stresses, rho air and current
+      !
+      IF (.NOT. LPDLIB) THEN
+        ICEFO(I) = 0
+        DO J=1, 4
+          ISEA = MAPFS(IY(J),IX(J))
+#ifdef W3_DIST
+          JSEA = 1 + (ISEA-1)/NAPROC
+#endif
+#ifdef W3_SHRD
+          JSEA = ISEA
+#endif
+          ICEFO(I) = ICEFO(I) + RD(J)*ICEF(JSEA)
+        END DO
+      ELSE
+        ICEFO(I) = RD(1)*ICEF(IS(1)) + RD(2)*ICEF(IS(2)) +          &
+             RD(3)*ICEF(IS(3)) + RD(4)*ICEF(IS(4))
+      END IF
+
+      ICEO(I) = RD(1)*ICE(IS(1)) + RD(2)*ICE(IS(2)) +               &
+           RD(3)*ICE(IS(3)) + RD(4)*ICE(IS(4))
+
+      ICEHO(I) = RD(1)*ICEH(IS(1)) + RD(2)*ICEH(IS(2)) +            &
+           RD(3)*ICEH(IS(3)) + RD(4)*ICEH(IS(4))
+      !
+      DPO(I) = RD(1)*DW(IS(1)) + RD(2)*DW(IS(2)) +                  &
+           RD(3)*DW(IS(3)) + RD(4)*DW(IS(4))
+#ifdef W3_SETUP
+      DPO(I) = RD(1)*ZETA_SETUP(IS(1)) +                     &
+           RD(2)*ZETA_SETUP(IS(2)) +                     &
+           RD(3)*ZETA_SETUP(IS(3)) +                     &
+           RD(4)*ZETA_SETUP(IS(4))
+#endif
+      !
+#ifdef W3_FLX5
+      DAIRO(I) = RD(1)*RHOAIR(IS(1)) + RD(2)*RHOAIR(IS(2)) +        &
+           RD(3)*RHOAIR(IS(3)) + RD(4)*RHOAIR(IS(4))
+#endif
+      !
+      WNDX   = RD(1) * UA(IS(1)) * COS(UD(IS(1))) +                 &
+           RD(2) * UA(IS(2)) * COS(UD(IS(2))) +                 &
+           RD(3) * UA(IS(3)) * COS(UD(IS(3))) +                 &
+           RD(4) * UA(IS(4)) * COS(UD(IS(4)))
+      WNDY   = RD(1) * UA(IS(1)) * SIN(UD(IS(1))) +                 &
+           RD(2) * UA(IS(2)) * SIN(UD(IS(2))) +                 &
+           RD(3) * UA(IS(3)) * SIN(UD(IS(3))) +                 &
+           RD(4) * UA(IS(4)) * SIN(UD(IS(4)))
+      !
+      WAO(I) = SQRT ( WNDX**2 + WNDY**2 )
+      IF ( WAO(I).GT.1.E-7 ) THEN
+        WDO(I) = ATAN2(WNDY,WNDX)
+#ifdef W3_RTD
+        IF ( FLAGUNR ) WDO(I) = WDO(I) - AnglD(IS(1))*DERA
+#endif
+      ELSE
+        WDO(I) = 0.
+      END IF
+      !
+#ifdef W3_FLX5
+      TAUX   = RD(1) * TAUA(IS(1)) * COS(TAUADIR(IS(1))) +          &
+           RD(2) * TAUA(IS(2)) * COS(TAUADIR(IS(2))) +          &
+           RD(3) * TAUA(IS(3)) * COS(TAUADIR(IS(3))) +          &
+           RD(4) * TAUA(IS(4)) * COS(TAUADIR(IS(4)))
+      TAUY   = RD(1) * TAUA(IS(1)) * SIN(TAUADIR(IS(1))) +          &
+           RD(2) * TAUA(IS(2)) * SIN(TAUADIR(IS(2))) +          &
+           RD(3) * TAUA(IS(3)) * SIN(TAUADIR(IS(3))) +          &
+           RD(4) * TAUA(IS(4)) * SIN(TAUADIR(IS(4)))
+      !
+      TAUAO(I) = SQRT ( TAUX**2 + TAUY**2 )
+      IF ( TAUAO(I).GT.1.E-7 ) THEN
+        TAUDO(I) = ATAN2(TAUY,TAUX)
+#ifdef W3_RTD
+        IF ( FLAGUNR ) TAUDO(I) = TAUDO(I) - AnglD(IS(1))*DERA
+#endif
+      ELSE
+        TAUDO(I) = 0.
+      END IF
+      !
+#endif
+      ASO(I) = RD(1)*AS(IS(1)) + RD(2)*AS(IS(2)) +                  &
+           RD(3)*AS(IS(3)) + RD(4)*AS(IS(4))
+      !
+      CURX   = RD(1)*CX(IS(1)) + RD(2)*CX(IS(2)) +                  &
+           RD(3)*CX(IS(3)) + RD(4)*CX(IS(4))
+      CURY   = RD(1)*CY(IS(1)) + RD(2)*CY(IS(2)) +                  &
+           RD(3)*CY(IS(3)) + RD(4)*CY(IS(4))
+      !
+      CAO(I) = SQRT ( CURX**2 + CURY**2 )
+      IF ( CAO(I).GT.1.E-7 ) THEN
+        CDO(I) = ATAN2(CURY,CURX)
+#ifdef W3_RTD
+        IF ( FLAGUNR ) CDO(I) = CDO(I) - AnglD(IS(1))*DERA
+#endif
+      ELSE
+        CDO(I) = 0.
+      END IF
+      !
+      ! Interp. weights for spectra, no ice points (spectra by def. zero)
+      !
+      IF ( RDS .GT. 1.E-7 ) THEN
+        FACRD  = (RDS+RDI) / RDS
+        RD     = RD * FACRD
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9003) (RD(J),J=1,4)
+#endif
+      !
+      ! Extract spectra, shared memory version
+      !        (done in separate step for MPP compatibility)
+      !
+#ifdef W3_SHRD
+      DO J=1, 4
+        DO IK=1, NK
+          DO ITH=1, NTH
+            SP(ITH,IK,J) = A(ITH,IK,IS(J))
+          END DO
+        END DO
+      END DO
+#endif
+      !
+      ! Extract spectra, distributed memory version(s)
+      !
+#ifdef W3_MPI
+      IOFF   = 1 + 4*(I-1)
+      CALL MPI_STARTALL ( 4, IRQPO2(IOFF:IOFF+3), IERR_MPI )
+      CALL MPI_WAITALL  ( 4, IRQPO2(IOFF:IOFF+3), STAT(IOFF:IOFF+3), IERR_MPI )
+#endif
+      !
+      ! Interpolate spectrum
+      !
+      DO IK=1, NK
+        FAC1(IK) = TPI * SIG(IK) / CG(IK,IS(1))
+        FAC2(IK) = TPI * SIG(IK) / CG(IK,IS(2))
+        FAC3(IK) = TPI * SIG(IK) / CG(IK,IS(3))
+        FAC4(IK) = TPI * SIG(IK) / CG(IK,IS(4))
+      END DO
+      !
+      DO IK=1,NK
+        DO ITH=1,NTH
+          ISP    = ITH + (IK-1)*NTH
+          SPCO(ISP,I) = RD(1) * SP(ITH,IK,1) * FAC1(IK)             &
+               + RD(2) * SP(ITH,IK,2) * FAC2(IK)             &
+               + RD(3) * SP(ITH,IK,3) * FAC3(IK)             &
+               + RD(4) * SP(ITH,IK,4) * FAC4(IK)
+#ifdef W3_T
+          SPTEST(IK,ITH) = SPCO(ISP,I)
+#endif
+        END DO
+      END DO
+      !
+#ifdef W3_RTD
+      !!  Rotate the interpolated spectrum by -AnglD(IS(1)).  JGLi12Jun2012
+      !!  SPCO still holds action not energy spectrum yet.  JGLi18Jun2013
+      !!  Use new index IROT rather than IS(1) as in some cases
+      !!  IS(1) will be a coast point and have an index of 0. C.Bunney 15/02/2011
+      IF ( FLAGUNR ) THEN
+        Spectr = SPCO(:,I)
+        AnglDIS = -AnglD(IROT)
+        CALL  W3ACTURN( NTH, NK, AnglDIS, Spectr )
+        SPCO(:,I) = Spectr
+      END IF
+
+#endif
+      !
+#ifdef W3_T
+      WRITE (NDST,9004) DPO(I), WAO(I), WDO(I)*RADE,             &
+           CAO(I), CDO(I)*RADE
+#endif
+
+      ! FA COMMENTED OUT: BUG
+      !At line 1974 of file w3arrymd.f90
+      !Fortran runtime error: Index '52' of dimension 1 of array 'pnum2' above upper bound of 51
+#ifdef W3_T
+      ! CALL PRT2DS (NDST, NK, NK, NTH, SPTEST, SIG(1:), ' ', 1.,0.,&
+      !              0.0001, 'E(f,theta)', 'm**2s', 'TEST OUTPUT' )
+#endif
+      !
+    END DO
+    !
+    RETURN
+    !
+    ! Formats
+    !
+#ifdef W3_T
+9000 FORMAT (' TEST W3IOPE : POINT NR.:',I3)
+9001 FORMAT (' TEST W3IOPE :',2I8,'   (',I3,')')
+9002 FORMAT (' TEST W3IOPE :',4I7,2X,4I2,2X,4F5.2)
+9003 FORMAT (' TEST W3IOPE :',40X,4F5.2)
+9004 FORMAT (' TEST W3IOPE :',F8.1,2(F7.2,F7.1))
+#endif
+    !/
+    !/ End of W3IOPE ----------------------------------------------------- /
+    !/
+  END SUBROUTINE W3IOPE
+
+  !> Handle netCDF return code.
+  !>
+  !> @param errcode NetCDF error code. 0 for no error.
+  !>
+  !> @author Edward Hartnett  @date 1-Nov-2023
+  !>
+  integer function nf90_err_check(errcode, ILINE)
+    USE NetCDF
+    USE W3ODATMD, ONLY: NDSE
+    implicit none
+    integer, intent(in) :: errcode, ILINE
+    
+    nf90_err_check = errcode
+    if(errcode /= nf90_noerr) then
+      WRITE(NDSE,*) ' *** WAVEWATCH III ERROR IN W3IOPO :'
+      WRITE(NDSE,*) ' LINE NUMBER ', ILINE
+      WRITE(NDSE,*) ' NETCDF ERROR MESSAGE: '
+      WRITE(NDSE,*) 'Error: ', trim(nf90_strerror(errcode))
+      return 
+    endif
+  end function nf90_err_check
+#ifdef W3_BIN2NC
+
+  !> Read point output in netCDF format.
+  !>
+  !> @param[out] IOTST Test indictor for reading.
+  !> @param[in] IMOD_IN Model number for W3GDAT etc.
+  !> @param[in] filename Name of file to read.
+  !> @param[inout] ncerr Error code, 0 for success, netCDF error code
+  !> otherwise.
+  !>
+  !> @author Edward Hartnett  @date 1-Nov-2023
+  !>
+  SUBROUTINE W3IOPON_READ(IOTST, IMOD_IN, filename, ncerr, TOUT )
+    USE NetCDF
+    USE W3ODATMD, ONLY: W3DMO2
+    USE W3WDATMD, ONLY: TIME
+    USE W3GDATMD, ONLY: NTH, NK, NSPEC, FILEXT
+    USE W3ODATMD, ONLY: NDSE, NDST, IPASS => IPASS2, NOPTS,  &
+         IL, IW, II, PTLOC, DPO, WAO, WDO,                   &
+         ASO, CAO, CDO, SPCO, PTNME, O2INIT, FNMPRE,         &
+         GRDID, ICEO, ICEHO, ICEFO, W3DMO2
+    USE W3SERVMD, ONLY: EXTCDE
+#ifdef W3_FLX5
+    USE W3ODATMD, ONLY: TAUAO, TAUDO, DAIRO
+#endif
+#ifdef W3_SETUP
+    USE W3ODATMD, ONLY: ZET_SETO
+#endif
+    IMPLICIT NONE
+
+    INTEGER, INTENT(OUT)          :: IOTST
+    INTEGER, INTENT(IN), OPTIONAL :: IMOD_IN
+    character(*), intent(out) :: filename
+    integer, intent(inout) :: ncerr
+    INTEGER, INTENT(IN), OPTIONAL :: TOUT(2)
+    CHARACTER(LEN=15) :: TIMETAG
+    LOGICAL :: per_time_step
+    INTEGER :: IGRD,MK,MTH
+    integer :: fh, itime
+    integer :: d_nopts, d_nspec, d_vsize, d_namelen, d_grdidlen, d_time
+    integer :: d_nopts_len, d_nspec_len, d_vsize_len, d_namelen_len, d_grdidlen_len, d_time_len
+    integer :: v_nk, v_nth, v_ptloc, v_ptnme, v_ww3time 
+    integer :: v_dpo, v_wao, v_wdo
+#ifdef W3_FLX5
+    integer :: v_tauao,v_taudo, v_dairo
+#endif
+#ifdef W3_SETUP
+    integer :: v_zet_seto
+#endif
+    integer :: v_aso, v_cao, v_cdo, v_iceo
+    integer :: v_iceho, v_icefo, v_grdid, v_spco
+    integer :: v_title_len, v_version_len 
+    CHARACTER(LEN=31)       :: IDTST
+    CHARACTER(LEN=10)       :: VERTST
+
+    IOTST = 0
+
+    IF (PRESENT(IMOD_IN)) THEN
+      IGRD = IMOD_IN
+    ELSE
+      IGRD = 1
+    END IF
+
+    ! Determine if we are reading a per-time-step file
+    per_time_step = PRESENT(TOUT)
+    IF (per_time_step) THEN
+      WRITE(TIMETAG, '(I8.8, ".", I6.6)') TOUT(1), TOUT(2)
+      filename = TRIM(FNMPRE) // TRIM(TIMETAG) // '.out_pnt.' // TRIM(FILEXT) // '.nc'
+    ELSE
+      filename = FNMPRE(:LEN_TRIM(FNMPRE))//'out_pnt.'//FILEXT(:LEN_TRIM(FILEXT))//'.nc'
+    END IF
+
+    ! Open the netCDF file.
+    ncerr = nf90_open(filename, NF90_NOWRITE, fh)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Read and check the version:
+    ncerr = nf90_inquire_attribute(fh, NF90_GLOBAL, 'title', len = v_title_len) 
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_get_att(fh, NF90_GLOBAL, 'title', IDTST)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_attribute(fh, NF90_GLOBAL, 'version', len = v_version_len)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_get_att(fh, NF90_GLOBAL, 'version', VERTST)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    IF ( IDTST .NE. IDSTR ) THEN
+      WRITE (NDSE,902) IDTST, IDSTR
+      CALL EXTCDE ( 10 )
+    END IF
+    IF ( VERTST .NE. VEROPT ) THEN
+      WRITE (NDSE,903) VERTST, VEROPT
+      CALL EXTCDE ( 11 )
+    END IF
+
+    ! Read the dimension information for NOPTS.
+    ncerr = nf90_inq_dimid(fh, DNAME_NOPTS, d_nopts)
+    if (nf90_err(ncerr) .ne. 0) return 
+    ncerr = nf90_inquire_dimension(fh, d_nopts, len = d_nopts_len)
+    if (nf90_err(ncerr) .ne. 0) return
+    NOPTS=d_nopts_len
+
+    ! Read the dimension information for NSPEC.
+    ncerr = nf90_inq_dimid(fh, DNAME_NSPEC, d_nspec)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_dimension(fh, d_nspec, len = d_nspec_len)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Read the dimension information for VSIZE.
+    ncerr = nf90_inq_dimid(fh, DNAME_VSIZE, d_vsize)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_dimension(fh, d_vsize, len = d_vsize_len)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Read the dimension information for NAMELEN.
+    ncerr = nf90_inq_dimid(fh, DNAME_NAMELEN, d_namelen)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_dimension(fh, d_namelen, len = d_namelen_len)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Read the dimension information for GRDIDLEN.
+    ncerr = nf90_inq_dimid(fh, DNAME_GRDIDLEN, d_grdidlen)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_dimension(fh, d_grdidlen, len = d_grdidlen_len)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Read the dimention information from time
+    ncerr = nf90_inq_dimid(fh, DNAME_TIME, d_time)
+    if (nf90_err(ncerr) .ne. 0) return
+    ncerr = nf90_inquire_dimension(fh, d_time, len = d_time_len)
+    if (nf90_err(ncerr) .ne. 0) return
+    
+    !Determine the start for the time dimension
+    IF ( per_time_step ) THEN
+      itime=1
+    ELSE
+      itime=IPASS
+    END IF
+
+    IF ( itime .LE. d_time_len ) THEN
+      IF ( itime.EQ.1 ) THEN
+        ! Read scalar variables.
+        ncerr = nf90_inq_varid(fh, VNAME_NK, v_nk)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_nk, MK)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inq_varid(fh, VNAME_NTH, v_nth)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_nth, MTH)
+        if (nf90_err(ncerr) .ne. 0) return
+
+        !read in written variables NK, NTH as MK and MTH
+        !and ensure they match
+        IF (NK.NE.MK .OR. NTH.NE.MTH) THEN
+          WRITE (NDSE,904) MK, MTH, NK, NTH
+          CALL EXTCDE ( 12 )
+        END IF
+
+        ! Allocate variables:
+        IF ( .NOT. O2INIT )                                     &
+          CALL W3DMO2 ( IGRD, NDSE, NDST, NOPTS )
+
+        ! Read vars with nopts as a dimension.
+        ncerr = nf90_inq_varid(fh, VNAME_PTLOC, v_ptloc)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_ptloc, PTLOC, start = (/ 1, 1/), &
+            count = (/ d_vsize_len, d_nopts_len /))
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_inq_varid(fh, VNAME_PTNME, v_ptnme)
+        if (nf90_err(ncerr) .ne. 0) return
+        ncerr = nf90_get_var(fh, v_ptnme, PTNME)
+        if (nf90_err(ncerr) .ne. 0) return
+      END IF      
+        
+      !Variables read based on time (itime):      
+      ncerr = nf90_inq_varid(fh, VNAME_WW3TIME, v_ww3time)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_ww3time, TIME, start = (/ 1, itime/), &
+          count = (/ d_vsize_len, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! set IW, II and IL to 0,
+      ! These values are set to 0 in binary file and have been removed 
+      ! from netcdf file.  Possible can be completely removed. 
+      IW = 0
+      II = 0
+      IL = 0
+
+      ncerr = nf90_inq_varid(fh, VNAME_DPO, v_dpo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_dpo, DPO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_WAO, v_wao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_wao, WAO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_WDO, v_wdo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_wdo, WDO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+#ifdef W3_FLX5
+      ncerr = nf90_inq_varid(fh, VNAME_TAUAO, v_tauao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_tauao, TAUAO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_TAUDO, v_taudo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_taudo, TAUDO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_DAIRO, v_dairo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_dairo, DAIRO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+#endif
+#ifdef W3_SETUP
+      ncerr = nf90_inq_varid(fh, ZET_SETO, v_zet_seto)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_zet_seto, ZET_SETO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+#endif
+      ncerr = nf90_inq_varid(fh, VNAME_ASO, v_aso)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_aso, ASO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_CAO, v_cao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_cao, CAO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_CDO, v_cdo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_cdo, CDO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_ICEO, v_iceo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_iceo, ICEO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_ICEHO, v_iceho)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_iceho, ICEHO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_ICEFO, v_icefo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_icefo, ICEFO, start = (/ 1, itime/), &
+          count = (/ NOPTS, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_GRDID, v_grdid)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_grdid, GRDID, start = (/ 1, 1, itime/), &
+          count = (/ 13, nopts, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_inq_varid(fh, VNAME_SPCO, v_spco)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_get_var(fh, v_spco, SPCO, start = (/ 1, 1, itime/), &
+          count = (/nspec, nopts, 1 /))
+      if (nf90_err(ncerr) .ne. 0) return
+    ELSE 
+      ! Set flag to indicate IPASS > d_time_len 
+      ! and are at the end of the
+      IOTST  = -1
+    END IF
+
+    ! Close the file.
+    ncerr = nf90_close(fh)
+    if (nf90_err(ncerr) .ne. 0) return
+
+902 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPON :'/               &
+         '     ILEGAL IDSTR, READ : ',A/                        &
+         '                  CHECK : ',A/)
+903 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPON :'/               &
+         '     ILEGAL VEROPT, READ : ',A/                       &
+         '                   CHECK : ',A/)
+904 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ERROR IN SPECTRA, MK, MTH : ',2I8/               &
+         '              ARRAY DIMENSIONS : ',2I8/)
+
+
+  END SUBROUTINE W3IOPON_READ
+
+  !/ ------------------------------------------------------------------- /
+  !>
+  !> @brief Write point output in netCDF format.
+  !>
+  !> @param[in] filename Name of file to write.
+  !> @param[in] timestep_only Will be 0 if whole model run should be
+  !> written, 1 if only one timestep should be written.
+  !> @param[inout] ncerr Error code, 0 for success, netCDF error code
+  !> otherwise.
+  !>
+  !> @author Edward Hartnett  @date 1-Nov-2023
+  !>
+  SUBROUTINE W3IOPON_WRITE(timestep_only,filename, ncerr, NDSOP, fname, path)
+    USE NETCDF 
+    USE W3GDATMD, ONLY: NTH, NK, NSPEC
+    USE W3WDATMD, ONLY: TIME
+    USE W3ODATMD, ONLY: IPASS => IPASS2, NOPTS,               &
+         PTLOC, DPO, WAO, WDO, ASO, CAO, CDO, SPCO, PTNME,    &
+         GRDID, ICEO, ICEHO, ICEFO
+  USE W3TIMEMD, ONLY: CALTYPE, T2D, U2D, TSUB
+#ifdef W3_FLX5
+    USE W3ODATMD, ONLY: TAUAO, TAUDO, DAIRO
+#endif
+#ifdef W3_SETUP
+    USE W3ODATMD, ONLY: ZET_SETO
+#endif
+
+    IMPLICIT NONE
+    integer, intent(in) :: timestep_only ! 1 if only timestep should be written.
+    character(*), intent(in) :: filename
+    integer, intent(inout) :: ncerr
+    !
+    INTEGER, INTENT(IN), OPTIONAL :: NDSOP
+    CHARACTER(LEN=124), INTENT(IN), OPTIONAL :: fname
+    CHARACTER(LEN=256), INTENT(IN), OPTIONAL :: path
+    !
+    integer :: itime, fh
+    integer :: d_nopts, d_nspec, d_vsize, d_namelen, d_grdidlen, d_time
+    integer :: v_nk, v_nth, v_ptloc, v_ptnme, v_time, v_ww3time
+    integer :: v_dpo, v_wao, v_wdo
+#ifdef W3_FLX5
+    integer :: v_tauao, v_taudo, v_dairo
+#endif    
+#ifdef W3_SETUP
+    integer :: v_zet_seto
+#endif  
+    integer :: v_aso, v_cao, v_cdo, v_iceo
+    integer :: v_iceho, v_icefo, v_grdid, v_spco
+    integer :: curdate(8), refdate(8),ierr
+    double precision :: outjulday
+
+
+    ! INDICATOR LOG
+    INTEGER :: NDSOPLOG
+
+    !If first pass, or if you are writting a file for every time-step: 
+    IF ( IPASS.EQ.1  .OR. timestep_only.EQ.1 ) THEN 
+      ! Create the netCDF file.
+      ncerr = nf90_create(filename, NF90_NETCDF4, fh)
+      if (nf90_err(ncerr) .ne. 0) return
+ 
+      ! Define dimensions.
+      ncerr = nf90_def_dim(fh, DNAME_NOPTS, NOPTS, d_nopts)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_dim(fh, DNAME_NSPEC, NSPEC, d_nspec)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_dim(fh, DNAME_VSIZE, 2, d_vsize)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_dim(fh, DNAME_NAMELEN, 40, d_namelen)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_dim(fh, DNAME_GRDIDLEN, 13, d_grdidlen)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_dim(fh, DNAME_TIME, NF90_UNLIMITED, d_time)
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! Define global attributes.
+      ncerr = nf90_put_att(fh, NF90_GLOBAL, 'title', IDSTR)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_put_att(fh, NF90_GLOBAL, 'version', VEROPT)
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! Define scalar variables.
+      ncerr = nf90_def_var(fh, VNAME_NK, NF90_INT, v_nk)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_NTH, NF90_INT, v_nth)
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! Define vars with nopts as a dimension. Point location and name
+      ncerr = nf90_def_var(fh, VNAME_PTLOC, NF90_FLOAT, (/d_vsize, d_nopts/), v_ptloc)
+      if (nf90_err(ncerr) .ne. 0) return 
+      ncerr = nf90_def_var(fh, VNAME_PTNME, NF90_CHAR, (/d_namelen, d_nopts/), v_ptnme)
+      if (nf90_err(ncerr) .ne. 0) return
+ 
+      ! Define time for each time step 
+      ncerr = nf90_def_var(fh, VNAME_WW3TIME, NF90_INT, (/d_vsize, d_time/),v_ww3time)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_TIME, NF90_DOUBLE, (/d_time/),v_time)
+      if (nf90_err(ncerr) .ne. 0) return
+      SELECT CASE (TRIM(CALTYPE))
+      CASE ('360_day')
+        ncerr = nf90_put_att(fh, v_time, 'long_name', 'time in 360 day calendar')
+        if (nf90_err(ncerr) .ne. 0) return
+      CASE ('365_day')
+        ncerr = nf90_put_att(fh, v_time, 'long_name', 'time in 365 day calendar') 
+        if (nf90_err(ncerr) .ne. 0) return
+      CASE ('standard')
+        ncerr = nf90_put_att(fh, V_TIME, 'long_name', 'Julian day (UT)') 
+        if (nf90_err(ncerr) .ne. 0) return
+      END SELECT
+      ncerr = nf90_put_att(fh, V_TIME, 'standard_name', 'time')
+      if (nf90_err(ncerr) .ne. 0) return 
+      ncerr = nf90_put_att(fh, V_TIME, 'units', 'days since 1990-01-01 00:00:00')
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_put_att(fh, V_TIME, 'conventions','Relative Julian days with decimal part (as parts of the day)')
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_put_att(fh, V_TIME, 'axis', 'T')
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_put_att(fh, V_TIME, 'calendar', TRIM(CALTYPE))
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! Define vars with nopts and time as dimensions 
+      ncerr = nf90_def_var(fh, VNAME_DPO, NF90_FLOAT, (/d_nopts, d_time/), v_dpo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_WAO, NF90_FLOAT, (/d_nopts, d_time/), v_wao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_WDO, NF90_FLOAT, (/d_nopts, d_time/), v_wdo)
+      if (nf90_err(ncerr) .ne. 0) return
+#ifdef W3_FLX5
+      ncerr = nf90_def_var(fh, VNAME_TAUAO, NF90_FLOAT, (/d_nopts, d_time/), v_tauao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_TAUDO, NF90_FLOAT, (/d_nopts, d_time/), v_taudo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_DAIRO, NF90_FLOAT, (/d_nopts, d_time/), v_dairo)
+      if (nf90_err(ncerr) .ne. 0) return
+#endif    
+#ifdef W3_SETUP
+      ncerr = nf90_def_var(fh, VNAME_ZET_SETO, NF90_FLOAT, (/d_nopts, d_time/), v_zet_seto)
+      if (nf90_err(ncerr) .ne. 0) return
+#endif    
+      ncerr = nf90_def_var(fh, VNAME_ASO, NF90_FLOAT, (/d_nopts, d_time/), v_aso)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_CAO, NF90_FLOAT, (/d_nopts, d_time/), v_cao)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_CDO, NF90_FLOAT, (/d_nopts, d_time/), v_cdo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_ICEO, NF90_FLOAT, (/d_nopts, d_time/), v_iceo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_ICEHO, NF90_FLOAT, (/d_nopts, d_time/), v_iceho)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_ICEFO, NF90_FLOAT, (/d_nopts, d_time/), v_icefo)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_def_var(fh, VNAME_GRDID, NF90_CHAR, (/d_grdidlen, d_nopts, d_time/), v_grdid)
+      if (nf90_err(ncerr) .ne. 0) return
+      
+      ! Define spectral output with dimensions nspec, nopts and time
+      ncerr = nf90_def_var(fh, VNAME_SPCO, NF90_FLOAT, (/d_nspec, d_nopts, d_time/), v_spco)
+      if (nf90_err(ncerr) .ne. 0) return
+  
+      ! End of all variable definitions 
+      ncerr = nf90_enddef(fh)
+      if (nf90_err(ncerr) .ne. 0) return 
+
+      ! Write the scalar data.
+      ncerr = nf90_put_var(fh, v_nk, NK)
+      if (nf90_err(ncerr) .ne. 0) return
+      ncerr = nf90_put_var(fh, v_nth, NTH)
+      if (nf90_err(ncerr) .ne. 0) return
+
+      ! Write the data with NOPTS as a dimension. (no time dimension)
+      if (associated(PTLOC)) then
+         ncerr = nf90_put_var(fh, v_ptloc, PTLOC(:,1:NOPTS))
+         if (nf90_err(ncerr) .ne. 0) return
+      endif
+      if (associated(PTNME)) then
+         ncerr = nf90_put_var(fh, v_ptnme, PTNME(1:NOPTS))
+         if (nf90_err(ncerr) .ne. 0) return
+      endif
+      
+    ELSE 
+      ! If we are writing to the same file, re-open the file 
+      ncerr = nf90_open(filename, nf90_write, fh)
+      if (nf90_err(ncerr) .ne. 0) return
+    END IF 
+
+    !Determine the start for the time dimension 
+    IF ( timestep_only.EQ.1 ) THEN
+       itime=1
+    ELSE 
+       itime=IPASS
+    END IF
+
+    ! Write Time
+    IF ( itime > 1 ) THEN
+       ncerr = nf90_inq_varid(fh, VNAME_WW3TIME, v_ww3time)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_TIME, v_time)
+       if (nf90_err(ncerr) .ne. 0) return
+    END IF
+    ncerr = nf90_put_var(fh, v_ww3time, TIME, start = (/ 1, itime/), &
+       count = (/ 2, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    CALL U2D('days since 1990-01-01 00:00:00',REFDATE,IERR)
+    CALL T2D(TIME,CURDATE,IERR)
+    outjulday=TSUB(REFDATE,CURDATE)
+
+    ncerr = nf90_put_var(fh, v_time, outjulday, start = (/itime/))
+    if (nf90_err(ncerr) .ne. 0) return
+
+
+    ! If itime > 1 need to inquire varid 
+    IF ( itime > 1 ) THEN 
+       ncerr = nf90_inq_varid(fh, VNAME_DPO, v_dpo)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_WAO, v_wao)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_WDO, v_wdo)
+       if (nf90_err(ncerr) .ne. 0) return
+#ifdef W3_FLX5
+       ncerr = nf90_inq_varid(fh, VNAME_TAUAO, v_tauao)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_TAUDO, v_taudo)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_DAIRO, v_dairo)
+       if (nf90_err(ncerr) .ne. 0) return
+#endif
+#ifdef W3_SETUP
+       ncerr = nf90_inq_varid(fh, VNAME_ZET_SETO, v_zet_seto)
+       if (nf90_err(ncerr) .ne. 0) return
+#endif
+       ncerr = nf90_inq_varid(fh, VNAME_ASO, v_aso)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_CAO, v_cao)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_CDO, v_cdo)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_ICEO, v_iceo)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_ICEHO, v_iceho)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_ICEFO, v_icefo)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_GRDID, v_grdid)
+       if (nf90_err(ncerr) .ne. 0) return
+       ncerr = nf90_inq_varid(fh, VNAME_SPCO, v_spco)
+       if (nf90_err(ncerr) .ne. 0) return
+    END IF
+
+    ncerr = nf90_put_var(fh, v_dpo, DPO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_wao, WAO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_wdo, WDO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+#ifdef W3_FLX5
+    ncerr = nf90_put_var(fh, v_tauao, TAUAO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_taudo, TAUDO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_dairo, DAIRO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+#endif
+#ifdef W3_SETUP
+    ncerr = nf90_put_var(fh, v_zet_seto, ZET_SETO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+#endif
+    ncerr = nf90_put_var(fh, v_aso, ASO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_cao, CAO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_cdo, CDO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_iceo, ICEO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_iceho, ICEHO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_icefo, ICEFO, start = (/ 1, itime/), &
+       count = (/ nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ncerr = nf90_put_var(fh, v_grdid, GRDID, start = (/ 1, 1, itime/), &
+       count = (/ 13, nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    !write spectral output
+    ncerr = nf90_put_var(fh, v_spco, SPCO, start = (/ 1, 1, itime/), &
+       count = (/nspec, nopts, 1 /))
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! Close the file.
+    ncerr = nf90_close(fh)
+    if (nf90_err(ncerr) .ne. 0) return
+
+    ! WRITE INDICATOR LOG AT THE END OF NETCDF OUTPUT
+    ! RE-USE NDSOP FOR NDSOPLOG
+    IF (timestep_only .EQ. 1) THEN
+      NDSOPLOG = NDSOP
+      OPEN(NDSOPLOG,FILE=path(:LEN_TRIM(path))//'log.'//TRIM(fname)//'.txt', &
+               form ='FORMATTED')
+      WRITE (NDSOPLOG,*) 'The '//TRIM(fname)//' file has been successfully written!'
+      CALL FLUSH (NDSOPLOG)
+      CLOSE (NDSOPLOG)
+    ENDIF
+
+  END SUBROUTINE W3IOPON_WRITE
+
+  !> Read or write the netCDF point output file,
+  !> depending on the value of the first parameter.
+  !>
+  !> When reading, the entire file is read with one call to this
+  !> subroutine.
+  !>
+  !> When writing, this subroutine can either write one timestep or
+  !> the whole model run. This is an option in the input file. If the
+  !> entire model run is to be written, then OFILES(2) is 0. If only
+  !> one timestep is to be written, then OFILES(2) is 1.
+  !>
+  !> If OFILES(2) is 0, the output file is names out_pnt.ww3. If
+  !> OFILES(2) is 1, the output file is named TIMETAG.out_pnt.ww3.
+  !>
+  !> @param[in] INXOUT String indicating read/write. Must be 'READ' or
+  !> 'WRITE'.
+  !> @param[in] NDSOP File unit number.
+  !> @param[out] IOTST Error code:
+  !> - 0 No error.
+  !> - -1 Unexpected end of file when reading.
+  !> @param[in] IMOD Model number for W3GDAT etc.
+  !>
+  !> @author Edward Hartnett  @date 1-Nov-2023
+  SUBROUTINE W3IOPON ( INXOUT, NDSOP, IOTST, IMOD, TOUT )
+    USE W3GDATMD, ONLY: W3SETG
+    USE W3WDATMD, ONLY: W3SETW
+    USE W3ODATMD, ONLY: W3SETO
+    USE W3GDATMD, ONLY: FILEXT
+    USE W3WDATMD, ONLY: TIME
+    USE W3ODATMD, ONLY: NDST, NDSE, IPASS => IPASS2, FNMPRE, FNMPNT 
+    USE W3ODATMD, ONLY: OFILES
+    USE W3SERVMD, ONLY: EXTCDE
+#ifdef W3_S
+    USE W3SERVMD, ONLY: STRACE
+#endif
+    use netcdf
+    IMPLICIT NONE
+
+    CHARACTER, INTENT(IN)         :: INXOUT*(*)
+    INTEGER, INTENT(IN)           :: NDSOP
+    INTEGER, INTENT(OUT)          :: IOTST
+    INTEGER, INTENT(IN), OPTIONAL :: TOUT(2)
+    INTEGER, INTENT(IN), OPTIONAL :: IMOD
+    CHARACTER(LEN=15) :: TIMETAG
+    INTEGER :: IGRD
+    character(len = 256) :: filename
+    integer :: ncerr
+
+    ! DEFINED A LOCAL FNMPRE TO AVOID CHANGE THE GLOBAL VALUE
+    CHARACTER(LEN=256)       :: FNMPRE_LOCAL
+    CHARACTER(LEN=124)       :: FNAME
+#ifdef W3_S
+    CALL STRACE (IENT, 'W3IOPON')
+#endif
+
+    ! IPASS essentially is the time variable dimension 
+    IPASS  = IPASS + 1
+
+    ! Optimistically assume success.
+    IOTST = 0
+
+    ! Has a model number been specified?
+    IF (PRESENT(IMOD)) THEN
+      IGRD = IMOD
+    ELSE
+      IGRD = 1
+    END IF
+
+    CALL W3SETO(IGRD, NDSE, NDST)
+    CALL W3SETG(IGRD, NDSE, NDST)
+    CALL W3SETW(IGRD, NDSE, NDST)
+
+    ! INXOUT must be 'READ' or 'WRITE'.
+    IF (INXOUT .NE. 'READ' .AND. INXOUT .NE. 'WRITE') THEN
+      WRITE (NDSE, 900) INXOUT
+      CALL EXTCDE(1)
+    END IF
+
+    ! Determine filename.
+    IF (LEN_TRIM(FNMPNT) .EQ. 0) THEN
+      FNMPRE_LOCAL = FNMPRE
+    ELSE
+      FNMPRE_LOCAL = FNMPNT
+    END IF
+    !
+    
+    IF ( OFILES(2) .EQ. 1 ) THEN 
+      ! Create TIMETAG for file name using YYYYMMDD.HHMMS prefix
+      WRITE(TIMETAG,"(i8.8,'.'i6.6)")TIME(1),TIME(2)
+      filename = FNMPRE_LOCAL(:LEN_TRIM(FNMPRE_LOCAL))//TIMETAG//'.out_pnt.'//FILEXT(:LEN_TRIM(FILEXT))//'.nc'
+      FNAME = TIMETAG//'.out_pnt.'//FILEXT(:LEN_TRIM(FILEXT))
+    ELSE 
+      filename = FNMPRE_LOCAL(:LEN_TRIM(FNMPRE_LOCAL))//'out_pnt.'//FILEXT(:LEN_TRIM(FILEXT))//'.nc'
+    END IF 
+
+    ! Do a read or a write of the point file.
+    IF (INXOUT .EQ. 'READ') THEN
+      IF (PRESENT(TOUT)) THEN
+        CALL W3IOPON_READ(IOTST, IMOD, filename, ncerr, TOUT)
+      ELSE
+        CALL W3IOPON_READ(IOTST, IMOD, filename, ncerr)
+      END IF
+    ELSE
+      CALL W3IOPON_WRITE(OFILES(2), filename, ncerr, NDSOP=NDSOP, fname=FNAME, path=FNMPRE_LOCAL)
+    ENDIF
+    if (nf90_err(ncerr) .ne. 0) then
+      WRITE(NDSE,*) ' *** WAVEWATCH III ERROR IN W3IOPO :'
+      WRITE(NDSE,*) 'Nonzero return at end of W3IOPON'
+      WRITE(NDSE,*) 'Error: ', trim(nf90_strerror(ncerr))
+      CALL EXTCDE(21)
+    endif
+
+    !/
+    !/ End of W3IOPON ----------------------------------------------------- /
+    !/
+
+900 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ILEGAL INXOUT VALUE: ',A/)
+  END SUBROUTINE W3IOPON
+#endif
+  !/ ------------------------------------------------------------------- /
+  !> Read or write point output.
+  !>
+  !> This subroutine can either read or write the point output file,
+  !> depending on the value of the first parameter.
+  !>
+  !> When reading, the entire file is read with one call to this
+  !> subroutine.
+  !>
+  !> When writing, this subroutine can either write one timestep or
+  !> the whole model run. This is an option in the input file. If the
+  !> entire model run is to be written, then OFILES(2) is 0. If only
+  !> one timestep is to be written, then OFILES(2) is 1.
+  !>
+  !> If OFILES(2) is 0, the output file is names out_pnt.ww3. If
+  !> OFILES(2) is 1, the output file is named TIMETAG.out_pnt.ww3.
+  !>
+  !> The format of the point output file is:
+  !> Size (bytes) | Type | Variable | Meaning
+  !> -------------|------|----------|--------
+  !> 40 | character*40 | IDTST | ID string
+  !> 4 | integer | VERTST | Model definition file version number
+  !> 4 | integer | NK | Number of discrete wavenumbers  
+  !> 4 | integer | NTH | Number of discrete directions. 
+  !> 4 | integer | NOPTS | Number of output points.
+  !> 8*NOPTS | real(2,NOPTS) | PTLOC | Point locations
+  !> 7*NOPTS | character*7 | PTNME | Point names
+  !> 8 | integer(2) | TIME | Valid time
+  !> reclen*NOPTS | * | * | records
+  !>
+  !> Each record contains:
+  !> Size (bytes) | Type | Variable | Meaning
+  !> -------------|------|----------|--------
+  !> 4 | integer | IW | Number of water points in interpolation box for output point.
+  !> 4 | integer | II | Number of ice points in interpolation box for output point.
+  !> 4 | integer | IL | Number of land points in interpolation box for output point.
+  !> 4 | real | DPO | Interpolated depths.
+  !> 4 | real | WAO | Interpolated wind speeds.
+  !> 4 | real | WDO | Interpolated wind directions.
+  !> 4 | real | TAUAO | (W3_FLX5 only) Interpolated atmospheric stresses.
+  !> 4 | real | TAUDO | (W3_FLX5 only) Interpolated atmospheric stress directions.
+  !> 4 | real | DAIRO | (W3_FLX5 only) Interpolated rho atmosphere.
+  !> 4 | real | ZET_SETO | (W3_SETUP only) Used for wave setup.
+  !> 4 | real | ASO | Interpolated air-sea temperature difference
+  !> 4 | real | CAO | Interpolated current speeds.
+  !> 4 | real | CDO | Interpolated current directions.
+  !> 4 | real | ICEO | Interpolated ice concentration.
+  !> 4 | real | ICEHO | Interpolated ice thickness.
+  !> 4 | real | ICEFO | Interpolated ice floe.
+  !> 13 | char | GRDID | Originating grid ID
+  !> 4 | real | SPCO(J,I),J=1,NSPEC | Output spectra
+  !>
+  !> In the event of error, EXTCDE() will be called with the following exit codes:
+  !> - 1 INXOUT must be 'READ' or 'WRITE'.
+  !> - 2 Unexpectedly changed from WRITE to READ in subsequent call.
+  !> - 10 Unexpected IDSTR
+  !> - 11 Unexpected VEROPT
+  !> - 12 Unexpected MK or MTH
+  !> - 20 Error opening file.
+  !> - 21 Unexpected end of file during read.
+  !> - 22 Error reading file.
+  !> - 23 Unexpected end of file during read.
+  !>
+  !> @param[in] INXOUT String indicating read/write. Must be 'READ' or
+  !> 'WRITE'.
+  !> @param[in] NDSOP This is set by this subroutine to the netCDF
+  !> file ID (ncid) of the opened file. User does not have to
+  !> initialize this value, and should not change it.
+  !> @param[out] IOTST Error code:
+  !> - 0 No error.
+  !> - -1 Unexpected end of file when reading.
+  !> @param[in] IMOD Model number for W3GDAT etc.
+#ifdef W3_ASCII
+  !> @param[in] NDSOA File unit number for ASCII output.
+#endif
+  !>
+  !> @author H. L. Tolman  @date 25-Jul-2006
+  SUBROUTINE W3IOPO ( INXOUT, NDSOP, IOTST, IMOD &
+#ifdef W3_ASCII
+      ,NDSOA &
+#endif
+      )
+    !/
+    !/                  +-----------------------------------+
+    !/                  | WAVEWATCH III           NOAA/NCEP |
+    !/                  |           H. L. Tolman            |
+    !/                  |                        FORTRAN 90 |
+    !/                  | Last update :         25-Jul-2006 |
+    !/                  +-----------------------------------+
+    !/
+    !/    07-Jan-1999 : Distributed FORTRAN 77 version.     ( version 1.18 )
+    !/    30-Dec-1999 : Upgrade to FORTRAN 90               ( version 2.00 )
+    !/                  Major changes to logistics.
+    !/    10-Nov-2004 : Multiple grid version.              ( version 3.06 )
+    !/    27-Jun-2006 : Adding file name preamble.          ( version 3.09 )
+    !/    25-Jul-2006 : Adding grid ID per point.           ( version 3.10 )
+    !/    27-Aug-2015 : Adding interpolation for the ice.   ( version 5.10 )
+    !/    19-Jul-2021 : Momentum and air density support    ( version 7.14 )
+    !/
+    !  1. Purpose :
+    !
+    !     Read/write point output.
+    !
+    !  3. Parameters :
+    !
+    !     Parameter list
+    !     ----------------------------------------------------------------
+    !       INXOUT  C*(*)  I   Test string for read/write, valid are:
+    !                          'READ' and 'WRITE'.
+    !       NDSOP   Int.   I   File unit number. for binary
+    !       NDSOA   Int.   I   File unit number. for ASCII
+    !       IOTST   Int.   O   Test indictor for reading.
+    !                           0 : Data read.
+    !                          -1 : Past end of file.
+    !       IMOD    I(O)   I   Model number for W3GDAT etc.
+    !     ----------------------------------------------------------------
+    !
+    !  4. Subroutines used :
+    !
+    !     See module documentation.
+    !
+    !  5. Called by :
+    !
+    !      Name      Type  Module   Description
+    !     ----------------------------------------------------------------
+    !      W3WAVE    Subr. W3WAVEMD Actual wave model routine.
+    !      WW3_OUTP  Prog.   N/A    Postprocessing for point output.
+    !      GX_OUTP   Prog.   N/A    Grads postprocessing for point output.
+    !     ----------------------------------------------------------------
+    !
+    !  6. Error messages :
+    !
+    !       Tests on INXOUT, file status and on array dimensions.
+    !
+    !  7. Remarks :
+    !
+    !     - The output file has the pre-defined name 'out_pnt.FILEXT'.
+    !     - In MPP version of model data is supposed to be gatherd at the
+    !       correct processor before the routine is called.
+    !     - No error output filtering needed.
+    !
+    !  8. Structure :
+    !
+    !     See source code.
+    !
+    !  9. Switches :
+    !
+    !     !/SHRD  Switch for shared / distributed memory architecture.
+    !     !/DIST  Id.
+    !
+    !     !/S     Enable subroutine tracing.
+    !     !/T     Test output.
+    !
+    ! 10. Source code :
+    !
+    !/ ------------------------------------------------------------------- /
+    USE W3GDATMD, ONLY: W3SETG
+    USE W3WDATMD, ONLY: W3SETW
+    USE W3ODATMD, ONLY: W3SETO, W3DMO2
+    !/
+    USE W3GDATMD, ONLY: NTH, NK, NSPEC, FILEXT
+    USE W3WDATMD, ONLY: TIME
+    USE W3ODATMD, ONLY: NDST, NDSE, IPASS => IPASS2, NOPTS,    &
+         IL, IW, II, PTLOC, DPO, WAO, WDO,                     &
+         ASO, CAO, CDO, SPCO, PTNME, O2INIT, FNMPRE, FNMPNT,   &
+         GRDID, ICEO, ICEHO, ICEFO
+#ifdef W3_FLX5
+    USE W3ODATMD, ONLY: TAUAO, TAUDO, DAIRO
+#endif
+    USE W3ODATMD, ONLY :  OFILES
+    !/
+#ifdef W3_SETUP
+    USE W3ODATMD, ONLY: ZET_SETO
+#endif
+    !/
+    USE W3SERVMD, ONLY: EXTCDE, EXTOPN, EXTIOF
+#ifdef W3_S
+    USE W3SERVMD, ONLY: STRACE
+#endif
+
+    use constants, only: file_endian
+    !
+    IMPLICIT NONE
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ Parameter list
+    !/
+    INTEGER, INTENT(IN)           :: NDSOP
+#ifdef W3_ASCII
+    INTEGER, INTENT(IN), OPTIONAL :: NDSOA
+#endif
+    INTEGER, INTENT(OUT)          :: IOTST
+    INTEGER, INTENT(IN), OPTIONAL :: IMOD
+    CHARACTER, INTENT(IN)         :: INXOUT*(*)
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/ local parameters
+    !/
+    INTEGER                 :: IGRD, IERR, MK, MTH, I, J
+#ifdef W3_S
+    INTEGER, SAVE           :: IENT = 0
+#endif
+    LOGICAL,SAVE            :: WRITE
+    CHARACTER(LEN=31)       :: IDTST
+    CHARACTER(LEN=10)       :: VERTST
+    !/
+    CHARACTER(LEN=15) :: TIMETAG
+
+    ! DEFINED A LOCAL FNMPRE TO AVOID CHANGE THE GLOBAL VALUE
+    CHARACTER(LEN=256)       :: FNMPRE_LOCAL
+
+    !/
+    !/ ------------------------------------------------------------------- /
+    !/
+#ifdef W3_S
+    CALL STRACE (IENT, 'W3IOPO')
+#endif
+    IPASS  = IPASS + 1
+    IOTST  = 0
+    !
+    ! test input parameters ---------------------------------------------- *
+    !
+    IF ( PRESENT(IMOD) ) THEN
+      IGRD   = IMOD
+    ELSE
+      IGRD   = 1
+    END IF
+    !
+    CALL W3SETO ( IGRD, NDSE, NDST )
+    CALL W3SETG ( IGRD, NDSE, NDST )
+    CALL W3SETW ( IGRD, NDSE, NDST )
+    !
+    IF (INXOUT.NE.'READ' .AND. INXOUT.NE.'WRITE' ) THEN
+      WRITE (NDSE,900) INXOUT
+      CALL EXTCDE ( 1 )
+    END IF
+    !
+    ! First pass to this file and we are only writing 1 file for all time     
+    IF ( IPASS.EQ.1  .AND. OFILES(2) .EQ. 0) THEN
+      WRITE  = INXOUT.EQ.'WRITE'
+    ELSE
+      IF ( WRITE .AND. INXOUT.EQ.'READ' ) THEN
+        WRITE (NDSE,901) INXOUT
+        CALL EXTCDE ( 2 )
+      END IF
+    END IF
+    !
+    ! open file ---------------------------------------------------------- *
+    !
+    IF (LEN_TRIM(FNMPNT) .EQ. 0) THEN
+      FNMPRE_LOCAL = FNMPRE
+    ELSE
+      FNMPRE_LOCAL = FNMPNT
+    END IF
+    !
+
+    IF ( IPASS.EQ.1 .AND. OFILES(2) .EQ. 0 ) THEN
+
+      I      = LEN_TRIM(FILEXT)
+      J      = LEN_TRIM(FNMPRE_LOCAL)
+
+#ifdef W3_T
+      WRITE (NDST,9001) FNMPRE_LOCAL(:J)//'out_pnt.'//FILEXT(:I)
+#endif
+      IF ( WRITE ) THEN
+        OPEN (NDSOP,FILE=FNMPRE_LOCAL(:J)//'out_pnt.'//FILEXT(:I),    &
+             form='UNFORMATTED', convert=file_endian,IOSTAT=IERR)
+        IF (IERR.NE.0) CALL EXTOPN(NDSE,IERR,'W3IOPO','',20)
+#ifdef W3_ASCII
+        OPEN (NDSOA,FILE=FNMPRE_LOCAL(:J)//'out_pnt.'//FILEXT(:I)//'.txt',    &
+             form='FORMATTED',IOSTAT=IERR)
+        IF (IERR.NE.0) CALL EXTOPN(NDSE,IERR,'W3IOPO','',20)
+#endif
+      ELSE
+        OPEN (NDSOP,FILE=FNMPRE_LOCAL(:J)//'out_pnt.'//FILEXT(:I),    &
+             form='UNFORMATTED', convert=file_endian,IOSTAT=IERR,STATUS='OLD')
+        IF (IERR.NE.0) CALL EXTOPN(NDSE,IERR,'W3IOPO','',20)
+      END IF
+      !
+      REWIND ( NDSOP )
+      !
+      ! test info ---------------------------------------------------------- *
+      ! ( IPASS = 1 )
+      !
+      IF ( WRITE ) THEN
+        WRITE (NDSOP)                                           &
+             IDSTR, VEROPT, NK, NTH, NOPTS
+#ifdef W3_ASCII
+        WRITE (NDSOA,*)                                           &
+             'IDSTR, VEROPT, NK, NTH, NOPTS:',                  &
+             IDSTR, VEROPT, NK, NTH, NOPTS
+#endif
+      ELSE
+        READ (NDSOP,IOSTAT=IERR)                &
+             IDTST, VERTST, MK, MTH, NOPTS
+        IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+        !
+        IF ( IDTST .NE. IDSTR ) THEN
+          WRITE (NDSE,902) IDTST, IDSTR
+          CALL EXTCDE ( 10 )
+        END IF
+        IF ( VERTST .NE. VEROPT ) THEN
+          WRITE (NDSE,903) VERTST, VEROPT
+          CALL EXTCDE ( 11 )
+        END IF
+        IF (NK.NE.MK .OR. NTH.NE.MTH) THEN
+          WRITE (NDSE,904) MK, MTH, NK, NTH
+          CALL EXTCDE ( 12 )
+        END IF
+        IF ( .NOT. O2INIT )                                     &
+             CALL W3DMO2 ( IGRD, NDSE, NDST, NOPTS )
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9002) IDSTR, VEROPT, NK, NTH, NOPTS
+#endif
+      !
+      ! Point specific info ------------------------------------------------ *
+      ! ( IPASS = 1 )
+      !
+      IF ( WRITE ) THEN
+        WRITE (NDSOP)                                           &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+#ifdef W3_ASCII
+        WRITE (NDSOA,*)                                           &
+             '((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS):', &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+#endif
+      ELSE
+        READ  (NDSOP,IOSTAT=IERR)               &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+        IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9003)
+      DO I=1, NOPTS
+        WRITE (NDST,9004) I, PTLOC(1,I), PTLOC(2,I), PTNME(I)
+      END DO
+#endif
+      !
+    END IF
+    !
+    !
+    IF ( IPASS.GE. 1  .AND. OFILES(2) .EQ. 1) THEN
+      WRITE  = INXOUT.EQ.'WRITE'
+    ELSE
+      IF ( WRITE .AND. INXOUT.EQ.'READ' ) THEN
+        WRITE (NDSE,901) INXOUT
+        CALL EXTCDE ( 2 )
+      END IF
+    END IF
+
+    ! open file ---------------------------------------------------------- *
+    !
+    IF ( IPASS.GE.1 .AND. OFILES(2) .EQ. 1) THEN
+      !
+      I      = LEN_TRIM(FILEXT)
+      J      = LEN_TRIM(FNMPRE_LOCAL)
+
+      ! Create TIMETAG for file name using YYYYMMDD.HHMMS prefix
+      WRITE(TIMETAG,"(i8.8,'.'i6.6)")TIME(1),TIME(2)
+      !
+#ifdef W3_T
+      WRITE (NDST,9001) FNMPRE_LOCAL(:J)//TIMETAG//'.out_pnt.'// &
+           FILEXT(:I)
+#endif
+      IF ( WRITE ) THEN
+        OPEN (NDSOP,FILE=FNMPRE_LOCAL(:J)//TIMETAG//'.out_pnt.'   &
+             //FILEXT(:I),form='UNFORMATTED', convert=file_endian,IOSTAT=IERR)
+        IF (IERR.NE.0) CALL EXTOPN(NDSE,IERR,'W3IOPO','',20)
+#ifdef W3_ASCII
+        OPEN (NDSOA,FILE=FNMPRE_LOCAL(:J)//TIMETAG//'.out_pnt.'   &
+             //FILEXT(:I)//'.txt',form='FORMATTED',IOSTAT=IERR)
+        IF (IERR.NE.0) CALL EXTOPN(NDSE,IERR,'W3IOPO','',20)
+#endif
+      END IF
+      !
+      REWIND ( NDSOP )
+      !
+      !
+      ! test info ---------------------------------------------------------- *
+      ! ( IPASS GE.1 .AND. OFILES(2) .EQ. 1)
+      !
+      IF ( WRITE ) THEN
+        WRITE (NDSOP)                                           &
+            IDSTR, VEROPT, NK, NTH, NOPTS
+#ifdef W3_ASCII
+        WRITE (NDSOA,*)                                           &
+             'IDSTR, VEROPT, NK, NTH, NOPTS:',                  &
+             IDSTR, VEROPT, NK, NTH, NOPTS
+#endif
+      ELSE
+        READ (NDSOP,IOSTAT=IERR)                &
+             IDTST, VERTST, MK, MTH, NOPTS
+        IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+        !
+        IF ( IDTST .NE. IDSTR ) THEN
+          WRITE (NDSE,902) IDTST, IDSTR
+          CALL EXTCDE ( 10 )
+        END IF
+        IF ( VERTST .NE. VEROPT ) THEN
+          WRITE (NDSE,903) VERTST, VEROPT
+          CALL EXTCDE ( 11 )
+        END IF
+        IF (NK.NE.MK .OR. NTH.NE.MTH) THEN
+          WRITE (NDSE,904) MK, MTH, NK, NTH
+          CALL EXTCDE ( 12 )
+        END IF
+        IF ( .NOT. O2INIT )                                     &
+             CALL W3DMO2 ( IGRD, NDSE, NDST, NOPTS )
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9002) IDSTR, VEROPT, NK, NTH, NOPTS
+#endif
+      !
+      ! Point specific info ------------------------------------------------ *
+      ! ( IPASS GE.1 .AND. OFILES(2) .EQ. 1)
+      !
+      IF ( WRITE ) THEN
+        WRITE (NDSOP)                                           &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+#ifdef W3_ASCII
+        WRITE (NDSOA,*)                                           &
+             '((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS):', &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+#endif
+      ELSE
+        READ  (NDSOP,IOSTAT=IERR)               &
+             ((PTLOC(J,I),J=1,2),I=1,NOPTS), (PTNME(I),I=1,NOPTS)
+        IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+      END IF
+      !
+#ifdef W3_T
+      WRITE (NDST,9003)
+      DO I=1, NOPTS
+        WRITE (NDST,9004) I, PTLOC(1,I), PTLOC(2,I), PTNME(I)
+      END DO
+#endif
+      !
+    END IF
+    !
+    !
+    ! TIME --------------------------------------------------------------- *
+    !
+    IF ( WRITE ) THEN
+      WRITE (NDSOP)                            TIME
+#ifdef W3_ASCII
+      WRITE (NDSOA,*) 'TIME:',                   TIME
+#endif
+    ELSE
+      READ (NDSOP,IOSTAT=IERR) TIME
+      IF (IERR.LT.0) THEN
+        IOTST  = -1
+#ifdef W3_T
+        WRITE (NDST,9011)
+#endif
+        RETURN
+      ELSE IF (IERR.GT.0) THEN
+        CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+      END IF
+    END IF
+    !
+#ifdef W3_T
+    WRITE (NDST,9010) TIME
+#endif
+    !
+    !
+    ! Loop over spectra -------------------------------------------------- *
+    !
+    DO I=1, NOPTS
+      !
+      IF ( WRITE ) THEN
+        ! set IW, II and IL to 0 because it is not used and gives &
+        ! outlier values in out_pnt.points
+        IW(I) = 0
+        II(I) = 0
+        IL(I) = 0
+        WRITE (NDSOP)                                            &
+             IW(I), II(I), IL(I), DPO(I), WAO(I), WDO(I),      &
+#ifdef W3_FLX5
+             TAUAO(I), TAUDO(I), DAIRO(I),                     &
+#endif
+#ifdef W3_SETUP
+             ZET_SETO(I),                                      &
+#endif
+             ASO(I), CAO(I), CDO(I), ICEO(I), ICEHO(I),        &
+             ICEFO(I), GRDID(I), (SPCO(J,I),J=1,NSPEC)
+#ifdef W3_ASCII
+        WRITE (NDSOA,*)                                            &
+             'IW(I), II(I), IL(I), DPO(I), WAO(I), WDO(I):',      &
+             IW(I), II(I), IL(I), DPO(I), WAO(I), WDO(I),      &
+#ifdef W3_FLX5
+             'TAUAO(I), TAUDO(I), DAIRO(I):',                     &
+             TAUAO(I), TAUDO(I), DAIRO(I),                     &
+#endif
+#ifdef W3_SETUP
+             'ZET_SETO(I):',                                      &
+             ZET_SETO(I),                                      &
+#endif
+             'ASO(I), CAO(I), CDO(I), ICEO(I), ICEHO(I):',        &
+             ASO(I), CAO(I), CDO(I), ICEO(I), ICEHO(I),        &
+             'ICEFO(I), GRDID(I), (SPCO(J,I),J=1,NSPEC):',       &
+             ICEFO(I), GRDID(I), (SPCO(J,I),J=1,NSPEC)
+#endif
+      ELSE
+        READ (NDSOP,IOSTAT=IERR)                 &
+             IW(I), II(I), IL(I), DPO(I), WAO(I), WDO(I),      &
+#ifdef W3_FLX5
+             TAUAO(I), TAUDO(I), DAIRO(I),                     &
+#endif
+#ifdef W3_SETUP
+             ZET_SETO(I),                                      &
+#endif
+             ASO(I), CAO(I), CDO(I), ICEO(I), ICEHO(I),        &
+             ICEFO(I), GRDID(I), (SPCO(J,I),J=1,NSPEC)
+        IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IOPO','',21)
+      END IF
+      !
+    END DO
+    IF (OFILES(2) .EQ. 1)  CLOSE (NDSOP)
+    !
+    RETURN
+    !
+    ! Formats
+    !
+900 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ILEGAL INXOUT VALUE: ',A/)
+901 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     MIXED READ/WRITE, LAST REQUEST: ',A/)
+902 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ILEGAL IDSTR, READ : ',A/                        &
+         '                  CHECK : ',A/)
+903 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ILEGAL VEROPT, READ : ',A/                       &
+         '                   CHECK : ',A/)
+904 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO :'/                &
+         '     ERROR IN SPECTRA, MK, MTH : ',2I8/               &
+         '              ARRAY DIMENSIONS : ',2I8/)
+    !
+1001 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO : '/               &
+         '     PREMATURE END OF FILE'/)
+1002 FORMAT (/' *** WAVEWATCH III ERROR IN W3IOPO : '/               &
+         '     ERROR IN READING FROM FILE'/                     &
+         '     IOSTAT =',I5/)
+    !
+#ifdef W3_T
+9000 FORMAT (' TEST W3IOPO : IPASS =',I4,'    INXOUT = ',A,       &
+         ' WRITE = ',L1,' UNIT =',I3/                         &
+         '               IGRD =',I3,' FEXT = ',A)
+
+9001 FORMAT (' TEST W3IOPO : OPENING NEW FILE [',A,']')
+9002 FORMAT (' TEST W3IOPO : TEST PARAMETERS:'/                   &
+         '       IDSTR : ',A/                                 &
+         '      VEROPT : ',A/                                 &
+         '      NK,NTH :',I5,I8/                              &
+         '        NOPT :',I5)
+9003 FORMAT (' TEST W3IOPO : POINT LOCATION AND ID')
+9004 FORMAT (3X,I4,2F10.2,2X,A)
+    !
+9010 FORMAT (' TEST W3IOPO : TIME  :',I9.8,I7.6)
+9011 FORMAT (' TEST W3IOPO : END OF FILE REACHED')
+    !
+9020 FORMAT (' TEST W3IOPO : POINT NR.:',I5)
+9021 FORMAT (' TEST W3IOPO :',2I4,2F6.3)
+9022 FORMAT (' TEST W3IOPO :',4I7,2X,4I2,2X,4F5.2)
+9030 FORMAT (' TEST W3IOPO :',F8.1,2(F7.2,F7.1))
+#endif
+    !/
+    !/ End of W3IOPO ----------------------------------------------------- /
+    !/
+  END SUBROUTINE W3IOPO
+  !/
+  !/ End of module W3IOPOMD -------------------------------------------- /
+  !/
+END MODULE W3IOPOMD

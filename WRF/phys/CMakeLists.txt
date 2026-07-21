@@ -1,0 +1,462 @@
+# WRF CMake Build
+
+########################################################################################################################
+# 
+# Quickly preprocess some files so that cmake can understand the module dependencies
+#
+########################################################################################################################
+wrf_c_preproc_fortran( 
+                      TARGET_NAME     module_ra_rrtmg_preproc
+                      OUTPUT_DIR      ${CMAKE_CURRENT_BINARY_DIR}/preproc/
+                      EXTENSION       ".f90"
+                      INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR}
+                      DEPENDENCIES    registry_code
+                      DEFINITIONS     ${PROJECT_COMPILE_DEFINITIONS}
+                      SOURCES         module_ra_rrtmg_lwk.F
+                                      module_ra_rrtmg_lwf.F
+                                      module_ra_rrtmg_swk.F
+                                      module_ra_rrtmg_swf.F
+                                      module_sf_clm.F
+                      )
+
+add_dependencies( ${PROJECT_NAME}_Core module_ra_rrtmg_preproc )
+
+target_sources(
+                ${PROJECT_NAME}_Core
+                PRIVATE
+                  ccpp_kind_types.F
+                  complex_number_module.F
+                  module_bep_bem_helper.F
+                  module_bl_acm.F
+                  module_bl_boulac.F
+                  module_bl_camuwpbl_driver.F
+                  module_bl_eepsilon.F
+                  module_bl_fogdes.F
+                  module_bl_gbmpbl.F
+                  module_bl_gfs.F
+                  module_bl_gfsedmf.F
+                  module_bl_gwdo.F
+                  module_bl_gwdo_gsl.F
+                  module_bl_keps.F
+                  module_bl_mfshconvpbl.F
+                  module_bl_mrf.F
+                  module_bl_myjpbl.F
+                  module_bl_myjurb.F
+                  module_bl_qnsepbl.F
+                  module_bl_shinhong.F
+                  module_bl_temf.F
+                  module_bl_ysu.F
+                  module_cam_bl_diffusion_solver.F
+                  module_cam_bl_eddy_diff.F
+                  module_cam_cldwat.F
+                  module_cam_constituents.F
+                  module_cam_error_function.F
+                  module_cam_esinti.F
+                  module_cam_gffgch.F
+                  module_cam_infnan.F
+                  module_cam_molec_diff.F
+                  module_cam_mp_cldwat2m_micro.F
+                  module_cam_mp_conv_water.F
+                  module_cam_mp_microp_aero.F
+                  module_cam_mp_modal_aero_initialize_data_phys.F
+                  module_cam_mp_ndrop.F
+                  module_cam_mp_qneg3.F
+                  module_cam_mp_radconstants.F
+                  module_cam_physconst.F
+                  module_cam_shr_const_mod.F
+                  module_cam_shr_kind_mod.F
+                  module_cam_support.F
+                  module_cam_trb_mtn_stress.F
+                  module_cam_upper_bc.F
+                  module_cam_wv_saturation.F
+                  module_checkerror.F
+                  module_cu_bmj.F
+                  module_cu_camzm.F
+                  module_cu_camzm_driver.F
+                  module_cu_g3.F
+                  module_cu_gd.F
+                  module_cu_kf.F
+                  module_cu_kfcup.F
+                  module_cu_kfeta.F
+                  module_cu_ksas.F
+                  module_cu_mskf.F
+                  module_cu_nsas.F
+                  module_cu_ntiedtke.F
+                  module_cu_osas.F
+                  module_cu_sas.F
+                  module_cu_scalesas.F
+                  module_cu_tiedtke.F
+                  module_cumulus_driver.F
+                  module_data_cam_mam_aero.F
+                  module_data_cam_mam_asect.F
+                  module_data_gocart_dust.F
+                  module_diag_afwa.F
+                  module_diag_cl.F
+                  module_diag_cordex.F
+                  module_diag_functions.F
+                  module_diag_hailcast.F
+                  module_diag_misc.F
+                  module_diag_nwp.F
+                  module_diag_pld.F
+                  module_diag_rasm.F
+                  module_diag_solar.F
+                  module_diag_trad_fields.F
+                  module_diag_zld.F
+                  module_diagvar_cordex.F
+                  module_diagnostics_driver.F
+                  module_dust_emis.F
+                  module_fdda_psufddagd.F
+                  module_fdda_spnudging.F
+                  module_fddagd_driver.F
+                  module_fddaobs_driver.F
+                  module_fddaobs_rtfdda.F
+                  module_fire_emis.F
+                  module_firebrand_spotting.F
+                  module_firebrand_spotting_mpi.F
+                  module_fr_fire_atm.F
+                  module_fr_fire_core.F
+                  module_fr_fire_driver.F
+                  module_fr_fire_driver_wrf.F
+                  module_fr_fire_model.F
+                  module_fr_fire_phys.F
+                  module_fr_fire_util.F
+                  module_gfs_funcphys.F
+                  module_gfs_machine.F
+                  module_gfs_physcons.F
+                  module_gocart_coupling.F
+                  module_irrigation.F
+                  module_lightning_driver.F
+                  module_ltng_cpmpr92z.F
+                  module_ltng_crmpr92.F
+                  module_ltng_iccg.F
+                  module_ltng_lpi.F
+                  module_calc_lpi_new.F
+                  module_ltng_pe.F
+                  module_ltng_strokes.F
+                  module_madwrf.F
+                  module_microphysics_driver.F
+                  module_microphysics_zero_out.F
+                  module_mixactivate.F
+                  module_mp_cammgmp_driver.F
+                  module_mp_etanew.F
+                  module_mp_fast_sbm.F
+                  module_mp_fer_hires.F
+                  module_mp_full_sbm.F
+                  module_mp_gsfcgce.F
+                  module_mp_gsfcgce_4ice_nuwrf.F
+                  module_mp_jensen_ishmael.F
+                  module_mp_kessler.F
+                  module_mp_lin.F
+                  module_mp_milbrandt2mom.F
+                  module_mp_morr_two_moment.F
+                  module_mp_morr_two_moment_aero.F
+                  module_mp_nssl_2mom.F
+                  module_mp_ntu.F
+                  module_mp_p3.F
+                  module_mp_radar.F
+                  module_mp_rcon.F
+                  module_mp_SBM_polar_radar.F
+                  module_mp_sbu_ylin.F
+                  module_mp_thompson.F
+                  module_mp_udm.F
+                  module_mp_wdm5.F
+                  module_mp_wdm6.F
+                  module_mp_wdm7.F
+                  module_mp_wsm3.F
+                  module_mp_wsm5.F
+                  module_mp_wsm6.F
+                  module_mp_wsm6r.F
+                  module_mp_wsm7.F
+                  module_pbl_driver.F
+                  module_physics_addtendc.F
+                  module_physics_init.F
+                  module_progtm.F
+                  module_ra_aerosol.F
+                  module_ra_cam.F
+                  module_ra_cam_support.F
+                  module_ra_clWRF_support.F
+                  module_ra_eclipse.F
+                  module_ra_effective_radius.F
+                  module_ra_farms.F
+                  module_ra_flg.F
+                  module_ra_gfdleta.F
+                  module_ra_goddard.F
+                  module_ra_gsfcsw.F
+                  module_ra_hs.F
+                  module_ra_rrtm.F
+                  module_ra_rrtmg_aero_optical_util_cmaq.F
+                  module_ra_rrtmg_lw.F
+                  # module_ra_rrtmg_lwf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwf.f90
+                  # module_ra_rrtmg_lwk.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_lwk.f90
+                  module_ra_rrtmg_sw.F
+                  # module_ra_rrtmg_swf.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swf.f90
+                  # module_ra_rrtmg_swk.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_ra_rrtmg_swk.f90
+
+                  module_ra_sw.F
+                  module_radiation_driver.F
+                  module_sf_3dpwp.F
+                  module_sf_bem.F
+                  module_sf_bep.F
+                  module_sf_bep_bem.F
+                  # module_sf_clm.F
+                  ${CMAKE_CURRENT_BINARY_DIR}/preproc/module_sf_clm.f90
+                  module_sf_ctsm.F
+                  module_sf_exchcoef.F
+                  module_sf_fogdes.F
+                  module_sf_gecros.F
+                  module_sf_gfdl.F
+                  module_sf_gfs.F
+                  module_sf_idealscmsfclay.F
+                  module_sf_lake.F
+                  module_sf_myjsfc.F
+                  module_sf_noah_seaice.F
+                  module_sf_noah_seaice_drv.F
+                  module_sf_noahdrv.F
+                  module_sf_noahlsm.F
+                  module_sf_noahlsm_glacial_only.F
+                  # NoahMP Code
+                  noahmp/drivers/wrf/NoahmpWRFinitMod.F90
+                  noahmp/drivers/wrf/NoahmpWRFmainMod.F90
+                  noahmp/drivers/wrf/NoahmpUrbanDriverMainMod.F90
+                  noahmp/drivers/wrf/NoahmpGroundwaterInitMod.F90
+                  noahmp/drivers/wrf/NoahmpSnowInitMod.F90
+                  noahmp/drivers/wrf/NoahmpInitMainMod.F90
+                  noahmp/drivers/wrf/NoahmpDriverMainMod.F90
+                  noahmp/drivers/wrf/NoahmpIOVarType.F90
+                  noahmp/drivers/wrf/NoahmpIOVarInitMod.F90
+                  noahmp/drivers/wrf/NoahmpReadTableMod.F90
+                  noahmp/drivers/wrf/ConfigVarOutTransferMod.F90
+                  noahmp/drivers/wrf/ForcingVarOutTransferMod.F90
+                  noahmp/drivers/wrf/EnergyVarOutTransferMod.F90
+                  noahmp/drivers/wrf/WaterVarOutTransferMod.F90
+                  noahmp/drivers/wrf/BiochemVarOutTransferMod.F90
+                  noahmp/drivers/wrf/ConfigVarInTransferMod.F90
+                  noahmp/drivers/wrf/ForcingVarInTransferMod.F90
+                  noahmp/drivers/wrf/EnergyVarInTransferMod.F90
+                  noahmp/drivers/wrf/WaterVarInTransferMod.F90
+                  noahmp/drivers/wrf/BiochemVarInTransferMod.F90
+                  noahmp/drivers/wrf/GroundWaterMmfMod.F90
+                  noahmp/drivers/wrf/PedoTransferSR2006Mod.F90
+                  noahmp/utility/Machine.F90
+                  noahmp/utility/CheckNanMod.F90
+                  noahmp/utility/PiecewiseLinearInterp1dMod.F90
+                  noahmp/src/ConstantDefineMod.F90
+                  noahmp/src/ConfigVarType.F90
+                  noahmp/src/ForcingVarType.F90
+                  noahmp/src/EnergyVarType.F90
+                  noahmp/src/WaterVarType.F90
+                  noahmp/src/BiochemVarType.F90
+                  noahmp/src/NoahmpVarType.F90
+                  noahmp/src/ConfigVarInitMod.F90
+                  noahmp/src/ForcingVarInitMod.F90
+                  noahmp/src/EnergyVarInitMod.F90
+                  noahmp/src/WaterVarInitMod.F90
+                  noahmp/src/BiochemVarInitMod.F90
+                  noahmp/src/CanopyHydrologyMod.F90
+                  noahmp/src/GroundWaterTopModelMod.F90
+                  noahmp/src/IrrigationFloodMod.F90
+                  noahmp/src/IrrigationInfilPhilipMod.F90
+                  noahmp/src/IrrigationMicroMod.F90
+                  noahmp/src/MatrixSolverTriDiagonalMod.F90
+                  noahmp/src/RunoffSubSurfaceDrainageMod.F90
+                  noahmp/src/RunoffSubSurfaceEquiWaterTableMod.F90
+                  noahmp/src/RunoffSubSurfaceGroundWaterMod.F90
+                  noahmp/src/RunoffSubSurfaceShallowMmfMod.F90
+                  noahmp/src/RunoffSurfaceBatsMod.F90
+                  noahmp/src/RunoffSurfaceDynamicVicMod.F90
+                  noahmp/src/RunoffSurfaceExcessDynamicVicMod.F90
+                  noahmp/src/RunoffSurfaceFreeDrainMod.F90
+                  noahmp/src/RunoffSurfaceTopModelEquiMod.F90
+                  noahmp/src/RunoffSurfaceTopModelGrdMod.F90
+                  noahmp/src/RunoffSurfaceTopModelMmfMod.F90
+                  noahmp/src/RunoffSurfaceVicMod.F90
+                  noahmp/src/RunoffSurfaceXinAnJiangMod.F90
+                  noahmp/src/RunoffSurfaceWetlandMod.F90
+                  noahmp/src/WetlandWaterZhang22Mod.F90
+                  noahmp/src/ShallowWaterTableMmfMod.F90
+                  noahmp/src/SnowfallBelowCanopyMod.F90
+                  noahmp/src/SnowLayerCombineMod.F90
+                  noahmp/src/SnowLayerDivideMod.F90
+                  noahmp/src/SnowLayerWaterComboMod.F90
+                  noahmp/src/SnowpackCompactionMod.F90
+                  noahmp/src/SnowpackCompactionAR24Mod.F90
+                  noahmp/src/SnowpackHydrologyMod.F90
+                  noahmp/src/SnowWaterMainMod.F90
+                  noahmp/src/SoilHydraulicPropertyMod.F90
+                  noahmp/src/SoilMoistureSolverMod.F90
+                  noahmp/src/SoilWaterDiffusionRichardsMod.F90
+                  noahmp/src/SoilWaterInfilGreenAmptMod.F90
+                  noahmp/src/SoilWaterInfilPhilipMod.F90
+                  noahmp/src/SoilWaterInfilSmithParlangeMod.F90
+                  noahmp/src/SoilWaterMainMod.F90
+                  noahmp/src/TileDrainageEquiDepthMod.F90
+                  noahmp/src/TileDrainageHooghoudtMod.F90
+                  noahmp/src/TileDrainageSimpleMod.F90
+                  noahmp/src/WaterMainMod.F90
+                  noahmp/src/WaterTableDepthSearchMod.F90
+                  noahmp/src/WaterTableEquilibriumMod.F90
+                  noahmp/src/IrrigationTriggerMod.F90
+                  noahmp/src/IrrigationSprinklerMod.F90
+                  noahmp/src/CanopyWaterInterceptMod.F90
+                  noahmp/src/PrecipitationHeatAdvectMod.F90
+                  noahmp/src/SnowThermalPropertyMod.F90
+                  noahmp/src/SoilThermalPropertyMod.F90
+                  noahmp/src/GroundThermalPropertyMod.F90
+                  noahmp/src/EnergyMainMod.F90
+                  noahmp/src/NoahmpMainMod.F90
+                  noahmp/src/SnowAerosolSnicarMod.F90
+                  noahmp/src/SnowAgingBatsMod.F90
+                  noahmp/src/SnowAgingSnicarMod.F90
+                  noahmp/src/SnowAlbedoBatsMod.F90
+                  noahmp/src/SnowAlbedoClassMod.F90
+                  noahmp/src/SnowAlbedoSnicarMod.F90
+                  noahmp/src/SnowFreshRadiusMod.F90
+                  noahmp/src/SnowInputSnicarMod.F90
+                  noahmp/src/SnowRadiationSnicarMod.F90
+                  noahmp/src/GroundAlbedoMod.F90
+                  noahmp/src/CanopyRadiationTwoStreamMod.F90
+                  noahmp/src/SurfaceAlbedoMod.F90
+                  noahmp/src/SurfaceRadiationMod.F90
+                  noahmp/src/HumiditySaturationMod.F90
+                  noahmp/src/ResistanceAboveCanopyChen97Mod.F90
+                  noahmp/src/ResistanceAboveCanopyMostMod.F90
+                  noahmp/src/ResistanceCanopyStomataBallBerryMod.F90
+                  noahmp/src/ResistanceCanopyStomataJarvisMod.F90
+                  noahmp/src/ResistanceLeafToGroundMod.F90
+                  noahmp/src/VaporPressureSaturationMod.F90
+                  noahmp/src/SurfaceEnergyFluxVegetatedMod.F90
+                  noahmp/src/ResistanceBareGroundChen97Mod.F90
+                  noahmp/src/ResistanceBareGroundMostMod.F90
+                  noahmp/src/SurfaceEnergyFluxBareGroundMod.F90
+                  noahmp/src/SoilSnowTemperatureMainMod.F90
+                  noahmp/src/SoilSnowTemperatureSolverMod.F90
+                  noahmp/src/SoilSnowThermalDiffusionMod.F90
+                  noahmp/src/SoilSnowWaterPhaseChangeMod.F90
+                  noahmp/src/SoilWaterSupercoolKoren99Mod.F90
+                  noahmp/src/SoilWaterSupercoolNiu06Mod.F90
+                  noahmp/src/SnowCoverGroundNiu07Mod.F90
+                  noahmp/src/SnowCoverGroundAR25Mod.F90
+                  noahmp/src/GroundRoughnessPropertyMod.F90
+                  noahmp/src/SurfaceEmissivityMod.F90
+                  noahmp/src/PsychrometricVariableMod.F90
+                  noahmp/src/ResistanceGroundEvaporationMod.F90
+                  noahmp/src/SoilWaterTranspirationMod.F90
+                  noahmp/src/AtmosForcingMod.F90
+                  noahmp/src/PhenologyMainMod.F90
+                  noahmp/src/BiochemCropMainMod.F90
+                  noahmp/src/BiochemNatureVegMainMod.F90
+                  noahmp/src/CarbonFluxCropMod.F90
+                  noahmp/src/CarbonFluxNatureVegMod.F90
+                  noahmp/src/CropGrowDegreeDayMod.F90
+                  noahmp/src/CropPhotosynthesisMod.F90
+                  noahmp/src/IrrigationPrepareMod.F90
+                  noahmp/src/BalanceErrorCheckMod.F90
+                  noahmp/src/GeneralInitMod.F90
+                  noahmp/src/BalanceErrorCheckGlacierMod.F90
+                  noahmp/src/EnergyMainGlacierMod.F90
+                  noahmp/src/GeneralInitGlacierMod.F90
+                  noahmp/src/GlacierIceThermalPropertyMod.F90
+                  noahmp/src/GlacierPhaseChangeMod.F90
+                  noahmp/src/GlacierTemperatureMainMod.F90
+                  noahmp/src/GlacierTemperatureSolverMod.F90
+                  noahmp/src/GlacierThermalDiffusionMod.F90
+                  noahmp/src/GroundAlbedoGlacierMod.F90
+                  noahmp/src/GroundRoughnessPropertyGlacierMod.F90
+                  noahmp/src/GroundThermalPropertyGlacierMod.F90
+                  noahmp/src/NoahmpMainGlacierMod.F90
+                  noahmp/src/PrecipitationHeatAdvectGlacierMod.F90
+                  noahmp/src/PsychrometricVariableGlacierMod.F90
+                  noahmp/src/ResistanceGroundEvaporationGlacierMod.F90
+                  noahmp/src/SnowCoverGlacierMod.F90
+                  noahmp/src/SnowWaterMainGlacierMod.F90
+                  noahmp/src/SnowpackHydrologyGlacierMod.F90
+                  noahmp/src/SurfaceAlbedoGlacierMod.F90
+                  noahmp/src/SurfaceEmissivityGlacierMod.F90
+                  noahmp/src/SurfaceEnergyFluxGlacierMod.F90
+                  noahmp/src/SurfaceRadiationGlacierMod.F90
+                  noahmp/src/WaterMainGlacierMod.F90
+
+                  module_sf_ocean_driver.F
+                  module_sf_oml.F
+                  module_sf_pxlsm.F
+                  module_sf_pxlsm_data.F
+                  module_sf_pxsfclay.F
+                  module_sf_qnsesfc.F
+                  module_sf_ruclsm.F
+                  module_sf_scmflux.F
+                  module_sf_scmskintemp.F
+                  module_sf_sfcdiags.F
+                  module_sf_sfcdiags_ruclsm.F
+                  module_sf_sfclay.F
+                  module_sf_sfclayrev.F
+                  module_sf_slab.F
+                  module_sf_ssib.F
+                  module_sf_sstskin.F
+                  module_sf_temfsfclay.F
+                  module_sf_tmnupdate.F
+                  module_sf_urban.F
+                  module_shallowcu_driver.F
+                  module_shcu_camuwshcu.F
+                  module_shcu_camuwshcu_driver.F
+                  module_shcu_deng.F
+                  module_shcu_grims.F
+                  module_shcu_nscv.F
+                  module_surface_driver.F
+                  module_wind_fitch.F
+                  module_wind_mav.F
+
+                  # Shared physics
+                  physics_mmm/bl_gwdo.F90
+                  physics_mmm/bl_ysu.F90
+                  physics_mmm/bl_shinhong.F90
+                  physics_mmm/cu_ntiedtke.F90
+                  physics_mmm/module_libmassv.F90
+                  physics_mmm/mp_radar.F90
+                  physics_mmm/mp_wsm6.F90
+                  physics_mmm/mp_wsm6_effectRad.F90
+                  physics_mmm/sf_sfclayrev.F90
+
+                  # MYNN-SFC
+                  MYNN-SFC/WRF/module_sf_mynnsfc_common.F90
+                  MYNN-SFC/WRF/module_sf_mynnsfc_driver.F90
+                  MYNN-SFC/module_sf_mynnsfc_land.F90
+                  MYNN-SFC/module_sf_mynnsfc_water.F90
+                  MYNN-SFC/module_sf_mynnsfc_ice.F90
+
+                  # MYNN-EDMF
+                  MYNN-EDMF/module_bl_mynnedmf.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
+                  MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
+
+                  # TEMPO
+                  TEMPO/src/module_mp_tempo_cfgs.F90
+                  TEMPO/src/module_mp_tempo_params.F90
+                  TEMPO/src/module_mp_tempo_utils.F90
+                  TEMPO/src/module_mp_tempo_diags.F90
+                  TEMPO/src/module_mp_tempo_ml.F90
+                  TEMPO/src/module_mp_tempo_aerosols.F90
+                  TEMPO/src/module_mp_tempo_main.F90
+                  TEMPO/src/module_mp_tempo_driver.F90
+                  # GFL
+                  GFL/module_cu_gfl_deep.F90
+                  GFL/module_cu_gfl_sh.F90
+                  GFL/WRF/module_cu_gfl_common.F90
+                  GFL/WRF/module_cu_gfl_wrf.F90
+                  )
+
+
+target_include_directories( 
+                            ${PROJECT_NAME}_Core
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}
+                            )
+
+if ( ${ENABLE_CFBM} )
+  set( DM_PARALLEL ${USE_MPI} )
+  set( OPENMP ${USE_OPENMP} )
+  add_subdirectory( fire_behavior )
+endif()

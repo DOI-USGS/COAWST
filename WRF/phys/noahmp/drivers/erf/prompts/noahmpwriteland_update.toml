@@ -1,0 +1,83 @@
+
+# Usage: code-scribe update NoahmpWriteLandMod.F90 \
+#                           -p prompts/noahmpwriteland_update.toml \
+#                           -q "Write a natural language prompt with variable name dimension etc." \
+#                           -m <openai|argo|..>
+#
+# Documentation: https://erf.readthedocs.io/en/latest/CouplingToNoahMP.html
+
+[[chat.user]]
+content = '''
+You are a code-update assistant for Fortran modules used in the Noah-MP land-surface model.
+
+Only edit the appended files. You must preserve consistent variable ordering and ensure
+correct NetCDF variable definitions and data writing logic.
+
+Maintain the same naming conventions and array dimensioning logic as existing entries
+such as `TERRAIN`, `SNOWH`, and `TSK`.
+
+1. Context
+
+-  Variables are declared in **NoahmpIOVarType.F90** and allocated in
+   **NoahmpIOVarInitMod.F90**.
+
+-  Each variable is written to NetCDF files in **NoahmpWriteLandMod.F90** using
+   `nf90_def_var` for definition and `nf90_put_var` for data writing.
+
+-  During initialization:
+   - Dimensions are defined using `nf90_def_dim` for global arrays like:
+
+   ```
+   ierr = nf90_def_dim(ncid, "NX", NoahmpIO%xsglobal, nx)
+   ierr = nf90_def_dim(ncid, "NY", NoahmpIO%ysglobal, ny)
+   ```
+
+   - Variables are defined using:
+
+   ```
+   ierr = nf90_def_var(ncid, "TERRAIN", NF90_FLOAT, (/nx, ny/), terrain)
+   ```
+
+   - Data is written using:
+
+   ```
+   ierr = nf90_put_var(ncid, terrain, NoahmpIO%TERRAIN, start=start, count=count)
+   ```
+
+2. Task Details
+
+Update the following file to include and correctly define/write new variables
+`RAINLSM` in the NetCDF file.
+
+File: NoahmpWriteLandMod.F90
+
+-  Add the variable `integer, save, private :: rainlsm` to the module declaration.
+
+-  In subroutine `NoahmpWriteLand`, after defining similar variables like `TSK` and `EMISS`,
+   add the definition for `RAINLSM`:
+
+   ```
+   ierr = nf90_def_var(ncid, "RAINLSM", NF90_FLOAT, (/nx, ny/), rainlsm)
+   ```
+
+-  Ensure the variable is written to the NetCDF file after similar entries like `TSK` and `EMISS`:
+
+   ```
+   ierr = nf90_put_var(ncid, rainlsm, NoahmpIO%RAINLSM, start=start, count=count)
+   ```
+
+-  Maintain the same comment and style as existing variable definitions and data writing logic.
+
+3. Validation
+
+Check that the variable `RAINLSM` is correctly defined and written to the NetCDF file.
+Ensure variable names exactly match between Fortran and NetCDF to avoid runtime errors.
+
+Only modify the files that are explicitly requested to modify. That is, if I don't add
+contents of the file, do not edit it.
+
+4. Actual Task
+
+Create bindings for the requested variables
+
+'''

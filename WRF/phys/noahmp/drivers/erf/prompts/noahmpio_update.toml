@@ -1,0 +1,114 @@
+# Usage: code-scribe update NoahmpIO.H NoahmpIO.cpp NoahpmIO_fi.F90 \
+#                           -p prompts/noahmpio_update.toml \
+#                           -q "Write a natural language prompt with variable name dimension etc." \
+#                           -m <openai|argo|..>
+#
+# Documentation: https://erf.readthedocs.io/en/latest/CouplingToNoahMP.html
+
+[[chat.user]]
+content = '''
+You are a code-update assistant for Fortran–C interoperability interfaces used
+in the Noah-MP land-surface model.
+
+Only edit the appended files. You must preserve consistent variable ordering between
+the C++ struct (`NoahmpIO_type_fi`) and the Fortran bind(C) type (`NoahmpIO_type_fi`)
+to prevent segmentation faults.
+
+Maintain the same naming conventions and pointer mapping logic as existing entries
+such as `U_PHY`, `V_PHY`, and `QV_CURR`.
+
+1. Context
+
+-  Variables are declared in **NoahmpIOVarType.F90** and allocated in
+   **NoahmpIOVarInitMod.F90**.
+
+-  Each variable has a pointer representation in the **Fortran bind(C)** type and
+   a mirrored `double*` pointer in the C++ struct.
+
+-  During initialization:
+   - Fortran code allocates arrays like:
+
+   ```
+   if (.not. allocated(NoahmpIO%T_PHY)) allocate(NoahmpIO%T_PHY(XSTART:XEND,KMS:KME,YSTART:YEND))
+   if (.not. allocated(NoahmpIO%TSK)) allocate(NoahmpIO%TSK(XSTART:XEND,YSTART:YEND))
+   ```
+
+   - The Fortran interface then binds C pointers using:
+
+   ```
+   NoahmpIO_cptr%T_PHY = C_LOC(NoahmpIO_vect(level)%NoahmpIO(bid)%T_PHY)
+   NoahmpIO_cptr%TSK   = C_LOC(NoahmpIO_vect(level)%NoahmpIO(bid)%TSK)
+   ```
+
+   - On the C++ side, these are wrapped into `NoahArray3D` or `NoahArray2D` objects respectively.
+
+2. Task Details
+
+Update the following files to include and correctly link new variables
+`T_PHY` and `TSK` between the C++ and Fortran layers.
+
+File: NoahmpIO.H
+
+-  Add pointer members `double* T_PHY = nullptr;` and `double* TSK = nullptr;`
+   in `struct NoahmpIO_type_fi` immediately after similar fields like `U_PHY` and `V_PHY`.
+
+-  Add corresponding `NoahArray3D<double> T_PHY;` and `NoahArray2D<double> TSK;`
+   members to the `class NoahmpIO_type`.
+
+-  Ensure constructor and initialization ordering are consistent with the existing pattern.
+
+File: NoahmpIO.cpp
+
+-  In `NoahmpIO_type::VarInitDefault()`, after calling `NoahmpIOVarInitDefault_fi(&fptr);`,
+   add initialization for `T_PHY` and `TSK` as:
+
+   ```
+   T_PHY = NoahArray3D<double>(fptr.T_PHY, {xstart, kms, ystart}, {xend, kme, yend});
+   TSK   = NoahArray2D<double>(fptr.TSK, {xstart, ystart}, {xend, yend});
+   ```
+
+-  Maintain the same comment and style as existing array initializations.
+
+File: NoahmpIO_fi.F90
+
+-  Ensure type NoahmpIO_type_fi includes type(C_PTR) :: T_PHY, TSK in the correct
+   location (matching the order in NoahmpIO_type_fi from C++).
+
+-  Within subroutine NoahmpIOVarInitDefault_fi, after C_LOC calls for similar arrays, include:
+
+   ```
+   NoahmpIO_cptr%T_PHY = C_LOC(NoahmpIO_vect(level)%NoahmpIO(bid)%T_PHY)
+   NoahmpIO_cptr%TSK   = C_LOC(NoahmpIO_vect(level)%NoahmpIO(bid)%TSK)
+   ```
+
+File: NoahmpIOVarType.F90
+
+-  Update the variable declarations in NoahmpIO_type from:
+
+   ```
+   real(kind=kind_noahmp), allocatable, dimension(:,:)    ::  TSK
+   real(kind=kind_noahmp), allocatable, dimension(:,:,:)  ::  T_PHY
+   ```
+
+   to:
+
+   ```
+   real(kind=C_DOUBLE),    allocatable, dimension(:,:)    ::  TSK
+   real(kind=C_DOUBLE),    allocatable, dimension(:,:,:)  ::  T_PHY
+   ```
+
+   Note the spaces to align everything at right locations.
+
+3. Validation
+
+Check that both NoahmpIO_type_fi definitions (C++ and Fortran) have identical ordering.
+Ensure variable names exactly match between Fortran and C++ to avoid memory mapping issues.
+
+Only modify the files that are explicitly requested to modify. That is, if I don't add
+contents of the file, do not edit it.
+
+4. Actual Task
+
+Create bindings for the requsted variables
+
+'''
