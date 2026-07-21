@@ -1,0 +1,750 @@
+<!-- -*- mode: jinja2 -*- -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="Documentation for TEMPO Microphysics">
+    <meta name="author" content="Anders A. Jensen" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>max_hail_diam &ndash; TEMPO Microphysics</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Font Awesome -->
+    <link href="../css/fontawesome.min.css" rel="stylesheet">
+    <link href="../css/brands.min.css" rel="stylesheet">
+    <link href="../css/regular.min.css" rel="stylesheet">
+    <link href="../css/solid.min.css" rel="stylesheet">
+    <link href="../css/v4-font-face.min.css" rel="stylesheet">
+    <link href="../css/v4-shims.min.css" rel="stylesheet">
+    <!-- MathJax -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { equationNumbers: { autoNumber: "AMS" } }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async
+            integrity="sha256-DViIOMYdwlM/axqoGDPeUyf0urLoHMN4QACBKyB58Uw=" crossorigin="anonymous"></script>
+    <!-- Other scripts and stylesheets -->
+    <link href="../css/local.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <script src="../js/svg-pan-zoom.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="container-fluid mb-sm-4 mb-xl-2">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="../index.html">TEMPO Microphysics </a>
+          <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
+                  aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon">
+          </button>
+
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="../lists/files.html">Source Files</a>
+                  </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/modules.html">Modules</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/procedures.html">Procedures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/types.html">Derived Types</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/programs.html">Programs</a>
+                </li>
+            </ul>
+              <div class="d-flex align-items-end flex-grow-1">
+                <form action="../search.html" role="search" class="ms-auto">
+                  <input type="text" class="form-control" aria-label="Search" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+                </form>
+              </div>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+  <div class="row">
+    <h1>max_hail_diam
+      <small>Subroutine</small>
+      
+    </h1>
+      <div class="container p-2 mb-4 bg-light border rounded-3">
+    <div class="row align-items-center justify-content-between" id="info-bar">
+      <div class="col">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+
+            <li class="list-inline-item" id="statements"><i class="fa fa-list-ol"></i>
+              <a data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                 title=" 0.8% of total for procedures.">35 statements</a>
+            </li>
+
+            <li class="list-inline-item" id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/module_mp_tempo_diags.F90"> Source File</a>
+            </li>
+        </ul>
+      </div>
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-end mb-0">
+                <li class="breadcrumb-item"><a href='../sourcefile/module_mp_tempo_diags.f90.html'>module_mp_tempo_diags.F90</a></li>
+                <li class="breadcrumb-item"><a href='../module/module_mp_tempo_diags.html'>module_mp_tempo_diags</a></li>
+            <li class="breadcrumb-item active" aria-current="page">max_hail_diam</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Enable Bootstrap tooltips
+    (function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    })();
+  </script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+      <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  </div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>public  subroutine max_hail_diam(rho, rg, ng, ilamg, idx, max_hail_diameter)  
+</h2>
+        <div class="card mb-4">
+      <h3 class="card-header card-title bg-light">Uses</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <ul class="list-inline">
+                  <li class="list-inline-item"><a href='../module/module_mp_tempo_params.html'>module_mp_tempo_params</a></li>
+              </ul>
+            </li>
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: proc~~max_hail_diam~~UsesGraph Pages: 1 -->
+<svg id="procmax_hail_diamUsesGraph" width="404pt" height="154pt"
+ viewBox="0.00 0.00 404.00 154.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~max_hail_diam~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 149.77)">
+<title>proc~~max_hail_diam~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-149.77 400.06,-149.77 400.06,4 -4,4"/>
+<!-- proc~max_hail_diam -->
+<g id="proc~~max_hail_diam~~UsesGraph_node1" class="node">
+<title>proc~max_hail_diam</title>
+<polygon fill="none" stroke="black" points="396.06,-83.77 312.54,-83.77 312.54,-61 396.06,-61 396.06,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="354.3" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50">max_hail_diam</text>
+</g>
+<!-- module~module_mp_tempo_params -->
+<g id="proc~~max_hail_diam~~UsesGraph_node2" class="node">
+<title>module~module_mp_tempo_params</title>
+<g id="a_proc~~max_hail_diam~~UsesGraph_node2"><a xlink:href="../module/module_mp_tempo_params.html" xlink:title="module_mp_tempo_params">
+<polygon fill="#337ab7" stroke="#337ab7" points="276.54,-83.77 130.77,-83.77 130.77,-61 276.54,-61 276.54,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="203.66" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_params</text>
+</a>
+</g>
+</g>
+<!-- proc~max_hail_diam&#45;&gt;module~module_mp_tempo_params -->
+<g id="proc~~max_hail_diam~~UsesGraph_edge1" class="edge">
+<title>proc~max_hail_diam&#45;&gt;module~module_mp_tempo_params</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.29,-72.39C304.73,-72.39 296.58,-72.39 288.28,-72.39"/>
+<polygon fill="#000000" stroke="#000000" points="288.42,-68.89 278.42,-72.39 288.42,-75.89 288.42,-68.89"/>
+</g>
+<!-- ccpp_kind_types -->
+<g id="proc~~max_hail_diam~~UsesGraph_node3" class="node">
+<title>ccpp_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="92.89,-145.77 1.88,-145.77 1.88,-123 92.89,-123 92.89,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ccpp_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;ccpp_kind_types -->
+<g id="proc~~max_hail_diam~~UsesGraph_edge2" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;ccpp_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M173.27,-84.19C149.23,-93.86 114.96,-107.63 88.41,-118.3"/>
+<polygon fill="#000000" stroke="#000000" points="87.3,-114.97 79.32,-121.95 89.91,-121.47 87.3,-114.97"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="proc~~max_hail_diam~~UsesGraph_node4" class="node">
+<title>iso_fortran_env</title>
+<g id="a_proc~~max_hail_diam~~UsesGraph_node4"><a xlink:href="http://fortranwiki.org/fortran/show/iso_fortran_env" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="90.27,-104.77 4.5,-104.77 4.5,-82 90.27,-82 90.27,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;iso_fortran_env -->
+<g id="proc~~max_hail_diam~~UsesGraph_edge3" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-82.21C120.89,-83.51 111.2,-84.83 101.99,-86.09"/>
+<polygon fill="#000000" stroke="#000000" points="101.58,-82.61 92.15,-87.43 102.53,-89.55 101.58,-82.61"/>
+</g>
+<!-- module~machine -->
+<g id="proc~~max_hail_diam~~UsesGraph_node5" class="node">
+<title>module~machine</title>
+<g id="a_proc~~max_hail_diam~~UsesGraph_node5"><a xlink:href="../module/machine.html" xlink:title="machine">
+<polygon fill="#337ab7" stroke="#337ab7" points="74.38,-63.77 20.38,-63.77 20.38,-41 74.38,-41 74.38,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">machine</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;module~machine -->
+<g id="proc~~max_hail_diam~~UsesGraph_edge4" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;module~machine</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-63.03C115.08,-61.03 99.41,-59 85.95,-57.25"/>
+<polygon fill="#000000" stroke="#000000" points="86.61,-53.81 76.25,-56 85.71,-60.75 86.61,-53.81"/>
+</g>
+<!-- mpas_kind_types -->
+<g id="proc~~max_hail_diam~~UsesGraph_node6" class="node">
+<title>mpas_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="94.77,-22.77 0,-22.77 0,0 94.77,0 94.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpas_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;mpas_kind_types -->
+<g id="proc~~max_hail_diam~~UsesGraph_edge5" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;mpas_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M172.91,-60.62C148.98,-51.16 115.11,-37.77 88.73,-27.34"/>
+<polygon fill="#000000" stroke="#000000" points="90.3,-24.19 79.71,-23.77 87.72,-30.7 90.3,-24.19"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsesGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsesGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <p>estimates maximmum hail diameter [mm] using a binned approach</p>
+<p>see <a href="https://doi.org/10.1175/MWR-D-21-0319.1">Jensen et al. (2023)</a></p>
+
+
+    <h3>Arguments</h3>
+        <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rho~24"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rho</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rg~14"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rg</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ng~18"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ng</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamg~12"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilamg</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-idx~15"></span>
+              integer,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>idx</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-max_hail_diameter~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>max_hail_diameter</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <br>
+    <div class="card">
+      <div class="card-header">
+  <h3 class="card-title">Called by</h3>
+      </div>
+      <div class="card-body">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: proc~~max_hail_diam~~CalledByGraph Pages: 1 -->
+<svg id="procmax_hail_diamCalledByGraph" width="641pt" height="229pt"
+ viewBox="0.00 0.00 641.00 229.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~max_hail_diam~~CalledByGraph" class="graph" transform="scale(0.972907 0.972907) rotate(0) translate(4 231.77)">
+<title>proc~~max_hail_diam~~CalledByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-231.77 654.85,-231.77 654.85,4 -4,4"/>
+<!-- proc~max_hail_diam -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node1" class="node">
+<title>proc~max_hail_diam</title>
+<polygon fill="none" stroke="black" points="650.85,-124.77 567.33,-124.77 567.33,-102 650.85,-102 650.85,-124.77"/>
+<text xml:space="preserve" text-anchor="middle" x="609.09" y="-109.04" font-family="Helvetica,sans-Serif" font-size="10.50">max_hail_diam</text>
+</g>
+<!-- proc~tempo_main -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node2" class="node">
+<title>proc~tempo_main</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node2"><a xlink:href="../proc/tempo_main.html" xlink:title="tempo_main">
+<polygon fill="#d9534f" stroke="#d9534f" points="531.33,-124.77 460.56,-124.77 460.56,-102 531.33,-102 531.33,-124.77"/>
+<text xml:space="preserve" text-anchor="middle" x="495.95" y="-109.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tempo_main</text>
+</a>
+</g>
+</g>
+<!-- proc~tempo_main&#45;&gt;proc~max_hail_diam -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge1" class="edge">
+<title>proc~tempo_main&#45;&gt;proc~max_hail_diam</title>
+<path fill="none" stroke="#000000" d="M531.81,-113.39C539.42,-113.39 547.64,-113.39 555.77,-113.39"/>
+<polygon fill="#000000" stroke="#000000" points="555.61,-116.89 565.61,-113.39 555.61,-109.89 555.61,-116.89"/>
+</g>
+<!-- proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node3" class="node">
+<title>proc~tempo_run</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node3"><a xlink:href="../proc/tempo_run.html" xlink:title="tempo_run">
+<polygon fill="#d9534f" stroke="#d9534f" points="424.56,-124.77 361.29,-124.77 361.29,-102 424.56,-102 424.56,-124.77"/>
+<text xml:space="preserve" text-anchor="middle" x="392.93" y="-109.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tempo_run</text>
+</a>
+</g>
+</g>
+<!-- proc~tempo_run&#45;&gt;proc~tempo_main -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge2" class="edge">
+<title>proc~tempo_run&#45;&gt;proc~tempo_main</title>
+<path fill="none" stroke="#000000" d="M425.06,-113.39C432.62,-113.39 440.87,-113.39 448.97,-113.39"/>
+<polygon fill="#000000" stroke="#000000" points="448.7,-116.89 458.7,-113.39 448.7,-109.89 448.7,-116.89"/>
+</g>
+<!-- proc~test_cloud_number_aerosolaware -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node4" class="node">
+<title>proc~test_cloud_number_aerosolaware</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node4"><a xlink:href="../proc/test_cloud_number_aerosolaware.html" xlink:title="test_cloud_number_aerosolaware">
+<polygon fill="#d9534f" stroke="#d9534f" points="313.29,-227.77 139.77,-227.77 139.77,-205 313.29,-205 313.29,-227.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-212.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_cloud_number_aerosolaware</text>
+</a>
+</g>
+</g>
+<!-- proc~test_cloud_number_aerosolaware&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge3" class="edge">
+<title>proc~test_cloud_number_aerosolaware&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M306.23,-204.51C312.91,-202.02 319.37,-199.01 325.29,-195.38 349.46,-180.57 368.73,-153.76 380.21,-134.84"/>
+<polygon fill="#000000" stroke="#000000" points="383.16,-136.73 385.15,-126.32 377.1,-133.21 383.16,-136.73"/>
+</g>
+<!-- proc~test_cloud_number_ml -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node5" class="node">
+<title>proc~test_cloud_number_ml</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node5"><a xlink:href="../proc/test_cloud_number_ml.html" xlink:title="test_cloud_number_ml">
+<polygon fill="#d9534f" stroke="#d9534f" points="286.66,-186.77 166.39,-186.77 166.39,-164 286.66,-164 286.66,-186.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-171.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_cloud_number_ml</text>
+</a>
+</g>
+</g>
+<!-- proc~test_cloud_number_ml&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge4" class="edge">
+<title>proc~test_cloud_number_ml&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M286.91,-166.01C299.81,-163.04 313.21,-159.23 325.29,-154.38 339.87,-148.54 354.87,-139.61 366.94,-131.57"/>
+<polygon fill="#000000" stroke="#000000" points="368.81,-134.53 375.07,-125.98 364.85,-128.76 368.81,-134.53"/>
+</g>
+<!-- proc~test_cloud_number_non_aerosolaware -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node6" class="node">
+<title>proc~test_cloud_number_non_aerosolaware</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node6"><a xlink:href="../proc/test_cloud_number_non_aerosolaware.html" xlink:title="test_cloud_number_non_aerosolaware">
+<polygon fill="#d9534f" stroke="#d9534f" points="325.29,-145.77 127.77,-145.77 127.77,-123 325.29,-123 325.29,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_cloud_number_non_aerosolaware</text>
+</a>
+</g>
+</g>
+<!-- proc~test_cloud_number_non_aerosolaware&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge5" class="edge">
+<title>proc~test_cloud_number_non_aerosolaware&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M320.3,-122.53C330.64,-121.21 340.76,-119.92 349.98,-118.74"/>
+<polygon fill="#000000" stroke="#000000" points="350.15,-122.25 359.63,-117.51 349.26,-115.31 350.15,-122.25"/>
+</g>
+<!-- proc~test_graupel_sedimentation -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node7" class="node">
+<title>proc~test_graupel_sedimentation</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node7"><a xlink:href="../proc/test_graupel_sedimentation.html" xlink:title="test_graupel_sedimentation">
+<polygon fill="#d9534f" stroke="#d9534f" points="298.29,-104.77 154.77,-104.77 154.77,-82 298.29,-82 298.29,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_graupel_sedimentation</text>
+</a>
+</g>
+</g>
+<!-- proc~test_graupel_sedimentation&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge6" class="edge">
+<title>proc~test_graupel_sedimentation&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M298.68,-102.04C316.11,-104.16 334.21,-106.36 349.77,-108.26"/>
+<polygon fill="#000000" stroke="#000000" points="349.28,-111.72 359.62,-109.46 350.12,-104.77 349.28,-111.72"/>
+</g>
+<!-- proc~test_ml_cloud_effective_radius -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node8" class="node">
+<title>proc~test_ml_cloud_effective_radius</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node8"><a xlink:href="../proc/test_ml_cloud_effective_radius.html" xlink:title="test_ml_cloud_effective_radius">
+<polygon fill="#d9534f" stroke="#d9534f" points="305.79,-63.77 147.27,-63.77 147.27,-41 305.79,-41 305.79,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_ml_cloud_effective_radius</text>
+</a>
+</g>
+</g>
+<!-- proc~test_ml_cloud_effective_radius&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge7" class="edge">
+<title>proc~test_ml_cloud_effective_radius&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M296.49,-64.2C306.31,-66.75 316.17,-69.78 325.29,-73.39 339.6,-79.04 354.39,-87.59 366.39,-95.34"/>
+<polygon fill="#000000" stroke="#000000" points="364.22,-98.1 374.48,-100.74 368.1,-92.28 364.22,-98.1"/>
+</g>
+<!-- proc~test_snow_sedimentation -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node9" class="node">
+<title>proc~test_snow_sedimentation</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node9"><a xlink:href="../proc/test_snow_sedimentation.html" xlink:title="test_snow_sedimentation">
+<polygon fill="#d9534f" stroke="#d9534f" points="292.66,-22.77 160.39,-22.77 160.39,0 292.66,0 292.66,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="226.53" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">test_snow_sedimentation</text>
+</a>
+</g>
+</g>
+<!-- proc~test_snow_sedimentation&#45;&gt;proc~tempo_run -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge8" class="edge">
+<title>proc~test_snow_sedimentation&#45;&gt;proc~tempo_run</title>
+<path fill="none" stroke="#000000" d="M292.98,-19.07C304.27,-22.14 315.5,-26.43 325.29,-32.39 349.19,-46.94 368.41,-73.21 379.96,-91.89"/>
+<polygon fill="#000000" stroke="#000000" points="376.83,-93.48 384.93,-100.31 382.86,-89.92 376.83,-93.48"/>
+</g>
+<!-- program~run_tempo_tests -->
+<g id="proc~~max_hail_diam~~CalledByGraph_node10" class="node">
+<title>program~run_tempo_tests</title>
+<g id="a_proc~~max_hail_diam~~CalledByGraph_node10"><a xlink:href="../program/run_tempo_tests.html" xlink:title="run_tempo_tests">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="91.77,-124.77 0,-124.77 0,-102 91.77,-102 91.77,-124.77"/>
+<text xml:space="preserve" text-anchor="middle" x="45.88" y="-109.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">run_tempo_tests</text>
+</a>
+</g>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_cloud_number_aerosolaware -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge9" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_cloud_number_aerosolaware</title>
+<path fill="none" stroke="#000000" d="M54.83,-124.99C67.84,-143.07 95.51,-177.68 127.77,-195.38 131.18,-197.26 134.75,-198.96 138.41,-200.52"/>
+<polygon fill="#000000" stroke="#000000" points="136.96,-203.71 147.55,-203.97 139.43,-197.16 136.96,-203.71"/>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_cloud_number_ml -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge10" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_cloud_number_ml</title>
+<path fill="none" stroke="#000000" d="M66.52,-125.15C82.52,-134.29 105.95,-146.66 127.77,-154.38 136.38,-157.43 145.58,-160.12 154.76,-162.45"/>
+<polygon fill="#000000" stroke="#000000" points="153.9,-165.85 164.44,-164.78 155.54,-159.04 153.9,-165.85"/>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_cloud_number_non_aerosolaware -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge11" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_cloud_number_non_aerosolaware</title>
+<path fill="none" stroke="#000000" d="M91.96,-118.68C99.58,-119.58 107.78,-120.54 116.22,-121.54"/>
+<polygon fill="#000000" stroke="#000000" points="115.59,-124.99 125.93,-122.68 116.41,-118.03 115.59,-124.99"/>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_graupel_sedimentation -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge12" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_graupel_sedimentation</title>
+<path fill="none" stroke="#000000" d="M91.96,-108.34C107.56,-106.59 125.55,-104.58 143.18,-102.6"/>
+<polygon fill="#000000" stroke="#000000" points="143.33,-106.11 152.88,-101.52 142.56,-99.15 143.33,-106.11"/>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_ml_cloud_effective_radius -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge13" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_ml_cloud_effective_radius</title>
+<path fill="none" stroke="#000000" d="M67.22,-101.56C83.22,-92.7 106.32,-80.86 127.77,-73.39 134.39,-71.08 141.35,-68.98 148.38,-67.07"/>
+<polygon fill="#000000" stroke="#000000" points="149.15,-70.49 157.98,-64.62 147.42,-63.71 149.15,-70.49"/>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;proc~test_snow_sedimentation -->
+<g id="proc~~max_hail_diam~~CalledByGraph_edge14" class="edge">
+<title>program~run_tempo_tests&#45;&gt;proc~test_snow_sedimentation</title>
+<path fill="none" stroke="#000000" d="M55.07,-101.63C68.22,-83.7 95.83,-49.78 127.77,-32.39 134.43,-28.76 141.66,-25.76 149.07,-23.27"/>
+<polygon fill="#000000" stroke="#000000" points="150,-26.65 158.57,-20.43 147.99,-19.95 150,-26.65"/>
+</g>
+</g>
+</svg>
+</div>                <script>
+                  var panprocmax_hail_diamCalledByGraph = svgPanZoom('#procmax_hail_diamCalledByGraph',
+                    {zoomEnabled: true, controlIconsEnabled: true, fit: true, center: true,}
+                  );
+                </script>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#CalledByGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="CalledByGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="28pt"
+ viewBox="0.00 0.00 641.00 28.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.923937 0.923937) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 689.77,-26.77 689.77,4 -4,4"/>
+<!-- Subroutine -->
+<g id="node1" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="63.27,-22.77 0,-22.77 0,0 63.27,0 63.27,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="31.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node2" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="135.63,-22.77 81.64,-22.77 81.64,0 135.63,0 135.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="108.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node3" class="node">
+<title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="207.63,-22.77 153.63,-22.77 153.63,0 207.63,0 207.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="180.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Type Bound Procedure -->
+<g id="node4" class="node">
+<title>Type Bound Procedure</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="347.14,-22.77 226.12,-22.77 226.12,0 347.14,0 347.14,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="286.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type Bound Procedure</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node5" class="node">
+<title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="499.89,-22.77 365.38,-22.77 365.38,0 499.89,0 499.89,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="432.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node6" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="571.63,-22.77 517.63,-22.77 517.63,0 571.63,0 571.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="544.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node7" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="685.77,-22.77 589.5,-22.77 589.5,0 685.77,0 685.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="637.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+
+
+    
+    
+
+    
+    
+
+
+
+    
+    
+    </div>
+  </div>
+
+      <hr>
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col">
+            <p>
+              TEMPO Microphysics
+ was developed by Anders A. Jensen<br>              &copy; 2026 
+</p>
+          </div>
+          <div class="col">
+            <p class="text-end">
+              Documentation generated by
+              <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+            </p>
+          </div>
+        </div>
+        <br>
+      </div> <!-- /container -->
+    </footer>
+  </body>
+</html>

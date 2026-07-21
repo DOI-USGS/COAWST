@@ -1,0 +1,761 @@
+<!-- -*- mode: jinja2 -*- -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="Documentation for TEMPO Microphysics">
+    <meta name="author" content="Anders A. Jensen" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>build_table_qr_acr_qg &ndash; TEMPO Microphysics</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Font Awesome -->
+    <link href="../css/fontawesome.min.css" rel="stylesheet">
+    <link href="../css/brands.min.css" rel="stylesheet">
+    <link href="../css/regular.min.css" rel="stylesheet">
+    <link href="../css/solid.min.css" rel="stylesheet">
+    <link href="../css/v4-font-face.min.css" rel="stylesheet">
+    <link href="../css/v4-shims.min.css" rel="stylesheet">
+    <!-- MathJax -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { equationNumbers: { autoNumber: "AMS" } }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async
+            integrity="sha256-DViIOMYdwlM/axqoGDPeUyf0urLoHMN4QACBKyB58Uw=" crossorigin="anonymous"></script>
+    <!-- Other scripts and stylesheets -->
+    <link href="../css/local.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <script src="../js/svg-pan-zoom.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="container-fluid mb-sm-4 mb-xl-2">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="../index.html">TEMPO Microphysics </a>
+          <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
+                  aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon">
+          </button>
+
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="../lists/files.html">Source Files</a>
+                  </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/modules.html">Modules</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/procedures.html">Procedures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/types.html">Derived Types</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/programs.html">Programs</a>
+                </li>
+            </ul>
+              <div class="d-flex align-items-end flex-grow-1">
+                <form action="../search.html" role="search" class="ms-auto">
+                  <input type="text" class="form-control" aria-label="Search" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+                </form>
+              </div>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+  <div class="row">
+    <h1>build_table_qr_acr_qg
+      <small>Subroutine</small>
+      
+    </h1>
+      <div class="container p-2 mb-4 bg-light border rounded-3">
+    <div class="row align-items-center justify-content-between" id="info-bar">
+      <div class="col">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+
+            <li class="list-inline-item" id="statements"><i class="fa fa-list-ol"></i>
+              <a data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                 title=" 1.3% of total for procedures.">58 statements</a>
+            </li>
+
+            <li class="list-inline-item" id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/module_mp_tempo_tables.F90"> Source File</a>
+            </li>
+        </ul>
+      </div>
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-end mb-0">
+                <li class="breadcrumb-item"><a href='../sourcefile/module_mp_tempo_tables.f90.html'>module_mp_tempo_tables.F90</a></li>
+                <li class="breadcrumb-item"><a href='../module/module_mp_tempo_tables.html'>module_mp_tempo_tables</a></li>
+            <li class="breadcrumb-item active" aria-current="page">build_table_qr_acr_qg</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Enable Bootstrap tooltips
+    (function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    })();
+  </script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+      <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  </div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>private  subroutine build_table_qr_acr_qg(rank, num_proc)  
+</h2>
+        <div class="card mb-4">
+      <h3 class="card-header card-title bg-light">Uses</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <ul class="list-inline">
+                  <li class="list-inline-item"><a href='../module/module_mp_tempo_params.html'>module_mp_tempo_params</a></li>
+              </ul>
+            </li>
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: proc~~build_table_qr_acr_qg~~UsesGraph Pages: 1 -->
+<svg id="procbuild_table_qr_acr_qgUsesGraph" width="439pt" height="154pt"
+ viewBox="0.00 0.00 439.00 154.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 149.77)">
+<title>proc~~build_table_qr_acr_qg~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-149.77 434.56,-149.77 434.56,4 -4,4"/>
+<!-- proc~build_table_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node1" class="node">
+<title>proc~build_table_qr_acr_qg</title>
+<polygon fill="none" stroke="black" points="430.56,-83.77 312.54,-83.77 312.54,-61 430.56,-61 430.56,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="371.55" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50">build_table_qr_acr_qg</text>
+</g>
+<!-- module~module_mp_tempo_params -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node2" class="node">
+<title>module~module_mp_tempo_params</title>
+<g id="a_proc~~build_table_qr_acr_qg~~UsesGraph_node2"><a xlink:href="../module/module_mp_tempo_params.html" xlink:title="module_mp_tempo_params">
+<polygon fill="#337ab7" stroke="#337ab7" points="276.54,-83.77 130.77,-83.77 130.77,-61 276.54,-61 276.54,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="203.66" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_params</text>
+</a>
+</g>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;module~module_mp_tempo_params -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_edge1" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;module~module_mp_tempo_params</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.06,-72.39C304.33,-72.39 296.28,-72.39 288.22,-72.39"/>
+<polygon fill="#000000" stroke="#000000" points="288.38,-68.89 278.38,-72.39 288.38,-75.89 288.38,-68.89"/>
+</g>
+<!-- ccpp_kind_types -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node3" class="node">
+<title>ccpp_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="92.89,-145.77 1.88,-145.77 1.88,-123 92.89,-123 92.89,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ccpp_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;ccpp_kind_types -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_edge2" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;ccpp_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M173.27,-84.19C149.23,-93.86 114.96,-107.63 88.41,-118.3"/>
+<polygon fill="#000000" stroke="#000000" points="87.3,-114.97 79.32,-121.95 89.91,-121.47 87.3,-114.97"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node4" class="node">
+<title>iso_fortran_env</title>
+<g id="a_proc~~build_table_qr_acr_qg~~UsesGraph_node4"><a xlink:href="http://fortranwiki.org/fortran/show/iso_fortran_env" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="90.27,-104.77 4.5,-104.77 4.5,-82 90.27,-82 90.27,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;iso_fortran_env -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_edge3" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-82.21C120.89,-83.51 111.2,-84.83 101.99,-86.09"/>
+<polygon fill="#000000" stroke="#000000" points="101.58,-82.61 92.15,-87.43 102.53,-89.55 101.58,-82.61"/>
+</g>
+<!-- module~machine -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node5" class="node">
+<title>module~machine</title>
+<g id="a_proc~~build_table_qr_acr_qg~~UsesGraph_node5"><a xlink:href="../module/machine.html" xlink:title="machine">
+<polygon fill="#337ab7" stroke="#337ab7" points="74.38,-63.77 20.38,-63.77 20.38,-41 74.38,-41 74.38,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">machine</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;module~machine -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_edge4" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;module~machine</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-63.03C115.08,-61.03 99.41,-59 85.95,-57.25"/>
+<polygon fill="#000000" stroke="#000000" points="86.61,-53.81 76.25,-56 85.71,-60.75 86.61,-53.81"/>
+</g>
+<!-- mpas_kind_types -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_node6" class="node">
+<title>mpas_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="94.77,-22.77 0,-22.77 0,0 94.77,0 94.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpas_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;mpas_kind_types -->
+<g id="proc~~build_table_qr_acr_qg~~UsesGraph_edge5" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;mpas_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M172.91,-60.62C148.98,-51.16 115.11,-37.77 88.73,-27.34"/>
+<polygon fill="#000000" stroke="#000000" points="90.3,-24.19 79.71,-23.77 87.72,-30.7 90.3,-24.19"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsesGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsesGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <p>build lookup table data for rain-graupel collection</p>
+
+
+    <h3>Arguments</h3>
+        <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rank~3"></span>
+              integer,
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rank</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-num_proc~3"></span>
+              integer,
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>num_proc</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <br>
+    <div class="card">
+      <div class="card-header">
+  <h3 class="card-title">Calls</h3>
+      </div>
+      <div class="card-body">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: proc~~build_table_qr_acr_qg~~CallsGraph Pages: 1 -->
+<svg id="procbuild_table_qr_acr_qgCallsGraph" width="409pt" height="277pt"
+ viewBox="0.00 0.00 409.00 277.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 272.77)">
+<title>proc~~build_table_qr_acr_qg~~CallsGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-272.77 404.56,-272.77 404.56,4 -4,4"/>
+<!-- proc~build_table_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node1" class="node">
+<title>proc~build_table_qr_acr_qg</title>
+<polygon fill="none" stroke="black" points="118.02,-145.77 0,-145.77 0,-123 118.02,-123 118.02,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="59.01" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50">build_table_qr_acr_qg</text>
+</g>
+<!-- mpi_allgather -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node2" class="node">
+<title>mpi_allgather</title>
+<polygon fill="#777777" stroke="#777777" points="261.92,-268.77 185.9,-268.77 185.9,-246 261.92,-246 261.92,-268.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-253.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_allgather</text>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;mpi_allgather -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge1" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;mpi_allgather</title>
+<path fill="none" stroke="#000000" d="M67.58,-146.04C81.91,-167.18 115.07,-211.91 154.02,-236.38 160.35,-240.36 167.47,-243.62 174.68,-246.29"/>
+<polygon fill="#000000" stroke="#000000" points="173.56,-249.61 184.16,-249.42 175.76,-242.96 173.56,-249.61"/>
+</g>
+<!-- mpi_barrier -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node3" class="node">
+<title>mpi_barrier</title>
+<polygon fill="#777777" stroke="#777777" points="257.04,-227.77 190.77,-227.77 190.77,-205 257.04,-205 257.04,-227.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-212.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_barrier</text>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;mpi_barrier -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge2" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;mpi_barrier</title>
+<path fill="none" stroke="#000000" d="M75.19,-146.16C93.16,-159.63 124.39,-181.59 154.02,-195.38 162.07,-199.13 170.95,-202.42 179.59,-205.21"/>
+<polygon fill="#000000" stroke="#000000" points="178.28,-208.47 188.87,-208.03 180.32,-201.77 178.28,-208.47"/>
+</g>
+<!-- mpi_wtime -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node4" class="node">
+<title>mpi_wtime</title>
+<polygon fill="#777777" stroke="#777777" points="255.16,-186.77 192.65,-186.77 192.65,-164 255.16,-164 255.16,-186.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-171.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_wtime</text>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;mpi_wtime -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge3" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;mpi_wtime</title>
+<path fill="none" stroke="#000000" d="M107.13,-146.24C130.6,-152.15 158.73,-159.23 181.38,-164.93"/>
+<polygon fill="#000000" stroke="#000000" points="180.32,-168.28 190.88,-167.32 182.03,-161.49 180.32,-168.28"/>
+</g>
+<!-- proc~gather -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node5" class="node">
+<title>proc~gather</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CallsGraph_node5"><a xlink:href="../proc/gather.html" xlink:title="gather">
+<polygon fill="#d9534f" stroke="#d9534f" points="250.91,-145.77 196.91,-145.77 196.91,-123 250.91,-123 250.91,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">gather</text>
+</a>
+</g>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;proc~gather -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge4" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;proc~gather</title>
+<path fill="none" stroke="#000000" d="M118.36,-134.38C140.69,-134.38 165.55,-134.38 185.42,-134.38"/>
+<polygon fill="#000000" stroke="#000000" points="185.27,-137.89 195.27,-134.39 185.27,-130.89 185.27,-137.89"/>
+</g>
+<!-- proc~get_index_for_rank -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node6" class="node">
+<title>proc~get_index_for_rank</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CallsGraph_node6"><a xlink:href="../proc/get_index_for_rank.html" xlink:title="get_index_for_rank">
+<polygon fill="#d9534f" stroke="#d9534f" points="275.79,-104.77 172.02,-104.77 172.02,-82 275.79,-82 275.79,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">get_index_for_rank</text>
+</a>
+</g>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;proc~get_index_for_rank -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge5" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;proc~get_index_for_rank</title>
+<path fill="none" stroke="#000000" d="M107.13,-122.53C125.19,-117.98 146.02,-112.74 164.98,-107.96"/>
+<polygon fill="#000000" stroke="#000000" points="165.58,-111.42 174.43,-105.59 163.88,-104.63 165.58,-111.42"/>
+</g>
+<!-- proc~initialize_arrays_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node7" class="node">
+<title>proc~initialize_arrays_qr_acr_qg</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CallsGraph_node7"><a xlink:href="../proc/initialize_arrays_qr_acr_qg.html" xlink:title="initialize_arrays_qr_acr_qg">
+<polygon fill="#d9534f" stroke="#d9534f" points="293.79,-63.77 154.02,-63.77 154.02,-41 293.79,-41 293.79,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">initialize_arrays_qr_acr_qg</text>
+</a>
+</g>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;proc~initialize_arrays_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge6" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;proc~initialize_arrays_qr_acr_qg</title>
+<path fill="none" stroke="#000000" d="M75.19,-122.61C93.16,-109.14 124.39,-87.18 154.02,-73.39 158.23,-71.43 162.66,-69.59 167.17,-67.89"/>
+<polygon fill="#000000" stroke="#000000" points="168.06,-71.29 176.33,-64.66 165.73,-64.69 168.06,-71.29"/>
+</g>
+<!-- proc~qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node8" class="node">
+<title>proc~qr_acr_qg</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CallsGraph_node8"><a xlink:href="../proc/qr_acr_qg.html" xlink:title="qr_acr_qg">
+<polygon fill="#d9534f" stroke="#d9534f" points="254.04,-22.77 193.77,-22.77 193.77,0 254.04,0 254.04,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="223.91" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">qr_acr_qg</text>
+</a>
+</g>
+</g>
+<!-- proc~build_table_qr_acr_qg&#45;&gt;proc~qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge7" class="edge">
+<title>proc~build_table_qr_acr_qg&#45;&gt;proc~qr_acr_qg</title>
+<path fill="none" stroke="#000000" d="M67.58,-122.73C81.91,-101.59 115.07,-56.86 154.02,-32.39 162.63,-26.97 172.73,-22.88 182.5,-19.81"/>
+<polygon fill="#000000" stroke="#000000" points="183.16,-23.26 191.84,-17.18 181.26,-16.53 183.16,-23.26"/>
+</g>
+<!-- mpi_gatherv -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_node9" class="node">
+<title>mpi_gatherv</title>
+<polygon fill="#777777" stroke="#777777" points="400.56,-145.77 329.79,-145.77 329.79,-123 400.56,-123 400.56,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="365.18" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpi_gatherv</text>
+</g>
+<!-- proc~gather&#45;&gt;mpi_gatherv -->
+<g id="proc~~build_table_qr_acr_qg~~CallsGraph_edge8" class="edge">
+<title>proc~gather&#45;&gt;mpi_gatherv</title>
+<path fill="none" stroke="#000000" d="M251.1,-134.38C269.96,-134.38 295.88,-134.38 318.16,-134.38"/>
+<polygon fill="#000000" stroke="#000000" points="317.9,-137.89 327.9,-134.39 317.9,-130.89 317.9,-137.89"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#CallsGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="CallsGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="28pt"
+ viewBox="0.00 0.00 641.00 28.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.923937 0.923937) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 689.77,-26.77 689.77,4 -4,4"/>
+<!-- Subroutine -->
+<g id="node1" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="63.27,-22.77 0,-22.77 0,0 63.27,0 63.27,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="31.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node2" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="135.63,-22.77 81.64,-22.77 81.64,0 135.63,0 135.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="108.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node3" class="node">
+<title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="207.63,-22.77 153.63,-22.77 153.63,0 207.63,0 207.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="180.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Type Bound Procedure -->
+<g id="node4" class="node">
+<title>Type Bound Procedure</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="347.14,-22.77 226.12,-22.77 226.12,0 347.14,0 347.14,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="286.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type Bound Procedure</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node5" class="node">
+<title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="499.89,-22.77 365.38,-22.77 365.38,0 499.89,0 499.89,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="432.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node6" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="571.63,-22.77 517.63,-22.77 517.63,0 571.63,0 571.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="544.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node7" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="685.77,-22.77 589.5,-22.77 589.5,0 685.77,0 685.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="637.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+  <h3 class="card-title">Called by</h3>
+      </div>
+      <div class="card-body">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: proc~~build_table_qr_acr_qg~~CalledByGraph Pages: 1 -->
+<svg id="procbuild_table_qr_acr_qgCalledByGraph" width="371pt" height="31pt"
+ viewBox="0.00 0.00 371.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>proc~~build_table_qr_acr_qg~~CalledByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 367.06,-26.77 367.06,4 -4,4"/>
+<!-- proc~build_table_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph_node1" class="node">
+<title>proc~build_table_qr_acr_qg</title>
+<polygon fill="none" stroke="black" points="363.06,-22.77 245.04,-22.77 245.04,0 363.06,0 363.06,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="304.05" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">build_table_qr_acr_qg</text>
+</g>
+<!-- proc~tempo_build_tables -->
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph_node2" class="node">
+<title>proc~tempo_build_tables</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CalledByGraph_node2"><a xlink:href="../proc/tempo_build_tables.html" xlink:title="tempo_build_tables">
+<polygon fill="#d9534f" stroke="#d9534f" points="209.04,-22.77 104.52,-22.77 104.52,0 209.04,0 209.04,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="156.78" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tempo_build_tables</text>
+</a>
+</g>
+</g>
+<!-- proc~tempo_build_tables&#45;&gt;proc~build_table_qr_acr_qg -->
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph_edge1" class="edge">
+<title>proc~tempo_build_tables&#45;&gt;proc~build_table_qr_acr_qg</title>
+<path fill="none" stroke="#000000" d="M209.41,-11.39C217.17,-11.39 225.28,-11.39 233.34,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="233.15,-14.89 243.15,-11.39 233.15,-7.89 233.15,-14.89"/>
+</g>
+<!-- program~build_tables -->
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph_node3" class="node">
+<title>program~build_tables</title>
+<g id="a_proc~~build_table_qr_acr_qg~~CalledByGraph_node3"><a xlink:href="../program/build_tables.html" xlink:title="build_tables">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="68.52,-22.77 0,-22.77 0,0 68.52,0 68.52,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="34.26" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">build_tables</text>
+</a>
+</g>
+</g>
+<!-- program~build_tables&#45;&gt;proc~tempo_build_tables -->
+<g id="proc~~build_table_qr_acr_qg~~CalledByGraph_edge2" class="edge">
+<title>program~build_tables&#45;&gt;proc~tempo_build_tables</title>
+<path fill="none" stroke="#000000" d="M68.83,-11.39C76.4,-11.39 84.67,-11.39 93,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="92.83,-14.89 102.83,-11.39 92.83,-7.89 92.83,-14.89"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#CalledByGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="CalledByGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="641pt" height="28pt"
+ viewBox="0.00 0.00 641.00 28.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.923937 0.923937) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 689.77,-26.77 689.77,4 -4,4"/>
+<!-- Subroutine -->
+<g id="node1" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="63.27,-22.77 0,-22.77 0,0 63.27,0 63.27,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="31.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node2" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="135.63,-22.77 81.64,-22.77 81.64,0 135.63,0 135.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="108.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Interface -->
+<g id="node3" class="node">
+<title>Interface</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="207.63,-22.77 153.63,-22.77 153.63,0 207.63,0 207.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="180.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Interface</text>
+</g>
+<!-- Type Bound Procedure -->
+<g id="node4" class="node">
+<title>Type Bound Procedure</title>
+<polygon fill="#a7506f" stroke="#a7506f" points="347.14,-22.77 226.12,-22.77 226.12,0 347.14,0 347.14,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="286.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Type Bound Procedure</text>
+</g>
+<!-- Unknown Procedure Type -->
+<g id="node5" class="node">
+<title>Unknown Procedure Type</title>
+<polygon fill="#777777" stroke="#777777" points="499.89,-22.77 365.38,-22.77 365.38,0 499.89,0 499.89,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="432.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Unknown Procedure Type</text>
+</g>
+<!-- Program -->
+<g id="node6" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="571.63,-22.77 517.63,-22.77 517.63,0 571.63,0 571.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="544.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node7" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="685.77,-22.77 589.5,-22.77 589.5,0 685.77,0 685.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="637.63" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a procedure to one which it calls. Dashed 
+arrows point from an interface to procedures which implement that interface.
+This could include the module procedures in a generic interface or the
+implementation in a submodule of an interface in a parent module.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+
+
+    
+    
+
+    
+    
+
+
+
+    
+    
+    </div>
+  </div>
+
+      <hr>
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col">
+            <p>
+              TEMPO Microphysics
+ was developed by Anders A. Jensen<br>              &copy; 2026 
+</p>
+          </div>
+          <div class="col">
+            <p class="text-end">
+              Documentation generated by
+              <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+            </p>
+          </div>
+        </div>
+        <br>
+      </div> <!-- /container -->
+    </footer>
+  </body>
+</html>

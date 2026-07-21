@@ -1,0 +1,1830 @@
+<!-- -*- mode: jinja2 -*- -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="Documentation for TEMPO Microphysics">
+    <meta name="author" content="Anders A. Jensen" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>module_mp_tempo_diags &ndash; TEMPO Microphysics</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Font Awesome -->
+    <link href="../css/fontawesome.min.css" rel="stylesheet">
+    <link href="../css/brands.min.css" rel="stylesheet">
+    <link href="../css/regular.min.css" rel="stylesheet">
+    <link href="../css/solid.min.css" rel="stylesheet">
+    <link href="../css/v4-font-face.min.css" rel="stylesheet">
+    <link href="../css/v4-shims.min.css" rel="stylesheet">
+    <!-- MathJax -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { equationNumbers: { autoNumber: "AMS" } }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async
+            integrity="sha256-DViIOMYdwlM/axqoGDPeUyf0urLoHMN4QACBKyB58Uw=" crossorigin="anonymous"></script>
+    <!-- Other scripts and stylesheets -->
+    <link href="../css/local.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <script src="../js/svg-pan-zoom.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="container-fluid mb-sm-4 mb-xl-2">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="../index.html">TEMPO Microphysics </a>
+          <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
+                  aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon">
+          </button>
+
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="../lists/files.html">Source Files</a>
+                  </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/modules.html">Modules</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/procedures.html">Procedures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/types.html">Derived Types</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/programs.html">Programs</a>
+                </li>
+            </ul>
+              <div class="d-flex align-items-end flex-grow-1">
+                <form action="../search.html" role="search" class="ms-auto">
+                  <input type="text" class="form-control" aria-label="Search" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+                </form>
+              </div>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+  <div class="row">
+    <h1>module_mp_tempo_diags
+      <small>Module</small>
+      
+    </h1>
+      <div class="container p-2 mb-4 bg-light border rounded-3">
+    <div class="row align-items-center justify-content-between" id="info-bar">
+      <div class="col">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+
+            <li class="list-inline-item" id="statements"><i class="fa fa-list-ol"></i>
+              <a data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                 title=" 6.2% of total for modules and submodules.">311 statements</a>
+            </li>
+
+            <li class="list-inline-item" id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/module_mp_tempo_diags.F90"> Source File</a>
+            </li>
+        </ul>
+      </div>
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-end mb-0">
+                <li class="breadcrumb-item"><a href='../sourcefile/module_mp_tempo_diags.f90.html'>module_mp_tempo_diags.F90</a></li>
+            <li class="breadcrumb-item active" aria-current="page">module_mp_tempo_diags</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Enable Bootstrap tooltips
+    (function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    })();
+  </script>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-3">
+        <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+      <div class="card mb-4">
+      <a data-bs-toggle="collapse" href="#funcs-0"
+         aria-expanded="false" aria-controls="funcs-0">
+         <h4 class="card-header bg-primary text-white">Functions</h4>
+      </a>
+      <div id="funcs-0" class="collapse">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-find_melting_level">find_melting_level</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-complex_water_ray">complex_water_ray</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-complex_ice_maetzler">complex_ice_maetzler</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-reflectivity_from_melting_graupel">reflectivity_from_melting_graupel</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-reflectivity_from_melting_snow">reflectivity_from_melting_snow</a>
+        </div>
+      </div>
+    </div>
+
+      <div class="card mb-4">
+      <a data-bs-toggle="collapse" href="#subs-0"
+         aria-expanded="false" aria-controls="subs-0">
+         <h4 class="card-header bg-primary text-white">Subroutines</h4>
+      </a>
+      <div id="subs-0" class="collapse">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-effective_radius">effective_radius</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-reflectivity_10cm">reflectivity_10cm</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-rayleigh_soak_wetgraupel">rayleigh_soak_wetgraupel</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-max_hail_diam">max_hail_diam</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_diags.html#proc-freezing_rain">freezing_rain</a>
+        </div>
+      </div>
+    </div>
+
+  
+  
+  
+  
+  
+  
+  
+
+
+  </div>
+
+    </div>
+
+    <div class="col-md-9" id='text'>
+      <p>diagnostic output</p>
+<br>          <div class="card mb-4">
+      <h3 class="card-header card-title bg-light">Uses</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <ul class="list-inline">
+                  <li class="list-inline-item"><a href='module_mp_tempo_utils.html'>module_mp_tempo_utils</a></li>
+                  <li class="list-inline-item"><a href='module_mp_tempo_params.html'>module_mp_tempo_params</a></li>
+              </ul>
+            </li>
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: module~~module_mp_tempo_diags~~UsesGraph Pages: 1 -->
+<svg id="modulemodule_mp_tempo_diagsUsesGraph" width="620pt" height="154pt"
+ viewBox="0.00 0.00 620.00 154.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~module_mp_tempo_diags~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 149.77)">
+<title>module~~module_mp_tempo_diags~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-149.77 616.33,-149.77 616.33,4 -4,4"/>
+<!-- module~module_mp_tempo_diags -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node1" class="node">
+<title>module~module_mp_tempo_diags</title>
+<polygon fill="none" stroke="black" points="612.33,-83.77 477.06,-83.77 477.06,-61 612.33,-61 612.33,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="544.7" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50">module_mp_tempo_diags</text>
+</g>
+<!-- module~module_mp_tempo_params -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node2" class="node">
+<title>module~module_mp_tempo_params</title>
+<g id="a_module~~module_mp_tempo_diags~~UsesGraph_node2"><a xlink:href="../module/module_mp_tempo_params.html" xlink:title="module_mp_tempo_params">
+<polygon fill="#337ab7" stroke="#337ab7" points="276.54,-83.77 130.77,-83.77 130.77,-61 276.54,-61 276.54,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="203.66" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_params</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_params -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge1" class="edge">
+<title>module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_params</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M476.62,-73.13C464.77,-73.24 452.55,-73.33 441.06,-73.39 383.94,-73.66 369.66,-73.65 312.54,-73.39 304.71,-73.35 296.56,-73.3 288.41,-73.24"/>
+<polygon fill="#000000" stroke="#000000" points="288.44,-69.74 278.42,-73.16 288.39,-76.74 288.44,-69.74"/>
+</g>
+<!-- module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node3" class="node">
+<title>module~module_mp_tempo_utils</title>
+<g id="a_module~~module_mp_tempo_diags~~UsesGraph_node3"><a xlink:href="../module/module_mp_tempo_utils.html" xlink:title="module_mp_tempo_utils">
+<polygon fill="#337ab7" stroke="#337ab7" points="441.06,-64.77 312.54,-64.77 312.54,-42 441.06,-42 441.06,-64.77"/>
+<text xml:space="preserve" text-anchor="middle" x="376.8" y="-49.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_utils</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge2" class="edge">
+<title>module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_utils</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M476.7,-64.71C468.81,-63.81 460.73,-62.88 452.74,-61.97"/>
+<polygon fill="#000000" stroke="#000000" points="453.39,-58.52 443.06,-60.86 452.59,-65.47 453.39,-58.52"/>
+</g>
+<!-- ccpp_kind_types -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node4" class="node">
+<title>ccpp_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="92.89,-145.77 1.88,-145.77 1.88,-123 92.89,-123 92.89,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ccpp_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;ccpp_kind_types -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge3" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;ccpp_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M173.27,-84.19C149.23,-93.86 114.96,-107.63 88.41,-118.3"/>
+<polygon fill="#000000" stroke="#000000" points="87.3,-114.97 79.32,-121.95 89.91,-121.47 87.3,-114.97"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node5" class="node">
+<title>iso_fortran_env</title>
+<g id="a_module~~module_mp_tempo_diags~~UsesGraph_node5"><a xlink:href="http://fortranwiki.org/fortran/show/iso_fortran_env" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="90.27,-104.77 4.5,-104.77 4.5,-82 90.27,-82 90.27,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;iso_fortran_env -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge4" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-82.21C120.89,-83.51 111.2,-84.83 101.99,-86.09"/>
+<polygon fill="#000000" stroke="#000000" points="101.58,-82.61 92.15,-87.43 102.53,-89.55 101.58,-82.61"/>
+</g>
+<!-- module~machine -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node6" class="node">
+<title>module~machine</title>
+<g id="a_module~~module_mp_tempo_diags~~UsesGraph_node6"><a xlink:href="../module/machine.html" xlink:title="machine">
+<polygon fill="#337ab7" stroke="#337ab7" points="74.38,-63.77 20.38,-63.77 20.38,-41 74.38,-41 74.38,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">machine</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;module~machine -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge5" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;module~machine</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-63.03C115.08,-61.03 99.41,-59 85.95,-57.25"/>
+<polygon fill="#000000" stroke="#000000" points="86.61,-53.81 76.25,-56 85.71,-60.75 86.61,-53.81"/>
+</g>
+<!-- mpas_kind_types -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_node7" class="node">
+<title>mpas_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="94.77,-22.77 0,-22.77 0,0 94.77,0 94.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpas_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;mpas_kind_types -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge6" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;mpas_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M172.91,-60.62C148.98,-51.16 115.11,-37.77 88.73,-27.34"/>
+<polygon fill="#000000" stroke="#000000" points="90.3,-24.19 79.71,-23.77 87.72,-30.7 90.3,-24.19"/>
+</g>
+<!-- module~module_mp_tempo_utils&#45;&gt;module~module_mp_tempo_params -->
+<g id="module~~module_mp_tempo_diags~~UsesGraph_edge7" class="edge">
+<title>module~module_mp_tempo_utils&#45;&gt;module~module_mp_tempo_params</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.07,-60.46C304.26,-61.33 296.18,-62.22 288.13,-63.12"/>
+<polygon fill="#000000" stroke="#000000" points="287.85,-59.63 278.29,-64.21 288.62,-66.58 287.85,-59.63"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsesGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsesGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+          <div class="card">
+      <h3 class="card-header card-title bg-light">Used by</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: module~~module_mp_tempo_diags~~UsedByGraph Pages: 1 -->
+<svg id="modulemodule_mp_tempo_diagsUsedByGraph" width="641pt" height="28pt"
+ viewBox="0.00 0.00 641.00 28.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~module_mp_tempo_diags~~UsedByGraph" class="graph" transform="scale(0.912027 0.912027) rotate(0) translate(4 26.77)">
+<title>module~~module_mp_tempo_diags~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 698.83,-26.77 698.83,4 -4,4"/>
+<!-- module~module_mp_tempo_diags -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_node1" class="node">
+<title>module~module_mp_tempo_diags</title>
+<polygon fill="none" stroke="black" points="135.27,-22.77 0,-22.77 0,0 135.27,0 135.27,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="67.64" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">module_mp_tempo_diags</text>
+</g>
+<!-- module~module_mp_tempo_main -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_node2" class="node">
+<title>module~module_mp_tempo_main</title>
+<g id="a_module~~module_mp_tempo_diags~~UsedByGraph_node2"><a xlink:href="../module/module_mp_tempo_main.html" xlink:title="module_mp_tempo_main">
+<polygon fill="#337ab7" stroke="#337ab7" points="304.29,-22.77 171.27,-22.77 171.27,0 304.29,0 304.29,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="237.78" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_main</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_diags -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_edge1" class="edge">
+<title>module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_diags</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M170.81,-11.39C162.93,-11.39 154.83,-11.39 146.8,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="147.04,-7.89 137.04,-11.39 147.04,-14.89 147.04,-7.89"/>
+</g>
+<!-- module~module_mp_tempo_driver -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_node3" class="node">
+<title>module~module_mp_tempo_driver</title>
+<g id="a_module~~module_mp_tempo_diags~~UsedByGraph_node3"><a xlink:href="../module/module_mp_tempo_driver.html" xlink:title="module_mp_tempo_driver">
+<polygon fill="#337ab7" stroke="#337ab7" points="477.06,-22.77 340.29,-22.77 340.29,0 477.06,0 477.06,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="408.68" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_driver</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_main -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_edge2" class="edge">
+<title>module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_main</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M339.95,-11.39C332.03,-11.39 323.9,-11.39 315.87,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="316.11,-7.89 306.11,-11.39 316.11,-14.89 316.11,-7.89"/>
+</g>
+<!-- module~tests -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_node4" class="node">
+<title>module~tests</title>
+<g id="a_module~~module_mp_tempo_diags~~UsedByGraph_node4"><a xlink:href="../module/tests.html" xlink:title="tests">
+<polygon fill="#337ab7" stroke="#337ab7" points="567.06,-22.77 513.06,-22.77 513.06,0 567.06,0 567.06,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="540.06" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tests</text>
+</a>
+</g>
+</g>
+<!-- module~tests&#45;&gt;module~module_mp_tempo_driver -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_edge3" class="edge">
+<title>module~tests&#45;&gt;module~module_mp_tempo_driver</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M512.56,-11.39C505.37,-11.39 497.19,-11.39 488.66,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="488.81,-7.89 478.81,-11.39 488.81,-14.89 488.81,-7.89"/>
+</g>
+<!-- program~run_tempo_tests -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_node5" class="node">
+<title>program~run_tempo_tests</title>
+<g id="a_module~~module_mp_tempo_diags~~UsedByGraph_node5"><a xlink:href="../program/run_tempo_tests.html" xlink:title="run_tempo_tests">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="694.83,-22.77 603.06,-22.77 603.06,0 694.83,0 694.83,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="648.95" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">run_tempo_tests</text>
+</a>
+</g>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;module~tests -->
+<g id="module~~module_mp_tempo_diags~~UsedByGraph_edge4" class="edge">
+<title>program~run_tempo_tests&#45;&gt;module~tests</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M602.62,-11.39C594.61,-11.39 586.35,-11.39 578.58,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="578.78,-7.89 568.78,-11.39 578.78,-14.89 578.78,-7.89"/>
+</g>
+</g>
+</svg>
+</div>                <script>
+                  var panmodulemodule_mp_tempo_diagsUsedByGraph = svgPanZoom('#modulemodule_mp_tempo_diagsUsedByGraph',
+                    {zoomEnabled: true, controlIconsEnabled: true, fit: true, center: true,}
+                  );
+                </script>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsedByGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsedByGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+      <br>
+
+
+
+
+
+
+
+        <section>
+          <h2>Functions</h2>
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-find_melting_level"></span> <h3>private  function <a href='../proc/find_melting_level.html'>find_melting_level</a>(temp, l_qr, l_qs, l_qg) result(k_melt)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>finds the melting level</p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-temp~21"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>temp</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qr~10"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qs~12"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qg~11"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>integer</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-complex_water_ray"></span> <h3>private  function <a href='../proc/complex_water_ray.html'>complex_water_ray</a>(lambda, t) result(refractive_index)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>complex refractive index of water
+from <a href="https://doi.org/10.1364/AO.11.001836">Ray (1972)</a>
+calculated as function of temperature t [Celsius] (valid from -10 to 30)
+and radar wavelength lambda [m] (valid from 0.001 to 1)</p><a href="../proc/complex_water_ray.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lambda"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>lambda</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-t~12"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>t</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>complex(kind=dp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-complex_ice_maetzler"></span> <h3>private  function <a href='../proc/complex_ice_maetzler.html'>complex_ice_maetzler</a>(lambda, t) result(refractive_index)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>complex refractive index of ice from
+<a href="https://doi.org/10.1007/978-94-011-5252-5_10">Maetzler (1998)</a>
+calculated as function of temperature t [Celsius] (valid from -250 to 0)
+and radar wavelength lambda [m] (valid from 0.0001 to 30)</p><a href="../proc/complex_ice_maetzler.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lambda~2"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>lambda</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-t~13"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>t</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>complex(kind=dp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-reflectivity_from_melting_graupel"></span> <h3>private  function <a href='../proc/reflectivity_from_melting_graupel.html'>reflectivity_from_melting_graupel</a>(rg, ng, ilamg, idx, rr) result(ze_graupel)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates radar reflectivity from melting graupel using binned approach</p><a href="../proc/reflectivity_from_melting_graupel.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rg~13"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ng~17"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ng</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamg~11"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ilamg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-idx~14"></span>
+              integer,
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>idx</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rr~13"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-reflectivity_from_melting_snow"></span> <h3>private  function <a href='../proc/reflectivity_from_melting_snow.html'>reflectivity_from_melting_snow</a>(rs, smob, smoc, rr) result(ze_snow)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates radar reflectivity from melting snow using binned approach</p><a href="../proc/reflectivity_from_melting_snow.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rs~14"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smob~8"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smob</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoc~8"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smoc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rr~14"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+        </section>
+        <br>
+
+        <section>
+          <h2>Subroutines</h2>
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-effective_radius"></span> <h3>public  subroutine <a href='../proc/effective_radius.html'>effective_radius</a>(temp, l_qc, nc, ilamc, l_qi, ilami, l_qs, rs, re_qc, re_qi, re_qs)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>effective radius values for cloud water, cloud ice and snow</p><a href="../proc/effective_radius.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-temp~19"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>temp</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qc~8"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nc~16"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>nc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamc~6"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilamc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qi~6"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qi</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilami~5"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilami</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qs~10"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rs~12"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-re_qc"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>re_qc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-re_qi"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>re_qi</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-re_qs"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>re_qs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-reflectivity_10cm"></span> <h3>public  subroutine <a href='../proc/reflectivity_10cm.html'>reflectivity_10cm</a>(refl10cm_from_melting_flag, temp, l_qr, rr, nr, ilamr, l_qs, rs, smoc, smob, smoz, l_qg, rg, ng, idx, ilamg, dbz)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>10-cm radar reflectivity</p><a href="../proc/reflectivity_10cm.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-refl10cm_from_melting_flag~3"></span>
+              logical,
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>refl10cm_from_melting_flag</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-temp~20"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>temp</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qr~9"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rr~12"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nr~16"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>nr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamr~10"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilamr</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qs~11"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rs~13"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoc~7"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>smoc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smob~7"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>smob</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoz~3"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>smoz</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-l_qg~10"></span>
+              logical,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>l_qg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rg~12"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ng~16"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ng</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-idx~13"></span>
+              integer,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>idx</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamg~10"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilamg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-dbz"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>dbz</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-rayleigh_soak_wetgraupel"></span> <h3>private  subroutine <a href='../proc/rayleigh_soak_wetgraupel.html'>rayleigh_soak_wetgraupel</a>(x_g, a_geo, b_geo, fmelt, lambda_radar, meltratio_outside, m_w, m_i, backscatter)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates backscatter cross section of wet snow or graupel
+using Maxwell-Garnett mixing formula and Rayleigh approximation</p><a href="../proc/rayleigh_soak_wetgraupel.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-x_g"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>x_g</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-a_geo"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>a_geo</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-b_geo"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>b_geo</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-fmelt~3"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>fmelt</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lambda_radar~3"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>lambda_radar</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-meltratio_outside"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>meltratio_outside</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-m_w"></span>
+              complex(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>m_w</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-m_i"></span>
+              complex(kind=dp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>m_i</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-backscatter~3"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>backscatter</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-max_hail_diam"></span> <h3>public  subroutine <a href='../proc/max_hail_diam.html'>max_hail_diam</a>(rho, rg, ng, ilamg, idx, max_hail_diameter)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>estimates maximmum hail diameter [mm] using a binned approach</p><a href="../proc/max_hail_diam.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rho~24"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rho</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rg~14"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>rg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ng~18"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ng</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ilamg~12"></span>
+              real(kind=dp),
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>ilamg</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-idx~15"></span>
+              integer,
+            </td>
+<td>intent(in),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>idx</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-max_hail_diameter~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>max_hail_diameter</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-freezing_rain"></span> <h3>public  subroutine <a href='../proc/freezing_rain.html'>freezing_rain</a>(temp, rain_precip, cloud_precip, frz_rain)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>estimates freezing rain/drizzle accumulation</p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-temp~22"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>temp</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rain_precip~3"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rain_precip</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-cloud_precip~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>cloud_precip</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-frz_rain"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>frz_rain</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+        </section>
+        <br>
+
+
+
+    </div>
+  </div>
+
+      <hr>
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col">
+            <p>
+              TEMPO Microphysics
+ was developed by Anders A. Jensen<br>              &copy; 2026 
+</p>
+          </div>
+          <div class="col">
+            <p class="text-end">
+              Documentation generated by
+              <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+            </p>
+          </div>
+        </div>
+        <br>
+      </div> <!-- /container -->
+    </footer>
+  </body>
+</html>

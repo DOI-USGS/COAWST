@@ -1,0 +1,56 @@
+.SUFFIXES: .F90 .o
+
+all: dummy microphysics
+
+dummy:
+	echo "****** compiling TEMPO microphysics ******"
+
+# Detect the underlying compiler type (works even through MPI wrappers like mpif90)
+FC_VERSION := $(shell $(FC) --version 2>/dev/null)
+
+ifneq (,$(findstring ifort,$(FC_VERSION))$(findstring ifx,$(FC_VERSION))$(findstring Intel,$(FC_VERSION)))
+    # --- Intel (ifort/ifx) optimization flags ---
+    TEMPO_FFLAGS = -fma -fp-model=fast -fprotect-parens -fimf-precision=high
+else
+    TEMPO_FFLAGS =
+endif
+
+OBJS = \
+	module_mp_tempo_params.o    \
+	module_mp_tempo_cfgs.o      \
+	module_mp_tempo_utils.o     \
+	module_mp_tempo_diags.o     \
+	module_mp_tempo_aerosols.o  \
+	module_mp_tempo_ml.o        \
+	module_mp_tempo_main.o      \
+	module_mp_tempo_driver.o
+
+microphysics: $(OBJS)
+	ar -ru ./../../libphys.a $(OBJS)
+
+module_mp_tempo_ml.o: module_mp_tempo_params.o
+module_mp_tempo_utils.o: module_mp_tempo_params.o
+module_mp_tempo_aerosols.o: module_mp_tempo_params.o
+module_mp_tempo_diags.o: module_mp_tempo_params.o \
+			module_mp_tempo_utils.o
+module_mp_tempo_driver.o : module_mp_tempo_params.o \
+			module_mp_tempo_cfgs.o \
+			module_mp_tempo_utils.o \
+			module_mp_tempo_diags.o \
+		    module_mp_tempo_main.o \
+		    module_mp_tempo_ml.o
+module_mp_tempo_main.o : module_mp_tempo_params.o \
+			module_mp_tempo_cfgs.o \
+			module_mp_tempo_utils.o \
+			module_mp_tempo_diags.o \
+			module_mp_tempo_aerosols.o \
+			module_mp_tempo_ml.o
+
+clean:
+	$(RM) *.f90 *.o *.mod
+	@# Certain systems with intel compilers generate *.i files
+	@# This removes them during the clean process
+	$(RM) *.i
+
+%.o %.mod: src/%.F90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) $(TEMPO_FFLAGS) $(comp_flag) -Dtempo_mpas -c src/$*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I../.. -I../../physics_wrf -I../../physics_mmm -I../../../../framework -I../../../../external/esmf_time_f90

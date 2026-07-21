@@ -1,0 +1,304 @@
+[ccpp-table-properties]
+  name = module_mp_tempo_driver
+  type = scheme
+  dependencies = ../../hooks/machine.F
+  dependencies = TEMPO/src/module_mp_tempo_params.F90
+  dependencies = TEMPO/src/module_mp_tempo_cfgs.F90  
+  dependencies = TEMPO/src/module_mp_tempo_utils.F90
+  dependencies = TEMPO/src/module_mp_tempo_diags.F90
+  dependencies = TEMPO/src/module_mp_tempo_ml.F90
+  dependencies = TEMPO/src/module_mp_tempo_aerosols.F90
+  dependencies = TEMPO/src/module_mp_tempo_main.F90  
+
+########################################################################
+[ccpp-arg-table]
+  name = tempo_init
+  type = scheme
+[tempo_cfgs]
+  standard_name = configuration_for_TEMPO_microphysics
+  long_name = configuration information for TEMPO microphysics
+  units = mixed
+  dimensions = ()
+  type = ty_tempo_cfgs
+[ncol]
+  standard_name = horizontal_loop_extent
+  long_name = horizontal loop extent
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[nlev]
+  standard_name = vertical_layer_dimension
+  long_name = number of vertical levels
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[is_initialized]
+  standard_name = flag_for_tempo_mp_scheme_initialization
+  long_name = flag carrying scheme initialization status
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = inout
+[con_pi]
+  standard_name = pi
+  long_name = ratio of a circle's circumference to its diameter
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_rv]
+  standard_name = gas_constant_water_vapor
+  long_name = ideal gas constant for water vapor
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_rd]
+  standard_name = gas_constant_of_dry_air
+  long_name = ideal gas constant for dry air
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_eps]
+  standard_name = ratio_of_dry_air_to_water_vapor_gas_constants
+  long_name = rd/rv
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_cp]
+  standard_name = specific_heat_of_dry_air_at_constant_pressure
+  long_name = specific heat of dry air at constant pressure
+  units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_rgas]
+  standard_name = molar_gas_constant
+  long_name = universal ideal molar gas constant
+  units = J K-1 mol-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[con_hvap]
+  standard_name = latent_heat_of_vaporization_of_water_at_0C
+  long_name = latent heat of evaporation/sublimation
+  units = J kg-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[is_aerosol_aware]
+  standard_name = flag_for_aerosol_physics
+  long_name = flag for aerosol-aware physics
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[is_hail_aware]
+  standard_name = flag_for_hail_physics
+  long_name = flag for hail-aware physics
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[errmsg]
+  standard_name = ccpp_error_message
+  long_name = error message for error handling in CCPP
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = out
+[errflg]
+  standard_name = ccpp_error_code
+  long_name = error code for error handling in CCPP
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+########################################################################
+[ccpp-arg-table]
+  name = tempo_run
+  type = scheme
+[con_g]
+  standard_name = gravitational_acceleration
+  long_name = gravitational acceleration
+  units = m s-2
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[tempo_cfgs]
+  standard_name = configuration_for_TEMPO_microphysics
+  long_name = configuration information for TEMPO microphysics
+  units = mixed
+  dimensions = ()
+  type = ty_tempo_cfgs
+[ncol]
+  standard_name = horizontal_dimension
+  long_name = horizontal dimension
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[nlev]
+  standard_name = vertical_layer_dimension
+  long_name = number of vertical levels
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[spechum]
+  standard_name = specific_humidity_of_new_state
+  long_name = water vapor specific humidity
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qc]
+  standard_name = cloud_liquid_water_mixing_ratio_of_new_state
+  long_name = cloud water mixing ratio wrt dry+vapor (no condensates)
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qr]
+  standard_name = rain_mixing_ratio_of_new_state
+  long_name = rain water mixing ratio wrt dry+vapor (no condensates)
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qi]
+  standard_name = cloud_ice_mixing_ratio_of_new_state
+  long_name = ice water mixing ratio wrt dry+vapor (no condensates)
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qs]
+  standard_name = snow_mixing_ratio_of_new_state
+  long_name = snow water mixing ratio wrt dry+vapor (no condensates)
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[qg]
+  standard_name = graupel_mixing_ratio_of_new_state
+  long_name = graupel mixing ratio wrt dry+vapor (no condensates)
+  units = kg kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[ni]
+  standard_name = mass_number_concentration_of_cloud_ice_water_crystals_in_air_of_new_state
+  long_name = ice number concentration
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[nr]
+  standard_name = mass_number_concentration_of_rain_water_in_air_of_new_state
+  long_name = rain number concentration
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[nc]
+  standard_name = mass_number_concentration_of_cloud_liquid_water_particles_in_air_of_new_state
+  long_name = cloud droplet number concentration
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[nwfa2d]
+  standard_name = tendency_of_hygroscopic_aerosols_at_surface_adjacent_layer
+  long_name = instantaneous fake water-friendly surface aerosol source
+  units = kg-1 s-1
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[nifa2d]
+  standard_name = tendency_of_nonhygroscopic_ice_nucleating_aerosols_at_surface_adjacent_layer
+  long_name = instantaneous fake ice-friendly surface aerosol source
+  units = kg-1 s-1
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[nwfa]
+  standard_name = mass_number_concentration_of_hygroscopic_aerosols_of_new_state
+  long_name = number concentration of water-friendly aerosols
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[nifa]
+  standard_name = mass_number_concentration_of_nonhygroscopic_ice_nucleating_aerosols_of_new_state
+  long_name = number concentration of ice-friendly aerosols
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[chw]
+  standard_name = mass_number_concentration_of_graupel_in_air_of_new_state
+  long_name = graupel number concentration
+  units = kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[vh]
+  standard_name = graupel_volume_of_new_state
+  long_name = graupel particle volume
+  units = m3 kg-1
+  dimensions = (horizontal_dimension,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+  optional = True
+[dtp]
+  standard_name = timestep_for_physics
+  long_name = physics timestep
+  units = s
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[dt_inner]
+  standard_name = time_step_for_inner_loop
+  long_name = time step for inner loop
+  units = s
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in

@@ -1,0 +1,529 @@
+<!-- -*- mode: jinja2 -*- -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="Documentation for TEMPO Microphysics">
+    <meta name="author" content="Anders A. Jensen" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>machine.F90 &ndash; TEMPO Microphysics</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Font Awesome -->
+    <link href="../css/fontawesome.min.css" rel="stylesheet">
+    <link href="../css/brands.min.css" rel="stylesheet">
+    <link href="../css/regular.min.css" rel="stylesheet">
+    <link href="../css/solid.min.css" rel="stylesheet">
+    <link href="../css/v4-font-face.min.css" rel="stylesheet">
+    <link href="../css/v4-shims.min.css" rel="stylesheet">
+    <!-- MathJax -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { equationNumbers: { autoNumber: "AMS" } }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async
+            integrity="sha256-DViIOMYdwlM/axqoGDPeUyf0urLoHMN4QACBKyB58Uw=" crossorigin="anonymous"></script>
+    <!-- Other scripts and stylesheets -->
+    <link href="../css/local.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <script src="../js/svg-pan-zoom.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="container-fluid mb-sm-4 mb-xl-2">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="../index.html">TEMPO Microphysics </a>
+          <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
+                  aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon">
+          </button>
+
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="../lists/files.html">Source Files</a>
+                  </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/modules.html">Modules</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/procedures.html">Procedures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/types.html">Derived Types</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/programs.html">Programs</a>
+                </li>
+            </ul>
+              <div class="d-flex align-items-end flex-grow-1">
+                <form action="../search.html" role="search" class="ms-auto">
+                  <input type="text" class="form-control" aria-label="Search" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+                </form>
+              </div>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+  <div class="row">
+    <h1>machine.F90
+      <small>Source File</small>
+      
+    </h1>
+      <div class="container p-2 mb-4 bg-light border rounded-3">
+    <div class="row align-items-center justify-content-between" id="info-bar">
+      <div class="col">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+
+            <li class="list-inline-item" id="statements"><i class="fa fa-list-ol"></i>
+              <a data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                 title=" 0.2% of total for source files.">9 statements</a>
+            </li>
+
+            <li class="list-inline-item" id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/machine.F90"> Source File</a>
+            </li>
+        </ul>
+      </div>
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-end mb-0">
+            <li class="breadcrumb-item active" aria-current="page">machine.F90</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Enable Bootstrap tooltips
+    (function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    })();
+  </script>
+
+  </div>
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+        <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+      <div class="card mb-4">
+      <a data-bs-toggle="collapse" href="#mods-0"
+         aria-expanded="false" aria-controls="mods-0">
+         <h4 class="card-header bg-primary text-white">Modules</h4>
+      </a>
+      <div id="mods-0" class="collapse">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item" href="../module/machine.html">machine</a>
+        </div>
+      </div>
+    </div>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    <div class="card card-primary">
+      <div class="card-header text-left"><h3 class="card-title">Source Code</h3></div>
+      <div class="list-group">
+        <a class="list-group-item" href="../sourcefile/machine.f90.html#src">machine.F90</a>
+      </div>
+    </div>
+
+
+  </div>
+
+    </div>
+    <div class="col-md-9" id='text'>
+      
+      <br>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Files dependent on this one</h3>
+          </div>
+          <div class="card-body">
+            <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: sourcefile~~machine.f90~~AfferentGraph Pages: 1 -->
+<svg id="sourcefilemachinef90AfferentGraph" width="641pt" height="160pt"
+ viewBox="0.00 0.00 641.00 160.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="sourcefile~~machine.f90~~AfferentGraph" class="graph" transform="scale(0.487393 0.487393) rotate(0) translate(4 323.91)">
+<title>sourcefile~~machine.f90~~AfferentGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-323.91 1311.16,-323.91 1311.16,4 -4,4"/>
+<!-- sourcefile~machine.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node1" class="node">
+<title>sourcefile~machine.f90</title>
+<polygon fill="none" stroke="black" points="73.77,-120.77 0,-120.77 0,-98 73.77,-98 73.77,-120.77"/>
+<text xml:space="preserve" text-anchor="middle" x="36.88" y="-105.04" font-family="Helvetica,sans-Serif" font-size="10.50">machine.F90</text>
+</g>
+<!-- sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node2" class="node">
+<title>sourcefile~module_mp_tempo_params.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node2"><a xlink:href="../sourcefile/module_mp_tempo_params.f90.html" xlink:title="module_mp_tempo_params.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="277.29,-120.77 109.77,-120.77 109.77,-98 277.29,-98 277.29,-120.77"/>
+<text xml:space="preserve" text-anchor="middle" x="193.53" y="-105.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_params.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_params.f90&#45;&gt;sourcefile~machine.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge1" class="edge">
+<title>sourcefile~module_mp_tempo_params.f90&#45;&gt;sourcefile~machine.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M109.32,-109.39C101.06,-109.39 92.89,-109.39 85.19,-109.39"/>
+<polygon fill="#000000" stroke="#000000" points="85.43,-105.89 75.43,-109.39 85.43,-112.89 85.43,-105.89"/>
+</g>
+<!-- sourcefile~build_tables.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node3" class="node">
+<title>sourcefile~build_tables.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node3"><a xlink:href="../sourcefile/build_tables.f90.html" xlink:title="build_tables.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="839.85,-295.77 749.58,-295.77 749.58,-273 839.85,-273 839.85,-295.77"/>
+<text xml:space="preserve" text-anchor="middle" x="794.71" y="-280.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">build_tables.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~build_tables.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge2" class="edge">
+<title>sourcefile~build_tables.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M749.18,-295.2C675.33,-311.26 523.45,-336.26 400.3,-304.38"/>
+</g>
+<!-- sourcefile~module_mp_tempo_tables.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node9" class="node">
+<title>sourcefile~module_mp_tempo_tables.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node9"><a xlink:href="../sourcefile/module_mp_tempo_tables.f90.html" xlink:title="module_mp_tempo_tables.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="681.33,-276.77 521.31,-276.77 521.31,-254 681.33,-254 681.33,-276.77"/>
+<text xml:space="preserve" text-anchor="middle" x="601.32" y="-261.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_tables.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~build_tables.f90&#45;&gt;sourcefile~module_mp_tempo_tables.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge17" class="edge">
+<title>sourcefile~build_tables.f90&#45;&gt;sourcefile~module_mp_tempo_tables.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M749.32,-279.98C732.52,-278.31 712.73,-276.35 693.2,-274.41"/>
+<polygon fill="#000000" stroke="#000000" points="693.56,-270.93 683.26,-273.42 692.87,-277.89 693.56,-270.93"/>
+</g>
+<!-- sourcefile~module_mp_tempo_aerosols.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node4" class="node">
+<title>sourcefile~module_mp_tempo_aerosols.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node4"><a xlink:href="../sourcefile/module_mp_tempo_aerosols.f90.html" xlink:title="module_mp_tempo_aerosols.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="485.31,-81.77 313.29,-81.77 313.29,-59 485.31,-59 485.31,-81.77"/>
+<text xml:space="preserve" text-anchor="middle" x="399.3" y="-66.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_aerosols.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_aerosols.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge3" class="edge">
+<title>sourcefile~module_mp_tempo_aerosols.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M336.33,-82.25C314.7,-86.39 290.21,-91.07 267.74,-95.37"/>
+<polygon fill="#000000" stroke="#000000" points="267.2,-91.91 258.04,-97.23 268.52,-98.79 267.2,-91.91"/>
+</g>
+<!-- sourcefile~module_mp_tempo_diags.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node5" class="node">
+<title>sourcefile~module_mp_tempo_diags.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node5"><a xlink:href="../sourcefile/module_mp_tempo_diags.f90.html" xlink:title="module_mp_tempo_diags.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="679.83,-120.77 522.81,-120.77 522.81,-98 679.83,-98 679.83,-120.77"/>
+<text xml:space="preserve" text-anchor="middle" x="601.32" y="-105.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_diags.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_diags.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge4" class="edge">
+<title>sourcefile~module_mp_tempo_diags.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M522.39,-107.65C485.38,-107.27 440.54,-107.45 400.3,-109.39"/>
+</g>
+<!-- sourcefile~module_mp_tempo_utils.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node10" class="node">
+<title>sourcefile~module_mp_tempo_utils.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node10"><a xlink:href="../sourcefile/module_mp_tempo_utils.f90.html" xlink:title="module_mp_tempo_utils.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="474.43,-159.77 324.16,-159.77 324.16,-137 474.43,-137 474.43,-159.77"/>
+<text xml:space="preserve" text-anchor="middle" x="399.3" y="-144.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_utils.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_diags.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge18" class="edge">
+<title>sourcefile~module_mp_tempo_diags.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M539.49,-121.25C518.35,-125.37 494.44,-130.03 472.47,-134.31"/>
+<polygon fill="#000000" stroke="#000000" points="471.81,-130.88 462.67,-136.22 473.15,-137.75 471.81,-130.88"/>
+</g>
+<!-- sourcefile~module_mp_tempo_driver.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node6" class="node">
+<title>sourcefile~module_mp_tempo_driver.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node6"><a xlink:href="../sourcefile/module_mp_tempo_driver.f90.html" xlink:title="module_mp_tempo_driver.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="1065.87,-42.77 908.1,-42.77 908.1,-20 1065.87,-20 1065.87,-42.77"/>
+<text xml:space="preserve" text-anchor="middle" x="986.98" y="-27.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_driver.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge5" class="edge">
+<title>sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M907.72,-29.61C873.34,-29.28 832.5,-29.52 795.71,-31.39"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node7" class="node">
+<title>sourcefile~module_mp_tempo_main.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node7"><a xlink:href="../sourcefile/module_mp_tempo_main.f90.html" xlink:title="module_mp_tempo_main.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="872.1,-120.77 717.33,-120.77 717.33,-98 872.1,-98 872.1,-120.77"/>
+<text xml:space="preserve" text-anchor="middle" x="794.71" y="-105.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_main.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_main.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge14" class="edge">
+<title>sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_main.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M957.09,-43.23C924.44,-56.61 871.14,-78.46 834.8,-93.36"/>
+<polygon fill="#000000" stroke="#000000" points="833.9,-89.95 825.97,-96.98 836.55,-96.43 833.9,-89.95"/>
+</g>
+<!-- sourcefile~module_mp_tempo_ml.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node8" class="node">
+<title>sourcefile~module_mp_tempo_ml.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node8"><a xlink:href="../sourcefile/module_mp_tempo_ml.f90.html" xlink:title="module_mp_tempo_ml.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="672.7,-198.77 529.93,-198.77 529.93,-176 672.7,-176 672.7,-198.77"/>
+<text xml:space="preserve" text-anchor="middle" x="601.32" y="-183.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_ml.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_ml.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge15" class="edge">
+<title>sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_ml.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M793.71,-226.38C767.6,-235.8 696.59,-217.22 648.8,-202.6"/>
+<polygon fill="#000000" stroke="#000000" points="650.12,-199.34 639.53,-199.72 648.04,-206.03 650.12,-199.34"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M979.71,-43.15C959.27,-79.91 890.49,-192.22 795.71,-226.38"/>
+</g>
+<!-- sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge19" class="edge">
+<title>sourcefile~module_mp_tempo_driver.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M793.71,-226.38C736.63,-246.96 579.93,-223.08 521.31,-207.38 487.68,-198.38 452.22,-179.88 428.44,-165.98"/>
+<polygon fill="#000000" stroke="#000000" points="430.37,-163.06 419.99,-160.94 426.78,-169.07 430.37,-163.06"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge6" class="edge">
+<title>sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M398.3,-109.39C362.58,-111.1 323.31,-111.47 288.85,-111.27"/>
+<polygon fill="#000000" stroke="#000000" points="288.9,-107.77 278.87,-111.2 288.85,-114.77 288.9,-107.77"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M600.32,-70.39C509.87,-65.73 490.77,-105.03 400.3,-109.39"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_aerosols.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge11" class="edge">
+<title>sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_aerosols.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M753.47,-97.53C715.05,-87.08 655.32,-73.11 602.32,-70.39"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M600.32,-70.39C566.66,-68.65 529.77,-68.24 496.94,-68.38"/>
+<polygon fill="#000000" stroke="#000000" points="497,-64.88 487.03,-68.45 497.05,-71.88 497,-64.88"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_diags.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge12" class="edge">
+<title>sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_diags.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M716.97,-109.39C708.51,-109.39 699.84,-109.39 691.25,-109.39"/>
+<polygon fill="#000000" stroke="#000000" points="691.53,-105.89 681.53,-109.39 691.53,-112.89 691.53,-105.89"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_ml.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge16" class="edge">
+<title>sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_ml.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M771.29,-121.06C748.88,-132.45 713.26,-149.87 681.33,-162.38 672.66,-165.78 663.33,-169.06 654.22,-172.06"/>
+<polygon fill="#000000" stroke="#000000" points="653.18,-168.72 644.73,-175.11 655.32,-175.38 653.18,-168.72"/>
+</g>
+<!-- sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge20" class="edge">
+<title>sourcefile~module_mp_tempo_main.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M734.11,-121.23C717.12,-124.27 698.54,-127.28 681.33,-129.38 616.05,-137.38 541.8,-142.21 486.02,-145.01"/>
+<polygon fill="#000000" stroke="#000000" points="486.1,-141.5 476.28,-145.48 486.44,-148.49 486.1,-141.5"/>
+</g>
+<!-- sourcefile~module_mp_tempo_ml.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge7" class="edge">
+<title>sourcefile~module_mp_tempo_ml.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M398.3,-304.38C304.17,-280.02 233.46,-176.12 206.48,-130.74"/>
+<polygon fill="#000000" stroke="#000000" points="209.65,-129.22 201.6,-122.33 203.59,-132.74 209.65,-129.22"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M583.36,-199.18C538.79,-229.88 420.45,-309.6 400.3,-304.38"/>
+</g>
+<!-- sourcefile~module_mp_tempo_tables.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge8" class="edge">
+<title>sourcefile~module_mp_tempo_tables.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M561.07,-277.2C511.79,-291.31 430.1,-312.1 400.3,-304.38"/>
+</g>
+<!-- sourcefile~module_mp_tempo_tables.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge21" class="edge">
+<title>sourcefile~module_mp_tempo_tables.f90&#45;&gt;sourcefile~module_mp_tempo_utils.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M553.71,-253.56C542.79,-250 531.4,-245.62 521.31,-240.38 482.84,-220.44 443.93,-188.23 420.98,-167.7"/>
+<polygon fill="#000000" stroke="#000000" points="423.6,-165.34 413.84,-161.21 418.89,-170.53 423.6,-165.34"/>
+</g>
+<!-- sourcefile~module_mp_tempo_utils.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge9" class="edge">
+<title>sourcefile~module_mp_tempo_utils.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M336.33,-136.52C314.7,-132.38 290.21,-127.7 267.74,-123.4"/>
+<polygon fill="#000000" stroke="#000000" points="268.52,-119.98 258.04,-121.54 267.2,-126.86 268.52,-119.98"/>
+</g>
+<!-- sourcefile~tests.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node11" class="node">
+<title>sourcefile~tests.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node11"><a xlink:href="../sourcefile/tests.f90.html" xlink:title="tests.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="1157.64,-22.77 1101.87,-22.77 1101.87,0 1157.64,0 1157.64,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="1129.75" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tests.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~tests.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge10" class="edge">
+<title>sourcefile~tests.f90&#45;&gt;sourcefile~module_mp_tempo_params.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M793.71,-31.39C580.3,-42.18 520.32,2.55 313.29,-50.39 279.87,-58.93 244.89,-77.68 221.62,-91.77"/>
+<polygon fill="#000000" stroke="#000000" points="220.05,-88.62 213.39,-96.87 223.74,-94.57 220.05,-88.62"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M1101.51,-9.85C1059.78,-7.84 977.55,-5.25 908.1,-11.39 857.56,-15.85 846.4,-29.25 795.71,-31.39"/>
+</g>
+<!-- sourcefile~tests.f90&#45;&gt;sourcefile~module_mp_tempo_driver.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge13" class="edge">
+<title>sourcefile~tests.f90&#45;&gt;sourcefile~module_mp_tempo_driver.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M1101.61,-15.24C1094.37,-16.27 1086.12,-17.44 1077.46,-18.67"/>
+<polygon fill="#000000" stroke="#000000" points="1077.21,-15.17 1067.81,-20.04 1078.2,-22.1 1077.21,-15.17"/>
+</g>
+<!-- sourcefile~run_tempo_tests.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_node12" class="node">
+<title>sourcefile~run_tempo_tests.f90</title>
+<g id="a_sourcefile~~machine.f90~~AfferentGraph_node12"><a xlink:href="../sourcefile/run_tempo_tests.f90.html" xlink:title="run_tempo_tests.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="1307.16,-22.77 1193.64,-22.77 1193.64,0 1307.16,0 1307.16,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="1250.4" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">run_tempo_tests.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~run_tempo_tests.f90&#45;&gt;sourcefile~tests.f90 -->
+<g id="sourcefile~~machine.f90~~AfferentGraph_edge22" class="edge">
+<title>sourcefile~run_tempo_tests.f90&#45;&gt;sourcefile~tests.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M1193.2,-11.39C1185.19,-11.39 1177.09,-11.39 1169.51,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="1169.61,-7.89 1159.61,-11.39 1169.61,-14.89 1169.61,-7.89"/>
+</g>
+</g>
+</svg>
+</div>                <script>
+                  var pansourcefilemachinef90AfferentGraph = svgPanZoom('#sourcefilemachinef90AfferentGraph',
+                    {zoomEnabled: true, controlIconsEnabled: true, fit: true, center: true,}
+                  );
+                </script>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#AfferentGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="AfferentGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="188pt" height="31pt"
+ viewBox="0.00 0.00 188.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 183.89,-26.77 183.89,4 -4,4"/>
+<!-- Source File -->
+<g id="node1" class="node">
+<title>Source File</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="65.52,-22.77 0,-22.77 0,0 65.52,0 65.52,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="32.76" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Source File</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="179.89,-22.77 83.62,-22.77 83.62,0 179.89,0 179.89,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="131.76" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a file to a file which it depends on. A file
+is dependent upon another if the latter must be compiled before the former
+can be.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+          </div>
+        </div>
+<br>
+      <section>
+        <h2><span class="anchor" id="src"></span>Source Code</h2>
+        <div class="hl codehilite"><pre><span></span><a id="ln-1" name="ln-1" href="#ln-1"></a><span class="k">module </span><span class="n">machine</span>
+<a id="ln-2" name="ln-2" href="#ln-2"></a><span class="w">  </span><span class="c">!! sets the precision if not set by a host model</span>
+<a id="ln-3" name="ln-3" href="#ln-3"></a>
+<a id="ln-4" name="ln-4" href="#ln-4"></a><span class="w">  </span><span class="k">implicit none</span>
+<a id="ln-5" name="ln-5" href="#ln-5"></a><span class="k">  private</span>
+<a id="ln-6" name="ln-6" href="#ln-6"></a>
+<a id="ln-7" name="ln-7" href="#ln-7"></a><span class="k">  public</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">kind_phys</span><span class="p">,</span><span class="w"> </span><span class="n">kind_sngl_prec</span><span class="p">,</span><span class="w"> </span><span class="n">kind_dbl_prec</span><span class="p">,</span><span class="w"> </span><span class="n">kind_io8</span>
+<a id="ln-8" name="ln-8" href="#ln-8"></a>
+<a id="ln-9" name="ln-9" href="#ln-9"></a><span class="w">  </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">kind_sngl_prec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<a id="ln-10" name="ln-10" href="#ln-10"></a><span class="w">    </span><span class="n">kind_dbl_prec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<a id="ln-11" name="ln-11" href="#ln-11"></a>
+<a id="ln-12" name="ln-12" href="#ln-12"></a><span class="c">! physics single precision flag</span>
+<a id="ln-13" name="ln-13" href="#ln-13"></a><span class="cp">#ifndef SINGLE_PREC </span>
+<a id="ln-14" name="ln-14" href="#ln-14"></a><span class="w">  </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">kind_phys</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kind_dbl_prec</span>
+<a id="ln-15" name="ln-15" href="#ln-15"></a><span class="cp">#else</span>
+<a id="ln-16" name="ln-16" href="#ln-16"></a><span class="w">  </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">kind_phys</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kind_sngl_prec</span>
+<a id="ln-17" name="ln-17" href="#ln-17"></a><span class="cp">#endif</span>
+<a id="ln-18" name="ln-18" href="#ln-18"></a><span class="w">  </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">kind_io8</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kind_phys</span>
+<a id="ln-19" name="ln-19" href="#ln-19"></a>
+<a id="ln-20" name="ln-20" href="#ln-20"></a><span class="k">end module </span><span class="n">machine</span>
+</pre></div>
+
+      </section>
+    </div>
+  </div>
+
+      <hr>
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col">
+            <p>
+              TEMPO Microphysics
+ was developed by Anders A. Jensen<br>              &copy; 2026 
+</p>
+          </div>
+          <div class="col">
+            <p class="text-end">
+              Documentation generated by
+              <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+            </p>
+          </div>
+        </div>
+        <br>
+      </div> <!-- /container -->
+    </footer>
+  </body>
+</html>

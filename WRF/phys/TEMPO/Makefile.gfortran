@@ -1,0 +1,134 @@
+# Project name
+name := tempo
+
+# to run unit tests, build test-drive and add the test-drive
+# directory to testdrive_dir. This directory should have libtest-drive.a
+# https://github.com/fortran-lang/test-drive
+# either set testdrive_dir here or set it in the make command
+# testdrive_dir = /set-this-dir/test-drive/build
+
+# compiles with mpi for faster table builds when mpi = 1
+mpi = 0
+
+# directories (these should not change)
+src_dir := src
+test_dir := test
+tools_dir := tools
+unittest_dir := $(test_dir)/unittests
+
+# libraries and executables
+testdrive_lib := libtest-drive.a
+unittest_exe := run_unit_tests
+tempotest_exe := run_tempo_tests
+tables_exe := run_build_tables
+
+# Compiler
+fc := gfortran
+fc_mpi := mpif90
+ar := ar rcs
+fcflags := -c -g -O0 -fbacktrace -fcheck=all -ffree-line-length-0  -fdefault-real-8 -fdefault-double-8 -J ./$(src_dir)
+
+# tempo library
+tempo_lib := $(patsubst %, lib%.a, $(name))
+tempo_files := $(wildcard $(src_dir)/*.F90)
+tempo_objs := $(patsubst %.F90, %.o, $(tempo_files))
+
+# tempo test
+tempotest_files := $(wildcard $(test_dir)/*.F90)
+tempotest_objs := $(patsubst %.F90, %.o, $(tempotest_files))
+
+# unit tests
+unittest_files := $(wildcard $(unittest_dir)/*.F90)
+unittest_objs := $(patsubst %.F90, %.o, $(unittest_files))
+
+# tables
+table_files := $(wildcard $(tools_dir)/*.F90)
+table_objs := $(patsubst %.F90, %.o, $(table_files))
+
+$(unittest_exe): $(unittest_objs) $(tempo_lib)
+	$(ld) -o $@ $^ $(td_lib) -I./$(src_dir)
+
+$(tempotest_exe): $(tempotest_objs) $(tempo_lib)
+	$(ld) -o $@ $^ -I./$(src_dir)
+
+$(tables_exe): $(table_objs) $(tempo_lib)
+	$(ld) -o $@ $^ -I./$(src_dir)
+
+%.o %.mod: %.F90
+	$(compiler) $(fcflags) $(mpi_flag) $(ut_flag) $(td_inc) $< -o $@
+
+$(tempo_lib): $(tempo_objs)
+	$(ar) $@ $^
+
+set-configs:
+    compiler := $(fc)
+    ld := $(fc)
+
+set-mpi: set-configs
+ifeq ($(mpi), 1)
+    compiler := $(fc_mpi)
+    ld := $(fc_mpi)
+    mpi_flag := -Dbuild_tables_with_mpi
+endif
+
+check-compiler: set-configs set-mpi
+	@which $(compiler) || { echo "Error: $(compiler) not found in PATH." >&2; exit 1; }
+	@echo "$(compiler) is available and ready to use."
+
+set-utest:
+ifneq ("$(wildcard $(testdrive_dir)/$(testdrive_lib))","")	
+    unit_tests: td_lib := $(testdrive_dir)/$(testdrive_lib)
+    unit_tests: td_inc := -I$(testdrive_dir)/include
+    unit_tests: ut_flag = -Dunit_testing
+endif
+
+build_tables: set-configs set-mpi check-compiler $(tables_exe)
+tempo_tests: set-configs check-compiler $(tempotest_exe)
+unit_tests: set-configs check-compiler set-utest $(unittest_exe)
+
+install : tempo_tests
+	mkdir -p rundir_tests
+	install $(tempotest_exe) ./rundir_tests/$(tempotest_exe)
+
+install_unit_tests : unit_tests
+	mkdir -p rundir_unit_tests
+	install $(unittest_exe) ./rundir_unit_tests/$(unittest_exe)
+
+# dependency rules
+$(src_dir)/module_mp_tempo_params.o: $(src_dir)/machine.o
+$(src_dir)/module_mp_tempo_ml.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_utils.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_aerosols.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_diags.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_diags.o: $(src_dir)/module_mp_tempo_utils.o
+$(src_dir)/module_mp_tempo_tables.o: $(src_dir)/module_mp_tempo_cfgs.o
+$(src_dir)/module_mp_tempo_tables.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_tables.o: $(src_dir)/module_mp_tempo_utils.o
+$(src_dir)/module_mp_tempo_driver.o: $(src_dir)/module_mp_tempo_cfgs.o
+$(src_dir)/module_mp_tempo_driver.o: $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_driver.o: $(src_dir)/module_mp_tempo_utils.o
+$(src_dir)/module_mp_tempo_driver.o: $(src_dir)/module_mp_tempo_ml.o
+$(src_dir)/module_mp_tempo_driver.o: $(src_dir)/module_mp_tempo_main.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_cfgs.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_params.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_utils.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_diags.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_aerosols.o
+$(src_dir)/module_mp_tempo_main.o : $(src_dir)/module_mp_tempo_ml.o
+$(test_dir)/tests.o: $(src_dir)/module_mp_tempo_cfgs.o
+$(test_dir)/tests.o: $(src_dir)/module_mp_tempo_params.o
+$(test_dir)/tests.o: $(src_dir)/module_mp_tempo_driver.o
+$(test_dir)/run_tempo_tests.o: $(test_dir)/tests.o
+$(unittest_dir)/test_tempo_init_suite.o: $(src_dir)/module_mp_tempo_params.o
+$(unittest_dir)/test_tempo_utils_suite.o: $(src_dir)/module_mp_tempo_params.o
+$(unittest_dir)/test_tempo_utils_suite.o: $(src_dir)/module_mp_tempo_utils.o
+$(unittest_dir)/test_tempo_main_suite.o: $(src_dir)/module_mp_tempo_params.o
+$(unittest_dir)/test_tempo_main_suite.o: $(src_dir)/module_mp_tempo_main.o
+$(unittest_dir)/run_unit_tests.o: $(unittest_dir)/test_tempo_init_suite.o
+$(unittest_dir)/run_unit_tests.o: $(unittest_dir)/test_tempo_utils_suite.o
+$(unittest_dir)/run_unit_tests.o: $(unittest_dir)/test_tempo_main_suite.o
+$(tools_dir)/build_tables.o: $(src_dir)/module_mp_tempo_params.o
+$(tools_dir)/build_tables.o: $(src_dir)/module_mp_tempo_tables.o
+
+clean:
+	rm -rf $(src_dir)/*.o $(src_dir)/*.mod $(test_dir)/*.o $(test_dir)/*.mod $(unittest_dir)/*.o $(unittest_dir)/*.mod $(tools_dir)/*.o $(tools_dir)/*.mod $(tempo_lib) $(unittest_exe) $(tempotest_exe) $(tables_exe)

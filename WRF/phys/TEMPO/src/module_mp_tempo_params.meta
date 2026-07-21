@@ -1,0 +1,24 @@
+[ccpp-table-properties]
+  name = ty_tempo_cfg
+  type = ddt
+  dependencies =
+
+[ccpp-arg-table]
+  name = ty_tempo_cfg
+  type = ddt
+
+########################################################################
+[ccpp-table-properties]
+  name = module_mp_tempo_params
+  type = module
+  dependencies = machine.F
+
+[ccpp-arg-table]
+  name = module_mp_tempo_params
+  type = module
+[ty_tempo_cfg]
+  standard_name = ty_tempo_cfg
+  long_name = definition of type ty_tempo_cfg
+  units = DDT
+  dimensions = ()
+  type = ty_tempo_cfg

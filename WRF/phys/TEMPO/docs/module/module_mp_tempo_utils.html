@@ -1,0 +1,1297 @@
+<!-- -*- mode: jinja2 -*- -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="Documentation for TEMPO Microphysics">
+    <meta name="author" content="Anders A. Jensen" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>module_mp_tempo_utils &ndash; TEMPO Microphysics</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Font Awesome -->
+    <link href="../css/fontawesome.min.css" rel="stylesheet">
+    <link href="../css/brands.min.css" rel="stylesheet">
+    <link href="../css/regular.min.css" rel="stylesheet">
+    <link href="../css/solid.min.css" rel="stylesheet">
+    <link href="../css/v4-font-face.min.css" rel="stylesheet">
+    <link href="../css/v4-shims.min.css" rel="stylesheet">
+    <!-- MathJax -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { equationNumbers: { autoNumber: "AMS" } }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML" async
+            integrity="sha256-DViIOMYdwlM/axqoGDPeUyf0urLoHMN4QACBKyB58Uw=" crossorigin="anonymous"></script>
+    <!-- Other scripts and stylesheets -->
+    <link href="../css/local.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <script src="../js/svg-pan-zoom.min.js"></script>
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="container-fluid mb-sm-4 mb-xl-2">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+          <a class="navbar-brand" href="../index.html">TEMPO Microphysics </a>
+          <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar"
+                  aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon">
+          </button>
+
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="navbar-nav">
+                  <li class="nav-item">
+                    <a class="nav-link" href="../lists/files.html">Source Files</a>
+                  </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/modules.html">Modules</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/procedures.html">Procedures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/types.html">Derived Types</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="../lists/programs.html">Programs</a>
+                </li>
+            </ul>
+              <div class="d-flex align-items-end flex-grow-1">
+                <form action="../search.html" role="search" class="ms-auto">
+                  <input type="text" class="form-control" aria-label="Search" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+                </form>
+              </div>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+    </div>
+
+    <div class="container">
+  <div class="row">
+    <h1>module_mp_tempo_utils
+      <small>Module</small>
+      
+    </h1>
+      <div class="container p-2 mb-4 bg-light border rounded-3">
+    <div class="row align-items-center justify-content-between" id="info-bar">
+      <div class="col">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+
+            <li class="list-inline-item" id="statements"><i class="fa fa-list-ol"></i>
+              <a data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+                 title=" 6.1% of total for modules and submodules.">308 statements</a>
+            </li>
+
+            <li class="list-inline-item" id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/module_mp_tempo_utils.F90"> Source File</a>
+            </li>
+        </ul>
+      </div>
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-end mb-0">
+                <li class="breadcrumb-item"><a href='../sourcefile/module_mp_tempo_utils.f90.html'>module_mp_tempo_utils.F90</a></li>
+            <li class="breadcrumb-item active" aria-current="page">module_mp_tempo_utils</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Enable Bootstrap tooltips
+    (function () {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    })();
+  </script>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-3">
+        <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+      <div class="card mb-4">
+      <a data-bs-toggle="collapse" href="#funcs-0"
+         aria-expanded="false" aria-controls="funcs-0">
+         <h4 class="card-header bg-primary text-white">Functions</h4>
+      </a>
+      <div id="funcs-0" class="collapse">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-calc_gamma_p">calc_gamma_p</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-calc_gamma_series">calc_gamma_series</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-calc_gamma_cf">calc_gamma_cf</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-calc_rslf">calc_rslf</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-calc_rsif">calc_rsif</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-get_nuc">get_nuc</a>
+        </div>
+      </div>
+    </div>
+
+      <div class="card mb-4">
+      <a data-bs-toggle="collapse" href="#subs-0"
+         aria-expanded="false" aria-controls="subs-0">
+         <h4 class="card-header bg-primary text-white">Subroutines</h4>
+      </a>
+      <div id="subs-0" class="collapse">
+        <div class="list-group list-group-flush">
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-get_constant_cloud_number">get_constant_cloud_number</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-snow_moments">snow_moments</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-compute_efrw">compute_efrw</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-compute_efsw">compute_efsw</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-qi_aut_qs">qi_aut_qs</a>
+            <a class="list-group-item" href="../module/module_mp_tempo_utils.html#proc-compute_drop_evap">compute_drop_evap</a>
+        </div>
+      </div>
+    </div>
+
+  
+  
+  
+  
+  
+  
+  
+
+
+  </div>
+
+    </div>
+
+    <div class="col-md-9" id='text'>
+      <p>utilities for tempo microphysics</p>
+<br>          <div class="card mb-4">
+      <h3 class="card-header card-title bg-light">Uses</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <ul class="list-inline">
+                  <li class="list-inline-item"><a href='module_mp_tempo_params.html'>module_mp_tempo_params</a></li>
+              </ul>
+            </li>
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: module~~module_mp_tempo_utils~~UsesGraph Pages: 1 -->
+<svg id="modulemodule_mp_tempo_utilsUsesGraph" width="449pt" height="154pt"
+ viewBox="0.00 0.00 449.00 154.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~module_mp_tempo_utils~~UsesGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 149.77)">
+<title>module~~module_mp_tempo_utils~~UsesGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-149.77 445.06,-149.77 445.06,4 -4,4"/>
+<!-- module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node1" class="node">
+<title>module~module_mp_tempo_utils</title>
+<polygon fill="none" stroke="black" points="441.06,-83.77 312.54,-83.77 312.54,-61 441.06,-61 441.06,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="376.8" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50">module_mp_tempo_utils</text>
+</g>
+<!-- module~module_mp_tempo_params -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node2" class="node">
+<title>module~module_mp_tempo_params</title>
+<g id="a_module~~module_mp_tempo_utils~~UsesGraph_node2"><a xlink:href="../module/module_mp_tempo_params.html" xlink:title="module_mp_tempo_params">
+<polygon fill="#337ab7" stroke="#337ab7" points="276.54,-83.77 130.77,-83.77 130.77,-61 276.54,-61 276.54,-83.77"/>
+<text xml:space="preserve" text-anchor="middle" x="203.66" y="-68.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_params</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_utils&#45;&gt;module~module_mp_tempo_params -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_edge1" class="edge">
+<title>module~module_mp_tempo_utils&#45;&gt;module~module_mp_tempo_params</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.07,-72.39C304.26,-72.39 296.18,-72.39 288.13,-72.39"/>
+<polygon fill="#000000" stroke="#000000" points="288.3,-68.89 278.3,-72.39 288.3,-75.89 288.3,-68.89"/>
+</g>
+<!-- ccpp_kind_types -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node3" class="node">
+<title>ccpp_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="92.89,-145.77 1.88,-145.77 1.88,-123 92.89,-123 92.89,-145.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-130.03" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ccpp_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;ccpp_kind_types -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_edge2" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;ccpp_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M173.27,-84.19C149.23,-93.86 114.96,-107.63 88.41,-118.3"/>
+<polygon fill="#000000" stroke="#000000" points="87.3,-114.97 79.32,-121.95 89.91,-121.47 87.3,-114.97"/>
+</g>
+<!-- iso_fortran_env -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node4" class="node">
+<title>iso_fortran_env</title>
+<g id="a_module~~module_mp_tempo_utils~~UsesGraph_node4"><a xlink:href="http://fortranwiki.org/fortran/show/iso_fortran_env" xlink:title="iso_fortran_env">
+<polygon fill="#337ab7" stroke="#337ab7" points="90.27,-104.77 4.5,-104.77 4.5,-82 90.27,-82 90.27,-104.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-89.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_fortran_env</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;iso_fortran_env -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_edge3" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;iso_fortran_env</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-82.21C120.89,-83.51 111.2,-84.83 101.99,-86.09"/>
+<polygon fill="#000000" stroke="#000000" points="101.58,-82.61 92.15,-87.43 102.53,-89.55 101.58,-82.61"/>
+</g>
+<!-- module~machine -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node5" class="node">
+<title>module~machine</title>
+<g id="a_module~~module_mp_tempo_utils~~UsesGraph_node5"><a xlink:href="../module/machine.html" xlink:title="machine">
+<polygon fill="#337ab7" stroke="#337ab7" points="74.38,-63.77 20.38,-63.77 20.38,-41 74.38,-41 74.38,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">machine</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;module~machine -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_edge4" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;module~machine</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M130.49,-63.03C115.08,-61.03 99.41,-59 85.95,-57.25"/>
+<polygon fill="#000000" stroke="#000000" points="86.61,-53.81 76.25,-56 85.71,-60.75 86.61,-53.81"/>
+</g>
+<!-- mpas_kind_types -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_node6" class="node">
+<title>mpas_kind_types</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="94.77,-22.77 0,-22.77 0,0 94.77,0 94.77,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="47.38" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mpas_kind_types</text>
+</g>
+<!-- module~module_mp_tempo_params&#45;&gt;mpas_kind_types -->
+<g id="module~~module_mp_tempo_utils~~UsesGraph_edge5" class="edge">
+<title>module~module_mp_tempo_params&#45;&gt;mpas_kind_types</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M172.91,-60.62C148.98,-51.16 115.11,-37.77 88.73,-27.34"/>
+<polygon fill="#000000" stroke="#000000" points="90.3,-24.19 79.71,-23.77 87.72,-30.7 90.3,-24.19"/>
+</g>
+</g>
+</svg>
+</div>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsesGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsesGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+          <div class="card">
+      <h3 class="card-header card-title bg-light">Used by</h3>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: module~~module_mp_tempo_utils~~UsedByGraph Pages: 1 -->
+<svg id="modulemodule_mp_tempo_utilsUsedByGraph" width="641pt" height="75pt"
+ viewBox="0.00 0.00 641.00 75.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~module_mp_tempo_utils~~UsedByGraph" class="graph" transform="scale(0.736485 0.736485) rotate(0) translate(4 97.16)">
+<title>module~~module_mp_tempo_utils~~UsedByGraph</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-97.16 866.35,-97.16 866.35,4 -4,4"/>
+<!-- module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node1" class="node">
+<title>module~module_mp_tempo_utils</title>
+<polygon fill="none" stroke="black" points="128.52,-63.77 0,-63.77 0,-41 128.52,-41 128.52,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="64.26" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50">module_mp_tempo_utils</text>
+</g>
+<!-- module~module_mp_tempo_diags -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node2" class="node">
+<title>module~module_mp_tempo_diags</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node2"><a xlink:href="../module/module_mp_tempo_diags.html" xlink:title="module_mp_tempo_diags">
+<polygon fill="#337ab7" stroke="#337ab7" points="301.29,-63.77 166.02,-63.77 166.02,-41 301.29,-41 301.29,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="233.66" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_diags</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge1" class="edge">
+<title>module~module_mp_tempo_diags&#45;&gt;module~module_mp_tempo_utils</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M165.53,-52.39C157.22,-52.39 148.67,-52.39 140.25,-52.39"/>
+<polygon fill="#000000" stroke="#000000" points="140.38,-48.89 130.38,-52.39 140.38,-55.89 140.38,-48.89"/>
+</g>
+<!-- module~module_mp_tempo_driver -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node3" class="node">
+<title>module~module_mp_tempo_driver</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node3"><a xlink:href="../module/module_mp_tempo_driver.html" xlink:title="module_mp_tempo_driver">
+<polygon fill="#337ab7" stroke="#337ab7" points="644.58,-82.77 507.81,-82.77 507.81,-60 644.58,-60 644.58,-82.77"/>
+<text xml:space="preserve" text-anchor="middle" x="576.2" y="-67.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_driver</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge2" class="edge">
+<title>module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_utils</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M507.36,-79.97C438.63,-87.59 329.26,-96.74 234.66,-91.39"/>
+</g>
+<!-- module~module_mp_tempo_main -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node4" class="node">
+<title>module~module_mp_tempo_main</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node4"><a xlink:href="../module/module_mp_tempo_main.html" xlink:title="module_mp_tempo_main">
+<polygon fill="#337ab7" stroke="#337ab7" points="471.81,-63.77 338.79,-63.77 338.79,-41 471.81,-41 471.81,-63.77"/>
+<text xml:space="preserve" text-anchor="middle" x="405.3" y="-48.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_main</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_main -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge7" class="edge">
+<title>module~module_mp_tempo_driver&#45;&gt;module~module_mp_tempo_main</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M507.47,-63.77C499.55,-62.88 491.42,-61.96 483.39,-61.06"/>
+<polygon fill="#000000" stroke="#000000" points="483.95,-57.6 473.62,-59.96 483.17,-64.55 483.95,-57.6"/>
+</g>
+<!-- module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge3" class="edge">
+<title>module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_utils</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M232.66,-91.39C190.63,-89 144.1,-77.41 110.78,-67.47"/>
+<polygon fill="#000000" stroke="#000000" points="112.05,-64.2 101.46,-64.63 110,-70.89 112.05,-64.2"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M375.61,-64.17C342.22,-76.67 285.19,-94.25 234.66,-91.39"/>
+</g>
+<!-- module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_diags -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge5" class="edge">
+<title>module~module_mp_tempo_main&#45;&gt;module~module_mp_tempo_diags</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M338.71,-52.39C330.28,-52.39 321.59,-52.39 312.98,-52.39"/>
+<polygon fill="#000000" stroke="#000000" points="313.26,-48.89 303.26,-52.39 313.26,-55.89 313.26,-48.89"/>
+</g>
+<!-- module~module_mp_tempo_tables -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node5" class="node">
+<title>module~module_mp_tempo_tables</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node5"><a xlink:href="../module/module_mp_tempo_tables.html" xlink:title="module_mp_tempo_tables">
+<polygon fill="#337ab7" stroke="#337ab7" points="302.79,-22.77 164.52,-22.77 164.52,0 302.79,0 302.79,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="233.66" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">module_mp_tempo_tables</text>
+</a>
+</g>
+</g>
+<!-- module~module_mp_tempo_tables&#45;&gt;module~module_mp_tempo_utils -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge4" class="edge">
+<title>module~module_mp_tempo_tables&#45;&gt;module~module_mp_tempo_utils</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M184.24,-23.24C165.59,-27.81 144.07,-33.08 124.51,-37.87"/>
+<polygon fill="#000000" stroke="#000000" points="123.92,-34.41 115.04,-40.19 125.58,-41.21 123.92,-34.41"/>
+</g>
+<!-- module~tests -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node6" class="node">
+<title>module~tests</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node6"><a xlink:href="../module/tests.html" xlink:title="tests">
+<polygon fill="#337ab7" stroke="#337ab7" points="734.58,-82.77 680.58,-82.77 680.58,-60 734.58,-60 734.58,-82.77"/>
+<text xml:space="preserve" text-anchor="middle" x="707.58" y="-67.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">tests</text>
+</a>
+</g>
+</g>
+<!-- module~tests&#45;&gt;module~module_mp_tempo_driver -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge6" class="edge">
+<title>module~tests&#45;&gt;module~module_mp_tempo_driver</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M680.08,-71.39C672.89,-71.39 664.71,-71.39 656.18,-71.39"/>
+<polygon fill="#000000" stroke="#000000" points="656.33,-67.89 646.33,-71.39 656.33,-74.89 656.33,-67.89"/>
+</g>
+<!-- program~build_tables -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node7" class="node">
+<title>program~build_tables</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node7"><a xlink:href="../program/build_tables.html" xlink:title="build_tables">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="439.56,-22.77 371.04,-22.77 371.04,0 439.56,0 439.56,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="405.3" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">build_tables</text>
+</a>
+</g>
+</g>
+<!-- program~build_tables&#45;&gt;module~module_mp_tempo_tables -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge8" class="edge">
+<title>program~build_tables&#45;&gt;module~module_mp_tempo_tables</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M370.78,-11.39C354.56,-11.39 334.34,-11.39 314.47,-11.39"/>
+<polygon fill="#000000" stroke="#000000" points="314.7,-7.89 304.7,-11.39 314.7,-14.89 314.7,-7.89"/>
+</g>
+<!-- program~run_tempo_tests -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_node8" class="node">
+<title>program~run_tempo_tests</title>
+<g id="a_module~~module_mp_tempo_utils~~UsedByGraph_node8"><a xlink:href="../program/run_tempo_tests.html" xlink:title="run_tempo_tests">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="862.35,-82.77 770.58,-82.77 770.58,-60 862.35,-60 862.35,-82.77"/>
+<text xml:space="preserve" text-anchor="middle" x="816.47" y="-67.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">run_tempo_tests</text>
+</a>
+</g>
+</g>
+<!-- program~run_tempo_tests&#45;&gt;module~tests -->
+<g id="module~~module_mp_tempo_utils~~UsedByGraph_edge9" class="edge">
+<title>program~run_tempo_tests&#45;&gt;module~tests</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M770.14,-71.39C762.13,-71.39 753.87,-71.39 746.1,-71.39"/>
+<polygon fill="#000000" stroke="#000000" points="746.3,-67.89 736.3,-71.39 746.3,-74.89 746.3,-67.89"/>
+</g>
+</g>
+</svg>
+</div>                <script>
+                  var panmodulemodule_mp_tempo_utilsUsedByGraph = svgPanZoom('#modulemodule_mp_tempo_utilsUsedByGraph',
+                    {zoomEnabled: true, controlIconsEnabled: true, fit: true, center: true,}
+                  );
+                </script>          <div>
+            <a type="button" class="graph-help" data-bs-toggle="modal" href="#UsedByGraph-help-text">Help</a>
+          </div>
+          <div class="modal fade" id="UsedByGraph-help-text" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title" id="-graph-help-label">Graph Key</h4>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+<p>Nodes of different colours represent the following: </p>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 14.0.2 (20251019.1705)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="485pt" height="31pt"
+ viewBox="0.00 0.00 485.00 31.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 26.77)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-26.77 481.13,-26.77 481.13,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-22.77 0,-22.77 0,0 54,0 54,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="27" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="137.76,-22.77 72.24,-22.77 72.24,0 137.76,0 137.76,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="105" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="218.63,-22.77 155.37,-22.77 155.37,0 218.63,0 218.63,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="187" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="291,-22.77 237,-22.77 237,0 291,0 291,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="264" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="363,-22.77 309,-22.77 309,0 363,0 363,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="336" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="477.13,-22.77 380.87,-22.77 380.87,0 477.13,0 477.13,-22.77"/>
+<text xml:space="preserve" text-anchor="middle" x="429" y="-7.04" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+<p>Solid arrows point from a submodule to the (sub)module which it is
+descended from. Dashed arrows point from a module or program unit to 
+modules which it uses.
+</p>
+ </div>
+            </div>
+          </div>
+        </div>
+            </li>
+        </ul>
+      </div>
+    </div>
+
+      <br>
+
+
+
+
+
+
+
+        <section>
+          <h2>Functions</h2>
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-calc_gamma_p"></span> <h3>public  function <a href='../proc/calc_gamma_p.html'>calc_gamma_p</a>(a, x) result(gamma_p)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>normalized lower gamma function calculated either with a 
+series expansion or continued fraction method</p><a href="../proc/calc_gamma_p.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-a~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>a</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-x"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>x</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-calc_gamma_series"></span> <h3>private  function <a href='../proc/calc_gamma_series.html'>calc_gamma_series</a>(a, x) result(gamma_series)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>solves the normalized lower gamma function</p><a href="../proc/calc_gamma_series.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-a~3"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>a</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-x~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>x</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-calc_gamma_cf"></span> <h3>private  function <a href='../proc/calc_gamma_cf.html'>calc_gamma_cf</a>(a, x) result(gamma_cf)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>solves the normalized upper gamma function <script type="math/tex">\gamma(a,x) / \Gamma(a)</script>
+ using a continued fractions method
+ <a href="http://functions.wolfram.com/06.06.10.0003.01">(modified Lentz Algorithm)</a></p><a href="../proc/calc_gamma_cf.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-a~4"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>a</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-x~3"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>x</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-calc_rslf"></span> <h3>public  function <a href='../proc/calc_rslf.html'>calc_rslf</a>(p, t) result(rslf)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates liquid saturation vapor mixing ratio</p><a href="../proc/calc_rslf.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-p~8"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>p</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-t~10"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>t</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-calc_rsif"></span> <h3>public  function <a href='../proc/calc_rsif.html'>calc_rsif</a>(p, t) result(rsif)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates liquid saturation vapor mixing ratio</p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-p~9"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>p</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-t~11"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>t</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>real(kind=wp)</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-get_nuc"></span> <h3>public  function <a href='../proc/get_nuc.html'>get_nuc</a>(nc) result(nu_c)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>returns nu_c for cloud water (values from 2-15)</p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nc~15"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+    <h4>
+    Return Value
+    <small>integer</small>
+    </h4>
+    
+
+    </div>
+  </div>
+
+        </section>
+        <br>
+
+        <section>
+          <h2>Subroutines</h2>
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-get_constant_cloud_number"></span> <h3>public  subroutine <a href='../proc/get_constant_cloud_number.html'>get_constant_cloud_number</a>(land, nc)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>returns land-specific value of cloud droplet number concentration
+when aerosol-aware = false if land = 1, else returns ocean-specific value</p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-land~2"></span>
+              integer,
+            </td>
+<td>intent(in),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>land</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nc~14"></span>
+              real(kind=wp),
+            </td>
+<td>intent(out),</td>
+              <td></td>            <td>
+              dimension(:)
+            </td>
+            <td>::</td>
+            <td><strong>nc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-snow_moments"></span> <h3>public  subroutine <a href='../proc/snow_moments.html'>snow_moments</a>(rs, tc, smob, smoc, ns, smo0, smo1, smo2, smoe, smof, smog, smoz)  
+</h3></div>
+    <div class="card-body">
+          
+  <p>computes snow moments from
+<a href="https://doi.org/10.1256/qj.04.134">Field et al. (2005)</a></p>
+
+  <h4>Arguments</h4>
+      <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th scope="col">Type</th>
+<th scope="col">Intent</th><th scope="col">Optional</th>        <th scope="col">Attributes</th>
+        <th scope="col"></th>
+        <th scope="col">Name</th>
+        <th scope="col"></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-rs~11"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>rs</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tc~2"></span>
+              real(kind=wp),
+            </td>
+<td>intent(in)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>tc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smob~5"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smob</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoc~5"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out)</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smoc</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ns~2"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ns</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smo0~5"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smo0</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smo1~4"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smo1</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smo2~2"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smo2</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoe~5"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smoe</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smof~4"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smof</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smog~2"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smog</strong></td>
+            <td>
+
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-smoz~2"></span>
+              real(kind=dp),
+            </td>
+<td>intent(out),</td>
+              <td>optional</td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>smoz</strong></td>
+            <td>
+
+            </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-compute_efrw"></span> <h3>public  subroutine <a href='../proc/compute_efrw.html'>compute_efrw</a>()  
+</h3></div>
+    <div class="card-body">
+          
+  <p>collision efficiency for rain collecting cloud water from Beard and Grover (1974)
+if a/A &lt; 0.25
+https://doi.org/10.1175/1520-0469(1974)031&lt;0543:NCEFSR&gt;2.0.CO;2
+otherwise uses polynomials to get close match of Pruppacher and Klett Fig. 14-9</p>
+
+  <h4>Arguments</h4>
+    <em>None</em>
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-compute_efsw"></span> <h3>public  subroutine <a href='../proc/compute_efsw.html'>compute_efsw</a>()  
+</h3></div>
+    <div class="card-body">
+          
+  <p>collision efficiency for snow collecting cloud water from Wang and Ji (2000)
+https://doi.org/10.1175/1520-0469(2000)057&lt;1001:CEOICA&gt;2.0.CO;2
+equating melted snow diameter to effective collision cross-section</p>
+
+  <h4>Arguments</h4>
+    <em>None</em>
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-qi_aut_qs"></span> <h3>public  subroutine <a href='../proc/qi_aut_qs.html'>qi_aut_qs</a>()  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates cloud ice conversion to snow
+and depositional growth by binning cloud ice distributions and 
+determining both the size bins &gt; d0s (that are converted to snow) and the 
+depositional growth up to d0s (for cloud ice) and &gt; d0s for snow 
+following Harrington et al. (1995)
+https://doi.org/10.1175/1520-0469(1995)052&lt;4344:POICCP&gt;2.0.CO;2</p>
+
+  <h4>Arguments</h4>
+    <em>None</em>
+
+    </div>
+  </div>
+
+              <div class="card">
+    <div class="card-header codesum"><span class="anchor" id="proc-compute_drop_evap"></span> <h3>public  subroutine <a href='../proc/compute_drop_evap.html'>compute_drop_evap</a>()  
+</h3></div>
+    <div class="card-body">
+          
+  <p>calculates droplet evaporation data</p>
+
+  <h4>Arguments</h4>
+    <em>None</em>
+
+    </div>
+  </div>
+
+        </section>
+        <br>
+
+
+
+    </div>
+  </div>
+
+      <hr>
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+        <div class="row justify-content-between">
+          <div class="col">
+            <p>
+              TEMPO Microphysics
+ was developed by Anders A. Jensen<br>              &copy; 2026 
+</p>
+          </div>
+          <div class="col">
+            <p class="text-end">
+              Documentation generated by
+              <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+            </p>
+          </div>
+        </div>
+        <br>
+      </div> <!-- /container -->
+    </footer>
+  </body>
+</html>
