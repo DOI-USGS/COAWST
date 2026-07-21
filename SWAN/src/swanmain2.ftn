@@ -1,0 +1,57 @@
+#include "swancpp.h"
+#ifdef SWAN_MODEL
+!***********************************************************************
+!                                                                      *
+      PROGRAM SWAN
+!                                                                      *
+!***********************************************************************
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+      LOGICAL STPNOW                                                      40.30 34.01
+!
+! 13. Source Code
+!
+!     --- initialize the MPI execution environment                        40.30
+
+!      CALL SWINITMPI                                                      40.30
+      IF (STPNOW()) GOTO 999                                              40.30
+
+999   CONTINUE
+
+!     --- end of MAIN PROGRAM
+!
+      END
+#else
+      MODULE swanmain2
+
+      END MODULE swanmain2
+#endif

@@ -1,0 +1,409 @@
+#include "swancpp.h"
+      MODULE waves_control_mod
+!
+!svn $Id: waves_control.F 814 2008-10-29 01:42:17Z jcwarner $
+!================================================== John C. Warner  ====
+!  Copyright (c) 2002-2008 The ROMS/TOMS Group                         !
+!    Licensed under a MIT/X style license                              !
+!    See License_ROMS.txt                                              !
+!=======================================================================
+!                                                                      !
+!  SWAN model:                                                         !
+!                                                                      !
+!  This driver executes SWAN by controlling initialization,            !
+!  time-stepping, and finalization for nested grids.                   !
+!                                                                      !
+!     SWAN_initialize                                                  !
+!     SWAN_run                                                         !
+!     SWAN_finalize                                                    !
+!                                                                      !
+!=======================================================================
+!
+#ifdef COAWST_COUPLING
+      USE mct_coupler_params
+#endif
+      USE M_COUPLING
+
+      implicit none
+
+      PRIVATE
+      PUBLIC  :: SWAN_driver_init
+      PUBLIC  :: SWAN_driver_run
+      PUBLIC  :: SWAN_driver_finalize
+
+      CONTAINS
+
+      SUBROUTINE SWAN_driver_init (MyCOMM)
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates and initializes SWAN variables               !
+!  and internal and external parameters.                               !
+!                                                                      !
+!=======================================================================
+!
+      USE swan_iounits
+      USE mod_coupler_kinds
+      USE M_PARALL
+      USE M_PARALL2
+      USE SWCOMM3
+      USE TIMECOMM
+      USE M_MPI
+      USE M_COUPLING
+      USE OCPCOMM4, ONLY: SCREEN
+#ifdef COAWST_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV_ROUTERS
+#endif
+#ifdef NESTING
+      USE INTERP_SWAN_MOD, ONLY: swan_ref_init
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: MyCOMM
+!     real(m4), intent(in)  :: CouplingTime             ! single precision
+!
+!  Local variable declarations.
+!
+      integer :: i, MyRank, MyError
+      integer :: ngp
+#ifdef NESTING
+      integer :: indx, inp, my_grid
+      character (len=1 ), parameter :: blank = ' '
+      character (len=160) :: line, aline
+#endif
+!      character (len=160) :: tempname
+
+#if !defined COAWST_COUPLING
+!
+!  Establish MPI rank.
+!
+      CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
+!
+!     here we need to get Wnames.
+!     Use arg count to see how many grids there are.
+!
+      IF (MyRank.eq.0) NUM_SGRIDS=command_argument_count()
+      CALL mpi_bcast (NUM_SGRIDS, 1, MPI_INT, 0, MyCOMM, MyError)
+!      
+      call allocate_swan_iounits
+!
+!     Now we have the total number of grids so get any more
+!     input files.
+!
+      DO ng=1,NUM_SGRIDS
+        IF (MyRank.eq.0) CALL getarg (ng,Wname(ng))
+      END DO
+      i=IOnamesize*NUM_SGRIDS
+      CALL mpi_bcast (Wname, i, MPI_BYTE, 0, MyCOMM, MyError)
+#endif
+#ifdef NESTING
+      IF (NUM_SGRIDS.eq.1) THEN
+        WRITE(SCREEN,'(a40)') 'Num swan grids should be > 1 for nesting'
+      END IF
+#else
+      IF (NUM_SGRIDS.ne.1) THEN
+        WRITE(SCREEN,'(a40)') 'Num swan grids should = 1 for no nesting'
+      END IF
+#endif
+#ifdef NESTING
+!
+!  Get refined grid parameters: myparent, mychild.  Read SWAN input files.
+!
+      inp=1
+      DO i=1,NUM_SGRIDS
+        OPEN (inp, FILE=TRIM(Wname(i)), FORM='formatted', STATUS='old', &
+     &        ERR=110)
+        GOTO 130
+ 110    WRITE (SCREEN,120) Wname(i)
+ 120    FORMAT (/,'WAVES CONTROL-Unable to open swan input file.'/,a80)
+        RETURN
+ 130    CONTINUE
+!
+        DO WHILE (.TRUE.)
+          READ (inp,'(a)',ERR=116,END=140) line
+!
+!  Look for NSGRIDS: Number of nested SWAN grids, grid id number, and my parent.
+!
+          aline=ADJUSTL(line)
+          IF(aline(1:7).eq.'NSGRIDS') THEN
+            aline=aline(8:LEN(aline))
+            aline=ADJUSTL(aline)
+!  already have this
+!           read(aline(1:1),'(i1)') NUM_SGRIDS
+!
+            aline=aline(2:LEN(aline))
+            aline=ADJUSTL(aline)
+!
+            read(aline(1:1),'(i1)') my_grid
+!
+            aline=aline(2:LEN(aline))
+            aline=ADJUSTL(aline)
+!
+            read(aline(1:1),'(i1)') mysparent(my_grid)
+          END IF
+        END DO
+ 116    IF (MyRank.eq.0) WRITE (SCREEN,60) line
+        RETURN
+  60    FORMAT (/,'read model inputs-Error while processing line: ',/,a)
+ 140    CLOSE (inp)
+      END DO
+!
+!  Now determine the children.  If i have a child, then
+!  myschild(mygird, other grid) = 1
+!
+      DO i=1,NUM_SGRIDS
+        IF (mysparent(i).gt.0) THEN
+            myschild(mysparent(i),i)=i
+        END IF
+      END DO
+!
+!     Force grid 1 parent to be 1 for the run_grid determination.
+!
+      mysparent(1)=1
+!
+! Allocate some arrays for refinement.
+!
+      IF (.not.allocated(Numspec)) allocate (Numspec(NUM_SGRIDS))
+      IF (.not.allocated(sstp)) allocate (sstp(NUM_SGRIDS))
+      IF (.not.allocated(snew)) allocate (snew(NUM_SGRIDS))
+#endif
+!
+!  Initialize the time counter.
+!
+      IF (.not.ALLOCATED(iics)) ALLOCATE (iics(NUM_SGRIDS))
+      DO ng=1,NUM_SGRIDS
+        iics(ng)=0
+      END DO
+!
+!  Initialize restart counters.
+!
+      DO ng=1,NUM_SGRIDS
+        dtswanrst(ng)=0.
+        SwanRstFnum(ng)=0
+      END DO
+!
+!  Initialize the grids.
+!
+      DO ng=1,NUM_SGRIDS
+#ifdef NESTING
+        ngp=mysparent(ng)
+#else
+        ngp=1
+#endif
+!       swan_initialize does not use ngc or ngp
+        CALL SWAN_INITIALIZE (NUM_SGRIDS, MyCOMM, Wname(ng))
+#ifdef NESTING
+!
+! Call routine to initialize the child refined grid bc arrays.
+!
+        IF (ng.gt.1) THEN
+          CALL swan_ref_init (ng, ngp, NUM_SGRIDS)
+        END IF
+#endif
+        CALL SWSYNC
+      END DO
+
+#ifdef COAWST_COUPLING
+!
+!  Initialize the MCT routers to ROMS. This has to be
+!  done outside an 'ng' loop so that it is synchronous 
+!  with ROMS.
+!
+      CALL INITIALIZE_WAV_ROUTERS
+#endif
+!
+!  The call to run here does not do a time step, it fills the bc arrays,
+!  fill AC2 array of bound spec data for child grids, and enters into MCT.
+!
+      DO ng=1,NUM_SGRIDS
+        CALL SWSYNC
+#ifdef NESTING
+        ngp=mysparent(ng)
+        sstp(ng)=1
+        snew(ng)=3-sstp(ng)
+#else
+        ngp=1
+#endif
+        CALL SWAN_RUN (0, ngp, 0)
+        CALL SWAN_RST (0)
+      END DO
+#ifdef COAWST_COUPLING
+!
+!     --- couple models during output computations
+!
+        CALL SWSYNC
+        CALL SWAN_CPL (0)
+#endif
+
+      RETURN
+      END SUBROUTINE SWAN_driver_init
+
+      SUBROUTINE SWAN_driver_run
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates and initializes ROMS/TOMS state variables    !
+!  and internal and external parameters.                               !
+!                                                                      !
+!=======================================================================
+!
+      USE swan_iounits
+      USE mct_coupler_params
+      USE M_PARALL
+      USE M_PARALL2
+      USE SWCOMM3
+      USE TIMECOMM
+      USE M_MPI
+      USE M_COUPLING
+!
+!  Imported variable declarations.
+!
+!     real(m4), intent(in)  :: CouplingTime             ! single precision
+!
+!  Local variable declarations.
+!
+      integer :: i, MyRank, MyError
+      integer, allocatable :: run_grid(:)
+      integer, allocatable :: run_cplr(:)
+      real, allocatable :: rtime(:)
+      real, allocatable :: dtscale(:)
+      real :: rtime_start, cff
+      integer :: ngc, ngp, iw, mingrid
+      CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
+!
+!  Set some initial run time parameters here.
+!
+      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(NUM_SGRIDS))
+      IF (.not.ALLOCATED(run_cplr)) ALLOCATE (run_cplr(NUM_SGRIDS))
+      IF (.not.ALLOCATED(rtime)) ALLOCATE (rtime(NUM_SGRIDS))
+      IF (.not.ALLOCATED(dtscale)) ALLOCATE (dtscale(NUM_SGRIDS))
+      rtime_start=0.
+      DO ng=1,NUM_SGRIDS
+        run_grid(ng)=1
+        run_cplr(ng)=1
+        rtime(ng)=rtime_start
+      END DO
+!
+!  Main job control loop here.
+!  Determine which grids has the minimum
+!
+      mingrid=1
+#ifdef NESTING
+      DO ng=2,NUM_SGRIDS
+        IF (DT_G(ng).le.DT_G(ng-1)) mingrid=ng
+      END DO
+#endif
+      DO WHILE (iics(mingrid).lt.MTC_G(mingrid))
+!
+!  Advance grids in time that have run_grid flag == 1
+!  For the first entry, all grids step individual dts.
+!
+        DO ng=1,NUM_SGRIDS
+          IF (run_grid(ng).eq.1) THEN
+            iics(ng)=iics(ng)+1
+#ifdef NESTING
+            ngp=mysparent(ng)
+            sstp(ng)=1+MOD(iics(ng),2)
+            snew(ng)=3-sstp(ng)
+#else
+            ngp=1
+#endif
+            CALL SWAN_RUN (iics(ng), ngp, 1)
+            run_grid(ng)=0
+!           CALL SWAN_RST (iics(ng))
+            rtime(ng)=rtime(ng)+DT_G(ng)
+          END IF
+        END DO
+!
+!  Advance the time counter by the smallest dt.
+!
+!        rtime=rtime+DT_G(NUM_SGRIDS)
+!
+!  Determine what grids can be time stepped.
+!  If you dont have children, then you can go until
+!     your time is equal to your parent.
+!  If you have children, then all child grids need to be 
+!     time stepped to your level before you can go.
+!
+!  Determine dt scale factors for each grid
+!
+#ifdef NESTING
+        DO ng=1,NUM_SGRIDS
+          ngp=mysparent(ng)
+          dtscale(ng)=INT(DT_G(ngp)/DT_G(ng))
+        END DO
+#endif
+!
+        DO ng=1,NUM_SGRIDS
+          run_grid(ng)=1
+#ifdef NESTING
+!
+!  Do no child first.
+!
+          ngp=mysparent(ng)
+          DO iw=1,NUM_SGRIDS
+            ngc=myschild(ng,iw)
+            IF ((ng.ne.iw).and.(ngc.eq.0)) THEN
+!             IF (rtime(ng).eq.rtime(ngp)) THEN
+              IF (iics(ng).eq.iics(ngp)*dtscale(ng)) THEN
+                run_grid(ng)=0
+              END IF
+            END IF
+          END DO
+!
+!  Now check children.
+!
+          DO iw=1,NUM_SGRIDS
+            ngc=myschild(ng,iw)
+            IF ((ng.ne.iw).and.(ngc.gt.0)) THEN
+!             IF (rtime(ng).ne.rtime(ngc)) THEN
+              IF (iics(ng)*dtscale(ngc).ne.iics(ngc)) THEN
+                run_grid(ng)=0
+              END IF
+            END IF
+          END DO
+#endif
+        END DO
+#ifdef COAWST_COUPLING
+        IF (run_grid(1).eq.1) THEN
+!
+!     --- receive data from other coupled models.
+          CALL SWSYNC
+          CALL SWAN_CPL (1)
+        END IF
+#endif
+        DO ng=1,NUM_SGRIDS
+          IF (run_grid(1).eq.1) THEN
+            CALL SWAN_RST (iics(ng))
+          END IF
+        END DO
+      END DO
+      IF (ALLOCATED(run_grid)) DEALLOCATE (run_grid)
+      IF (ALLOCATED(run_cplr)) DEALLOCATE (run_cplr)
+      IF (ALLOCATED(iics)) DEALLOCATE (iics)
+
+      RETURN
+      END SUBROUTINE SWAN_driver_run
+
+      SUBROUTINE SWAN_driver_finalize
+!
+!=======================================================================
+!                                                                      !
+!  This routine terminates SWAN.                                       !
+!                                                                      !
+!=======================================================================
+!
+      USE swan_iounits
+      USE M_COUPLING
+!
+!  Local variable declarations.
+!
+      DO ng=1,NUM_SGRIDS
+        CALL SWAN_FINALIZE (NUM_SGRIDS)
+      END DO
+
+      RETURN
+      END SUBROUTINE SWAN_driver_finalize
+
+      END MODULE waves_control_mod
