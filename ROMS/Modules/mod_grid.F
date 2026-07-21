@@ -1,0 +1,1596 @@
+#include "cppdefs.h"
+      MODULE mod_grid
+!
+!git $Id$
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2026 The ROMS Group                              !
+!    Licensed under a MIT/X style license                              !
+!    See License_ROMS.md                                               !
+!=======================================================================
+!                                                                      !
+!  IJwaterR   Water points IJ couter for RHO-points masked variables.  !
+!  IJwaterU   Water points IJ couter for   U-points masked variables.  !
+!  IJwaterV   Water points IJ couter for   V-points masked variables.  !
+!  Hz         Thicknesses (m) of vertical RHO-points.                  !
+# ifdef ADJUST_BOUNDARY
+!  Hz_bry     Thicknesses (m) at the open boundaries; used only for    !
+!               4DVAR adjustments.                                     !
+# endif
+!  Huon       Total U-momentum flux term, Hz*u/pn.                     !
+!  Hvom       Total V-momentum flux term, Hz*v/pm.                     !
+!  IcePress   Pressure under the ice shelf at RHO-points.              !
+!  Rscope     Adjoint sensitivity spatial scope mask at RHO-points.    !
+!  Tcline     Width (m) of surface or bottom boundary layer where      !
+!               higher vertical resolution is required during          !
+!               stretching.                                            !
+!  Uscope     Adjoint sensitivity spatial scope mask at U-points.      !
+!  Vscope     Adjoint sensitivity spatial scope mask at V-points.      !
+!  angler     Angle (radians) between XI-axis and true EAST at         !
+!               RHO-points.                                            !
+!  CosAngler  Cosine of curvilinear angle, angler.                     !
+!  SinAngler  Sine of curvilinear angle, angler.                       !
+#if defined TIDE_GENERATING_FORCES
+!  Cos2Lat    Squared cosine of latitude, COS2(latr).                  !
+!  SinLat2    Sine of twice the latitude, SIN(2*latr).                 !
+#endif
+!  dmde       ETA-derivative of inverse metric factor pm,              !
+!               d(1/pm)/d(ETA).                                        !
+!  dndx       XI-derivative  of inverse metric factor pn,              !
+!               d(1/pn)/d(XI).                                         !
+!  f          Coriolis parameter (1/s).                                !
+!  fomn       Compound term, f/(pm*pn) at RHO points.                  !
+!  grdscl     Grid scale used to adjust horizontal mixing according    !
+!               to grid area.                                          !
+!  h          Bottom depth (m) at RHO-points.                          !
+!  latp       Latitude (degrees_north) at PSI-points.                  !
+!  latr       Latitude (degrees_north) at RHO-points.                  !
+!  latu       Latitude (degrees_north) at U-points.                    !
+!  latv       Latitude (degrees_north) at V-points.                    !
+!  lonp       Longitude (degrees_east) at PSI-points.                  !
+!  lonr       Longitude (degrees_east) at RHO-points.                  !
+!  lonu       Longitude (degrees_east) at U-points.                    !
+!  lonv       Longitude (degrees_east) at V-points.                    !
+!  MyLon      Longitude work array for regridding.                     !
+!  omm        RHO-grid area (meters2).                                 !
+!  om_p       PSI-grid spacing (meters) in the XI-direction.           !
+!  om_r       RHO-grid spacing (meters) in the XI-direction.           !
+!  om_u       U-grid spacing (meters) in the XI-direction.             !
+!  om_v       V-grid spacing (meters) in the XI-direction.             !
+!  on_p       PSI-grid spacing (meters) in the ETA-direction.          !
+!  on_r       RHO-grid spacing (meters) in the ETA-direction.          !
+!  on_u       U-grid spacing (meters) in the ETA-direction.            !
+!  on_v       V-grid spacing (meters) in the ETA-direction.            !
+!  pm         Coordinate transformation metric "m" (1/meters)          !
+!               associated with the differential distances in XI.      !
+!  pmon_p     Compound term, pm/pn at PSI-points.                      !
+!  pmon_r     Compound term, pm/pn at RHO-points.                      !
+!  pmon_u     Compound term, pm/pn at U-points.                        !
+!  pmon_v     Compound term, pm/pn at V-points.                        !
+!  pn         Coordinate transformation metric "n" (1/meters)          !
+!               associated with the differential distances in ETA.     !
+!  pnom_p     Compound term, pn/pm at PSI-points.                      !
+!  pnom_r     Compound term, pn/pm at RHO-points.                      !
+!  pnom_u     Compound term, pn/pm at U-points.                        !
+!  pnom_v     Compound term, pn/pm at V-points.                        !
+#ifdef MASKING
+!  pmask      Slipperiness time-independent mask at PSI-points:        !
+!               (0=Land, 1=Sea, 2=no-slip).                            !
+!  rmask      Time-independent mask at RHO-points (0=Land, 1=Sea).     !
+!  umask      Time-independent mask at U-points (0=Land, 1=Sea).       !
+!  vmask      Time-independent mask at V-points (0=Land, 1=Sea).       !
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+!
+!  pmask_avg  Time-averaged full mask at PSI-points (0=dry, 1=wet).    !
+!  rmask_avg  Time-averaged full mask at RHO-points (0=dry, 1=wet).    !
+!  rmask_avg  Time-averaged full mask at   U-points (0=dry, 1=wet).    !
+!  rmask_avg  Time-averaged full mask at   V-points (0=dry, 1=wet).    !
+# endif
+# ifdef DIAGNOSTICS
+!
+!  pmask_dia  Diagnostics full mask at PSI-points (0=dry, 1=wet).      !
+!  rmask_dia  Diagnostics full mask at RHO-points (0=dry, 1=wet).      !
+!  rmask_dia  Diagnostics full mask at   U-points (0=dry, 1=wet).      !
+!  rmask_dia  Diagnostics full mask at   V-points (0=dry, 1=wet).      !
+# endif
+!                                                                      !
+!  pmask_full Full mask at PSI-points (0=dry, 1=wet, 2=no-slip).       !
+!  rmask_full Full mask at RHO-points (0=dry, 1=wet).                  !
+!  rmask_full Full mask at   U-points (0=dry, 1=wet).                  !
+!  rmask_full Full mask at   V-points (0=dry, 1=wet).                  !
+#endif
+#ifdef WET_DRY
+!  pmask_wet  Wet/Dry mask at PSI-points (0=dry, 1=wet, 2=no-slip).    !
+!  rmask_wet  Wet/Dry mask at RHO-points (0=dry, 1=wet).               !
+!  umask_wet  Wet/Dry mask at   U-points (0=dry, 1,2=wet).             !
+!  vmask_wet  Wet/Dry mask at   V-points (0=dry, 1,2=wet).             !
+#endif
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+!  ZoBot      Bottom roughness length (m).                             !
+#endif
+#if defined UV_LDRAG
+!  rdrag      Linear drag coefficient (m/s).                           !
+#elif defined UV_QDRAG
+!  rdrag2     Quadratic drag coefficient (nondimensional).             !
+#endif
+#if defined UV_WAVEDRAG
+!  wavedrag   Linear drag coefficient from internal tides (m/s).       !
+#endif
+!  xp         XI-coordinates (m) at PSI-points.                        !
+!  xr         XI-coordinates (m) at RHO-points.                        !
+!  xu         XI-coordinates (m) at U-points.                          !
+!  xv         XI-coordinates (m) at V-points.                          !
+!  yp         ETA-coordinates (m) at PSI-points.                       !
+!  yr         ETA-coordinates (m) at RHO-points.                       !
+!  yu         ETA-coordinates (m) at U-points.                         !
+!  yv         ETA-coordinates (m) at V-points.                         !
+!  zice       Depth of ice shelf cavity (m, negative) at               !
+!               RHO-points.                                            !
+!  z0_r       Time independent depths (m) at horizontal RHO-points and !
+!               vertical RHO-points.                                   !
+!  z0_w       Time independent depths (m) at horizontal RHO-points and !
+!               vertical W-points.                                     !
+!  z_r        Actual depths (m) at horizontal RHO-points and           !
+!               vertical RHO-points.                                   !
+!  z_w        Actual depths (m) at horizontal RHO-points and           !
+!               vertical W-points.                                     !
+#ifdef GRID_EXTRACT
+!                                                                      !
+! Packed global arrays needed for field extraction by interpolation:   !
+!                                                                      !
+!  Gangle_psi Global curvilinear angle (radians) at PSI-points.        !
+!  Gangle_rho Global curvilinear angle (radians) at RHO-points.        !
+!  Gangle_u   Global curvilinear angle (radians) at U-points.          !
+!  Gangle_v   Global curvilinear angle (radians) at V-points.          !
+# ifdef MASKING
+!  Gmask_psi  Global time-independent land/sea mask at PSI-points.     !
+!  Gmask_rho  Global time-independent land/sea mask at RHO-points.     !
+!  Gmask_u    Global time-independent land/sea mask at U-points.       !
+!  Gmask_v    Global time-independent land/sea mask at V-points.       !
+# endif
+!  Gx_psi     Global X-coordinate at PSI-points.                       !
+!  Gx_rho     Global X-coordinate at RHO-points.                       !
+!  Gx_u       Global X-coordinate at U-points.                         !
+!  Gx_v       Global X-coordinate at V-points.                         !
+!  Gy_psi     Global Y-coordinate at PSI-points.                       !
+!  Gy_rho     Global Y-coordinate at RHO-points.                       !
+!  Gy_u       Global Y-coordinate at U-points.                         !
+!  Gy_v       Global Y-coordinate at V-points.                         !
+#endif
+!                                                                      !
+!=======================================================================
+!
+        USE mod_kinds
+!
+        implicit none
+!
+        PUBLIC :: allocate_grid
+        PUBLIC :: deallocate_grid
+        PUBLIC :: initialize_grid
+!
+!-----------------------------------------------------------------------
+!  Define T_GRID structure.
+!-----------------------------------------------------------------------
+!
+        TYPE T_GRID
+!
+!  Nonlinear model state.
+!
+#if defined MASKING && defined PROPAGATOR
+          integer, pointer :: IJwaterR(:,:)
+          integer, pointer :: IJwaterU(:,:)
+          integer, pointer :: IJwaterV(:,:)
+#endif
+
+          real(r8), pointer :: angler(:,:)
+          real(r8), pointer :: CosAngler(:,:)
+          real(r8), pointer :: SinAngler(:,:)
+
+#if defined TIDE_GENERATING_FORCES
+          real(r8), pointer :: Cos2Lat(:,:)
+          real(r8), pointer :: SinLat2(:,:)
+#endif
+
+#if defined CURVGRID && defined UV_ADV
+          real(r8), pointer :: dmde(:,:)
+          real(r8), pointer :: dndx(:,:)
+#endif
+          real(r8), pointer :: f(:,:)
+          real(r8), pointer :: fomn(:,:)
+          real(r8), pointer :: grdscl(:,:)
+          real(r8), pointer :: h(:,:)
+          real(r8), pointer :: latp(:,:)
+          real(r8), pointer :: latr(:,:)
+          real(r8), pointer :: latu(:,:)
+          real(r8), pointer :: latv(:,:)
+          real(r8), pointer :: lonp(:,:)
+          real(r8), pointer :: lonr(:,:)
+          real(r8), pointer :: lonu(:,:)
+          real(r8), pointer :: lonv(:,:)
+          real(r8), pointer :: MyLon(:,:)
+          real(r8), pointer :: omn(:,:)
+          real(r8), pointer :: om_p(:,:)
+          real(r8), pointer :: om_r(:,:)
+          real(r8), pointer :: om_u(:,:)
+          real(r8), pointer :: om_v(:,:)
+          real(r8), pointer :: on_p(:,:)
+          real(r8), pointer :: on_r(:,:)
+          real(r8), pointer :: on_u(:,:)
+          real(r8), pointer :: on_v(:,:)
+          real(r8), pointer :: pm(:,:)
+          real(r8), pointer :: pn(:,:)
+          real(r8), pointer :: pmon_p(:,:)
+          real(r8), pointer :: pmon_r(:,:)
+          real(r8), pointer :: pmon_u(:,:)
+          real(r8), pointer :: pmon_v(:,:)
+          real(r8), pointer :: pnom_p(:,:)
+          real(r8), pointer :: pnom_r(:,:)
+          real(r8), pointer :: pnom_u(:,:)
+          real(r8), pointer :: pnom_v(:,:)
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+          real(r8), pointer :: ZoBot(:,:)
+#endif
+          real(r8), pointer :: rdrag(:,:)
+#if defined UV_QDRAG
+          real(r8), pointer :: rdrag2(:,:)
+#endif
+#if defined UV_WAVEDRAG
+          real(r8), pointer :: wavedrag(:,:)
+#endif
+          real(r8), pointer :: xp(:,:)
+          real(r8), pointer :: xr(:,:)
+          real(r8), pointer :: xu(:,:)
+          real(r8), pointer :: xv(:,:)
+          real(r8), pointer :: yp(:,:)
+          real(r8), pointer :: yr(:,:)
+          real(r8), pointer :: yu(:,:)
+          real(r8), pointer :: yv(:,:)
+#if defined CURVGRID && defined INWAVE_MODEL
+          real(r8), pointer :: jaco(:,:)
+          real(r8), pointer :: dpdx(:,:)
+          real(r8), pointer :: dpdy(:,:)
+          real(r8), pointer :: dqdx(:,:)
+          real(r8), pointer :: dqdy(:,:)
+#endif
+#ifdef SOLVE3D
+          real(r8), pointer :: Hz(:,:,:)
+# ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: Hz_bry(:,:,:)
+# endif
+          real(r8), pointer :: Huon(:,:,:)
+          real(r8), pointer :: Hvom(:,:,:)
+          real(r8), pointer :: z0_r(:,:,:)
+          real(r8), pointer :: z0_w(:,:,:)
+          real(r8), pointer :: z_r(:,:,:)
+          real(r8), pointer :: z_v(:,:,:)
+          real(r8), pointer :: z_w(:,:,:)
+# ifdef ICESHELF
+          real(r8), pointer :: IcePress(:,:)
+          real(r8), pointer :: zice(:,:)
+# endif
+#endif
+#ifdef MASKING
+          real(r8), pointer :: pmask(:,:)
+          real(r8), pointer :: rmask(:,:)
+          real(r8), pointer :: umask(:,:)
+          real(r8), pointer :: vmask(:,:)
+
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+          real(r8), pointer :: pmask_avg(:,:)
+          real(r8), pointer :: rmask_avg(:,:)
+          real(r8), pointer :: umask_avg(:,:)
+          real(r8), pointer :: vmask_avg(:,:)
+# endif
+# ifdef DIAGNOSTICS
+          real(r8), pointer :: pmask_dia(:,:)
+          real(r8), pointer :: rmask_dia(:,:)
+          real(r8), pointer :: umask_dia(:,:)
+          real(r8), pointer :: vmask_dia(:,:)
+# endif
+          real(r8), pointer :: pmask_full(:,:)
+          real(r8), pointer :: rmask_full(:,:)
+          real(r8), pointer :: umask_full(:,:)
+          real(r8), pointer :: vmask_full(:,:)
+#endif
+#ifdef WET_DRY
+          real(r8), pointer :: pmask_wet(:,:)
+          real(r8), pointer :: rmask_wet(:,:)
+          real(r8), pointer :: umask_wet(:,:)
+          real(r8), pointer :: vmask_wet(:,:)
+# ifdef SOLVE3D
+          real(r8), pointer :: rmask_wet_avg(:,:)
+# endif
+#endif
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
+    defined SO_SEMI
+          real(r8), pointer :: Rscope(:,:)
+          real(r8), pointer :: Uscope(:,:)
+          real(r8), pointer :: Vscope(:,:)
+#endif
+#if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+          real(r8), pointer :: tl_h(:,:)
+# ifdef SOLVE3D
+          real(r8), pointer :: tl_Hz(:,:,:)
+#  ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: tl_Hz_bry(:,:,:)
+#  endif
+          real(r8), pointer :: tl_Huon(:,:,:)
+          real(r8), pointer :: tl_Hvom(:,:,:)
+          real(r8), pointer :: tl_z_r(:,:,:)
+          real(r8), pointer :: tl_z_w(:,:,:)
+# endif
+#endif
+
+#ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+          real(r8), pointer :: ad_h(:,:)
+# ifdef SOLVE3D
+          real(r8), pointer :: ad_Hz(:,:,:)
+#  ifdef ADJUST_BOUNDARY
+          real(r8), pointer :: ad_Hz_bry(:,:,:)
+#  endif
+          real(r8), pointer :: ad_Huon(:,:,:)
+          real(r8), pointer :: ad_Hvom(:,:,:)
+          real(r8), pointer :: ad_z_r(:,:,:)
+          real(r8), pointer :: ad_z_w(:,:,:)
+# endif
+#endif
+#ifdef GRID_EXTRACT
+!
+! Set global geometry 1D arrays, packed in column-major order, needed
+! for field extraction by interpolation during writing to the proper
+! output NetCDF file.
+!
+         real(r8), pointer :: Gangle_psi(:)
+         real(r8), pointer :: Gangle_rho(:)
+         real(r8), pointer :: Gangle_u(:)
+         real(r8), pointer :: Gangle_v(:)
+         real(r8), pointer :: Gx_psi(:)
+         real(r8), pointer :: Gx_rho(:)
+         real(r8), pointer :: Gx_u(:)
+         real(r8), pointer :: Gx_v(:)
+         real(r8), pointer :: Gy_psi(:)
+         real(r8), pointer :: Gy_rho(:)
+         real(r8), pointer :: Gy_u(:)
+         real(r8), pointer :: Gy_v(:)
+# ifdef MASKING
+         real(r8), pointer :: Gmask_psi(:)
+         real(r8), pointer :: Gmask_rho(:)
+         real(r8), pointer :: Gmask_u(:)
+         real(r8), pointer :: Gmask_v(:)
+# endif
+#endif
+        END TYPE T_GRID
+!
+        TYPE (T_GRID), allocatable :: GRID(:)
+!
+      CONTAINS
+!
+      SUBROUTINE allocate_grid (ng, Extract_Flag,                       &
+     &                          LBi, UBi, LBj, UBj, LBij, UBij)
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates all variables in the module for all nested   !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+!
+!  Local variable declarations.
+!
+      integer, intent(in) :: ng, Extract_Flag
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
+!
+!  Local variable declarations.
+!
+      integer  :: my_size
+!
+      real(r8) :: size2d
+!
+!-----------------------------------------------------------------------
+!  Allocate and initialize module variables.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.1) allocate ( GRID(Ngrids) )
+!
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
+!
+!  Nonlinear model state.
+!
+#if defined MASKING && defined PROPAGATOR
+      allocate ( GRID(ng) % IJwaterR(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % IJwaterU(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % IJwaterV(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+      allocate ( GRID(ng) % angler(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % CosAngler(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % SinAngler(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+#if defined TIDE_GENERATING_FORCES
+      allocate ( GRID(ng) % Cos2Lat(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % SinLat2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+#if defined CURVGRID && defined UV_ADV
+      allocate ( GRID(ng) % dmde(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % dndx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+      allocate ( GRID(ng) % f(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % fomn(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % grdscl(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % h(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % latp(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % latr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % latu(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % latv(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % lonp(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % lonr(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % lonu(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % lonv(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % Mylon(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % omn(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % om_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % om_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % om_u(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % om_v(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % on_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % on_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % on_u(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % on_v(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pn(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pmon_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pmon_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pmon_u(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pmon_v(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pnom_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pnom_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pnom_u(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % pnom_v(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+      allocate ( GRID(ng) % ZoBot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+      allocate ( GRID(ng) % rdrag(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+#if defined UV_QDRAG
+      allocate ( GRID(ng) % rdrag2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+#if defined UV_WAVEDRAG
+      allocate ( GRID(ng) % wavedrag(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+      allocate ( GRID(ng) % xp(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % xr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % xu(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % xv(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % yp(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % yr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % yu(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % yv(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+#if defined CURVGRID && defined INWAVE_MODEL
+      allocate ( GRID(ng) % jaco(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % dpdx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % dpdy(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % dqdx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % dqdy(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+#ifdef SOLVE3D
+      allocate ( GRID(ng) % Hz(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+# ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % Hz_bry(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL((UBij-LBij)*N(ng),r8)
+# endif
+
+      allocate ( GRID(ng) % Huon(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % Hvom(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % z0_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % z0_w(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
+      allocate ( GRID(ng) % z_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % z_v(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % z_w(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
+# ifdef ICESHELF
+      allocate ( GRID(ng) % IcePress(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % zice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# endif
+
+#endif
+
+#ifdef MASKING
+      allocate ( GRID(ng) % pmask(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % rmask(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % umask(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % vmask(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+      allocate ( GRID(ng) % pmask_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % rmask_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % umask_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % vmask_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# endif
+# ifdef DIAGNOSTICS
+      allocate ( GRID(ng) % pmask_dia(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % rmask_dia(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % umask_dia(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % vmask_dia(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# endif
+      allocate ( GRID(ng) % pmask_full(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % rmask_full(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % umask_full(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % vmask_full(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+#ifdef WET_DRY
+      allocate ( GRID(ng) % pmask_wet(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % umask_wet(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# ifdef SOLVE3D
+      allocate ( GRID(ng) % rmask_wet_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# endif
+#endif
+
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
+    defined SO_SEMI
+      allocate ( GRID(ng) % Rscope(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % Uscope(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % Vscope(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+#if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      allocate ( GRID(ng) % tl_h(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+# ifdef SOLVE3D
+      allocate ( GRID(ng) % tl_Hz(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+#  ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % tl_Hz_bry(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL((UBij-LBij)*N(ng),r8)*size2d
+#  endif
+
+      allocate ( GRID(ng) % tl_Huon(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % tl_Hvom(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % tl_z_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % tl_z_w(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+# endif
+#endif
+
+#ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      allocate ( GRID(ng) % ad_h(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+# ifdef SOLVE3D
+      allocate ( GRID(ng) % ad_Hz(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+#  ifdef ADJUST_BOUNDARY
+      allocate ( GRID(ng) % ad_Hz_bry(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL((UBij-LBij)*N(ng),r8)*size2d
+#  endif
+
+      allocate ( GRID(ng) % ad_Huon(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % ad_Hvom(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % ad_z_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
+      allocate ( GRID(ng) % ad_z_w(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+# endif
+#endif
+
+#ifdef GRID_EXTRACT
+!
+!  Allocate global arrays for extraction by interpolation.
+!
+      IF (Extract_Flag.ge.1) THEN
+        my_size=(IOBOUNDS(ng)%IUB_psi-IOBOUNDS(ng)%ILB_psi+1)*          &
+     &          (IOBOUNDS(ng)%JUB_psi-IOBOUNDS(ng)%JLB_psi+1)
+
+        allocate ( GRID(ng) % Gangle_psi(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+# ifdef MASKING
+        allocate ( GRID(ng) % Gmask_psi(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+# endif
+
+        allocate ( GRID(ng) % Gx_psi(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+        allocate ( GRID(ng) % Gy_psi(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+!
+        my_size=(IOBOUNDS(ng)%IUB_rho-IOBOUNDS(ng)%ILB_rho+1)*          &
+     &          (IOBOUNDS(ng)%JUB_rho-IOBOUNDS(ng)%JLB_rho+1)
+
+        allocate ( GRID(ng) % Gangle_rho(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+# ifdef MASKING
+        allocate ( GRID(ng) % Gmask_rho(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+# endif
+
+        allocate ( GRID(ng) % Gx_rho(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+        allocate ( GRID(ng) % Gy_rho(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+!
+        my_size=(IOBOUNDS(ng)%IUB_u-IOBOUNDS(ng)%ILB_u+1)*              &
+     &          (IOBOUNDS(ng)%JUB_u-IOBOUNDS(ng)%JLB_u+1)
+
+        allocate ( GRID(ng) % Gangle_u(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+# ifdef MASKING
+        allocate ( GRID(ng) % Gmask_u(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+# endif
+
+        allocate ( GRID(ng) % Gx_u(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+        allocate ( GRID(ng) % Gy_u(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+!
+        my_size=(IOBOUNDS(ng)%IUB_v-IOBOUNDS(ng)%ILB_v+1)*              &
+     &          (IOBOUNDS(ng)%JUB_v-IOBOUNDS(ng)%JLB_v+1)
+
+        allocate ( GRID(ng) % Gangle_v(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+# ifdef MASKING
+        allocate ( GRID(ng) % Gmask_v(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+# endif
+
+        allocate ( GRID(ng) % Gx_v(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+
+        allocate ( GRID(ng) % Gy_v(my_size) )
+        Dmem(ng)=Dmem(ng)+REAL(my_size,r8)
+      END IF
+#endif
+!
+      RETURN
+      END SUBROUTINE allocate_grid
+!
+      SUBROUTINE deallocate_grid (ng)
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates all variables in the module for all nested !
+!  grids.                                                              !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param,   ONLY : Ngrids
+#ifdef SUBOBJECT_DEALLOCATION
+      USE destroy_mod, ONLY : destroy
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", deallocate_grid"
+
+#ifdef SUBOBJECT_DEALLOCATION
+!
+!-----------------------------------------------------------------------
+!  Deallocate each variable in the derived-type T_GRID structure
+!  separately.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+# if defined MASKING && defined PROPAGATOR
+      IF (.not.destroy(ng, GRID(ng)%IJwaterR, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterR')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%IJwaterU, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterU')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%IJwaterV, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IJwaterV')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%angler, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%angler')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%CosAngler, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%CosAngler')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%SinAngler, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%SinAngler')) RETURN
+
+# if defined TIDE_GENERATING_FORCES
+      IF (.not.destroy(ng, GRID(ng)%Cos2Lat, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%Cos2Lat')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%SinLat2, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%SinLat2')) RETURN
+# endif
+
+# if defined CURVGRID && defined UV_ADV
+      IF (.not.destroy(ng, GRID(ng)%dmde, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dmde')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%dndx, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dndx')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%f, MyFile,                          &
+     &                 __LINE__, 'GRID(ng)%f')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%fomn, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%fomn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%grdscl, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%grdscl')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%h, MyFile,                          &
+     &                 __LINE__, 'GRID(ng)%h')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latp, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latr, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latu, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%latv, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%latv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonp, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonr, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonu, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%lonv, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%lonv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Mylon, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%Mylon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%omn, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%omn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_p, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_u, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%om_v, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%om_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_p, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_u, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%on_v, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%on_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pm, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%pm')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pn, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%pn')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_p, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_u, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pmon_v, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pmon_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_p, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_p')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_u, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_u')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%pnom_v, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%pnom_v')) RETURN
+
+# if defined UV_LOGDRAG || defined GLS_MIXING || \
+     defined BBL_MODEL  || defined SEDIMENT
+      IF (.not.destroy(ng, GRID(ng)%ZoBot, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%ZoBot')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%rdrag, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%rdrag')) RETURN
+
+# if defined UV_QDRAG
+      IF (.not.destroy(ng, GRID(ng)%rdrag2, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%rdrag2')) RETURN
+# endif
+
+      IF (.not.destroy(ng, GRID(ng)%xp, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xr, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xu, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%xv, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%xv')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yp, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yp')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yr, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yr')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yu, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yu')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%yv, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%yv')) RETURN
+
+#if defined CURVGRID && defined INWAVE_MODEL
+      IF (.not.destroy(ng, GRID(ng)%jaco, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%jaco')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%jaco, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dpdx')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%jaco, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dpdy')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%jaco, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dqdx')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%jaco, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%dqdy')) RETURN
+#endif
+
+# ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%Hz, MyFile,                         &
+     &                 __LINE__, 'GRID(ng)%Hz')) RETURN
+
+#  ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%Hz_bry, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Hz_bry')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, GRID(ng)%Huon, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Hvom, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z0_r, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%z0_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z0_w, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%z0_w')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_r, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_v, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_v')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%z_w, MyFile,                        &
+     &                 __LINE__, 'GRID(ng)%z_w')) RETURN
+
+#  ifdef ICESHELF
+      IF (.not.destroy(ng, GRID(ng)%IcePress, MyFile,                   &
+     &                 __LINE__, 'GRID(ng)%IcePress')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%zice, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%zice')) RETURN
+#  endif
+
+# endif
+
+# ifdef MASKING
+      IF (.not.destroy(ng, GRID(ng)%pmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%pmask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%rmask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%umask')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%vmask')) RETURN
+
+#  if defined AVERAGES    || \
+     (defined AD_AVERAGES && defined ADJOINT) || \
+     (defined RP_AVERAGES && defined TL_IOMS) || \
+     (defined TL_AVERAGES && defined TANGENT)
+      IF (.not.destroy(ng, GRID(ng)%pmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_avg')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_avg, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_avg')) RETURN
+#  endif
+
+#  ifdef DIAGNOSTICS
+      IF (.not.destroy(ng, GRID(ng)%pmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_dia')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_dia, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_dia')) RETURN
+#  endif
+
+      IF (.not.destroy(ng, GRID(ng)%pmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%pmask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%rmask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%umask_full')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_full, MyFile,                 &
+     &                 __LINE__, 'GRID(ng)%vmask_full')) RETURN
+# endif
+
+# ifdef WET_DRY
+      IF (.not.destroy(ng, GRID(ng)%pmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%pmask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%rmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%rmask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%umask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%umask_wet')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%vmask_wet, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%vmask_wet')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%rmask_wet_avg, MyFile,              &
+     &                 __LINE__, 'GRID(ng)%rmask_wet_avg')) RETURN
+#  endif
+# endif
+
+# if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
+     defined SO_SEMI
+      IF (.not.destroy(ng, GRID(ng)%Rscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Rscope')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Uscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Uscope')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%Vscope, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%Vscope')) RETURN
+# endif
+
+# if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      IF (.not.destroy(ng, GRID(ng)%tl_h, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%tl_h')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%tl_Hz, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%tl_Hz')) RETURN
+
+#   ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%tl_Hz_bry, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%tl_Hz_bry')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, GRID(ng)%tl_Huon, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%tl_Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_Hvom, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%tl_Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_z_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%tl_z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%tl_z_w, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%tl_z_w')) RETURN
+#  endif
+# endif
+
+# ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      IF (.not.destroy(ng, GRID(ng)%ad_h, MyFile,                       &
+     &                 __LINE__, 'GRID(ng)%ad_h')) RETURN
+
+#  ifdef SOLVE3D
+      IF (.not.destroy(ng, GRID(ng)%ad_Hz, MyFile,                      &
+     &                 __LINE__, 'GRID(ng)%ad_Hz')) RETURN
+
+#   ifdef ADJUST_BOUNDARY
+      IF (.not.destroy(ng, GRID(ng)%ad_Hz_bry, MyFile,                  &
+     &                 __LINE__, 'GRID(ng)%ad_Hz_bry')) RETURN
+#   endif
+
+      IF (.not.destroy(ng, GRID(ng)%ad_Huon, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%ad_Huon')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_Hvom, MyFile,                    &
+     &                 __LINE__, 'GRID(ng)%ad_Hvom')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_z_r, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%ad_z_r')) RETURN
+
+      IF (.not.destroy(ng, GRID(ng)%ad_z_w, MyFile,                     &
+     &                 __LINE__, 'GRID(ng)%ad_z_w')) RETURN
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Deallocate derived-type GRID structure.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+        IF (allocated(GRID)) deallocate ( GRID )
+      END IF
+!
+      RETURN
+      END SUBROUTINE deallocate_grid
+!
+      SUBROUTINE initialize_grid (ng, tile, model)
+!
+!=======================================================================
+!                                                                      !
+!  This routine initialize all variables in the module using first     !
+!  touch distribution policy. In shared-memory configuration, this     !
+!  operation actually performs propagation of the  "shared arrays"     !
+!  across the cluster, unless another policy is specified to           !
+!  override the default.                                               !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_scalars
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile, model
+!
+!  Local variable declarations.
+!
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: i, j
+#ifdef SOLVE3D
+      integer :: k
+#endif
+
+      real(r8), parameter :: IniVal = 0.0_r8
+      real(r8) :: IniMetricVal
+
+#include "set_bounds.h"
+!
+!  Set array initialization range.
+!
+#ifdef DISTRIBUTE
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
+#else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
+#endif
+!
+!  Set initialization value that it is special in nexting to just
+!  load contact points that have not been initialized from the
+!  regular physical grid. This is done to make sure that all these
+!  important metric values have been set-up correctly.
+!
+#ifdef NESTING
+      IniMetricVal=spval                   ! very large value
+#else
+      IniMetricVal=IniVal
+#endif
+!
+!-----------------------------------------------------------------------
+!  Initialize module variables.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model state.
+!
+      IF ((model.eq.0).or.(model.eq.iNLM)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+#if defined MASKING && defined PROPAGATOR
+            GRID(ng) % IJwaterR(i,j) = 0
+            GRID(ng) % IJwaterU(i,j) = 0
+            GRID(ng) % IJwaterV(i,j) = 0
+#endif
+            GRID(ng) % angler(i,j) = IniMetricVal
+            GRID(ng) % CosAngler(i,j) = IniVal
+            GRID(ng) % SinAngler(i,j) = IniVal
+
+#if defined TIDE_GENERATING_FORCES
+            GRID(ng) % Cos2Lat(i,j) = IniVal
+            GRID(ng) % SinLat2(i,j) = IniVal
+#endif
+
+#if defined CURVGRID && defined UV_ADV
+            GRID(ng) % dmde(i,j) = IniMetricVal
+            GRID(ng) % dndx(i,j) = IniMetricVal
+#endif
+            GRID(ng) % f(i,j) = IniMetricVal
+            GRID(ng) % fomn(i,j) = IniVal
+            GRID(ng) % grdscl(i,j) = IniVal
+
+            GRID(ng) % h(i,j) = IniMetricVal
+
+            GRID(ng) % latp(i,j) = IniVal
+            GRID(ng) % latr(i,j) = IniMetricVal
+            GRID(ng) % latu(i,j) = IniMetricVal
+            GRID(ng) % latv(i,j) = IniMetricVal
+            GRID(ng) % lonp(i,j) = IniVal
+            GRID(ng) % lonr(i,j) = IniMetricVal
+            GRID(ng) % lonu(i,j) = IniMetricVal
+            GRID(ng) % lonv(i,j) = IniMetricVal
+            GRID(ng) % MyLon(i,j) = IniMetricVal
+
+            GRID(ng) % omn(i,j) = IniVal
+            GRID(ng) % om_p(i,j) = IniVal
+            GRID(ng) % om_r(i,j) = IniVal
+            GRID(ng) % om_u(i,j) = IniVal
+            GRID(ng) % om_v(i,j) = IniVal
+            GRID(ng) % on_p(i,j) = IniVal
+            GRID(ng) % on_r(i,j) = IniVal
+            GRID(ng) % on_u(i,j) = IniVal
+            GRID(ng) % on_v(i,j) = IniVal
+
+            GRID(ng) % pm(i,j) = IniMetricVal
+            GRID(ng) % pn(i,j) = IniMetricVal
+
+            GRID(ng) % pmon_p(i,j) = IniVal
+            GRID(ng) % pmon_r(i,j) = IniVal
+            GRID(ng) % pmon_u(i,j) = IniVal
+            GRID(ng) % pmon_v(i,j) = IniVal
+            GRID(ng) % pnom_p(i,j) = IniVal
+            GRID(ng) % pnom_r(i,j) = IniVal
+            GRID(ng) % pnom_u(i,j) = IniVal
+            GRID(ng) % pnom_v(i,j) = IniVal
+
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+            GRID(ng) % ZoBot(i,j) = Zob(ng)
+#endif
+            GRID(ng) % rdrag(i,j) = rdrg(ng)
+#if defined UV_QDRAG
+            GRID(ng) % rdrag2(i,j) = rdrg2(ng)
+#endif
+#if defined UV_WAVEDRAG
+            GRID(ng) % wavedrag(i,j) = Inival
+#endif
+
+            GRID(ng) % xp(i,j) = IniVal
+            GRID(ng) % xr(i,j) = IniMetricVal
+            GRID(ng) % xu(i,j) = IniMetricVal
+            GRID(ng) % xv(i,j) = IniMetricVal
+            GRID(ng) % yp(i,j) = IniVal
+            GRID(ng) % yr(i,j) = IniMetricVal
+            GRID(ng) % yu(i,j) = IniMetricVal
+            GRID(ng) % yv(i,j) = IniMetricVal
+
+#if defined CURVGRID && defined INWAVE_MODEL
+            GRID(ng) % jaco(i,j) = IniMetricVal
+            GRID(ng) % dpdx(i,j) = IniMetricVal
+            GRID(ng) % dpdy(i,j) = IniMetricVal
+            GRID(ng) % dqdx(i,j) = IniMetricVal
+            GRID(ng) % dqdy(i,j) = IniMetricVal
+#endif
+
+#if defined ICESHELF && defined SOLVE3D
+            GRID(ng) % IcePress(i,j) = IniVal
+            GRID(ng) % zice(i,j) = IniVal
+#endif
+
+#ifdef MASKING
+            GRID(ng) % pmask(i,j) = IniVal
+            GRID(ng) % rmask(i,j) = IniMetricVal
+            GRID(ng) % umask(i,j) = IniMetricVal
+            GRID(ng) % vmask(i,j) = IniMetricVal
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+            GRID(ng) % pmask_avg(i,j) = IniVal
+            GRID(ng) % rmask_avg(i,j) = IniVal
+            GRID(ng) % umask_avg(i,j) = IniVal
+            GRID(ng) % vmask_avg(i,j) = IniVal
+# endif
+# ifdef DIAGNOSTICS
+            GRID(ng) % pmask_dia(i,j) = IniVal
+            GRID(ng) % rmask_dia(i,j) = IniVal
+            GRID(ng) % umask_dia(i,j) = IniVal
+            GRID(ng) % vmask_dia(i,j) = IniVal
+# endif
+            GRID(ng) % pmask_full(i,j) = IniVal
+            GRID(ng) % rmask_full(i,j) = IniVal
+            GRID(ng) % umask_full(i,j) = IniVal
+            GRID(ng) % vmask_full(i,j) = IniVal
+#endif
+
+#ifdef WET_DRY
+            GRID(ng) % pmask_wet(i,j) = IniVal
+            GRID(ng) % rmask_wet(i,j) = IniVal
+            GRID(ng) % umask_wet(i,j) = IniVal
+            GRID(ng) % vmask_wet(i,j) = IniVal
+# ifdef SOLVE3D
+            GRID(ng) % rmask_wet_avg(i,j) = IniVal
+# endif
+#endif
+
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
+    defined SO_SEMI
+            GRID(ng) % Rscope(i,j) = IniVal
+            GRID(ng) % Uscope(i,j) = IniVal
+            GRID(ng) % Vscope(i,j) = IniVal
+#endif
+          END DO
+
+#ifdef SOLVE3D
+          DO k=1,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % Hz(i,j,k) = IniVal
+              GRID(ng) % Huon(i,j,k) = IniVal
+              GRID(ng) % Hvom(i,j,k) = IniVal
+              GRID(ng) % z0_r(i,j,k) = IniVal
+              GRID(ng) % z_r(i,j,k) = IniVal
+              GRID(ng) % z_v(i,j,k) = IniVal
+            END DO
+          END DO
+          DO k=0,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % z0_w(i,j,k) = IniVal
+              GRID(ng) % z_w(i,j,k) = IniVal
+            END DO
+          END DO
+#endif
+        END DO
+#if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % Hz_bry = IniVal
+#endif
+      END IF
+
+#if defined TANGENT || defined TL_IOMS
+!
+!  Tangent linear model state.
+!
+      IF ((model.eq.0).or.(model.eq.iTLM).or.(model.eq.iRPM)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            GRID(ng) % tl_h(i,j) = IniVal
+          END DO
+# ifdef SOLVE3D
+          DO k=1,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % tl_Hz(i,j,k) = IniVal
+              GRID(ng) % tl_Huon(i,j,k) = IniVal
+              GRID(ng) % tl_Hvom(i,j,k) = IniVal
+              GRID(ng) % tl_z_r(i,j,k) = IniVal
+            END DO
+          END DO
+          DO k=0,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % tl_z_w(i,j,k) = IniVal
+            END DO
+          END DO
+# endif
+        END DO
+# if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % tl_Hz_bry = IniVal
+# endif
+      END IF
+#endif
+
+#ifdef ADJOINT
+!
+!  Adjoint model state.
+!
+      IF ((model.eq.0).or.(model.eq.iADM)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            GRID(ng) % ad_h(i,j) = IniVal
+          END DO
+# ifdef SOLVE3D
+          DO k=1,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % ad_Hz(i,j,k) = IniVal
+              GRID(ng) % ad_Huon(i,j,k) = IniVal
+              GRID(ng) % ad_Hvom(i,j,k) = IniVal
+              GRID(ng) % ad_z_r(i,j,k) = IniVal
+            END DO
+          END DO
+          DO k=0,N(ng)
+            DO i=Imin,Imax
+              GRID(ng) % ad_z_w(i,j,k) = IniVal
+            END DO
+          END DO
+# endif
+        END DO
+# if defined ADJUST_BOUNDARY && defined SOLVE3D
+        GRID(ng) % ad_Hz_bry = IniVal
+# endif
+      END IF
+#endif
+!
+      RETURN
+      END SUBROUTINE initialize_grid
+
+      END MODULE mod_grid

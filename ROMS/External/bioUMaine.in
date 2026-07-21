@@ -1,0 +1,864 @@
+!  Fasham Nitrogen-based Biological Model Parameters.
+!
+!svn $Id$
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+    Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+     BioIter == 1
+
+! Microzooplankton excretion rate to ammonium [1/day].
+
+   reg1 == 0.2d0
+
+! Mesozooplankton excretion rate to ammonium [1/day].
+
+   reg2 == 0.1d0
+
+! Maximum specific growth rate of small phytoplankton
+!              [1/day]
+
+   gmaxs1 == 1.5d0
+
+! Maximum specific growth rate of diatom [1/day]
+
+   gmaxs2 == 2.5d0
+
+! Maximum specific growth rate of coccolithophores [1/day]
+
+   gmaxs3 == 1.0d0
+
+! Microzooplankton maximum grazing rate [1/day]
+
+   beta1 == 1.55d0
+
+! Mesozooplankton maximum grazing rate [1/day]
+
+   beta2 == 0.56d0
+
+! Half saturation constant for microzooplankton grazing
+!              [mmol_N/m3]
+
+   akz1 == 0.5d0
+
+! Half saturation constant for mesozooplankton grazing
+!              [mmol_N/m3]
+
+   akz2 == 0.25d0
+
+! Fraction of shortwave radiation that is available for
+!              photosyntesis [nondimensional].
+
+   PARfrac == 0.46d0
+
+! Initial chlorophyll-specific slope of P-I curve of small phytoplankton
+!              [mol_C m2/(g_Chl W day)]
+
+   alphachl_s1 == 0.25d0
+
+! Initial chlorophyll-specific slope of P-I curve of diatom
+!              [mol_C m2/(g_Chl W day)]
+
+   alphachl_s2 == 0.25d0
+
+! Initial chlorophyll-specific slope of P-I curve of coccolithophores
+!              [mol_C m2/(g_Chl W day)]
+
+   alphachl_s3 == 0.25d0
+
+
+! Ammonium inhibition parameter for small phytoplankton
+!              [mmol_N/m3]
+
+   pis1 == 5.59d0
+
+! Ammonium inhibition parameter for diatom [mmol_N/m3]
+
+   pis2 == 1.5d0
+
+! Ammonium inhibition parameter for coccolithophores [mmol_N/m3]
+
+   pis3 == 5.59d0
+
+! Half saturation concentration for nitrate uptake by
+!              small phytoplankton [mmol_N/m3].
+
+   akno3s1 == 1.0d0
+
+! Half saturation concentration for nitrate uptake by
+!              diatom [mmol_N/m3].
+
+   akno3s2 == 3.0d0
+
+! Half saturation concentration for nitrate uptake by
+!              coccolithophores [mmol_N/m3].
+
+   akno3s3 == 1.0d0
+
+! Half saturation concentration for ammonium uptake by
+!              small phytoplankton [mmol_N/m3].
+
+   aknh4s1 == 0.1d0
+
+! Half saturation concentration for ammonium uptake by
+!              diatom [mmol_N/m3].
+
+   aknh4s2 == 0.1d0
+
+! Half saturation concentration for ammonium uptake by
+!              coccolithophores [mmol_N/m3].
+
+   aknh4s3 == 1.0d0
+
+! Half saturation concentration for phosphate uptake by
+!              small phytoplankton [mmol_P/m3].
+
+   akpo4s1 == 0.1d0
+
+! Half saturation concentration for phosphate uptake by
+!              diatom [mmol_P/m3].
+
+   akpo4s2 == 0.2d0
+
+! Half saturation concentration for phosphate uptake by
+!              coccolithophores [mmol_P/m3].
+
+   akpo4s3 == 0.2d0
+
+! Half saturation concentration for co2 uptake by
+!              small phytoplankton [mmol_C/m3].
+
+   akco2s1 == 200.0d0
+
+! Half saturation concentration for co2 uptake by
+!              diatom [mmol_C/m3].
+
+   akco2s2 == 200.0d0
+
+! Half saturation concentration for co2 uptake by
+!              coccolithophores [mmol_C/m3].
+
+   akco2s3 == 200.0d0
+
+! Half saturation constant for silicate uptake by
+!              diatom [mmol_N/m3].
+
+   aksio4s2 == 4.5d0
+
+! Phytoplankton exudation parameter for small phytoplankton
+! [nondimensional]
+
+    ES1 == 0.2d0
+
+! Phytoplankton exudation parameter for diatom
+! [nondimensional]
+
+    ES2 == 0.2d0
+
+! Phytoplankton exudation parameter for coccolithophores
+! [nondimensional]
+
+    ES3 == 0.2d0
+
+! Light attenuation coefficient of water [1/m]
+
+   ak1 == 0.046d0
+
+! Specific light attenuation coefficient for
+!              phytoplankton [1/m/(mmol_N/m3)].
+
+   ak2 == 0.030d0
+
+! Maximum phytoplankton N:C ratio [mol_N/mol_C]
+
+   Qmax == 0.17d0
+
+! Minimum phytoplankton N:C ratio [mol_N/mol_C]
+
+   Qmin == 0.06d0
+
+! Cost of biosynthesis for small phytoplankton [mol_C/mol_N]
+
+   lambdano3_s1 == 2.33
+
+! Cost of biosynthesis for diatom [mol_C/mol_N]
+
+   lambdano3_s2 == 2.33
+
+! Cost of biosynthesis for coccolithophores [mol_C/mol_N]
+
+   lambdano3_s3 == 2.33
+
+! Maximum Chl:N for small phytoplankton [g_Chl/mol_N]
+
+   thetaNmax_s1 == 1.5d0
+
+! Maximum Chl:N for diatom [g_Chl/mol_N]
+
+   thetaNmax_s2 == 1.5d0
+
+! Maximum Chl:N for coccolithophores [g_Chl/mol_N]
+
+   thetaNmax_s3 == 1.5d0
+
+! Mesozooplankton specific mortality rate [1/day].
+
+   bgamma == 0.05d0
+
+! Grazing efficiency of microzooplankton [nondimensional].
+
+   bgamma1 == 0.90d0
+
+! Grazing efficiency of mesozooplankton for N [nondimensional].
+
+   bgamma2 == 0.70d0
+
+! Grazing efficiency of mesozooplankton for C [nondimensional].
+
+   bgamma22 == 0.65d0
+
+! Death rate of small phytoplankton [1/day].
+
+   bgamma3 == 0.02d0
+
+! Death rate of diatom [1/day].
+
+   bgamma4 == 0.05d0
+
+! Death rate of coccolithophores [1/day].
+
+   bgamma10 == 0.05d0
+
+! Death rate of bacteria [1/day].
+
+   bgamma12 == 0.05d0
+
+! Decay rate of detritus [1/day].
+
+   bgamma5 == 0.20d0
+
+! Nitrafication rate [1/day].
+
+   bgamma7 == 0.05d0
+
+! Maximum ammonium uptake rate by bacteria [1/day].
+
+   bgamma11 == 0.8d0
+
+! Maximum semi-labile hydrolysis [1/day].
+
+   bgamma13 == 0.21d0
+
+! Ratio of mortality to dissolved pool of small phytoplankton
+! [nondimensional].
+
+   mtos1 == 0.5d0
+
+! Ratio of mortality to dissolved pool of diatom
+! [nondimensional].
+
+   mtos2 == 0.5d0
+
+! Ratio of mortality to dissolved pool of coccolithophores
+! [nondimensional].
+
+   mtos3 == 0.5d0
+
+! Feeding loss by small zooplankton [nondimensional].
+
+   flz1 == 0.1d0
+
+! Feeding loss by large zooplankton [nondimensional].
+
+   flz2 == 0.2d0
+
+! Phytoplankton leakage fraction of small phytoplankton
+! [nondimensional].
+
+   lk1 == 0.3d0
+
+! Phytoplankton leakage fraction of diatom
+! [nondimensional].
+
+   lk2 == 0.3d0
+
+! Phytoplankton leakage fraction of coccolithophores
+! [nondimensional].
+
+   lk3 == 0.3d0
+
+! Labile fraction [nondimensional].
+
+   ratiol1 == 0.90d0
+
+! Labile fraction for phytoplankton [nondimensional].
+
+   ratiol2 == 0.65d0
+
+! Sinking velocity of detritus N [m/day].
+
+   wsdn == 10.0d0
+
+! Sinking velocity of detritus C [m/day].
+
+   wsdc == 15.0d0
+
+! Sinking velocity of detritus silicate [m/day].
+
+   wsdsi == 20.0d0
+
+! Sinking velocity of particulate inorganic carbon [m/day].
+
+   wsdca == 15.0d0
+
+! Sinking velocity of small phytoplankton [m/day].
+
+   wsp1 == 0.0d0
+
+! Sinking velocity of diatom [m/day].
+
+   wsp2 == 1.0d0
+
+! Sinking velocity of coccolithophores [m/day].
+
+   wsp3 == 1.0d0
+
+! Air pCO2 [ppmv].
+
+   pco2a == 380.00
+
+! Phosphorus to nitrogen ratio [mol_P/mol_N].
+
+   p2n == 0.0625d0
+
+! Oxygen to nitrate ratio [mol_O2/mol_NO3].
+
+   o2no == 8.625d0
+
+! Oxygen to ammonium ratio [mol_O2/mol_NH4].
+
+   o2nh == 6.625d0
+
+! C:N in bacteria [mol_C/mol_N].
+
+   cnb == 5.1
+
+! Ratio of PIC to organic carbon in coccolithophores
+! [mol_C/mol_N]
+
+   apsilon == 1.0d0
+
+! Grazing preference for diatom [nondimensional].
+
+   ro5 == 0.60d0
+
+! Grazing preference for microzooplankton [nondimensional].
+
+   ro6 == 0.10d0
+
+! Grazing preference for detritus [nondimensional].
+
+   ro7 == 0.20d0
+
+! Grazing preference for coccolithophores [nondimensional].
+
+   ro10 == 0.10d0
+
+! Grazing preference for small phytoplankton [nondimensional].
+
+   rop == 0.90d0
+
+! Grazing preference for bacteria [nondimensional].
+
+   rob == 0.10d0
+
+! Half saturation for ammonium uptake by bacteria [mmol_N/m3].
+
+   kabac == 0.5d0
+
+! Half saturation for labile DOC uptake [mmol_C/m3].
+
+   klbac == 25.0d0
+
+! Half saturation for semi-labile DOC uptake [mmol_C/m3].
+
+   ksdoc == 417.0d0
+
+! Half saturation for semi-labile DON uptake [mmol_N/m3].
+
+   ksdon == 35.3d0
+
+! Bacteria growth loss fraction [nondimensional].
+
+   ratiob == 0.5d0
+
+! Color fraction of Bacteria loss [nondimensional].
+
+   ratiobc == 0.96d0
+
+! Rate of conversion of colored labile DOC to labile DOC
+! [mmol_C/m2/d]
+
+   RtUVLDOC == 1.0d0
+
+! Rate of conversion of colored semi-labile DOC to labile DOC
+! [mmol_C/m2/d]
+
+   RtUVSDOC == 1.0d0
+
+! Rate of conversion of colored labile DOC to DIC
+! [mmol_C/m2/d]
+
+   RtUVLDIC == 2.0d0
+
+! Rate of conversion of colored semi-labile DOC to DIC
+! [mmol_C/m2/d]
+
+   RtUVSDIC == 2.0d0
+
+! Color fraction for labile DOC [nondimensional].
+
+   colorFR1 == 0.1d0
+
+! Color fraction for semi-labile DOC [nondimensional].
+
+   colorFR2 == 0.2d0
+
+! Lateral, constant, harmonic/biharmonic horizontal diffusion of biological
+! tracer: [1:NBT,Ngrids].
+
+        TNU2 == 31*0.0d0                        ! m2/s
+        TNU4 == 31*0.0d0                        ! m4/s
+
+! Vertical mixing coefficients for biological tracers: [1:NBT,Ngrids].
+
+     AKT_BAK == 31*1.0d-6                       ! m2/s
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+       TNUDG == 31*0.0d0                        ! days
+
+! Logical switches (TRUE/FALSE) to activate writing of biological tracers
+! into HISTORY output file: [1:NBT,Ngrids].
+
+Hout(idTvar) == 31*T                  ! biological tracer
+Hout(idTsur) == 31*F                  ! surface tracer flux
+
+Aout(idTvar) == 31*T
+
+   LBC(isTvar) ==   Per     Clo     Per     Clo \ ! iNO3_ Nitrate concentration
+                    Per     Clo     Per     Clo \ ! iNH4_ Ammonium concentration
+                    Per     Clo     Per     Clo \ ! iSiOH Silicate concentration
+                    Per     Clo     Per     Clo \ ! iPO4_ Phosphate concentration
+                    Per     Clo     Per     Clo \ ! iS1_N Small phytoplankton N
+                    Per     Clo     Per     Clo \ ! iS1_C Small phytoplankton C
+                    Per     Clo     Per     Clo \ ! iS1CH Small phytoplankton CHL
+                    Per     Clo     Per     Clo \ ! iS2_N Diatom concentration N
+                    Per     Clo     Per     Clo \ ! iS2_C Diatom concentration C
+                    Per     Clo     Per     Clo \ ! iS2CH Diatom concentration CHL
+                    Per     Clo     Per     Clo \ ! iS3_N Coccolithophores N
+                    Per     Clo     Per     Clo \ ! iS3_C Coccolithophores C
+                    Per     Clo     Per     Clo \ ! iS3CH Coccolithophores CHL
+                    Per     Clo     Per     Clo \ ! iZ1_N Small zooplankton N
+                    Per     Clo     Per     Clo \ ! iZ1_C Small zooplankton C
+                    Per     Clo     Per     Clo \ ! iZ2_N Mesozooplankton N
+                    Per     Clo     Per     Clo \ ! iZ2_C Mesozooplankton C
+                    Per     Clo     Per     Clo \ ! iBAC_ Bacteria concentration N
+                    Per     Clo     Per     Clo \ ! iDD_N Detritus concentration N
+                    Per     Clo     Per     Clo \ ! iDD_C Detritus concentration C
+                    Per     Clo     Per     Clo \ ! iDDSi Biogenic silicate concentration
+                    Per     Clo     Per     Clo \ ! iLDON Labile dissolved organic N
+                    Per     Clo     Per     Clo \ ! iLDOC Labile dissolved organic C
+                    Per     Clo     Per     Clo \ ! iSDON Semi-labile dissolved organic N
+                    Per     Clo     Per     Clo \ ! iSDOC Semi-labile dissolved organic C
+                    Per     Clo     Per     Clo \ ! iCLDC Colored labile dissolved organic C
+                    Per     Clo     Per     Clo \ ! iCSDC Colored semi-labile dissolved organic C
+                    Per     Clo     Per     Clo \ ! iDDCA Particulate inorganic C
+                    Per     Clo     Per     Clo \ ! iOxyg Dissolved oxygen
+                    Per     Clo     Per     Clo \ ! iTAlk Total alkalinity
+                    Per     Clo     Per     Clo   ! iTIC_ Total CO2
+
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+  LtracerSrc == 31*F
+
+! Logical switches (TRUE/FALSE) to specify which variables to process for
+! tracers climatology: [NBT,Ngrids] values are expected. See glossary below
+! for details.
+
+  LtracerCLM == 31*F
+
+! Logical switches (TRUE/FALSE) to nudge the desired biological tracer
+! climatology field. If not analytical climatology fields, users need to
+! turn on the logical switches above to process the fields from the
+! climatology NetCDF file that are needed for nudging; [NBT,Ngrids]
+! values are expected. See glossary below for details.
+
+  LnudgeTCLM == 31*F
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Carbon, Silicon, Nitrogen Ecosystem (CoSiNE) Model Parameters.
+!------------------------------------------------------------------------------
+!
+!  Lbiology  Switch to control the computation of a particular module within
+!              nested and/or multiple connected grids. By default this switch
+!              is set to TRUE in "mod_scalars" for all grids.  Ngrids values
+!              are expected. The USER has the option, for example, to compute
+!              the biology in just one of the nested grids. If so, this switch
+!              needs to be consistent with the dimension parameter NBT in
+!              "mod_param".  In order to make the model more efficient in
+!              memory usage, NBT(:) should be zero in such grids.
+!
+!  BioIter   Maximum number of iterations to achieve convergence of
+!              the nonlinear solution.
+!
+!   reg1     Microzooplankton excretion rate to ammonium [1/day].
+!
+!   reg2     Mesozooplankton excretion rate to ammonium [1/day].
+!
+!   gmaxs1   Maximum specific growth rate of small phytoplankton
+!              [1/day]
+!
+!   gmaxs2   Maximum specific growth rate of diatom [1/day]
+!
+!   gmaxs3   Maximum specific growth rate of coccolithophores [1/day]
+!
+!   beta1    Microzooplankton maximum grazing rate [1/day]
+!
+!   beta2    Mesozooplankton maximum grazing rate [1/day]
+!
+!   akz1     Half saturation constant for microzooplankton grazing
+!              [mmol_N/m3]
+!
+!   akz2     Half saturation constant for mesozooplankton grazing
+!              [mmol_N/m3]
+!
+!   PARfrac  Fraction of shortwave radiation that is available for
+!              photosyntesis [nondimensional].
+!
+!   alphachl_s1   Initial chlorophyll-specific slope of P-I curve of
+!                   small phytoplankton [1/(Watts/m2)/day]
+!
+!   alphachl_s2   Initial chlorophyll-specific slope of P-I curve of
+!                   diatom [1/(Watts/m2)/day]
+!
+!   alphachl_s3   Initial chlorophyll-specific slope of P-I curve of
+!                   coccolithophores [1/(Watts/m2)/day]
+!
+!   pis1     Ammonium inhibition parameter for small phytoplankton
+!              [mmol_N/m3]
+!
+!   pis2     Ammonium inhibition parameter for diatom [mmol_N/m3]
+!
+!   pis3     Ammonium inhibition parameter for coccolithophores [mmol_N/m3]
+!
+!   akno3s1  Half saturation concentration for nitrate uptake by
+!              small phytoplankton [mmol_N/m3].
+!
+!   akno3s2  Half saturation concentration for nitrate uptake by
+!              diatom [mmol_N/m3].
+!
+!   akno3s3  Half saturation concentration for nitrate uptake by
+!              coccolithophores [mmol_N/m3].
+!
+!   aknh4s1  Half saturation concentration for ammonium uptake by
+!              small phytoplankton [mmol_N/m3].
+!
+!   aknh4s2  Half saturation concentration for ammonium uptake by
+!              diatom [mmol_N/m3].
+!
+!   aknh4s3  Half saturation concentration for ammonium uptake by
+!              coccolithophores [mmol_N/m3].
+!
+!   akpo4s1  Half saturation concentration for phosphate uptake by
+!              small phytoplankton [mmol_P/m3].
+!
+!   akpo4s2  Half saturation concentration for phosphate uptake by
+!              diatom [mmol_P/m3].
+!
+!   akpo4s3  Half saturation concentration for phosphate uptake by
+!              coccolithophores [mmol_P/m3].
+!
+!   akco2s1  Half saturation concentration for co2 uptake by
+!              small phytoplankton [mmol_C/m3].
+!
+!   akco2s2  Half saturation concentration for co2 uptake by
+!              diatom [mmol_C/m3].
+!
+!   akco2s3  Half saturation concentration for co2 uptake by
+!              coccolithophores [mmol_C/m3].
+!
+!   aksio4s2 Half saturation constant for silicate uptake by
+!              diatom [mmol_N/m3].
+!
+!   ES1      Phytoplankton exudation parameter for
+!               small phytoplankton [nondimensional]
+!
+!   ES2      Phytoplankton exudation parameter for
+!               diatom [nondimensional]
+!   ES3      Phytoplankton exudation parameter for
+!               coccolithophores [nondimensional]
+!
+!   ak1      Light attenuation coefficient of water [1/m]
+!
+!   ak2      Specific light attenuation coefficient for
+!              phytoplankton [1/m/(mmol_N/m3)].
+!
+!   Qmax     Maximum phytoplankton N:C ratio [mol_N/mol_C]
+!
+!   Qmin     Minimum phytoplankton N:C ratio [mol_N/mol_C]
+!
+!   lambdano3_s1  Cost of biosynthesis for small phytoplankton [mol_C/mol_N]
+!
+!   lambdano3_s2  Cost of biosynthesis for diatom [mol_C/mol_N]
+!
+!   lambdano3_s3  Cost of biosynthesis for coccolithophores [mol_C/mol_N]
+!
+!   thetaNmax_s1  Maximum Chl:N for small phytoplankton [g_Chl/mol_N]
+!
+!   thetaNmax_s2  Maximum Chl:N for diatom [g_Chl/mol_N]
+!
+!   thetaNmax_s3  Maximum Chl:N for coccolithophores [g_Chl/mol_N]
+!
+!   bgamma    Mesozooplankton specific mortality rate [1/day].
+!
+!   bgamma1   Grazing efficiency of microzooplankton [nondimensional].
+!
+!   bgamma2   Grazing efficiency of mesozooplankton for N [nondimensional].
+!
+!   bgamma22  Grazing efficiency of mesozooplankton for C [nondimensional].
+!
+!   bgamma3   Death rate of small phytoplankton [1/day].
+!
+!   bgamma4   Death rate of diatom [1/day].
+!
+!   bgamma10  Death rate of coccolithophores [1/day].
+!
+!   bgamma12  Death rate of bacteria [1/day].
+!
+!   bgamma5   Decay rate of detritus [1/day].
+!
+!   bgamma7   Nitrafication rate [1/day].
+!
+!   bgamma11  Maximum ammonium uptake rate by bacteria [1/day].
+!
+!   bgamma13  Maximum semi-labile hydrolysis [1/day].
+!
+!   mtos1     Ratio of mortality to dissolved pool of small phytoplankton
+!              [nondimensional]
+!
+!   mtos2     Ratio of mortality to dissolved pool of diatom
+!              [nondimensional]
+!
+!   mtos3     Ratio of mortality to dissolved pool of coccolithophores
+!              [nondimensional]
+!
+!   flz1     Feeding loss by small zooplankton [nondimensional].
+!
+!   flz2     Feeding loss by large zooplankton [nondimensional].
+!
+!   lk1      Phytoplankton leakage fraction of small phytoplankton
+!               [nondimensional].
+!
+!   lk2      Phytoplankton leakage fraction of diatom
+!               [nondimensional].
+!
+!   lk3      Phytoplankton leakage fraction of coccolithophores
+!               [nondimensional].
+!
+!   ratiol1   Labile fraction [nondimensional].
+!
+!   ratiol2   Labile fraction for phytoplankton [nondimensional].
+!
+!   wsdn      Sinking velocity of detritus N [m/day].
+!
+!   wsdc      Sinking velocity of detritus C [m/day].
+!
+!   wsdsi    Sinking velocity of detritus silicate [m/day].
+!
+!   wsp1      Sinking velocity of small phytoplankton [m/day].
+!
+!   wsp2      Sinking velocity of diatom [m/day].
+!
+!   wsp3      Sinking velocity of coccolithophores [m/day].
+!
+!   pco2a    Air pCO2 [ppmv].
+!
+!   p2n      Phosphorus to nitrogen ratio [mol_P/mol_N].
+!
+!   o2no     Oxygen to nitrate ratio [mol_O2/mol_NO3].
+!
+!   o2nh     Oxygen to ammonium ratio [mol_O2/mol_NH4].
+!
+!   cnb      C:N in bacteria [mol_C/mol_N].
+!
+!   apsilon  Ratio of PIC to organic carbon in coccolithophores
+!               [mol_C/mol_N]
+!
+!   ro5      Grazing preference for diatom [nondimensional].
+!
+!   ro6      Grazing preference for microzooplankton [nondimensional]
+!
+!   ro7      Grazing preference for detritus [nondimensional].
+!
+!   ro10     Grazing preference for coccolithophores [nondimensional].
+!
+!   rop      Grazing preference for small phytoplankton [nondimensional].
+!
+!   rob      Grazing preference for bacteria [nondimensional].
+!
+!   kabac    Half saturation for ammonium uptake by bacteria [mmol_N/m3].
+!
+!   klbac    Half saturation for labile DOC uptake [mmol_C/m3].
+!
+!   ksdoc    Half saturation for semi-labile DOC uptake [mmol_C/m3].
+!
+!   ksdon    Half saturation for semi-labile DON uptake [mmol_N/m3].
+!
+!   ratiob   Bacteria growth loss fraction [nondimensional].
+!
+!   ratiobc  Color fraction of Bacteria loss [nondimensional].
+!
+!   RtUVLDOC Rate of conversion of colored labile DOC to labile DOC
+!               [mmol_C/m2/d]
+!   RtUVSDOC Rate of conversion of colored semi-labile DOC to labile DOC
+!               [mmol_C/m2/d]
+!   RtUVLDIC Rate of conversion of colored labile DOC to DIC
+!               [mmol_C/m2/d]
+!   RtUVSDIC Rate of conversion of colored semi-labile DOC to DIC
+!               [mmol_C/m2/d]
+!   colorFR1  Color fraction for labile DOC [nondimensional].
+!
+!   colorFR2  Color fraction for semi-labile DOC [nondimensional].
+!
+!  TNU2      Lateral, Laplacian, constant, mixing coefficient (m2/s) for
+!            biological tracer variables; [1:NBT,1:Ngrids] values are
+!            expected.  If variable horizontal diffusion is activated, TNU2
+!            is the mixing coefficient for the largest grid-cell in the domain.
+!
+!  TNU4      Lateral, biharmonic, constant, mixing coefficient (m4/s) for
+!            biological tracer variables; [1:NBT,1:Ngrids] values are
+!            expected.  If variable horizontal diffusion is activated, TNU4
+!            is the mixing coefficient for the largest grid-cell in the domain.
+!
+!  AKT_BAK   Background vertical mixing coefficient (m2/s) for biological
+!              tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!  TNUDG     Nudging time scale (days), [1:NBT,1:Ngrids].  Inverse scale will
+!              be computed internally.
+!
+!  Hout      Logical switches (T/F) to write out biological data into output
+!              NetCDF files:
+!
+!            History/Average file, [1:NBT,1:Ngrids] values are expected:
+!
+!              Hout(idTvar)     biological tracers
+!              Hout(idTsur)     biological tracers surface flux
+!
+!------------------------------------------------------------------------------
+!  Tracer climatology processing switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerCLM     Logical switches (T/F) to specify which tracer climatology
+!                   variables to consider when the option TCLIMATOLOGY is
+!                   activated; [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerCLM(idbio(1:31),ng)
+!
+!                 Recall that TCLIMATOLOGY is usually activated to nudge to
+!                 tracer climatology (TLCM_NUDGING).  The purpose of these
+!                 switches is to control which climatology tracer fields
+!                 (specially passive tracers) needs to be processed.  So we
+!                 may reduce the memory allocation for such array.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches.
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
+!                   to consider when the option TS_PSOURCE is activated;
+!                   [1:NBT,1:Ngrids] values are expected.
+!
+!                     LtracerSrc(idbio(1:31),ng)
+!
+!                   Recall that TS_PSOURCE is usually activated to add river
+!                   runoff as a point source. At minimum, it is necessary to
+!                   specify both temperature and salinity for all rivers. The
+!                   other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   This logical switch REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!

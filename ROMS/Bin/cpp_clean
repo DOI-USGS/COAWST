@@ -1,0 +1,61 @@
+#!/usr/bin/env perl
+#
+# git $Id$
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Copyright (c) 2002-2026 The ROMS Group                                :::
+#   Licensed under a MIT/X style license                                :::
+#   See License_ROMS.md                                                 :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#
+#  This script is used to clean CPP files.  It removes:
+#
+#       1) Lines with '#' in column 1 (lines inserted by CPP).
+#       2) Lines with '!#' in columns 1:2 (commented CPP definitions).
+#       2) Lines with '!!' in columns 1:2 (double commented lines).
+#       3) Lines with '!$!' in columns 1:3 (removes OpenMP directives).
+#       4) Blank lines.
+#       5) Fixes placement of trailing '&'
+#
+
+use strict;
+
+my ($root, $ind, $l, $t, $t2, $sp, $i);
+my $file = $ARGV[0];
+my $slash = rindex($file,"/");
+if($slash lt 0) {
+   $root = ".";
+}else {
+   $root = substr($file,0,$slash);
+}
+my $tmp = "$root/tmp.$$";
+open(FILE, "$file");
+open(TMP, ">$tmp") || die "Can't open tmp file";
+
+while (<FILE>) {
+   next if /^#/;
+   next if /^!#/;
+   next if /^!!/;
+   next if /^!\$\!/;
+   next if /^\s*$/;
+   if(/".*\/ROMS\/.*(\.F|\.h)"/){
+      $_=~s/".*\/ROMS\/(.*)(\.F|\.h)"/"ROMS\/$1$2"/;
+   }
+   $ind=rindex($_,"&");
+   if(/\&(\ )*$/ && $ind!=72){
+      $l=length();
+      if($ind<72){
+	      $t=($ind-1)-72;
+	      $t2=-$t;
+	      $sp="";
+	      for($i=1;$i<$t2;$i++){
+	         $sp=$sp . " ";
+         }
+	      substr($_,-2,-$t-1)="$sp&\n";
+      }
+   }
+   print TMP;
+}
+close(FILE);
+close(TMP);
+
+rename($tmp, $file);

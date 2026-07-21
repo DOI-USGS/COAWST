@@ -1,0 +1,286 @@
+!  Vegetation Model Parameters.
+!
+!git $Id$
+!========================================================== Hernan G.Arango ===
+!  Copyright (c) 2002-2026 The ROMS Group                                     !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.md                                                      !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Number of dominant submerged aquatic vegetation types (like salt marshes,
+! mangroves, and other herbaceous plants).
+
+        NVEG =  1
+
+! Drag coefficient (nondimensional) for each vegetation type, [NVEG,Ngrids]
+! values are expected.
+
+      CD_VEG == 1.0d0
+
+! Young's modulus (ratio between stress and tension) for each vegetation type,
+! [NVEG,Ngrid] values are expected.
+
+       E_VEG == 1.0d9
+
+! Plant stems mass density (kg/m3) for each vegetation type, [NVEG,Ngrids]
+! values are expected.
+
+VEG_MASSDENS == 700.0d0
+
+! Additional horizontal viscosity coefficient (m2/s) at the boundaries of a
+! vegetation patch, [NVEG,Ngrids] values are expected. 
+
+ VEGHMIXCOEF == 0.1d0
+
+! Marsh sediment erodibility coefficient (s/m), [Ngrids] values are expected.
+
+  KFAC_MARSH == 0.6d-9
+
+! Marsh scarp elevation (m) threshold upon which retreat is stopped, converting
+! the marsh mask from 1 to 0 (non-marsh cell). [Ngrids] values are expected.
+
+  SCARP_HGHT == 0.27d0
+
+! Number of days to record mean higher high water (MHHW), which determines
+! marsh vertical growth. Typically, use 30 days. [Ngrids] values are expected. 
+
+NTIMES_MARSH == 30
+
+! Marsh parabolic curve biomass growth parameters, [Ngrids] values are expected.
+
+    PAR_FAC1 == -0.7372d0
+    PAR_FAC2 == 0.092d0
+
+! Growing number of days for marsh, [Ngrids] values are expected.
+
+TDAYS_MARSH_GROWTH == 180
+
+! Fraction of below ground biomass (1/days), [Ngrids] values are expected.
+
+        NUGP == 0.0138d0
+
+! Optimal marsh biomass growth rate (kg/m2/year), [Ngrids] values are expected.
+
+        BMAX == 2.5d0
+
+! Fraction of recalcitrant Carbon for computing marsh effective biomass,
+! [Ngrids] values are expected.
+ 
+      CHIREF == 0.158d0
+
+! Marsh alpha and beta growth parameters for plant density, height, and
+! diameter. [Ngrids] values are expected.
+
+ ALPHA_PDENS == 250.0d0
+  BETA_PDENS == 0.3032d0
+ 
+ ALPHA_PHGHT == 0.0609d0
+  BETA_PHGHT == 0.1876d0
+
+ ALPHA_PDIAM == 0.0006d0
+  BETA_PDIAM == 0.3d0 
+
+! Logical switches (TRUE/FALSE) to activate writing of vegetation fields
+! into HISTORY output file: properties [NVEG,Ngrids], otherwise Ngrids].
+
+Hout(isDens) == T      ! plant_density       Plant density
+Hout(isHght) == F      ! plant_height        Dominant plant mean height
+Hout(isDiam) == F      ! plant_diameter      Dominant plant mean diameter
+Hout(isThck) == F      ! plant_thickness     Dominant plant mean thickness
+
+Hout(idWdvg) == T      ! Dissip_veg          Wave dissipation due to vegetation
+
+Hout(idTims) == T      ! marsh_mask          Marsh cells mask
+Hout(idTtot) == T      ! total_wave_thrust   Total wave thrust on marsh cells
+Hout(idTmfo) == T      ! marsh_flux_out_     Sediment flux out of marsh cells
+Hout(idTmmr) == F      ! marsh_retreat       Amount of marsh retreat
+Hout(idTmtr) == T      ! marsh_tidal_range   Tidal range for marsh growth
+Hout(idTmhw) == T      ! marsh_high_water    Mean high water for marsh cells
+Hout(idTmlw) == T      ! marsh_low_water     Mean low  water for marsh cells
+Hout(idTmvg) == T      ! marsh_vert_rate     Rate of marsh vertical growth
+Hout(idTmbp) == T      ! marsh_biomass_peak  Marsh biomass peak production
+
+! Logical switches (TRUE/FALSE) to activate writing of vegetation fields
+! into QUICKSAVE output file: properties [NVEG,Ngrids], otherwise !Ngrids]
+
+Qout(isDens) == F      ! plant_density       Plant density
+Qout(isHght) == F      ! plant_height        Dominant plant mean Height
+Qout(isDiam) == F      ! plant_diameter      Dominant plant mean diameter
+Qout(isThck) == F      ! plant_thickness     Dominant plant mean thickness
+
+Qout(idWdvg) == F      ! Dissip_veg          Wave dissipation due to vegetation
+
+Qout(idTims) == F      ! marsh_mask          Marsh cells mask
+Qout(idTtot) == F      ! total_wave_thrust   Total wave thrust on marsh cells
+Qout(idTmfo) == F      ! marsh_flux_out_     Sediment flux out of marsh cells
+Qout(idTmmr) == F      ! marsh_retreat       Amount of marsh retreat
+Qout(idTmtr) == F      ! marsh_tidal_range   Tidal range for marsh growth
+Qout(idTmhw) == F      ! marsh_high_water    Mean high water for marsh cells
+Qout(idTmlw) == F      ! marsh_low_water     Mean low  water for marsh cells
+Qout(idTmvg) == F      ! marsh_vert_rate     Rate of marsh vertical growth
+Qout(idTmbp) == F      ! marsh_biomass_peak  Marsh biomass peak production
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
+! 2D and 3D momentum diagnostic terms into DIAGNOSTIC output file.
+
+Dout(M2fveg) == T      ! ubar_fveg, ...      2D momentum drag due to vegetation 
+Dout(M3fveg) == T      ! u_fsgr, ...         3D momentum drag due to vegetation
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Submerged/Emergent Aguatic Vegetation Model Parameters. 
+!------------------------------------------------------------------------------
+!
+! The Vegeation model is ROMS is designed to account for a user specified
+! number of dominant plants. Thus, the physical parametes are dimesioned
+! as (NVEG,Ngrids).
+!
+!  NVEG              Dimension parameter indicating the Number of dominant
+!                      submerged/emergent aquatic plants types to consider,
+!                      like salt marshes, mangroves, and other herbaceous
+!                      vegetation. Each type having it specific parameters
+!                      provided by the user. In nested applications, all
+!                      grids will model NVEG plants.
+!
+!  CD_VEG            Drag coefficient (nondimensional) for each vegetation
+!                      type, [NVEG,Ngrids].
+!
+!  E_VEG             Young's Modulus (ration between tensile stress and
+!                      tensile tension) for each vegetation type,
+!                      [NVEG,Ngrids].
+!
+!  VEG_MASSDENS      Dominant plant stems mass density (kg/m3) for each
+!                      vegetation type, [NVEG,Ngrids].
+!
+!  VEGHMIXCOEF       Horizontal viscosity coefficient (m2/s) added at the
+!                       edge of a vegetation patch, [NVEG,Ngrids].
+!
+!------------------------------------------------------------------------------
+! Marsh Dynamics Parameters.
+!------------------------------------------------------------------------------
+!
+! The marsh dynamics processed accounts for the lateral wave thrust that
+! causes erosion with sediment transport and its vertical growth driven by
+! biomass production. All parameters are dimensioned Ngrids.
+!
+! KFAC_MARSH         Sediment erodibility coefficient (s/m).
+! 
+! SCARP_HGHT         Marsh scarp elevation (m) criteria indicating retreat or
+!                      not, and marsh mask boundary of one for marsh cells and
+!                      zero for non-marsh cells.
+! 
+! NTIMES_MARSH       Number of days to record mean higher high water (MHHW) and 
+!                      mean lower low water (MLLW), which are used to determine
+!                      marsh vetical growth. Typically has a value of 30 days.
+!
+! PAR_FAC1           Marsh parabolic curve biomass growth parameters as
+! PAR_FAC2             function of the mean height water.
+! 
+! TDAYS_MARSH_GROWTH Growing number of days for marsh.
+!
+! NUGP               Fraction of below ground biomass (1/days). 
+!  
+! BMAX               Marsh optimal biomass growth rate (kg/m2/days).
+!
+! CHIREF             Fraction of recalcitrant Carbon used in the computation
+!                      of effective biomass production.
+!
+! ALPHA_PDENS        Marsh vegetation growth alpha/beta parameters for
+! BETA_PDENS           plant density.
+! 
+! ALPHA_PHGHT        Marsh vegetation growth alpha/beta parameters for
+! BETA_PHGHT           plant stem height.
+! 
+! ALPHA_PDIAM        Marsh vegetation growth alpha/beta parameters for
+! BETA_PDIAM           plant stem diameter.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into HISTORY file.
+!------------------------------------------------------------------------------
+!
+!  Hout              Logical switches to write out vegetation fields into
+!                      output HISTORY NetCDF file:
+!
+!                      Hout(isDens)   Plant density, indviduals per area
+!                      Hout(isHght)   Dominant plant mean Height
+!                      Hout(isDiam)   Dominant plant mean diameter
+!                      Hout(isThck)   Dominant plant mean thickness
+!
+!                      Hout(idWdvg)   Wave dissipation due to vegetation
+!
+!                      Hout(idTims)   Marsh cells mask
+!                      Hout(idTtot)   Total wave thrust on marsh cells
+!                      Hout(idTmfo)   Sediment flux out of marsh cells
+!                      Hout(idTmmr)   Amount of marsh retreat
+!                      Hout(idTmtr)   Tidal range for marsh growth
+!                      Hout(idTmhw)   Mean high water for marsh cells
+!                      Hout(idTmvg)   Rate of marsh vertical growth
+!                      Hout(idTmbp)   Marsh biomass peak production
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into QUICKSAVE file.
+!------------------------------------------------------------------------------
+!
+!  Qout              Logical switches to write out vegetation fields into
+!                      output QUICKSAVE NetCDF file:
+!
+!                      Qout(isDens)   Plant density, indviduals per area
+!                      Qout(isHght)   Dominant plant mean Height
+!                      Qout(isDiam)   Dominant plant mean diameter
+!                      Qout(isThck)   Dominant plant mean thickness
+!
+!                      Qout(idWdvg)   Wave dissipation due to vegetation
+!
+!                      Qout(idTims)   Marsh cells mask
+!                      Qout(idTtot)   Total wave thrust on marsh cells
+!                      Qout(idTmfo)   Sediment flux out of marsh cells
+!                      Qout(idTmmr)   Amount of marsh retreat
+!                      Qout(idTmtr)   Tidal range for marsh growth
+!                      Qout(idTmhw)   Mean high water for marsh cells
+!                      Qout(idTmvg)   Rate of marsh vertical growth
+!                      Qout(idTmbp)   Marsh biomass peak production
+!
+!------------------------------------------------------------------------------
+! Logical switches (TRUE/FALSE) to activate writing into DIAGNOSTIC file.
+!------------------------------------------------------------------------------
+!
+!  Dout              Logical switches to write out time averaged vegetation
+!                      terms into output DIAGNOSTIC NetCDF file:
+!
+!                      Dout(M2fveg)   2D momentum drag force due to vegetation
+!                      Dout(M3fveg)   3D momentun drag force due to vegetation
+!
