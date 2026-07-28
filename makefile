@@ -715,7 +715,7 @@ endif
 
 wrfclean:
 ifdef USE_WRF
-	cd $(WRF_DIR); ls; ./clean -aa;                            \
+	cd $(WRF_DIR); ls; ./clean -a;                             \
 	./configure;                                               \
 	echo " "; echo " ";                                        \
 	echo "cleaned wrf";
