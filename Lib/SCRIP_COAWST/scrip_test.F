@@ -282,7 +282,7 @@
      &                     nc_srcgrdarea_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_area', 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_area',              &
      &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstgrdarea_id)
       call netcdf_error_handler(ncstat)

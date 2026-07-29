@@ -333,7 +333,7 @@ $                           SETUP_APPLY_WLV  : Compute wave setup (experimental)
 $                           SOLVERTHR_SETUP  : Solver threshold for setup computations
 $                           CRIT_DEP_SETUP  : Critical depths for setup computations
 $
-$  & UNST, UGOBCAUTO = T, EXPFSN = T /
+$ & UNST, UGOBCAUTO = T, IMPFSN = T /
 $ SMC grid propagation    : Namelist PSMC and default values
 $                           CFLTM  : Maximum CFL no. for propagation, 0.7
 $                           DTIME  : Swell age for diffusion term (s), 0.0
@@ -787,20 +787,20 @@ $      2  11   T
 $
 $  Close list by defining point (0,0) (mandatory)
 $
-$  for unstr
-$      0   0   F
+$  Uncomment this line also for unstructured Sandy
+$     0   0   F
 $
 $ Excluded grid points from segment data ( FROM != PART )
 $   First defined as lines, identical to the definition of the input
 $   boundary points, and closed the same way.
 $
-$  for unstr
-$      0   0   F
+$  Uncomment this line also for unstructured Sandy
+$     0   0   F
 $
 $   Second, define a point in a closed body of sea points to remove
 $   the entire body of sea points. Also close by point (0,0)
 $
-$  for unstr
+$  Uncomment this line also for unstructured Sandy
 $       0   0
 $
 $ Sedimentary bottom map if namelist &SBT4 SEDMAPD50 = T

@@ -129,7 +129,8 @@
       character (char_len) ::                                           &
      &          dim_name    ! netCDF dimension name
 
-      integer (kind=int_kind) :: i,j,n,                                 &
+!     integer (kind=int_kind) :: i,j,n,                                 &
+      integer (kind=int_kind) :: i,j,                                   &
      &    iunit  ! unit number for namelist file
 
       integer (kind=int_kind), dimension(:), allocatable ::             &

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 
-#if defined WW3_MODEL && defined NESTING && defined COAWST_COUPLING
+#if defined WW3_MODEL && defined COAWST_COUPLING
       SUBROUTINE get_numww3_grids(tempname)
 !
 !=======================================================================
@@ -13,6 +13,9 @@
       USE mod_coupler_kinds
       USE mct_coupler_params
       USE ww3_iounits
+# ifdef SCRIP_COAWST
+      use scripwrap_mod
+# endif
 
       implicit none
 !
@@ -24,7 +27,8 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, inp, out, status, num, test, indx, iw
+      integer :: i, j, inp, out, status
+      integer :: test, indx, iw, count, NXs, NYs
       integer :: MyRank, MyError, MyMaster
 
       character (len=12)  :: moddef_name
@@ -110,6 +114,7 @@
       MyMaster=0
       CALL mpi_comm_rank (MPI_COMM_WORLD, MyRank, MyError)
 
+# ifdef NESTING
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !   First read the ww3_multi.inp file to get the number of grids.
@@ -146,7 +151,22 @@
       allocate (dtwav(Nwav_grids))
 !
  240  CLOSE (inp)
+# else
+      Nwav_grids=1
+      allocate (dtwav(Nwav_grids))
+# endif
+# ifdef SCRIP_COAWST
+      Ngrids_ww3=Nwav_grids
+!     Allocate arrays
+      allocate(ngrd_w3(Ngrids_ww3))
 !
+      ww3_parent=0
+      IF (Nwav_grids.gt.1) THEN
+        DO i=2,Nwav_grids
+          ww3_parent(i)=1             !this is just a flag
+        END DO
+     END IF
+#endif
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -155,8 +175,12 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-      DO num=1,Nwav_grids
-        write(moddef_name,'(A11,I1)') 'mod_def.grd',num
+      DO iw=1,Nwav_grids
+# ifdef NESTING
+        write(moddef_name,'(A11,I1)') 'mod_def.grd',iw
+# else
+        write(moddef_name,'(A11)') 'mod_def.ww3'
+# endif
         OPEN (inp, FILE=TRIM(moddef_name), FORM='unformatted',          &
      &        STATUS='old', convert='big_endian',ERR=110)
         GO TO 130
@@ -177,12 +201,20 @@
      &       FNAME4, FNAME5, FNAME6, FNAMEP, FNAMEG,                    &
      &       FNAMEF, FNAMEI
 !
-#if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
+# if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
 !  use grid 1 to set the number of freqs.
-        IF (num.eq.1) THEN
+        IF (iw.eq.1) THEN
           MSCs=MK
         END IF
-#endif
+# endif
+# ifdef SCRIP_COAWST
+        ww3_numx(iw)=NX
+        ww3_numy(iw)=NY
+        allocate(ngrd_w3(iw)%xx(nx,ny))
+        allocate(ngrd_w3(iw)%lon_rho_w(nx,ny))
+        allocate(ngrd_w3(iw)%lat_rho_w(nx,ny))
+# endif
+
         ALLOCATE (NBO(0:NFBPO), NBO2(0:NFBPO)) 
         READ (inp,END=801,ERR=802,IOSTAT=IERR)                          &
      &       (NBO(I),I=0,NFBPO), (NBO2(I),I=0,NFBPO)
@@ -195,10 +227,25 @@
 
         CASE ( RLGTYPE )
           READ (inp,END=801,ERR=802,IOSTAT=IERR) SX, SY, X0, Y0
-
+# ifdef SCRIP_COAWST
+          DO i=1,NX
+            DO j=1,NY
+!              ngrd_w3(iw)%lon_rho_w(i,j)=SX(j,i)
+!              ngrd_w3(iw)%lat_rho_w(i,j)=SY(j,i)
+            END DO
+          END DO
+# endif
         CASE ( CLGTYPE )
           ALLOCATE(XGRD4(NY,NX),YGRD4(NY,NX)); XGRD4 = 0.; YGRD4 = 0.
           READ (inp,END=801,ERR=802,IOSTAT=IERR) XGRD4, YGRD4
+# ifdef SCRIP_COAWST
+          DO i=1,NX
+            DO j=1,NY
+              ngrd_w3(iw)%lon_rho_w(i,j)=XGRD4(j,i)
+              ngrd_w3(iw)%lat_rho_w(i,j)=YGRD4(j,i)
+            END DO
+          END DO
+# endif
           DEALLOCATE(XGRD4, YGRD4)
 
         CASE (UNGTYPE)
@@ -241,7 +288,16 @@
      &        DXYMAX, INDEX_CELL, CCON, COUNTCON, IE_CELL,              &
      &        POS_CELL, IOBP, IOBPA, IOBDP, IOBPD, IAA, JAA, POSI
 
-
+# ifdef SCRIP_COAWST
+          count=0
+          DO i=1,NX
+            DO j=1,NY
+              count=count+1
+              ngrd_w3(iw)%lon_rho_w(i,j)=XGRD(1,count)
+              ngrd_w3(iw)%lat_rho_w(i,j)=YGRD(1,count)
+            END DO
+          END DO
+# endif
           DEALLOCATE ( XGRD, YGRD )
           DEALLOCATE ( TRIGP )
           DEALLOCATE ( TRIA, LEN, SI, IEN )
@@ -258,6 +314,17 @@
         ALLOCATE ( MAPTMP(NY,NX), MAPFS(NY,NX), MAPSF(NSEA,3) )
         READ (inp,END=801,ERR=802,IOSTAT=IERR)   &
      &              ZB, MAPTMP, MAPFS, MAPSF, TRFLAG
+
+# ifdef SCRIP_COAWST
+        count=0
+        DO j=1,NY
+          DO i=1,NX
+            count=count+1
+            ngrd_w3(iw)%xx(i,j)=ZB(count)
+          END DO
+        END DO
+# endif
+
         DEALLOCATE ( ZB, MAPTMP, MAPFS, MAPSF )
 
         IF ( TRFLAG .NE. 0 ) THEN
@@ -280,8 +347,7 @@
         DEALLOCATE ( CLATS, CLATIS, CTHG0S )
 
 !  assign dtwav
-        dtwav(num)=DTMAX
-
+        dtwav(iw)=DTMAX
       END DO
  140  CLOSE (inp)
       RETURN

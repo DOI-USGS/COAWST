@@ -280,12 +280,8 @@
       CALL mpi_comm_rank (MyComm, MyRank, MyError)
       CALL mpi_comm_size (MyComm, Nprocs, MyError)
 #endif
-
-      write(*,*) 'top of create wrf moving ', ma
-
-
+!
 !  Create a grid that is the size of the parent times the refined ratio.
-
 !              lon_2drho_a(i,j)=ngrd_wr(pid)%lon_rho_a(i,j)
 !              lat_2drho_a(i,j)=ngrd_wr(pid)%lat_rho_a(i,j)
 

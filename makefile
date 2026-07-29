@@ -465,8 +465,10 @@ ifdef USE_ROMS
 		ROMS/Drivers \
 		ROMS/Modules
 endif
+ modules  +=	Lib/SCRIP_COAWST
 
  includes :=	ROMS/Include
+ includes +=	Lib/SCRIP_COAWST
 ifdef MY_ANALYTICAL
  includes +=	$(MY_ANALYTICAL_DIR)
 endif
@@ -613,7 +615,6 @@ mct_params:
 	cpp $(CPPFLAGS) $(MY_CPP_FLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/get_sparse_matrix.F > get_sparse_matrix.f90; \
 	$(MY_ROMS_SRC)/$(CLEAN) get_sparse_matrix.f90;                                             \
 	$(FC) -c $(FFLAGS) get_sparse_matrix.f90;
-
 #--------------------------------------------------------------------------
 #  Build SWAN.
 #--------------------------------------------------------------------------

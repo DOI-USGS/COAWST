@@ -80,10 +80,10 @@
 ! Sparse matrix interpolation weights files.
 ! Required if any model has more than 2 grids (ie nesting), or
 ! if you have only 1 grid per model but they are different spatial coverage.
-! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_wrf_moving_roms_ww3_3grids.nc
-  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_wrf_static_roms_ww3_3grids.nc
-! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_roms_swan_3grids.nc
-! SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_roms_ww3_3grids.nc
+! SCRIP_COAWST_NAME = scrip_sandy_wrf_moving_roms_ww3_3grids.nc
+! SCRIP_COAWST_NAME = scrip_sandy_wrf_static_roms_ww3_3grids.nc
+! SCRIP_COAWST_NAME = scrip_sandy_roms_swan_3grids.nc
+  SCRIP_COAWST_NAME = scrip_sandy_roms_ww3_3grids.nc
 
 !
 !  GLOSSARY:

@@ -36,6 +36,7 @@
       integer :: Npts, Nval, i, iw, io, ia, j, inp, out, status
       integer :: MyRank, MyError, MyMaster, Nchars
       integer :: cdecode_line, cload_i, cload_r, count
+      logical :: exists
 
       real(m8), dimension(100) :: Rval
       real(m8), dimension(1) :: Readval
@@ -182,6 +183,18 @@
           IF (status.gt.0) THEN
             IF (TRIM(KeyWord).eq.'SCRIP_COAWST_NAME') THEN
               SCRIPname=TRIM(ADJUSTL(Cval(Nval)))
+               write(*,*) 'read cowast par 2.11', SCRIPname
+! Check to see if the SCRIP file exists.  If not, then we call
+! scrip_coawst to make it.
+              inquire(file=trim(SCRIPname), exist=exists)
+              IF (exists) THEN
+                IF (MyRank.eq.MyMaster) WRITE(out,*)                    &
+     &                                   'Using scrip file =', SCRIPname
+              ELSE
+                IF (MyRank.eq.MyMaster) WRITE(out,*)                    &
+     &                                'Creating scrip file =', SCRIPname
+                call scrip_coawst(SCRIPname)
+              END IF
             END IF
           END IF
         END DO

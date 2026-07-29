@@ -49,7 +49,7 @@
       use kinds_mod                  ! module defining data types
       use constants                  ! module for common constants
       use iounits                    ! I/O unit manager
-      use timers                     ! CPU timers
+      use timers_scrip               ! CPU timers
       use scripwrap_mod              ! 
       use grids                      ! module with grid information
       use remap_vars                 ! common remapping variables

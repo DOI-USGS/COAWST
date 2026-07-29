@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !======================================================================
 !     This is a wrapper developed at USGS, Woods Hole Coastal and Marine
 !     Science Center. This routine calls the SCRIP interpolation 
@@ -9,33 +10,43 @@
 !--------------Date: 08/04/2015----------------------------------------
 !======================================================================
 
-      program scrip_coawst
-
+#if defined SCRIP_COAWST
+     subroutine scrip_coawst(tempname)
+#else
+     program scrip_coawst
+#endif
       use kinds_mod
       use constants
-      use iounits 
-      use scripwrap_mod 
-      use read_swan 
-      use read_roms 
+      use iounits
+      use scripwrap_mod
+      use read_swan
+      use read_roms
       use read_wrf
       use read_hydro
       use read_ww3
       use create_masks
 
       implicit none
+!
+!  Imported variable declarations.
+!
+#if defined SCRIP_COAWST
+      character (len=160), intent(in) :: tempname
+#endif
 #ifdef MPI
       include 'mpif.h'
       integer (kind=int_kind) :: Nnodes
 #endif
       integer (kind=int_kind) :: MyComm
 !     local variables
-      character(len=char_len) :: inputfile
       integer (kind=int_kind) :: OutThread
 !
 #ifdef MPI
 !  Initialize MPI execution environment.
 !
+# if !defined SCRIP_COAWST
       CALL mpi_init (MyError)
+# endif
 !
 !  Get rank of the local process in the group associated with the
 !  comminicator.
@@ -49,6 +60,11 @@
       OutThread=0
 #endif
 !
+#if defined SCRIP_COAWST
+!     For scrip_coawst as a subroutine
+      call get_scrip_inputs( MyComm )
+      output_ncfile=tempname
+#else
 !     Reading input file 
       call getarg(1,inputfile)
 !     inputfile = arg1
@@ -61,7 +77,7 @@
       open(unit=iunit,file=inputfile,status='old',form='formatted')
         call read_inputs( MyComm )
       close(iunit)
-
+#endif
 !     Read the information from different grids 
       if ((Ngrids_swan>0).and.(Ngrids_ww3>0)) then 
         write(stdout,*) 'Only use WW3 or SWAN, not both '
@@ -177,11 +193,15 @@
         call ocn2hyd_mask(MyComm)
       end if
 
-#ifdef MPI
+#if defined SCRIP_COAWST
+     end subroutine scrip_coawst
+#else
+# ifdef MPI
       CALL mpi_finalize (MyError)
-#endif
+# endif
       STOP
-      end program scrip_coawst
+     end program scrip_coawst
+#endif
 
 !======================================================================
 
@@ -282,3 +302,114 @@
  13   FORMAT(A21, 1X, I1, I3, 1X, A)
 
       end subroutine read_inputs 
+
+
+!======================================================================
+
+      subroutine get_scrip_inputs( MyComm )
+      use kinds_mod
+      use iounits
+      use scripwrap_mod
+ 
+      implicit none
+ 
+      integer (kind=int_kind), intent(in) :: MyComm
+
+#ifdef MPI
+      include 'mpif.h'
+      integer (kind=int_kind) :: MyRank, Nnodes, MyError
+#endif
+
+!     local variables
+      integer(int_kind) :: i
+
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+!      IF (MyRank.eq.0) THEN
+#endif
+!      write(stdout,*)"================================================"
+!      write(stdout,*) ' Read input_file for SCRIP_COAWST Wrapper '
+!      write(stdout,*)"================================================"
+#ifdef MPI
+!      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
+
+!     Here we need:
+!     Ngrids_roms, Ngrids_swan, Ngrids_ww3
+!     Ngrids_wrf,  Ngrids_hyd
+!     roms_grids,  roms_parent
+!     swan_coord, swan_bath
+!     swan_numx, swan_numy
+!     swan_cartesian, swan_parent
+!     ww3_xcoord, ww3_ycoord, ww3_bath
+!     ww3_numx, ww3_numy, ww3_parent
+!     wrf_grids, wrf_parent_grid_ratio, wrf_parent_id
+
+      Ngrids_hyd=0
+
+
+!     Total number of grid interpolation combinations 
+      Ngrids_comb_total=(Ngrids_roms*Ngrids_swan +                      &
+     &                   Ngrids_roms*Ngrids_wrf  +                      &
+     &                   Ngrids_swan*Ngrids_wrf  +                      & 
+     &                   Ngrids_roms*Ngrids_ww3  +                      &
+     &                   Ngrids_roms*Ngrids_hyd  +                      &
+     &                   Ngrids_ww3*Ngrids_wrf)*2
+
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
+      write(stdout,*) "Ngrid_roms=",Ngrids_roms
+      write(stdout,*) "Ngrid_swan=",Ngrids_swan
+      write(stdout,*) "Ngrid_ww3= ",Ngrids_ww3
+      write(stdout,*) "Ngrid_wrf =",Ngrids_wrf
+      write(stdout,*) "Ngrid_hyd =",Ngrids_hyd
+
+      write(stdout,*) "Common netcdf file is: ",output_ncfile
+      write(stdout,*) "Number of netcdf subgroups ", Ngrids_comb_total
+
+      do i = 1,Ngrids_roms 
+        write(*,10)"Input ROMS grid",i,"=",TRIM(ADJUSTL(roms_grids(i)))
+      end do
+      do i = 1,Ngrids_swan
+        write(*,10)"Input SWAN grid",i,"=", TRIM(ADJUSTL(swan_coord(i)))
+        write(*,11)"Input SWAN bath",i,"=", TRIM(ADJUSTL(swan_bath(i)))
+        write(*,12)"Cartesian input In meters=", swan_cartesian(i)
+      end do 
+      do i = 1,Ngrids_ww3
+#ifdef NESTING
+        write(ww3_xcoord(i),'(A11,I1)') 'mod_def.grd',i
+        write(ww3_ycoord(i),'(A11,I1)') 'mod_def.grd',i
+        write(ww3_bath(i),'(A11,I1)') 'mod_def.grd',i
+#else
+        ww3_xcoord(i)='mod_def.ww3'
+        ww3_ycoord(i)='mod_def.ww3'
+        ww3_bath(i)='mod_def.ww3'
+#endif        
+
+        write(*,10)"Input WW3 xgrid",i,"=", TRIM(ADJUSTL(ww3_xcoord(i)))
+        write(*,10)"Input WW3 ygrid",i,"=", TRIM(ADJUSTL(ww3_ycoord(i)))
+        write(*,11)"Input WW3 bath",i,"=", TRIM(ADJUSTL(ww3_bath(i)))
+      end do 
+      do i = 1,Ngrids_wrf
+        write(*,10)"Input WRF grid ", i,"=", TRIM(ADJUSTL(wrf_grids(i)))
+      end do 
+      do i = 1,Ngrids_hyd
+        write(*,10)"Input Hydro grid ", i,"=",                          &
+     &              TRIM(ADJUSTL(hydro_grids(i)))
+      end do 
+      write(stdout,*)"================================================"
+
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
+
+ 10   FORMAT(A16, 1X, I1, A3, 1X, A)
+ 11   FORMAT(A16, 1X, I1, A3, 1X, A)
+ 12   FORMAT(A27, 1X, I20)
+ 13   FORMAT(A21, 1X, I1, I3, 1X, A)
+
+      end subroutine get_scrip_inputs

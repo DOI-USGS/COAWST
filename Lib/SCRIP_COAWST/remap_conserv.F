@@ -56,7 +56,7 @@
 
       use kinds_mod    ! defines common data types
       use constants    ! defines common constants
-      use timers       ! module for timing
+      use timers_scrip ! module for timing
       use grids        ! module containing grid information
       use remap_vars   ! module containing remap information
 

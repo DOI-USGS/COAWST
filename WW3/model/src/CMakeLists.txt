@@ -178,6 +178,9 @@ if("PDLIB" IN_LIST switches)
   endif()
 endif()
 
+#jcw
+  target_link_libraries(ww3_lib PUBLIC $ENV{MCT_PARAMS_DIR}/mct_coupler_params.o -L$ENV{MCT_LIBDIR} -lmct -lmpeu)
+
 if("MPI" IN_LIST switches)
   find_package(MPI REQUIRED COMPONENTS Fortran)
   target_link_libraries(ww3_lib PUBLIC MPI::MPI_Fortran)
@@ -227,7 +230,7 @@ target_compile_options(ww3_lib ${WW3_FLAG_SCOPE} "$<$<AND:$<CONFIG:Debug>,$<COMP
 target_compile_options(ww3_lib ${WW3_FLAG_SCOPE} "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:Fortran>>:${compile_flags_release}>")
 
 #jcw
-  target_link_libraries(ww3_lib PUBLIC $ENV{MCT_PARAMS_DIR}/mct_coupler_params.o -L$ENV{MCT_LIBDIR} -lmct -lmpeu)
+##  target_link_libraries(ww3_lib PUBLIC $ENV{MCT_PARAMS_DIR}/mct_coupler_params.o -L$ENV{MCT_LIBDIR} -lmct -lmpeu)
 
 install(
   TARGETS ${programs} ww3_lib

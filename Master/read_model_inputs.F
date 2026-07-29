@@ -24,7 +24,9 @@
 # if defined WRF_MODEL || defined WRFHYDRO_MODEL
       USE mod_coupler_iounits
 # endif
-
+# ifdef SCRIP_COAWST
+      use scripwrap_mod
+# endif
       implicit none
 !
       include 'mpif.h'
@@ -34,10 +36,14 @@
 !
 !  Local variable declarations.
 !
-      integer :: Npts, Nval, i, isval, iw, ia, inp, out, status
+      integer :: Npts, Nval, i, isval
+      integer :: iw, ia, inp, out, status
       integer :: MyRank, MyError, MyMaster, DT, num, den
       integer :: cdecode_line, cload_i, cload_r, indx, indx2, test
       integer :: Ivalue
+# ifdef SCRIP_COAWST
+      logical :: exists
+# endif
 # if defined WRF_COUPLING
       integer :: sstupdate
 !     integer, allocatable :: parentid(:)
@@ -81,6 +87,7 @@
         IF (status.gt.0) THEN
           SELECT CASE (TRIM(KeyWord))
             CASE ('Ngrids')
+!             Number of nested grids.
               Npts=cload_i(Nval, Rval, 1, Ivalue)
               Nocn_grids=Ivalue
               IF (Nocn_grids.le.0) THEN
@@ -90,8 +97,21 @@
                 RETURN
               END IF
               allocate (dtocn(Nocn_grids))
+#ifdef SCRIP_COAWST
+              Ngrids_roms=Nocn_grids
+              roms_parent=0
+              IF (Nocn_grids.gt.1) THEN
+                DO i=2,Nocn_grids
+                  roms_parent(i)=1             !this is just a flag
+                END DO
+              END IF
+#endif
             CASE ('DT')
               Npts=cload_r(Nval, Rval, Nocn_grids, dtocn)
+#ifdef SCRIP_COAWST
+            CASE ('GRDNAME')
+              roms_grids(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+#endif
           END SELECT
 !         IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -140,6 +160,15 @@
             aline=ADJUSTL(aline)
             read(aline(1:2),'(i2)') Nwav_grids
             allocate (dtwav(Nwav_grids))
+#ifdef SCRIP_COAWST
+            Ngrids_swan=Nwav_grids
+            swan_parent=0
+            IF (Nwav_grids.gt.1) THEN
+              DO i=2,Nwav_grids
+                swan_parent(i)=1             !this is just a flag
+              END DO
+            END IF
+#endif
           END IF
 !
 !  here we look for model time step
@@ -205,6 +234,63 @@
             MSCs=MSCs+1
           END IF
 #  endif
+#  ifdef SCRIP_COAWST
+!
+!  here we look if coords are cartesian or spherical
+!  COORDINATES SPHERICAL
+!
+          IF(aline(1:11).eq.'COORDINATES') THEN
+            aline=aline(13:LEN(aline))
+            IF(aline(1:3).eq.'SPH') THEN
+              swan_cartesian(1)=0
+            ELSE
+              swan_cartesian(1)=1
+            END IF
+          END IF
+!
+!  here we look for the name of the coords file
+!  READGRID COORDINATES 1 'Projects/Sandy/SWAN/Sandy_swan_coord.grd' 4 0 0 FREE 
+!
+          IF(aline(1:13).eq.'READGRID COOR') THEN
+            indx=INDEX(aline,''')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,''')
+            aline=aline(1:indx-1)
+!
+            read(aline,'(a)') swan_coord(1)
+          END IF
+!
+!  here we look for the name of the bott file
+!  READINP BOTTOM 1 'Projects/Sandy/SWAN/Sandy_swan_bathy.bot' 4 0 FREE 
+!
+          IF(aline(1:11).eq.'READINP BOT') THEN
+            indx=INDEX(aline,''')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,''')
+            aline=aline(1:indx-1)
+!
+            read(aline,'(a)') swan_bath(1)
+          END IF
+!
+!  here we look for the grid size
+!  CGRID CURVILINEAR 86 64 EXC 9.999000e+003 9.999000e+003 CIRCLE 36 0.04 1.0 24
+!
+          IF(aline(1:5).eq.'CGRID') THEN
+            aline=aline(7:LEN(aline))
+!
+            indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,' ')
+            read(aline(1:indx-1,'i5') swan_numx(1)
+!
+            aline=aline(indx+1:LEN(aline))
+            indx=INDEX(aline,' ')
+            read(aline(1:indx-1,'i5') swan_numy(1)
+          END IF
+#  endif
         END IF
       END DO
  116  IF (MyRank.eq.MyMaster) THEN 
@@ -250,6 +336,62 @@
             ENDIF
             dtwav(iw)=dtwav(iw)*FAC
           END IF
+#  ifdef SCRIP_COAWST
+!  here we look if coords are cartesian or spherical
+!  COORDINATES SPHERICAL
+!
+          IF(aline(1:11).eq.'COORDINATES') THEN
+            aline=aline(13:LEN(aline))
+            IF(aline(1:3).eq.'SPH') THEN
+              swan_cartesian(iw)=0
+            ELSE
+              swan_cartesian(iw)=1
+            END IF
+          END IF
+!
+!  here we look for the name of the coords file
+!  READGRID COORDINATES 1 'Projects/Sandy/SWAN/Sandy_swan_coord.grd' 4 0 0 FREE 
+!
+          IF(aline(1:13).eq.'READGRID COOR') THEN
+            indx=INDEX(aline,''')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,''')
+            aline=aline(1:indx-1)
+!
+            read(aline,'(a)') swan_coord(iw)
+          END IF
+!
+!  here we look for the name of the bott file
+!  READINP BOTTOM 1 'Projects/Sandy/SWAN/Sandy_swan_bathy.bot' 4 0 FREE 
+!
+          IF(aline(1:11).eq.'READINP BOT') THEN
+            indx=INDEX(aline,''')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,''')
+            aline=aline(1:indx-1)
+!
+            read(aline,'(a)') swan_bath(iw)
+          END IF
+!
+!  here we look for the grid size
+!  CGRID CURVILINEAR 86 64 EXC 9.999000e+003 9.999000e+003 CIRCLE 36 0.04 1.0 24
+!
+          IF(aline(1:5).eq.'CGRID') THEN
+            aline=aline(7:LEN(aline))
+!
+            indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline))
+!
+            indx=INDEX(aline,' ')
+            read(aline(1:indx-1,'i5') swan_numx(iw)
+!
+            aline=aline(indx+1:LEN(aline))
+            indx=INDEX(aline,' ')
+            read(aline(1:indx-1,'i5') swan_numy(iw)
+          END IF
+#  endif
         END DO
  115    IF (MyRank.eq.MyMaster) THEN 
           WRITE (out,60) line
@@ -265,11 +407,12 @@
 !     Read WW3 input file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-#  if defined NESTING
+!#  if defined NESTING
       call get_numww3_grids (Wname(1))
-#  endif
-      iw=1
-!     OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
+!#  endif
+#  if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
+!      iw=1
+!!     OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
       OPEN (inp, FILE='ww3_grid.inp', FORM='formatted', STATUS='old',   &
      &      ERR=110)
       GO TO 130
@@ -280,13 +423,6 @@
  120  FORMAT (/,' READ MODEL INPUTS - Unable to open ww3 input file.',  &
      &        /,a80)
  130  CONTINUE
-!
-!  set number of WW3 grids to = 1 for non-nesting.
-!
-#  if !defined NESTING
-      Nwav_grids=1
-      allocate (dtwav(Nwav_grids))
-#  endif
 !
 !  now read the ww3_grid.inp file to get the dt
 !
@@ -304,7 +440,7 @@
         READ (inp,'(a)',ERR=116,END=140) line
         IF (line(1:1).ne.'$') THEN
           test=0
-#  if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
+!#  if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
 ! get the number of freqs
           aline=ADJUSTL(line)
           DO i=1,1
@@ -320,33 +456,12 @@
             aline=aline(indx+1:LEN(aline))
             aline=ADJUSTL(aline)
           END DO
-          indx=INDEX(aline,blank)
-          read(aline(1:indx),'(i2)') MSCs
+!          indx=INDEX(aline,blank)
+!          read(aline(1:indx),'(i2)') MSCs
 #  endif
         END IF
       END DO
 !
-      test=1
-      DO WHILE (test.eq.1)
-! Define model run flags
-        READ (inp,'(a)',ERR=116,END=140) line
-        IF (line(1:1).ne.'$') test=0
-      END DO
-!
-      test=1
-      DO WHILE (test.eq.1)
-! Define model time steps
-        READ (inp,'(a)',ERR=116,END=140) line
-        IF (line(1:1).ne.'$') test=0
-      END DO
-      aline=ADJUSTL(line)
-      indx=INDEX(aline,blank)
-      aline=aline(1:indx-1)
-#  if !defined NESTING
-      read(aline,*) dtwav(iw)
-! Set minimum 1 sec dt
-      dtwav(iw)=MAX(dtwav(iw),1.0_m8)
-#  endif
       test=1
       DO WHILE (test.eq.1)
 ! Read rest of file
@@ -399,6 +514,16 @@
           allocate (dtatm(Natm_grids))
           allocate (parentid(Natm_grids))
           allocate (wrf_e_we(Natm_grids))
+#  ifdef SCRIP_COAWST
+          Ngrids_wrf=Natm_grids
+          DO ia=1,Ngrids_wrf
+            write(wrf_grids(ia),'(A11,I1)') 'wrfinput_d0',ia
+            inquire(file=trim(wrf_grids(ia)), exist=exists)
+            IF (.not.exists) THEN
+              write(wrf_grids(ia),'(A6)') 'moving'
+            END IF
+          END DO
+#  endif
 !
 ! Process the time steps
 !
@@ -435,8 +560,22 @@
             saveline1=TRIM(ADJUSTL(aline(1:indx-1)))
             read(saveline1,'(i5)') parentid(ia)
             IF (parentid(ia).EQ.0) parentid(ia) = 1
+#  ifdef SCRIP_COAWST
+            wrf_parent_id(ia)=parentid(ia)
+#  endif
           END DO
         END IF
+#  ifdef SCRIP_COAWST
+        IF(aline(1:17).eq.'parent_grid_ratio') THEN
+          indx=INDEX(aline,'=')
+          DO ia=1,Natm_grids
+            aline=aline(indx+1:LEN(aline))
+            indx=INDEX(aline,',')
+            saveline1=TRIM(ADJUSTL(aline(1:indx-1)))
+            read(saveline1,'(i5)') wrf_parent_grid_ratio(ia)
+          END DO
+        END IF
+#  endif
         IF(aline(1:22).eq.'parent_time_step_ratio') THEN
           indx=INDEX(aline,'=')
           DO ia=1,Natm_grids

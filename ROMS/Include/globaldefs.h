@@ -830,6 +830,7 @@
 /* this allows differentiation between Rutgers
    and coawst coupling methods */
 #define COAWST_MODEL
+#define SCRIP_COAWST
 
 #if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL || \
                            defined WW3_MODEL  || defined WRFHYDRO_MODEL)

@@ -2274,12 +2274,10 @@
               dst_mask_unlim(nx,ny)=1
             enddo
           enddo
-
 !
 !  Compute ww3 grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-
           if (roms_ww3_samegrid.eq.1) then
             if (mw.eq.mo) then                     ! same grid, start with src mask
               samegrid=1

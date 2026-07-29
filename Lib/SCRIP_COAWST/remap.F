@@ -147,7 +147,7 @@
           end do
         else if (size(map_wts,DIM=1) == 4) then
           do n=1,size(dst_add)
-            dst_array(dst_add(n)) = dst_array(dst_add(n)) +
+            dst_array(dst_add(n)) = dst_array(dst_add(n)) +             &
      &                              src_array(src_add(n))*map_wts(1,n)+ &
      &                              src_grad1(src_add(n))*map_wts(2,n)+ &
      &                              src_grad2(src_add(n))*map_wts(3,n)+ &

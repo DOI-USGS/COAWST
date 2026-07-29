@@ -3,9 +3,9 @@
 % jcwarner 13Nov2017
 %
 
-cd Projects/Sandy/Ww3
+cd Projects/Sandy/WW3
 
-netcdf_load('../romsforc_NARR_Sandy2012.nc')
+netcdf_load('../ROMS/romsforc_NARR_Sandy2012.nc')
 [LP, MP, ntimes]=size(Uwind);
 %
 fid = fopen('ww3_sandy_wind_forc.dat','w');

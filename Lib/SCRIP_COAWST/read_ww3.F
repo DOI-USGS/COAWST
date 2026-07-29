@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     this module contains routines reading WW3 grids  
@@ -34,7 +35,7 @@
       integer (kind=int_kind), intent(in) :: MyComm
 
 !     local variables 
-      integer(int_kind) :: i, j, n, m, mp
+      integer(int_kind) :: i, j, n, m, mp, count
       integer(int_kind) :: nxs, nys, nxr, nyr
       integer(int_kind) :: test1, test2, test3
       integer(int_kind) :: mw, mo, nx, ny, grdsize
@@ -50,32 +51,99 @@
       real(dbl_kind) :: xx2, yy2, xxend_1, yyend_1
       real(dbl_kind) :: dist1, dist_max
       real(dbl_kind), allocatable :: lon_psi_w(:,:), lat_psi_w(:,:)
+#if defined SCRIP_COAWST
+      real(dbl_kind), allocatable :: temp(:)
+#endif
 
+#if !defined SCRIP_COAWST
 !     Allocate arrays
       allocate(ngrd_w3(Ngrids_ww3))
+#endif
+
+
+#if defined SCRIP_COAWST
+! here we need to check if the grid is unstructured.
+! if so, then we need to make is rect dims same as roms.
+      do mw=1,Ngrids_ww3
+        IF (ww3_numy(mw).eq.1) THEN
+!roms grid sizes
+          nx=ngrd_rm(mw)%xi_size
+          ny=ngrd_rm(mw)%eta_size
+          allocate(temp(nx*ny))
+!copy the ww3 data and make new array in rect size for lon
+          DO i=1,nx*ny
+            temp(i)=ngrd_w3(mw)%lon_rho_w(i,1)
+          END DO
+          deallocate(ngrd_w3(mw)%lon_rho_w)
+          allocate(ngrd_w3(mw)%lon_rho_w(nx,ny))
+          count=0
+          DO j=1,ny
+            DO i=1,nx
+              count=count+1
+              ngrd_w3(mw)%lon_rho_w(i,j)=temp(count)
+            END DO
+          END DO
+!copy the ww3 data and make new array in rect size for lat
+          DO i=1,nx*ny
+            temp(i)=ngrd_w3(mw)%lat_rho_w(i,1)
+          END DO
+          deallocate(ngrd_w3(mw)%lat_rho_w)
+          allocate(ngrd_w3(mw)%lat_rho_w(nx,ny))
+          count=0
+          DO j=1,ny
+            DO i=1,nx
+              count=count+1
+              ngrd_w3(mw)%lat_rho_w(i,j)=temp(count)
+            END DO
+          END DO
+!copy the ww3 data and make new array in rect size for depth
+          DO i=1,nx*ny
+            temp(i)=ngrd_w3(mw)%xx(i,1)
+          END DO
+          deallocate(ngrd_w3(mw)%xx)
+          allocate(ngrd_w3(mw)%xx(nx,ny))
+          count=0
+          DO j=1,ny
+            DO i=1,nx
+              count=count+1
+              ngrd_w3(mw)%xx(i,j)=temp(count)
+            END DO
+          END DO
+!update grid size
+          ww3_numx(mw)=nx
+          ww3_numy(mw)=ny
+          deallocate(temp)
+        END IF
+      end do
+#endif
+
 
       do mw=1,Ngrids_ww3
-         ngrd_w3(mw)%Numx_ww3=ww3_numx(mw)
-         ngrd_w3(mw)%Numy_ww3=ww3_numy(mw)
+        ngrd_w3(mw)%Numx_ww3=ww3_numx(mw)
+        ngrd_w3(mw)%Numy_ww3=ww3_numy(mw)
       end do
 
       do mw=1,Ngrids_ww3
-         nx=ngrd_w3(mw)%Numx_ww3
-         ny=ngrd_w3(mw)%Numy_ww3
-         allocate(ngrd_w3(mw)%xx(nx,ny))
-         allocate(ngrd_w3(mw)%mask_rho_w(nx,ny))
-         open(unit=iunit,file=ww3_bath(mw),status='old')
-         do j=1,ny
-           read(iunit,*) (ngrd_w3(mw)%xx(i,j),i=1,nx)
-           do i=1,nx
-             if(ngrd_w3(mw)%xx(i,j)==9999)then
-               ngrd_w3(mw)%mask_rho_w(i,j)=0
-             else
-               ngrd_w3(mw)%mask_rho_w(i,j)=1
-             endif
-            end do
-         end do
-         close(iunit)
+        nx=ngrd_w3(mw)%Numx_ww3
+        ny=ngrd_w3(mw)%Numy_ww3
+        allocate(ngrd_w3(mw)%mask_rho_w(nx,ny))
+#if !defined SCRIP_COAWST
+        allocate(ngrd_w3(mw)%xx(nx,ny))
+        open(unit=iunit,file=ww3_bath(mw),status='old')
+        do j=1,ny
+          read(iunit,*) (ngrd_w3(mw)%xx(i,j),i=1,nx)
+        end do
+        close(iunit)
+#endif
+        do j=1,ny
+          do i=1,nx
+            if(ngrd_w3(mw)%xx(i,j)==9999)then
+              ngrd_w3(mw)%mask_rho_w(i,j)=0
+            else
+              ngrd_w3(mw)%mask_rho_w(i,j)=1
+            endif
+          end do
+        end do
       end do
 !----------------------------------------------------------------------
 !     Work on the WW3_COORD input files
@@ -84,9 +152,9 @@
         nx=ngrd_w3(mw)%Numx_ww3
         ny=ngrd_w3(mw)%Numy_ww3
 
+#if !defined SCRIP_COAWST
         allocate(ngrd_w3(mw)%lon_rho_w(nx,ny))
         allocate(ngrd_w3(mw)%lat_rho_w(nx,ny))
-
         open(unit=iunit,file=ww3_xcoord(mw),status='old')
         do j=1,ny
           read(iunit,*) (ngrd_w3(mw)%lon_rho_w(i,j),i=1,nx)
@@ -95,6 +163,7 @@
         do j=1,ny
           read(iunit,*) (ngrd_w3(mw)%lat_rho_w(i,j),i=1,nx)
         end do
+#endif
       end do
 
 !   Create a full grid of lat and lon at psi locations 
@@ -129,6 +198,7 @@
 !
 !  Here we determine if the ROMS and WW3 grids are coincident.
 !
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
       roms_ww3_samegrid=0
 !     roms_ww3_samegrid=1
       if (Ngrids_roms.eq.Ngrids_ww3) then
@@ -151,7 +221,7 @@
           lats=ngrd_rm(mw)%lat_rho_o(1,1)
           lond=ngrd_w3(mw)%lon_rho_w(1,1)
           latd=ngrd_w3(mw)%lat_rho_w(1,1)
-          cff=min(abs(lons-lond),abs(lats-latd))
+          cff=max(abs(lons-lond),abs(lats-latd))
           if (abs(cff).le.tol) then
             test2=1
           end if
@@ -160,7 +230,7 @@
           lats=ngrd_rm(mw)%lat_rho_o(nxr,nyr)
           lond=ngrd_w3(mw)%lon_rho_w(nxs,nys)
           latd=ngrd_w3(mw)%lat_rho_w(nxs,nys)
-          cff=min(abs(lons-lond),abs(lats-latd))
+          cff=max(abs(lons-lond),abs(lats-latd))
           if (abs(cff).le.tol) then
             test3=1
           end if
@@ -173,7 +243,7 @@
         CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
 #endif
-        write(*,*) 'ROMS and WW3 same grids (0=no or 1=yes) ',          &
+          write(*,*) 'ROMS and WW3 same grids (0=no or 1=yes) ',        &
      &              roms_ww3_samegrid
 #ifdef MPI
         END IF
@@ -235,10 +305,10 @@
         CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
 #endif
-         print*,"WW3 starting i & j index of parent w.r.t child grid--"
-         print*,ngrd_w3(mw)%istr_w, ngrd_w3(mw)%jstr_w
-         print*,"ending i & j index of parent w.r.t child grid--"
-         print*,ngrd_w3(mw)%iend_w, ngrd_w3(mw)%jend_w
+          print*,"WW3 starting i & j index of parent w.r.t child grid--"
+          print*,ngrd_w3(mw)%istr_w, ngrd_w3(mw)%jstr_w
+          print*,"ending i & j index of parent w.r.t child grid--"
+          print*,ngrd_w3(mw)%iend_w, ngrd_w3(mw)%jend_w
 #ifdef MPI
         END IF
         CALL mpi_barrier (MyComm, MyError)
