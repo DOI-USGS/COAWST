@@ -189,6 +189,7 @@ ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
              LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
              LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
+             FFLAGS += -I$(NETCDF_INCDIR)
 endif
 
 ifdef USE_SWAN
