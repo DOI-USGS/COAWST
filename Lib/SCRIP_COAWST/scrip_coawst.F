@@ -1,4 +1,3 @@
-#include "cppdefs.h"
 !======================================================================
 !     This is a wrapper developed at USGS, Woods Hole Coastal and Marine
 !     Science Center. This routine calls the SCRIP interpolation 
@@ -11,9 +10,9 @@
 !======================================================================
 
 #if defined SCRIP_COAWST
-     subroutine scrip_coawst(tempname)
+      subroutine scrip_coawst(tempname)
 #else
-     program scrip_coawst
+      program scrip_coawst
 #endif
       use kinds_mod
       use constants
@@ -39,6 +38,9 @@
 #endif
       integer (kind=int_kind) :: MyComm
 !     local variables
+#if !defined SCRIP_COAWST
+      character(len=char_len) :: inputfile
+#endif
       integer (kind=int_kind) :: OutThread
 !
 #ifdef MPI
@@ -200,7 +202,7 @@
       CALL mpi_finalize (MyError)
 # endif
       STOP
-     end program scrip_coawst
+      end program scrip_coawst
 #endif
 
 !======================================================================
