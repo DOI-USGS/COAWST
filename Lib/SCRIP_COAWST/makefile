@@ -67,7 +67,7 @@ OBJSET  = \
 	remap_conserv.o \
 	remap_bilinear.o \
 	remap_bicubic.o \
-	timers.o \
+	timers_scrip.o \
 	remap_write.o \
 	scrip.o \
 	create_masks.o \
@@ -81,106 +81,106 @@ $(EXEDIR)/scrip_coawst: $(OBJSET)
 	$(FC) $(FLAGS) $(OBJSET)  -o $(EXEDIR)/scrip_coawst $(LIBS)
 ##	$(FC) $(FLAGS) $(OBJSET) $(LIB) -o $(EXEDIR)/scrip
 
-kinds_mod.o: $(SRCDIR)/kinds_mod.f $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/kinds_mod.f
+kinds_mod.o: $(SRCDIR)/kinds_mod.F $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/kinds_mod.F
 
-constants.o: $(SRCDIR)/constants.f kinds_mod.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/constants.f
+constants.o: $(SRCDIR)/constants.F kinds_mod.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/constants.F
 
-iounits.o: $(SRCDIR)/iounits.f kinds_mod.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/iounits.f
+iounits.o: $(SRCDIR)/iounits.F kinds_mod.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/iounits.F
 
-netcdf.o: $(SRCDIR)/netcdf.f kinds_mod.o constants.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/netcdf.f
+netcdf.o: $(SRCDIR)/netcdf.F kinds_mod.o constants.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/netcdf.F
 
-grids.o: $(SRCDIR)/grids.f kinds_mod.o constants.o iounits.o netcdf.o \
+grids.o: $(SRCDIR)/grids.F kinds_mod.o constants.o iounits.o netcdf.o \
 	$(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/grids.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/grids.F
 
-scripwrap_mod.o: $(SRCDIR)/scripwrap_mod.f kinds_mod.o \
+scripwrap_mod.o: $(SRCDIR)/scripwrap_mod.F kinds_mod.o \
 	$(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/scripwrap_mod.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/scripwrap_mod.F
 
-create_fullgrid.o: $(SRCDIR)/create_fullgrid.f kinds_mod.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/create_fullgrid.f
+create_fullgrid.o: $(SRCDIR)/create_fullgrid.F kinds_mod.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/create_fullgrid.F
 
-read_swan.o: $(SRCDIR)/read_swan.f kinds_mod.o scripwrap_mod.o \
+read_swan.o: $(SRCDIR)/read_swan.F kinds_mod.o scripwrap_mod.o \
 	               create_fullgrid.o     $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_swan.f  $(SRCDIR)/read_swan.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_swan.F  $(SRCDIR)/read_swan.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_swan.fpp
 
-read_ww3.o: $(SRCDIR)/read_ww3.f kinds_mod.o scripwrap_mod.o \
+read_ww3.o: $(SRCDIR)/read_ww3.F kinds_mod.o scripwrap_mod.o \
 	               create_fullgrid.o     $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_ww3.f  $(SRCDIR)/read_ww3.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_ww3.F  $(SRCDIR)/read_ww3.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_ww3.fpp
 
-read_roms.o: $(SRCDIR)/read_roms.f kinds_mod.o scripwrap_mod.o  \
+read_roms.o: $(SRCDIR)/read_roms.F kinds_mod.o scripwrap_mod.o  \
                         netcdf.o create_fullgrid.o $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_roms.f  $(SRCDIR)/read_roms.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_roms.F  $(SRCDIR)/read_roms.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_roms.fpp
 
 read_wrf.o: $(SRCDIR)/read_wrf.f kinds_mod.o scripwrap_mod.o  \
                           netcdf.o  create_fullgrid.o $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_wrf.f  $(SRCDIR)/read_wrf.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_wrf.F  $(SRCDIR)/read_wrf.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_wrf.fpp
 
-read_hydro.o: $(SRCDIR)/read_hydro.f kinds_mod.o scripwrap_mod.o  \
+read_hydro.o: $(SRCDIR)/read_hydro.F kinds_mod.o scripwrap_mod.o  \
                         netcdf.o create_fullgrid.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/read_hydro.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_hydro.F
 
-remap_vars.o: $(SRCDIR)/remap_vars.f kinds_mod.o constants.o grids.o \
+remap_vars.o: $(SRCDIR)/remap_vars.F kinds_mod.o constants.o grids.o \
                             $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_vars.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_vars.F
 
-remap_conserv.o: $(SRCDIR)/remap_conserv.f kinds_mod.o constants.o \
-		timers.o remap_vars.o grids.o $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/remap_conserv.f  $(SRCDIR)/remap_conserv.fpp
+remap_conserv.o: $(SRCDIR)/remap_conserv.F kinds_mod.o constants.o \
+		timers_scrip.o remap_vars.o grids.o $(INCLUDE)
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/remap_conserv.F  $(SRCDIR)/remap_conserv.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/remap_conserv.fpp
 
-remap_distwgt.o: $(SRCDIR)/remap_distwgt.f kinds_mod.o constants.o \
+remap_distwgt.o: $(SRCDIR)/remap_distwgt.F kinds_mod.o constants.o \
 		remap_vars.o grids.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_distwgt.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_distwgt.F
 
-remap_bilinear.o: $(SRCDIR)/remap_bilinear.f kinds_mod.o constants.o \
-		remap_vars.o grids.o timers.o $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/remap_bilinear.f  $(SRCDIR)/remap_bilinear.fpp
+remap_bilinear.o: $(SRCDIR)/remap_bilinear.F kinds_mod.o constants.o \
+		remap_vars.o grids.o timers_scrip.o $(INCLUDE)
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/remap_bilinear.F  $(SRCDIR)/remap_bilinear.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/remap_bilinear.fpp
 
-remap_bicubic.o: $(SRCDIR)/remap_bicubic.f kinds_mod.o constants.o \
+remap_bicubic.o: $(SRCDIR)/remap_bicubic.F kinds_mod.o constants.o \
 		remap_vars.o grids.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_bicubic.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_bicubic.F
 
-timers.o: $(SRCDIR)/timers.f kinds_mod.o constants.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/timers.f
+timers_scrip.o: $(SRCDIR)/timers_scrip.F kinds_mod.o constants.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/timers_scrip.F
 
-remap_write.o: $(SRCDIR)/remap_write.f kinds_mod.o constants.o \
+remap_write.o: $(SRCDIR)/remap_write.F kinds_mod.o constants.o \
 		netcdf.o remap_vars.o grids.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_write.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_write.F
 
-remap_read.o: $(SRCDIR)/remap_read.f kinds_mod.o constants.o netcdf.o \
+remap_read.o: $(SRCDIR)/remap_read.F kinds_mod.o constants.o netcdf.o \
 		remap_vars.o grids.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_read.f
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_read.F
 
-remap.o: $(SRCDIR)/remap.f kinds_mod.o constants.o 
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap.f
+remap.o: $(SRCDIR)/remap.F kinds_mod.o constants.o 
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap.F
 
-scrip.o: $(SRCDIR)/scrip.f kinds_mod.o constants.o iounits.o timers.o \
+scrip.o: $(SRCDIR)/scrip.F kinds_mod.o constants.o iounits.o timers_scrip.o \
 		remap_vars.o grids.o remap_conserv.o remap_distwgt.o \
 		remap_bilinear.o remap_bicubic.o remap_write.o \
 		$(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip.f  $(SRCDIR)/scrip.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip.F  $(SRCDIR)/scrip.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/scrip.fpp
 
-create_masks.o: $(SRCDIR)/create_masks.f kinds_mod.o scripwrap_mod.o  \
+create_masks.o: $(SRCDIR)/create_masks.F kinds_mod.o scripwrap_mod.o  \
                           scrip.o   $(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/create_masks.f  $(SRCDIR)/create_masks.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/create_masks.F  $(SRCDIR)/create_masks.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/create_masks.fpp
 
-scrip_coawst.o: $(SRCDIR)/scrip_coawst.f kinds_mod.o constants.o iounits.o \
+scrip_coawst.o: $(SRCDIR)/scrip_coawst.F kinds_mod.o constants.o iounits.o \
 		scripwrap_mod.o create_fullgrid.o read_swan.o read_roms.o  \
 		read_wrf.o read_hydro.o read_ww3.o scrip.o create_masks.o \
 		$(INCLUDE)
-	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip_coawst.f  $(SRCDIR)/scrip_coawst.fpp
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip_coawst.F  $(SRCDIR)/scrip_coawst.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/scrip_coawst.fpp
 
 
