@@ -1892,8 +1892,7 @@
 !
 #ifdef WAV2OCN_FLUXES
 !
-!  Compute scale factor for removal of dissip_break
-!
+!  Acquire surface stresses as function of wave source input
 !  TAUOCE  wav stress to ocean east
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TAUOCE",   &
@@ -1905,10 +1904,6 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=A(ij)
-!
-!  Here we need to remove the depth-limited breaking from the surface stress.
-!
-!
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocx(i,j)=cff
           ELSE
@@ -1937,9 +1932,6 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=A(ij)
-!
-!  Here we need to remove the depth-limited breaking from the surface stress.
-!
           IF (iw.eq.1) THEN
             FORCES(ng)%Tauocy(i,j)=cff
           ELSE
