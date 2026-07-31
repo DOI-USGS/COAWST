@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     this module contains routines reading SWAN grids  
@@ -93,44 +94,46 @@
         allocate(ngrd_sw(mw)%lat_rho_w(nx,ny))
 
         open(unit=iunit,file=swan_coord(mw),status='old')
-        n=0
-        do
-          read(iunit,*,end=1)
-          n=n+1
-        end do
-1       rewind(iunit)
-
-!  why do we need to recompute grid size.  it should be Nxswan_nyswan*2
+!
+!       n is the number of points in the file = numx * numy *2 for lat and lon
+!       grdsize is just numx * numy
+!
+        n=nx*ny*2
         grdsize=n/2
 
         allocate(grd(n),zz(grdsize))
-
         do i=1,n
           read(iunit,*) bf
           grd(i)=bf
         end do
-        do i=1,grdsize
-          zz(i)=grd(i)
-        end do
 
-!  every point will have lon_rho,lat_rho
-!  set a scale = 1 for spehrical, 1.rad earth for cartesian
+!
+!       set a scale = 1 for spehrical, 1.rad earth for cartesian
+!
         if (swan_cartesian(mw).eq.1) then
           scale=1./6371000.
         else
           scale=1.
         endif
-
+!
+!       here we just load lon
+!
+        do i=1,grdsize
+          zz(i)=grd(i)
+        end do
+!
         do j=1,ny
           do i=1,nx
             ngrd_sw(mw)%lon_rho_w(i,j)=zz(nx*(j-1)+i)*scale
           end do
         end do
-
+!
+!       here we just load lat
+!
         do i=grdsize+1,n
           zz(i-grdsize)=grd(i)
         end do
-
+!
         do j=1,ny
           do i=1,nx
             ngrd_sw(mw)%lat_rho_w(i,j)=zz(nx*(j-1)+i)*scale
@@ -138,6 +141,7 @@
         end do
 
         deallocate(grd, zz)
+        CLOSE (iunit)
 
       end do
 

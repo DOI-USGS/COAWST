@@ -252,10 +252,10 @@
 !  READGRID COORDINATES 1 'Projects/Sandy/SWAN/Sandy_swan_coord.grd' 4 0 0 FREE 
 !
           IF(aline(1:13).eq.'READGRID COOR') THEN
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(indx+1:LEN(aline))
 !
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(1:indx-1)
 !
             read(aline,'(a)') swan_coord(1)
@@ -265,30 +265,41 @@
 !  READINP BOTTOM 1 'Projects/Sandy/SWAN/Sandy_swan_bathy.bot' 4 0 FREE 
 !
           IF(aline(1:11).eq.'READINP BOT') THEN
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(indx+1:LEN(aline))
 !
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(1:indx-1)
 !
             read(aline,'(a)') swan_bath(1)
           END IF
 !
 !  here we look for the grid size
-!  CGRID CURVILINEAR 86 64 EXC 9.999000e+003 9.999000e+003 CIRCLE 36 0.04 1.0 24
+!  INPGRID BOTTOM CURVILINEAR 0 0 86 81 EXC 9.999000e+003        
 !
-          IF(aline(1:5).eq.'CGRID') THEN
-            aline=aline(7:LEN(aline))
+          IF(aline(1:9).eq.'INPGRID B') THEN
+            aline=aline(10:LEN(aline))        !TTOM CURVILINEAR 0 0 86 81 EXC 9.999000e+003
 !
             indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline))  !CURVILINEAR 0 0 86 81 EXC 9.999000e+003
+
+            indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline)) !0 0 86 81 EXC 9.999000e+003
+
+            indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline)) !0 86 81 EXC 9.999000e+003
+
+            indx=INDEX(aline,' ')
+            aline=aline(indx+1:LEN(aline)) !86 81 EXC 9.999000e+003
+!
+            indx=INDEX(aline,' ')
+            read(aline(1:indx-1),'(i5)') num
+            swan_numx(1)=num+1
+!
             aline=aline(indx+1:LEN(aline))
-!
             indx=INDEX(aline,' ')
-            read(aline(1:indx-1,'i5') swan_numx(1)
-!
-            aline=aline(indx+1:LEN(aline))
-            indx=INDEX(aline,' ')
-            read(aline(1:indx-1,'i5') swan_numy(1)
+            read(aline(1:indx-1),'(i5)') num
+            swan_numy(1)=num+1
           END IF
 #  endif
         END IF
@@ -353,10 +364,10 @@
 !  READGRID COORDINATES 1 'Projects/Sandy/SWAN/Sandy_swan_coord.grd' 4 0 0 FREE 
 !
           IF(aline(1:13).eq.'READGRID COOR') THEN
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(indx+1:LEN(aline))
 !
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(1:indx-1)
 !
             read(aline,'(a)') swan_coord(iw)
@@ -366,10 +377,10 @@
 !  READINP BOTTOM 1 'Projects/Sandy/SWAN/Sandy_swan_bathy.bot' 4 0 FREE 
 !
           IF(aline(1:11).eq.'READINP BOT') THEN
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(indx+1:LEN(aline))
 !
-            indx=INDEX(aline,''')
+            indx=INDEX(aline,"'")
             aline=aline(1:indx-1)
 !
             read(aline,'(a)') swan_bath(iw)
@@ -385,11 +396,13 @@
             aline=aline(indx+1:LEN(aline))
 !
             indx=INDEX(aline,' ')
-            read(aline(1:indx-1,'i5') swan_numx(iw)
+            read(aline(1:indx-1),'(i5)') num
+            swan_numx(iw)=num+1
 !
             aline=aline(indx+1:LEN(aline))
             indx=INDEX(aline,' ')
-            read(aline(1:indx-1,'i5') swan_numy(iw)
+            read(aline(1:indx-1),'(i5)') num
+            swan_numy(iw)=num+1
           END IF
 #  endif
         END DO

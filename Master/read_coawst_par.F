@@ -1,5 +1,4 @@
 #include "cppdefs.h"
-
 #ifdef COAWST_COUPLING
 
       SUBROUTINE read_coawst_par(flag)
@@ -23,6 +22,7 @@
 # ifdef WW3_MODEL
       USE ww3_iounits
 # endif
+
       implicit none
 !
       include 'mpif.h'
@@ -183,7 +183,6 @@
           IF (status.gt.0) THEN
             IF (TRIM(KeyWord).eq.'SCRIP_COAWST_NAME') THEN
               SCRIPname=TRIM(ADJUSTL(Cval(Nval)))
-               write(*,*) 'read cowast par 2.11', SCRIPname
 ! Check to see if the SCRIP file exists.  If not, then we call
 ! scrip_coawst to make it.
               inquire(file=trim(SCRIPname), exist=exists)

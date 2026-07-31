@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     this module contains necessary routines for performing an 

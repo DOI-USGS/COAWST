@@ -1,3 +1,5 @@
+#include "cppdefs.h"
+!
 !======================================================================
 !     This is a wrapper developed at USGS, Woods Hole Coastal and Marine
 !     Science Center. This routine calls the SCRIP interpolation 
@@ -30,7 +32,7 @@
 !  Imported variable declarations.
 !
 #if defined SCRIP_COAWST
-      character (len=160), intent(in) :: tempname
+      character (len=120), intent(in) :: tempname
 #endif
 #ifdef MPI
       include 'mpif.h'

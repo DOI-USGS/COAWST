@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Z!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     Note SCRIP_COAWST required the original file from SCRIP package 

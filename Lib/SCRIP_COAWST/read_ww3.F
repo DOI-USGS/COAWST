@@ -1,3 +1,4 @@
+#include "cppdefs.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     this module contains routines reading WW3 grids  

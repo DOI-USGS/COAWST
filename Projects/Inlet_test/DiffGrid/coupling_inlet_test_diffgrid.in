@@ -56,10 +56,10 @@
 ! Enter names of Atm, Wav, and Ocn input files.
 ! The Wav program needs multiple input files, one for each grid.
 
-   ATM_name = atmos.in                                             ! WRF input file
+   ATM_name = namelist.input                                       ! WRF input file
    WAV_name = Projects/Inlet_test/DiffGrid/swan_inlet_test_diff.in ! wave model
    OCN_name = Projects/Inlet_test/DiffGrid/ocean_inlet_test.in     ! ocean model
-   HYD_name = hydro.namelist                              ! hydro model
+   HYD_name = hydro.namelist                                       ! hydro model
 
 ! Sparse matrix interpolation weights files.
 

@@ -166,7 +166,6 @@ ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
              LIBS += $(MCT_PARAMS_DIR)/mod_coupler_iounits.o
              LIBS += $(MCT_PARAMS_DIR)/get_sparse_matrix.o
-             FFLAGS += -I$(NETCDF_INCDIR)
 endif
 
 ifdef USE_WW3
@@ -192,6 +191,10 @@ else
       NETCDF_LIBS ?= -lnetcdff -lnetcdf
              LIBS += -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
            INCDIR += $(NETCDF_INCDIR) $(INCDIR)
+endif
+
+ifndef USE_SCRIP
+             FFLAGS += -I$(NETCDF_INCDIR)
 endif
 
 ifdef USE_HDF5
