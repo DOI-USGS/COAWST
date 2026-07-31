@@ -19,7 +19,7 @@ yFRF=ncread(url,'yFRF');
 elev=ncread(url,'elevation');
 lat=ncread(url,'latitude');
 lon=ncread(url,'longitude');
-%save bath.mat
+save bath.mat
 %%%%%%
 
 %here we make Jonswap forcing files

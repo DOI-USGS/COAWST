@@ -5,7 +5,8 @@
 % jcw 09Jun2026
 %
 
-cd D:\models\COAWST_updates\COAWST_v3.9\Ducknc_xshore_test
+cd D:\models\COAWST_updates\COAWST_v3.9\COAWST_v3.9_test18_all_PROJECTS_RUN
+netcdf_load('Output_ducknc_roms_inwave/duck_xshore_his.nc')
 
 % Using 2D spec data at    20231101.00000000
 % Peak dir from    90.000000000000000
@@ -16,8 +17,8 @@ cd D:\models\COAWST_updates\COAWST_v3.9\Ducknc_xshore_test
 % Computing eastern AC forcing
 % Mean offshore water depth for AC is    8.9840437021504727
 
-netcdf_load('duck_xshore_his.nc');
 figure
+subplot(211)
 plot(x_rho(:,3),-squeeze(bath(:,3,1)),'k','linewidth',2)
 hold on
 plot(x_rho(:,3),-squeeze(bath(:,3,2:end)))
@@ -25,8 +26,16 @@ plot(x_rho(:,3),-squeeze(bath(:,3,2:end)))
 plot(x_rho(:,3),squeeze(zeta(:,3,:)))
 zoom on
 hold on
+title('Ducknc InWave: init and final bathy; 1 mintue water levels (solid)')
+subplot(212)
+plot(x_rho(:,3),-squeeze(bath(:,3,1)),'k','linewidth',2)
+hold on
+plot(x_rho(:,3),-squeeze(bath(:,3,2:end)))
+%
 plot(x_rho(:,3),squeeze(Hwave(:,3,:)),'--')
-title('Ducknc InWave: init and final bathy; 1 mintue water levels (solid) and Hsigs (dashed)')
+title('Ducknc InWave: init and final bathy; 1 mintue Hsigs (dashed)')
+print -dpng 'D:\models\COAWST\Projects\Ducknc\ROMS_InWave\zeta_hwave.png'
+
 
 %cross shore vels
 N=size(u,3)
@@ -47,7 +56,7 @@ xlabel('Cross shore distance, m')
 title('Cross shore velocities')
 
 
-netcdf_load('duck_xshore_avg.nc');
+netcdf_load('Output_ducknc_roms_inwave/duck_xshore_avg.nc');
 figure
 hold on
 plot(x_rho(:,3),squeeze(Hwave(:,3,:)))

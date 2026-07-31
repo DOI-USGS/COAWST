@@ -22,7 +22,7 @@
 # define ACY_ADVECTION
 # define ACT_ADVECTION
 # undef  INWAVE_HSCALE
-# undef  DOPPLER
+# define DOPPLER
 # define WDISS_GAMMA
 # undef  WDISS_ROELVINK
 #endif
