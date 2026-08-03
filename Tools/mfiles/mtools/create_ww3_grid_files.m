@@ -11,7 +11,7 @@
 %
 
 %1) cd to a working directory
-cd D:\models\COAWST_updates\COAWST_v3.9\COAWST_v3.9_test17\Projects\Sandy\ROMS
+cd D:\models\COAWST\Projects\Sandy\WW3
 
 %2) how many WW3 grids do you have for this configuration?
 numgrids=3;
