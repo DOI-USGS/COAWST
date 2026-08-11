@@ -44,7 +44,8 @@
 # if defined WW3_MODEL || defined SWAN_MODEL
 #  define WEC_VF
 #  define WDISS_WAVEMOD
-#  define UV_KIRBY
+#  undef  UV_KIRBY
+#  define UV_BANIHASHEMI
 # endif
 # define UV_ADV
 # define UV_COR

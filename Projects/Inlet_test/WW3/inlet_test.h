@@ -35,7 +35,8 @@
 #define SOLVE3D
 #define WEC_VF
 #define WDISS_WAVEMOD
-#define UV_KIRBY
+#undef  UV_KIRBY
+#define UV_BANIHASHEMI
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_FSOBC
