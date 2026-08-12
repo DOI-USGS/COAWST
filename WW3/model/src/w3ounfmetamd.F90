@@ -3478,6 +3478,19 @@ CONTAINS
     META(1)%VARND=''
     META(1)%VMIN = 0
     META(1)%VMAX = 64
+    ! IFI=5, IFJ=12, Z0_ATM
+    META => GROUP(5)%FIELD(12)%META
+    META(1)%FSC    = 0.002
+    META(1)%UNITS  = 'm'
+    META(1)%ENAME  = '.z0a'
+    META(1)%VARNM='z0a'
+    META(1)%VARNL='Surface_roughness'
+    META(1)%VARNS='sea_surface_rougnesss_from_source_term'
+    META(1)%VARNG='sea_surface_roughenss'
+    META(1)%VARNC=''
+    META(1)%VARND=''
+    META(1)%VMIN = 0
+    META(1)%VMAX = 5
     !
     !---------- GROUP 6 ----------------
     !

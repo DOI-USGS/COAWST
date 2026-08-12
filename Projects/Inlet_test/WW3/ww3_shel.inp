@@ -218,6 +218,7 @@ $  F  F  8     3   WL02[X,Y]  WL02  East/X North/Y mean wavelength compon
 $  F  F  8     4   ALPXT      AXT   Correl sea surface gradients (x,t)
 $  F  F  8     5   ALPYT      AYT   Correl sea surface gradients (y,t)
 $  F  F  8     6   ALPXY      AXY   Correl sea surface gradients (x,y)
+$  F  F  8     5   QP         QP    Goda wave spectrum peakedness parameter.
 $   -------------------------------------------------
 $        9                          Numerical diagnostics  
 $   -------------------------------------------------

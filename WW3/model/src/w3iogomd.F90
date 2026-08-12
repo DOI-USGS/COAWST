@@ -4757,6 +4757,10 @@ CONTAINS
               READ (NDSOG,IOSTAT=IERR) WHITECAP(1:NSEA,4)
             ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 11 ) THEN
               READ (NDSOG,IOSTAT=IERR) TWS(1:NSEA)
+#ifdef W3_COAWST_MODEL
+            ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 12 ) THEN
+              READ (NDSOG,IOSTAT=IERR) Z0_WAV(1:NSEA)
+#endif
               !
               !     Section 6)
               !

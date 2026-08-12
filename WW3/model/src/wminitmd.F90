@@ -2828,11 +2828,10 @@ CONTAINS
     ! 8.a.6 Check for coordinate system
     !
     DO I=1, NRGRD-1
-! jcw not working correctly for gfortran
       IF ( GRIDS(I)%FLAGLL .NEQV. GRIDS(I+1)%FLAGLL ) THEN
         IF ( IMPROC .EQ. NMPERR ) WRITE (MDSE,1070)
-!jcw        CALL EXTCDE ( 2070 )
-!jcw        RETURN
+        CALL EXTCDE ( 2070 )
+        RETURN
       END IF
     END DO
     !

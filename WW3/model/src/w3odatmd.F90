@@ -788,12 +788,12 @@ CONTAINS
     !
     ! 2) Standard mean wave parameters
     !
-    NOGE(2) = 19
 #ifdef W3_OASOCM
     NOGE(2) = 20
-#endif
-#ifdef W3_COAWST_MODEL
+#elif defined W3_COAWST_MODEL
     NOGE(2) = 22
+#else
+    NOGE(2) = 19
 #endif
     !
     IDOUT( 2, 1)  = 'Wave height         '
@@ -863,7 +863,11 @@ CONTAINS
     !
     ! 5) Atmosphere-waves layer
     !
+#ifdef W3_COAWST_MODEL
+    NOGE(5) = 12
+#else
     NOGE(5) = 11
+#endif
     !
     IDOUT( 5, 1)  = 'Friction velocity   '
     IDOUT( 5, 2)  = 'Charnock parameter  '
@@ -877,10 +881,17 @@ CONTAINS
     IDOUT( 5,10)  = 'Dominant break prob '
     IDOUT( 5,11)  = 'Wind sea period' ! C.Bunney - reinstated this as is used in ww3_ounf
     ! Is it suposed to be defunct? It is not in ww3_outf...
+#ifdef W3_COAWST_MODEL
+    IDOUT( 5,12)  = 'Sea surface roughness'
+#endif
     !
     ! 6) Wave-ocean layer
     !
+#ifdef W3_COAWST_MODEL
+    NOGE(6) = 19
+#else
     NOGE(6) = 13
+#endif
     !
     IDOUT( 6, 1)  = 'Radiation stresses  '
     IDOUT( 6, 2)  = 'Wave-ocean mom. flux'
@@ -896,7 +907,6 @@ CONTAINS
     IDOUT( 6,12)  = 'Split Surface Stokes'
     IDOUT( 6,13)  = 'Tot wav-ocn mom flux'
 #ifdef W3_COAWST_MODEL
-    NOGE(6) = 19
     IDOUT( 6,14)  = 'Src wav-ocn mom flux'
     IDOUT( 6,15)  = 'Dissip brk depth lim'
     IDOUT( 6,16)  = 'Dissip white capping'
