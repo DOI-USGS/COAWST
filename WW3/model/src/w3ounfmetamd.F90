@@ -3478,7 +3478,7 @@ CONTAINS
     META(1)%VARND=''
     META(1)%VMIN = 0
     META(1)%VMAX = 64
-    ! IFI=5, IFJ=12, Z0_ATM
+    ! IFI=5, IFJ=12, Z0_WAV
     META => GROUP(5)%FIELD(12)%META
     META(1)%FSC    = 0.002
     META(1)%UNITS  = 'm'

@@ -1704,7 +1704,7 @@ CONTAINS
               CALL S2GRID(TWS(1:NSEA), X1)
 #ifdef W3_COAWST_MODEL
               !
-              ! Z0_WAV
+              ! Surface rougness
             ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 12 ) THEN
               CALL S2GRID(Z0_WAV(1:NSEA), X1)
 #endif

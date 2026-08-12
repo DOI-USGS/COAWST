@@ -1191,6 +1191,19 @@ CONTAINS
                  (PHIBBL(ISEA),ISEA=1+(IPART-1)*NSIZE,                  &
                  MIN(NSEA,IPART*NSIZE))
           END DO
+!
+!  Write Z0_WAV into rst file
+!
+          DO IPART=1,NPART
+            NREC  = NREC + 1
+            RPOS  = 1_8 + LRECL*(NREC-1_8)
+            WRITE (NDSR,POS=RPOS,IOSTAT=IERR) WRITEBUFF
+             IF (IERR.NE.0) CALL EXTIOF(NDSE,IERR,'W3IORS','',31, &
+                                       ISWRITE=.TRUE.,POS=RPOS)
+            WRITE (NDSR,POS=RPOS,IOSTAT=IERR)                   &
+                 (Z0_WAV(ISEA),ISEA=1+(IPART-1)*NSIZE,                  &
+                 MIN(NSEA,IPART*NSIZE))
+          END DO
 # ifdef W3_MPI
           CALL W3SETA ( IGRD, NDSE, NDST )
 # endif

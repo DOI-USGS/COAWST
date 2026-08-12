@@ -4282,7 +4282,7 @@ CONTAINS
             ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 12 ) THEN
               WRITE ( NDSOG ) Z0_WAV(1:NSEA)
 # ifdef W3_ASCII
-              WRITE ( NDSOA,* ) 'Z0_WAV:', TWS(1:NSEA)
+              WRITE ( NDSOA,* ) 'Z0_WAV:', Z0_WAV(1:NSEA)
 # endif
 #endif
               !
