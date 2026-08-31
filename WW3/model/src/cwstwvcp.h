@@ -164,7 +164,7 @@
       USE MCT_COUPLER_PARAMS
       USE W3GDATMD, ONLY: W3SETG
       USE WMMDATMD, ONLY: MDST, MDSE
-      USE W3IDATMD, ONLY: W3SETI
+      USE W3IDATMD, ONLY: W3SETI, FLLEV
       USE W3ADATMD, ONLY: W3SETA
       USE W3WDATMD, ONLY: W3SETW, VA
       USE W3UPDTMD, ONLY: W3ULEV
@@ -203,7 +203,9 @@
           DO io=1,Nocn_grids
             CALL WAVFOCN_COUPLING (iw, io)
           END DO
-          CALL W3ULEV (VA, VA )
+          IF (FLLEV) THEN
+            CALL W3ULEV (VA, VA )
+          END IF
         END DO
       END IF
 #  endif
@@ -2185,7 +2187,7 @@
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF, NK, NTH, ZB
       USE W3SERVMD
       USE MCT_COUPLER_PARAMS
-      USE W3IDATMD, ONLY: WLEV
+      USE W3IDATMD, ONLY: FLLEV, WLEV
       USE W3ADATMD, ONLY: CX, CY
 #  if defined UV_BANIHASHEMI
       USE W3ADATMD, ONLY: CXTH, CYTH
@@ -2351,16 +2353,18 @@
 !
 !  Scatter to array WLEV.
 !
-        DO i=1,NSEA
-          IX     = MAPSF(i,1)
-          IY     = MAPSF(i,2)
-          IP=(IY-1)*NX+IX
-          IF (io.eq.1) THEN
-            WLEV(IX,IY)=RCV_BUF(IP)
-          ELSE
-            WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
-          END IF
-        END DO
+        IF (FLLEV) THEN
+          DO i=1,NSEA
+            IX     = MAPSF(i,1)
+            IY     = MAPSF(i,2)
+            IP=(IY-1)*NX+IX
+            IF (io.eq.1) THEN
+              WLEV(IX,IY)=RCV_BUF(IP)
+            ELSE
+              WLEV(IX,IY)=WLEV(IX,IY)+RCV_BUF(IP)
+            END IF
+          END DO
+        END IF
 #  if defined UV_BANIHASHEMI
 !
 !  Wave number dependent u-velocity...................................

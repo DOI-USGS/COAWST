@@ -429,12 +429,16 @@ CONTAINS
                           TAUADIR, FCUT, WHITECAP, BEDFORMS, TAUBBL,       &
                           TAUICE, PHIBBL, TAUOCX, TAUOCY, WNMEAN, PHIAW,   &
                           PHIOC, TWS, PHICE, CHARN, W3SETA, ITSTEP
+    !/
 #ifdef W3_COAWST_MODEL
     USE W3ADATMD,  ONLY : ITIME_COAWST,                                    &
                           PHIBRKX, PHIBRKY, PHICAPX, PHICAPY, QB,          &
                           TAUOSX, TAUOSY, Z0_WAV
 #endif
-
+    !/
+#ifdef W3_CURSP
+    USE W3ADATMD,  ONLY : CXTH, CYTH, DCXDXTH, DCXDYTH, DCYDXTH, DCYDYTH
+#endif
     !/
     USE W3IDATMD,  ONLY : IIDATA, INFLAGS1, FLLEV, FLCUR, FLWIND, FLICE,   &
                           FLTAUA, FLRHOA, FLIC1,                           &
@@ -1228,9 +1232,9 @@ CONTAINS
             WRITE(740+IAPROC,*) 'Before call to UG_GRADIENT for assigning DCXDX/DCXDY array'
 #endif
 #ifdef W3_CURSP
-            DO IP=1,NK
-              CALL UG_GRADIENTS(CXTH(:,IP), DCXDXTH(:,:,IP), DCXDYTH(:,:,IP))
-              CALL UG_GRADIENTS(CYTH(:,IP), DCYDXTH(:,:,IP), DCYDYTH(:,:,IP))
+            DO IK=1,NK
+              CALL UG_GRADIENTS(CXTH(:,IK), DCXDXTH(:,:,IK), DCXDYTH(:,:,IK))
+              CALL UG_GRADIENTS(CYTH(:,IK), DCYDXTH(:,:,IK), DCYDYTH(:,:,IK))
             END DO
 #else
             CALL UG_GRADIENTS(CX, DCXDX, DCXDY)
@@ -1240,9 +1244,9 @@ CONTAINS
             CFLXYMAX = 0.
           ELSE
 #ifdef W3_CURSP
-            DO IP=1,NK
-              CALL W3DZXY(CXTH(1:UBOUND(CX,1),IP),'m/s',DCXDXTH(:,:,IP), DCXDYTH(:,:,IP)) !CX GRADIENT
-              CALL W3DZXY(CYTH(1:UBOUND(CY,1),IP),'m/s',DCYDXTH(:,:,IP), DCYDYTH(:,:,IP)) !CY GRADIENT
+            DO IK=1,NK
+              CALL W3DZXY(CXTH(1:UBOUND(CX,1),IK),'m/s',DCXDXTH(:,:,IK), DCXDYTH(:,:,IK)) !CX GRADIENT
+              CALL W3DZXY(CYTH(1:UBOUND(CY,1),IK),'m/s',DCYDXTH(:,:,IK), DCYDYTH(:,:,IK)) !CY GRADIENT
             END DO
 #else
             CALL W3DZXY(CX(1:UBOUND(CX,1)),'m/s',DCXDX, DCXDY) !CX GRADIENT
@@ -1353,7 +1357,10 @@ CONTAINS
         call print_memcheck(memunit, 'memcheck_____:'//' WW3_WAVE TIME LOOP 7')
 
 #ifdef W3_PDLIB
-        CALL APPLY_BOUNDARY_CONDITION_VA
+        IF ( FLBPI ) THEN
+          CALL APPLY_BOUNDARY_CONDITION_VA
+          CALL PDLIB_exchange2DREAL_zero(VA)
+        END IF
 #ifdef W3_DEBUGCOH
         CALL ALL_VA_INTEGRAL_PRINT(IMOD, "After FLBPI and LOCAL", 1)
 #endif
@@ -2542,6 +2549,22 @@ CONTAINS
       !     Delay if data assimilation time.
       !
       !
+
+#if defined W3_COAWST_MODEL
+# if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
+      !  IMOD is the grid number, ITIME is a bad counter. It steps for 
+      !  updates to the forcings. So we made a clean counter.
+      IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
+        IF (IMOD.eq.Nwav_grids) THEN
+          CALL COAWST_CPL (ITIME_COAWST)
+        END IF
+      END IF
+# endif
+      ! reset RSTYPE to 0 in case it was a hot start. See usage in w3srcemd.
+      RSTYPE=0
+#endif
+
+
       IF ( TOFRST(1)  .EQ. -1 ) THEN
         DTTST  = 1.
       ELSE
@@ -2723,6 +2746,7 @@ CONTAINS
         IF ( NRQMAX .NE. 0 ) ALLOCATE ( STATIO(NRQMAX) )
 #endif
         call print_memcheck(memunit, 'memcheck_____:'//' WW3_WAVE AFTER TIME LOOP 2')
+
         !
         ! 4.c Reset next output time
 
@@ -2988,19 +3012,6 @@ CONTAINS
       IDACT  = '         '
       OUTID  = '           '
       FLACT  = .FALSE.
-#if defined W3_COAWST_MODEL
-# if defined W3_AIR_WAVES || defined W3_WAVES_OCEAN
-      !  IMOD is the grid number, ITIME is a bad counter. It steps for 
-      !  updates to the forcings. So we made a clean counter.
-      IF ( (ITIME_COAWST.EQ.0) .OR. (.NOT.FLZERO) ) THEN
-        IF (IMOD.eq.Nwav_grids) THEN
-          CALL COAWST_CPL (ITIME_COAWST)
-        END IF
-      END IF
-# endif
-      ! reset RSTYPE to 0 in case it was a hot start. See usage in w3srcemd.
-      RSTYPE=0
-#endif
       !
       ! 6.  If time is not ending time, branch back to 2 ------------------- /
       !

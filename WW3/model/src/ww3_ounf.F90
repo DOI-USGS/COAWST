@@ -2969,6 +2969,10 @@ CONTAINS
                 ! Time in days
                 OUTJULDAY = TSUB(EPOCHDATE,CURDATE)
                 IRET = NF90_PUT_VAR(NCID, VARID(3), OUTJULDAY, (/N/))
+#ifdef W3_COAWST_MODEL
+                IRET=nf90_sync(NCID)
+                CALL CHECK_ERR(IRET)
+#endif
               ENDIF
               CALL CHECK_ERR(IRET)
 
@@ -3320,6 +3324,10 @@ CONTAINS
                       IRET=NF90_PUT_VAR(NCID,VARID(IVAR1+1),               &
                            MX1R(IX1:IXN,IY1:IYN),(/START(1:4)/),(/COUNT(1:4)/))
                       call CHECK_ERR(IRET)
+#ifdef W3_COAWST_MODEL
+                      IRET=nf90_sync(NCID)
+                      CALL CHECK_ERR(IRET)
+#endif
 #ifdef W3_SMC
                     ENDIF
 #endif

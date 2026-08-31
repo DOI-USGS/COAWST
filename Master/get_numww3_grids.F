@@ -7,6 +7,7 @@
 !                                                                      !
 !  This routine reads the ww3 model input and gets the number          !
 !  of grids and dt's for a nested ww3 application.                     !
+!  Based on w3iogrmd.F90.                                              !
 !                                                                      !
 !=======================================================================
 !
@@ -58,7 +59,7 @@
 
       REAL, ALLOCATABLE       :: XGRD4(:,:), YGRD4(:,:)
       REAL, ALLOCATABLE       :: TRNX(:,:), TRNY(:,:)
-      REAL, ALLOCATABLE       ::    ZB(:)
+      REAL, ALLOCATABLE       :: ZB(:)
       REAL                    :: JCWR
       REAL             :: SX, SY, X0, Y0, DTCFL, DTCFLI, DTMAX,         &
      &                    DTMIN, DMIN, CTMAX, FICE0, FICEN, FICEL,      &
@@ -165,7 +166,7 @@
         DO i=2,Nwav_grids
           ww3_parent(i)=1             !this is just a flag
         END DO
-     END IF
+      END IF
 #endif
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -228,10 +229,16 @@
         CASE ( RLGTYPE )
           READ (inp,END=801,ERR=802,IOSTAT=IERR) SX, SY, X0, Y0
 # ifdef SCRIP_COAWST
+          DO j=1,NY
+            DO i=1,NX
+!              XGRD(:,IX) = REAL(X0 + REAL(IX-1)*SX)
+               ngrd_w3(iw)%lon_rho_w(i,j)=REAL(X0 + REAL(i-1)*SX)
+            END DO
+          END DO
           DO i=1,NX
             DO j=1,NY
-!              ngrd_w3(iw)%lon_rho_w(i,j)=SX(j,i)
-!              ngrd_w3(iw)%lat_rho_w(i,j)=SY(j,i)
+!             YGRD(IY,:) = REAL(Y0 + REAL(IY-1)*SY)
+              ngrd_w3(iw)%lat_rho_w(i,j)= REAL(Y0 + REAL(j-1)*SY)
             END DO
           END DO
 # endif
@@ -319,8 +326,12 @@
         count=0
         DO j=1,NY
           DO i=1,NX
-            count=count+1
-            ngrd_w3(iw)%xx(i,j)=ZB(count)
+            IF (MAPTMP(j,i).gt.0) THEN
+              count=count+1
+              ngrd_w3(iw)%xx(i,j)=ZB(count)
+            ELSE
+              ngrd_w3(iw)%xx(i,j)=0.
+            END IF
           END DO
         END DO
 # endif
@@ -351,21 +362,21 @@
       END DO
  140  CLOSE (inp)
       RETURN
- 801  CONTINUE
- 802  WRITE (out,803) tempname
- 803  FORMAT (/,' get num ww3 grids - error reading  ww3 input file.',  &
+!801  CONTINUE
+ 802  WRITE (out,803) moddef_name
+ 803  FORMAT (/,' get num ww3 grids - error reading: ',  &
      &        /,a80)
-      IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,         &
-     &                        TRIM(tempname)
-!     exit_flag=4
+!     IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,         &
+!    &                        TRIM(tempname)
+      STOP
       RETURN
 !
  116  IF (MyRank.eq.MyMaster) WRITE (out,60) line
-!     exit_flag=4
+      STOP
       RETURN
+  60  FORMAT (/,'get num ww3 grids - Error reading ww3_grid.inp ',/,a)
 
-  60  FORMAT (/,'read model inputs - Error while processing line: ',/,a)
-
+ 801  CONTINUE
       RETURN
       END SUBROUTINE get_numww3_grids
 #else

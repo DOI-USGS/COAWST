@@ -14,7 +14,7 @@
 !>
 !> @author H. L. Tolman
 !> @author F. Ardhuin
-!> @date   22-Mar-2021
+!> @date   11-Oct-2024
 !>
 !> @copyright Copyright 2009-2022 National Weather Service (NWS),
 !>       National Oceanic and Atmospheric Administration.  All rights
@@ -28,7 +28,7 @@ MODULE W3SRCEMD
   !/                  |           H. L. Tolman            |
   !/                  |            F. Ardhuin             |
   !/                  |                        FORTRAN 90 |
-  !/                  | Last update :         22-Mar-2021 |
+  !/                  | Last update :         11-Oct-2024 |
   !/                  +-----------------------------------+
   !/
   !/    For updates see subroutine.
@@ -271,6 +271,7 @@ CONTAINS
     !/    22-Mar-2021 : Add extra fields used in coupling   ( version 7.13 )
     !/    07-Jun-2021 : S_{nl5} GKE NL5 (Q. Liu)            ( version 7.13 )
     !/    19-Jul-2021 : Momentum and air density support    ( version 7.14 )
+    !/    11-Oct-2024 : Provide CHARN to ST6 (S. Zieger)
     !/    04-Jul-2025 : Remove labelled statements          ( version X.XX )
     !/
     !/    Copyright 2009-2013 National Weather Service (NWS),
@@ -535,11 +536,12 @@ CONTAINS
 #endif
 #ifdef W3_FLD1
     USE W3FLD1MD, ONLY: W3FLD1
-    USE W3GDATMD, ONLY: AALPHA
 #endif
 #ifdef W3_FLD2
     USE W3FLD2MD, ONLY: W3FLD2
-    USE W3GDATMD, ONLY: AALPHA
+#endif
+#if defined(W3_FLD1) || defined(W3_FLD2)
+    USE W3GDATMD, ONLY: FLDALPHA
 #endif
 #ifdef W3_FLX1
     USE W3FLX1MD
@@ -578,7 +580,7 @@ CONTAINS
     USE W3GDATMD, ONLY : ZZWND, FFXFM, FFXPM, FFXFA, SINTAILPAR
 #endif
 #ifdef W3_ST6
-    USE W3SRC6MD
+    USE W3SRC6MD, ONLY : W3SPR6, W3SIN6, W3SDS6
     USE W3SWLDMD, ONLY : W3SWL6
     USE W3GDATMD, ONLY : SWL6S6
 #endif
@@ -832,11 +834,12 @@ CONTAINS
     REAL :: VSUO(NSPEC), VDUO(NSPEC)
 #endif
 
+    REAL :: oDTG
 #ifdef W3_COAWST_MODEL
     REAL :: E3BAND, DIFF3, EFINISH3,                          &
             MWXFINISH3, MWYFINISH3,                           &
             A3BAND, B3BAND, TAUOX3, TAUOY3
-    REAL :: cff1, cff2, ALPHAC, oDTG
+    REAL :: cff1, cff2, ALPHAC
     REAL :: A2BAND, B2BAND, Hmax_r
     REAL :: SPEC3(NSPEC), VS3(NSPEC), VD3(NSPEC)
 #endif
@@ -967,11 +970,11 @@ CONTAINS
     ZWND = ZZWND
 #endif
 
+    oDTG   = 1.0/DTG
 #ifdef W3_COAWST_MODEL
     SPEC3  = 0.
     VS3    = 0.
     VD3    = 0.
-    oDTG   = 1.0/DTG
 #endif
     !
     ! 1.  Preparations --------------------------------------------------- *
@@ -1032,7 +1035,7 @@ CONTAINS
     WNMEAN = 0.
 #ifdef W3_COAWST_MODEL
     !  if a 'HOT' rst, then dont overwrite these vals for first time step.
-    IF (RSTYPE.NE.2) THEN
+    IF (((RSTYPE.NE.2).AND.(IT.eq.0)).OR.(IT.gt.0)) THEN
       PHIBRKX = 0.
       PHIBRKY = 0.
       QB      = 0.
@@ -1290,7 +1293,7 @@ CONTAINS
 
 #ifdef W3_ST6
       CALL W3SIN6 ( SPEC, CG1, WN2, U10ABS, USTAR, USTDIR, CD, DAIR, &
-           TAUWX, TAUWY, TAUWAX, TAUWAY, VSIN, VDIN )
+           TAUWX, TAUWY, TAUWAX, TAUWAY, CHARN, VSIN, VDIN )
 #endif
       !
       ! 2.b Nonlinear interactions.
@@ -1930,7 +1933,7 @@ CONTAINS
 #endif
         END DO
 #ifdef W3_COAWST_MODEL
-        IF (RSTYPE.NE.2) THEN
+        IF (((RSTYPE.NE.2).AND.(IT.eq.0)).OR.(IT.gt.0)) THEN
 !  if a 'HOT' rst, then dont overwrite these vals for first time step.
 # ifdef W3_DB1
 !  Here we compute breaking stress in W/m2
@@ -2231,14 +2234,14 @@ CONTAINS
     TAUOCX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX-TAUWIX)
     TAUOCY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY-TAUWIY)
 #ifdef W3_COAWST_MODEL
-    IF (RSTYPE.NE.2) THEN
+    IF (((RSTYPE.NE.2).AND.(IT.eq.0)).OR.(IT.gt.0)) THEN
 !     if a 'HOT' rst, then dont overwrite these vals for first time step.
       TAUOSX=DAIR*COEF*COEF*USTAR*USTAR*COS(USTDIR) + DWAT*(TAUOX3-TAUWIX)
       TAUOSY=DAIR*COEF*COEF*USTAR*USTAR*SIN(USTDIR) + DWAT*(TAUOY3-TAUWIY)
 !# ifdef WAV2ATM_FLUXES
 !  compute wave Z0 roughness to send to ATM model
-      cff1=SQRT(TAUWIX**2+TAUWIY**2)*DWAT
-      cff2=DAIR*COEF*COEF*USTAR*USTAR
+      cff1=SQRT(TAUWIX**2+TAUWIY**2+0.000001)*DWAT
+      cff2=DAIR*COEF*COEF*USTAR*USTAR+0.000001
       ALPHAC=0.0095/SQRT(MAX(1.0-cff1/cff2,0.001))
       Z0_WAV=ALPHAC*USTAR*USTAR/GRAV
     ENDIF
@@ -2252,7 +2255,7 @@ CONTAINS
     PHINL =DWAT*GRAV*PHINL *oDTG
     PHIBBL=DWAT*GRAV*PHIBBL*oDTG
 #ifdef W3_COAWST_MODEL
-    IF (RSTYPE.NE.2) THEN
+    IF (((RSTYPE.NE.2).AND.(IT.eq.0)).OR.(IT.gt.0)) THEN
       PHIBRKX=DWAT*GRAV*PHIBRKX*oDTG
       PHIBRKY=DWAT*GRAV*PHIBRKY*oDTG
       PHICAPX=DWAT*GRAV*PHICAPX*oDTG
@@ -2434,10 +2437,7 @@ CONTAINS
 #endif
 
     ! FLD1/2 requires the calculation of FPI:
-#ifdef W3_FLD1
-    CALL CALC_FPI(SPEC, CG1, FPI, VSIN )
-#endif
-#ifdef W3_FLD2
+#if defined(W3_FLD1) || defined(W3_FLD2)
     CALL CALC_FPI(SPEC, CG1, FPI, VSIN )
 #endif
     !
@@ -2447,7 +2447,7 @@ CONTAINS
            COEF*U10ABS*Sin(U10DIR), ZWND, DEPTH, 0.0, &
            DAIR, USTAR, USTDIR, Z0,TAUNUX,TAUNUY,CHARN)
     ELSE
-      CHARN = AALPHA
+      CHARN = FLDALPHA
     ENDIF
 # ifdef W3_COAWST_MODEL
 !   recompute the stresses for tranfer to ocean.
@@ -2461,7 +2461,7 @@ CONTAINS
            COEF*U10ABS*Sin(U10DIR), ZWND, DEPTH, 0.0, &
            DAIR, USTAR, USTDIR, Z0,TAUNUX,TAUNUY,CHARN)
     ELSE
-      CHARN = AALPHA
+      CHARN = FLDALPHA
     ENDIF
 #endif
     !

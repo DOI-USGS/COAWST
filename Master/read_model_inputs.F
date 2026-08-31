@@ -453,8 +453,7 @@
         READ (inp,'(a)',ERR=116,END=140) line
         IF (line(1:1).ne.'$') THEN
           test=0
-!#  if defined SPECTRUM_STOKES || defined UV_BANIHASHEMI
-! get the number of freqs
+! get the freqs start and scale
           aline=ADJUSTL(line)
           DO i=1,1
             indx=INDEX(aline,blank)
@@ -469,8 +468,6 @@
             aline=aline(indx+1:LEN(aline))
             aline=ADJUSTL(aline)
           END DO
-!          indx=INDEX(aline,blank)
-!          read(aline(1:indx),'(i2)') MSCs
 #  endif
         END IF
       END DO

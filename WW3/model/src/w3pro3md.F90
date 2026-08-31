@@ -1420,8 +1420,12 @@ CONTAINS
         END IF
         DO IBI=1, NBI
           IXY     = MAPSF(ISBPI(IBI),3)
+#ifdef W3_PDLIB
+          VQ(IXY) = ( RD1*BBPI0(ISP,IBI) + RD2*BBPIN(ISP,IBI) ) * CLATS(ISBPI(IBI))
+#else
           VQ(IXY) = ( RD1*BBPI0(ISP,IBI) + RD2*BBPIN(ISP,IBI) )   &
                / CG(IK,ISBPI(IBI)) * CLATS(ISBPI(IBI))
+#endif
         END DO
       END IF
       !
@@ -1688,6 +1692,9 @@ CONTAINS
     !/ Local parameters
     !/
     INTEGER                 :: ITH, IK, ISP
+#if defined W3_CURSP
+    INTEGER                 :: IP
+#endif
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
