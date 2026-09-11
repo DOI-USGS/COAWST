@@ -1,1 +1,1 @@
-../../geogrid/src/gridinfo_module.F
+../../metgrid/src/gridinfo_module.F

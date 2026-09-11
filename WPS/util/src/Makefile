@@ -4,7 +4,7 @@ OBJS	=	plotgrids.o avg_tsfc.o calc_ecmwf_p.o elev_angle.o plotfmt.o rd_intermedi
 		int2nc.o mod_levs.o height_ukmo.o \
 		cio.o gridinfo_module.o misc_definitions_module.o module_debug.o module_stringutil.o \
 		read_met_module.o write_met_module.o module_date_pack.o met_data_module.o constants_module.o \
-		module_map_utils.o
+		module_map_utils.o netCDF2intermediate_GHRSST.o
 
 all:
 		clear ;
@@ -18,6 +18,13 @@ rd_intermediate.exe: rd_intermediate.o read_met_module.o module_debug.o misc_def
 		module_debug.o misc_definitions_module.o cio.o met_data_module.o constants_module.o
 
 rd_intermediate.o: module_debug.o read_met_module.o rd_intermediate.F
+
+
+netCDF2intermediate_GHRSST.exe: netCDF2intermediate_GHRSST.o
+	$(SFC) -o $(@) $(LDFLAGS) netCDF2intermediate_GHRSST.o -L$(NETCDF)/lib -lnetcdf -lnetcdff -lm
+
+netCDF2intermediate_GHRSST.o: netCDF2intermediate_GHRSST.F
+
 
 plotgrids.exe: plotgrids.o
 	$(SFC) -o $(@) $(LDFLAGS) module_map_utils.o module_debug.o cio.o constants_module.o misc_definitions_module.o \
@@ -112,6 +119,6 @@ module_date_pack.o: module_date_pack.F
 clean:
 	$(RM) $(OBJS) *.f90 *.mod
 	$(RM) plotgrids.exe plotfmt.exe avg_tsfc.exe elev_angle.exe calc_ecmwf_p.exe rd_intermediate.exe \
-	mod_levs.exe height_ukmo.exe int2nc.exe
+	mod_levs.exe height_ukmo.exe int2nc.exe netCDF2intermediate_GHRSST.exe
 
 superclean:	clean
