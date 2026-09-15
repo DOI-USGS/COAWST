@@ -120,15 +120,17 @@
   integer                                :: is_sst(4), ie_sst(4), time_dim
   integer                                :: is_date(3), ie_date(3)   
 
-  integer                                :: tmp, iy, im, id, ih
+  integer                                :: tmp, iy, im, id, ih, iproj
   character (len=24)                     :: filename
   character (len=24)                     :: hdate
   integer                                :: time_periods
 
+  character(len=32)                      :: map_source
   character(len=9)                       :: field
   character(len=25)                      :: units
   character(len=46)                      :: Desc
   real                                   :: xfcst
+  real                                   :: xlvl
 
 
 !===========================================================================================
@@ -202,17 +204,16 @@
    land_sea = 0.      ! water
 
    call ncvgt( cdfid,id_var,is_sst,ie_sst,sst_int,rcode )
-   print*,"SST", sst_int(1,1,1,1), minval(sst_int), maxval(sst_int)
-   sst(:,:) = real(sst_int(:,:,1,1))*0.01
-
-   !!print*,"SST", sst(100,100), minval(sst), maxval(sst)
-
-
-   
+!  print*,"SST global min/max:",minval(sst_int), maxval(sst_int)
+!  sst(:,:) = real(sst_int(:,:,1,1))*0.01
+!  print*,"SST", sst(100,100), minval(sst), maxval(sst)
+  
    do i=1,ie_sst(1)
    do j=1,ie_sst(2)
-      if ( sst_int(i,j,1,1) /=  -999 ) then
-!jcw        sst(i,j) = sst(i,j) + 273.15
+!jcw  if ( sst_int(i,j,1,1) /=  -999 ) then
+      if ( sst_int(i,j,1,1) /=  -32768 ) then
+!jcw    sst(i,j) = sst(i,j) + 273.15
+        sst(i,j) = real(sst_int(i,j,1,1))*0.001 + 298.15
       else
         sst(i,j) = -999.0
         land_sea(i,j) = 1.
@@ -222,31 +223,47 @@
 
    print*," Min/Max LAND-SEA : ", minval(land_sea),maxval(land_sea)
    print*," Min/Max SST      : ", minval(sst),maxval(sst)
-   print*," Sample SST       : ", sst(100,100)
+   print*," SST Woods Hole   : ", sst(11800,12800)
+!  print*," Sample SST       : ", sst(4224,7100)
 
 
 !!! Create the intermediate file
-
+! https://www2.mmm.ucar.edu/wrf/users/docs/user_guide_v4/v4.4/users_guide_chap3.html#_Writing_Meteorological_Data
+!  if (iproj == 0) then
+!  write(unit=ounit) hdate, xfcst, map_source, field, &
+!                    units, desc, xlvl, nx, ny, iproj
+!  write(unit=ounit) startloc, startlat, startlon, &
+!                    deltalat, deltalon, earth_radius
+!      
      filename = "SST:"//hdate(1:13)
      print*,"Creating ",filename
      open(11, file=filename, form='unformatted')
 
      field  = "SST"
      units  = "K"
+     map_source = "Merged multi-sensor SST from JPL"
      Desc   = "Sea Surface Temperature"
      xfcst = 0.0
+     xlvl = 200100.0
+     iproj = 0
      write(11) 3
-     write(11) hdate, xfcst, field, units, Desc, 200100.0, 1440, 720, 0
-     write(11) -89.875, 0.125, 0.25, 0.25
+!!   write(11) hdate, xfcst, field, units, Desc, 200100.0, 1440, 720, 0
+!!   write(11) -89.875, 0.125, 0.25, 0.25
+!    write(11) hdate, xfcst, map_source, field, units, Desc, xlvl, ie_sst(1), ie_sst(2), iproj
+     write(11) hdate, xfcst, field, units, Desc, xlvl, ie_sst(1), ie_sst(2), iproj
+!    write(11) 'SWCORNER',-89.99, -179.99, 0.01, 0.01
+     write(11) -89.99, -179.99, 0.01, 0.01
      write(11) sst
 
-     field  = "LANDSEA"
+     field  = "SST_MASK"
      units  = " "
      Desc   = "Land Sea Mask"
      xfcst = 0.0
      write(11) 3
-     write(11) hdate, xfcst, field, units, Desc, 200100.0, 1440, 720, 0
-     write(11) -89.875, 0.125, 0.25, 0.25
+!    write(11) hdate, xfcst, map_source, field, units, Desc, xlvl, ie_sst(1), ie_sst(2), iproj
+     write(11) hdate, xfcst, field, units, Desc, xlvl, ie_sst(1), ie_sst(2), iproj
+!    write(11) 'SWCORNER',-89.99, -179.99, 0.01, 0.01
+     write(11) -89.99, -179.99, 0.01, 0.01
      write(11) land_sea
 
      close(11)
