@@ -465,10 +465,9 @@ ifdef USE_ROMS
 		ROMS/Drivers \
 		ROMS/Modules
 endif
- modules  +=	Lib/SCRIP_COAWST
 
  includes :=	ROMS/Include
- includes +=	Lib/SCRIP_COAWST
+
 ifdef MY_ANALYTICAL
  includes +=	$(MY_ANALYTICAL_DIR)
 endif
@@ -531,6 +530,10 @@ ifdef USE_WRF
  endif
 endif
 
+ifdef USE_MCT
+ modules  +=	Lib/SCRIP_COAWST
+ includes +=	Lib/SCRIP_COAWST
+endif
 
 ifdef USE_ROMS
  modules  +=	Master
