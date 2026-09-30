@@ -35,8 +35,8 @@
       integer (kind=int_kind), intent(in) :: MyComm
 
 !     local variables 
-      integer(int_kind) :: i, j, n, m, mp, count
-      integer(int_kind) :: nxs, nys, nxr, nyr
+      integer(int_kind) :: i, j, n, m, mp, count, ii
+      integer(int_kind) :: nxs, nys, nxr, nyr, nxp, nyp, nxw, nyw
       integer(int_kind) :: test1, test2, test3
       integer(int_kind) :: mw, mo, nx, ny, grdsize
 #ifdef MPI
@@ -59,7 +59,9 @@
 !     Allocate arrays
       allocate(ngrd_w3(Ngrids_ww3))
 #endif
-
+#ifdef MPI
+        CALL mpi_comm_rank (MyComm, MyRank, MyError)
+#endif
 
 #if defined SCRIP_COAWST
 ! here we need to check if the grid is unstructured.
@@ -116,7 +118,6 @@
         END IF
       end do
 #endif
-
 
       do mw=1,Ngrids_ww3
         ngrd_w3(mw)%Numx_ww3=ww3_numx(mw)
@@ -198,7 +199,6 @@
 !
 !  Here we determine if the ROMS and WW3 grids are coincident.
 !
-      CALL mpi_comm_rank (MyComm, MyRank, MyError)
       roms_ww3_samegrid=0
 !     roms_ww3_samegrid=1
       if (Ngrids_roms.eq.Ngrids_ww3) then
@@ -240,7 +240,6 @@
         roms_ww3_samegrid=0
       end if
 #ifdef MPI
-        CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
 #endif
           write(*,*) 'ROMS and WW3 same grids (0=no or 1=yes) ',        &
@@ -250,10 +249,10 @@
         CALL mpi_barrier (MyComm, MyError)
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 !     Find the indices of child grid with respect to parent grid
-!
+!     For each child grid, go lower in grid number to find its parent.
+!     For the grid i am on (mw), the ngrd_rm(mw) istr iend jstr jend _o are the
+!     start and end indices of the parent grid on the parent grid. 
       do mw=2,Ngrids_ww3
 
         if (roms_ww3_samegrid.eq.1) then
@@ -263,31 +262,52 @@
           ngrd_w3(mw)%jend_w=ngrd_rm(mw)%jend_o
           ngrd_w3(mw)%ref_fac=ngrd_rm(mw)%ref_fac
         else
+!         first find which grid is my parent
+!         check lower left and upper right corners
+          do ii=1,mw-1
+            nxp=ngrd_w3(ii)%Numx_ww3
+            nyp=ngrd_w3(ii)%Numy_ww3
+            nxw=ngrd_w3(mw)%Numx_ww3
+            nyw=ngrd_w3(mw)%Numy_ww3
+            if ((ngrd_w3(mw)%lon_rho_w(1  ,1  ).gt.ngrd_w3(ii)%lon_rho_w(1  ,1  )).and. &
+                (ngrd_w3(mw)%lon_rho_w(nxw,nyw).lt.ngrd_w3(ii)%lon_rho_w(nxp,nyp)).and. &
+                (ngrd_w3(mw)%lat_rho_w(1  ,1  ).gt.ngrd_w3(ii)%lat_rho_w(1  ,1  )).and. &
+                (ngrd_w3(mw)%lat_rho_w(nxw,nyw).lt.ngrd_w3(ii)%lat_rho_w(nxp,nyp))) then
+               ww3_parent(mw)=ii
+            end if
+          end do
+!         now find the parent indices on the parent grid for this child
           mp=ww3_parent(mw)
+#ifdef MPI
+        IF (MyRank.eq.0) THEN
+#endif
+          print*,"WW3 grid ", mw, " has a parent grid ", mp
+#ifdef MPI
+        END IF
+#endif
           nx=ngrd_w3(mp)%Numx_ww3
           ny=ngrd_w3(mp)%Numy_ww3
           dist_max=10e6
           xx2=ngrd_w3(mw)%lon_rho_w(2,2)
           yy2=ngrd_w3(mw)%lat_rho_w(2,2)
-
+!         lower left
           do j=1,ny
             do i=1,nx
               dist1=sqrt((ngrd_w3(mp)%lon_rho_w(i,j)-xx2)**2+           &
      &                   (ngrd_w3(mp)%lat_rho_w(i,j)-yy2)**2)
-              if(dist1<=dist_max)then
-                dist_max=dist1
-                ngrd_w3(mw)%istr_w=i
-                ngrd_w3(mw)%jstr_w=j
-               endif
+            if(dist1<=dist_max)then
+              dist_max=dist1
+              ngrd_w3(mw)%istr_w=i
+              ngrd_w3(mw)%jstr_w=j
+             endif
             enddo
           enddo
-
+!         upper right
           dist_max=10e6
           xxend_1=ngrd_w3(mw)%lon_rho_w(ngrd_w3(mw)%Numx_ww3-1,         &
-     &                                    ngrd_w3(mw)%Numy_ww3-1)
+     &                                  ngrd_w3(mw)%Numy_ww3-1)
           yyend_1=ngrd_w3(mw)%lat_rho_w(ngrd_w3(mw)%Numx_ww3-1,         &
-     &                                    ngrd_w3(mw)%Numy_ww3-1)
-
+     &                                  ngrd_w3(mw)%Numy_ww3-1)
           do j=1,ny
             do i=1,nx
               dist1=sqrt((ngrd_w3(mp)%lon_rho_w(i,j)-xxend_1)**2+       &
@@ -300,9 +320,7 @@
             enddo
           enddo
         endif
-
 #ifdef MPI
-        CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
 #endif
           print*,"WW3 starting i & j index of parent w.r.t child grid--"

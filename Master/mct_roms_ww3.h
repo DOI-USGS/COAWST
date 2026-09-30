@@ -1596,6 +1596,7 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=MAX(0.0_r8,A(ij))
+          IF (cff.gt.999.0) cff=0.0
           IF (iw.eq.1) THEN
             FORCES(ng)%Pwave_top(i,j)=cff
           ELSE
@@ -1655,13 +1656,12 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=MAX(0.0_r8,A(ij))
+          cff2=FORCES(ng)%Uwave_rms(i,j)+eps
           IF (iw.eq.1) THEN
-            FORCES(ng)%Pwave_bot(i,j)=2.0_r8*PI*cff/                    &
-     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+            FORCES(ng)%Pwave_bot(i,j)=2.0_r8*PI*cff/cff2
           ELSE
             FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
-     &                                2.0_r8*PI*cff/                    &
-     &                                (FORCES(ng)%Uwave_rms(i,j)+eps)
+     &                                2.0_r8*PI*cff/cff2
           END IF
           range(1)=MIN(range(1),cff)
           range(2)=MAX(range(2),cff)

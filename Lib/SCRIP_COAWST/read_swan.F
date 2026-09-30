@@ -35,7 +35,7 @@
       integer (kind=int_kind), intent(in) :: MyComm
 
 !     local variables 
-      integer(int_kind) :: i, j, n, m, ng, mp
+      integer(int_kind) :: i, j, n, m, ng, mp, ii, nxp, nxw, nyp, nyw
       integer(int_kind) :: nxs, nys, nxr, nyr
       integer(int_kind) :: test1, test2, test3
       integer(int_kind) :: mw, mo, nx, ny, grdsize
@@ -57,6 +57,10 @@
 
 !     Allocate arrays
       allocate(ngrd_sw(Ngrids_swan))
+
+#ifdef MPI
+        CALL mpi_comm_rank (MyComm, MyRank, MyError)
+#endif
 
       do mw=1,Ngrids_swan
          ngrd_sw(mw)%Numx_swan=swan_numx(mw)
@@ -106,7 +110,6 @@
           read(iunit,*) bf
           grd(i)=bf
         end do
-
 !
 !       set a scale = 1 for spehrical, 1.rad earth for cartesian
 !
@@ -217,7 +220,6 @@
         roms_swan_samegrid=0
       end if
 #ifdef MPI
-        CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
 #endif
         write(*,*) 'ROMS and SWAN same grids (0=no or 1=yes) ',         &
@@ -240,7 +242,29 @@
           ngrd_sw(mw)%jend_w=ngrd_rm(mw)%jend_o
           ngrd_sw(mw)%ref_fac=ngrd_rm(mw)%ref_fac
         else
+!         first find which grid is my parent
+!         check lower left and upper right corners
+          do ii=1,mw-1
+            nxp=ngrd_sw(ii)%Numx_swan
+            nyp=ngrd_sw(ii)%Numy_swan
+            nxw=ngrd_sw(mw)%Numx_swan
+            nyw=ngrd_sw(mw)%Numy_swan
+            if ((ngrd_sw(mw)%lon_rho_w(1  ,1  ).gt.ngrd_sw(ii)%lon_rho_w(1  ,1  )).and. &
+                (ngrd_sw(mw)%lon_rho_w(nxw,nyw).lt.ngrd_sw(ii)%lon_rho_w(nxp,nyp)).and. &
+                (ngrd_sw(mw)%lat_rho_w(1  ,1  ).gt.ngrd_sw(ii)%lat_rho_w(1  ,1  )).and. &
+                (ngrd_sw(mw)%lat_rho_w(nxw,nyw).lt.ngrd_sw(ii)%lat_rho_w(nxp,nyp))) then
+               swan_parent(mw)=ii
+            end if
+          end do
+!         now find the parent indices on the parent grid for this child
           mp=swan_parent(mw)
+#ifdef MPI
+        IF (MyRank.eq.0) THEN
+#endif
+          print*,"SWAN grid ", mw, " has a parent grid ", mp
+#ifdef MPI
+        END IF
+#endif
           nx=ngrd_sw(mp)%Numx_swan
           ny=ngrd_sw(mp)%Numy_swan
           dist_max=10e6

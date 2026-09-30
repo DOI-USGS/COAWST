@@ -1108,16 +1108,16 @@
      defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \ 
      defined WAVES_DISS     || defined WDISS_INWAVE
 #  if defined DISSIP_BREAK_DIR
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdix))) THEN
             got_var(idWdix)=.TRUE.
             S(ng)%Vid(idWdix)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiy))) THEN
             got_var(idWdiy)=.TRUE.
             S(ng)%Vid(idWdiy)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWcpx))) THEN
             got_var(idWcpx)=.TRUE.
             S(ng)%Vid(idWcpx)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWcpy))) THEN
             got_var(idWcpy)=.TRUE.
             S(ng)%Vid(idWcpy)=var_id(i)
 #  endif

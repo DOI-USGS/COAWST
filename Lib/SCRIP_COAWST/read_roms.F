@@ -43,6 +43,7 @@
       real(dbl_kind) :: dist1, dist_max, scale
       real(dbl_kind), allocatable :: lon_psi_o(:,:), lat_psi_o(:,:)
 
+      integer(int_kind) :: mp, nxp, nyp, nxo, nyo
       integer(int_kind) :: checksphere_id
       integer(int_kind) :: my_type
       integer(int_kind) :: AI
@@ -246,7 +247,84 @@
 
         deallocate(lon_psi_o, lat_psi_o)
       end do
-
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     Find the indices of child grid with respect to parent grid
+!     For each child grid, go lower in grid number to find its parent.
+!     For the grid i am on (mo), the ngrd_rm(mo) istr iend jstr jend _o are the
+!     start and end indices of the parent grid on the parent grid.
+      do mo=2,Ngrids_roms
+!
+!     check lower left and upper right corners
+!
+          do i=1,mo-1
+            nxp=ngrd_rm(i)%xi_size
+            nyp=ngrd_rm(i)%eta_size
+            nxo=ngrd_rm(mo)%xi_size
+            nyo=ngrd_rm(mo)%eta_size
+            if ((ngrd_rm(mo)%lon_rho_o(1  ,1  ).gt.ngrd_rm(i)%lon_rho_o(1  ,1  )).and. &
+                (ngrd_rm(mo)%lon_rho_o(nxo,nyo).lt.ngrd_rm(i)%lon_rho_o(nxp,nyp)).and. &
+                (ngrd_rm(mo)%lat_rho_o(1  ,1  ).gt.ngrd_rm(i)%lat_rho_o(1  ,1  )).and. &
+                (ngrd_rm(mo)%lat_rho_o(nxo,nyo).lt.ngrd_rm(i)%lat_rho_o(nxp,nyp))) then
+               roms_parent(mo)=i
+            end if
+          end do
+!         now find the parent indices on the parent grid for this child
+          mp=roms_parent(mo)
+#ifdef MPI
+        IF (MyRank.eq.0) THEN
+#endif
+          print*,"ROMS grid ", mo, " has a parent grid ", mp
+#ifdef MPI
+        END IF
+#endif
+          nx=ngrd_rm(mp)%xi_size
+          ny=ngrd_rm(mp)%eta_size
+          dist_max=10e6
+          xx2=ngrd_rm(mo)%lon_rho_o(2,2)
+          yy2=ngrd_rm(mo)%lat_rho_o(2,2)
+!         lower left
+          do j=1,ny
+            do i=1,nx
+              dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xx2)**2+           &
+     &                   (ngrd_rm(mp)%lat_rho_o(i,j)-yy2)**2)
+            if(dist1<=dist_max)then
+              dist_max=dist1
+              ngrd_rm(mo)%istr_o=i
+              ngrd_rm(mo)%jstr_o=j
+             endif
+            enddo
+          enddo
+!         upper right
+          dist_max=10e6
+          xxend_1=ngrd_rm(mo)%lon_rho_o(ngrd_rm(mo)%xi_size-1,          &
+     &                                  ngrd_rm(mo)%eta_size-1)
+          yyend_1=ngrd_rm(mo)%lat_rho_o(ngrd_rm(mo)%xi_size-1,          &
+     &                                  ngrd_rm(mo)%eta_size-1)
+          do j=1,ny
+            do i=1,nx
+              dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xxend_1)**2+       &
+     &                   (ngrd_rm(mp)%lat_rho_o(i,j)-yyend_1)**2)
+              if(dist1<=dist_max)then
+                dist_max=dist1
+                ngrd_rm(mo)%iend_o=i
+                ngrd_rm(mo)%jend_o=j
+              endif
+            enddo
+          enddo
+#ifdef MPI
+        IF (MyRank.eq.0) THEN
+#endif
+          print*,"ROMS starting i & j index of parent w.r.t child grid-"
+          print*,ngrd_rm(mo)%istr_o, ngrd_rm(mo)%jstr_o
+          print*,"ending i & j index of parent w.r.t child grid--"
+          print*,ngrd_rm(mo)%iend_o, ngrd_rm(mo)%jend_o
+#ifdef MPI
+        END IF
+        CALL mpi_barrier (MyComm, MyError)
+#endif
+      enddo
       end subroutine load_roms_grid
 !======================================================================
 

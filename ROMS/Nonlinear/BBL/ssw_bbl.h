@@ -382,7 +382,8 @@
 !
 ! Cap minimum Zr 0.9*depth and computed wave bound layer
 !
-          cff1=MIN(0.98_r8*Dstp,MAX(Zr(i,j), bottom(i,j,idtbl)*1.1_r8))
+          cff1=MIN(0.98_r8*Dstp,MAX(Zr(i,j),                            &
+     &             bottom(i,j,idtbl)*1.1_r8+1.0e-10_r8))
 # else
 !
 ! Use the original coded ssw_logint formulation
@@ -998,10 +999,10 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,izwbl))
-#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,idtbl))
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,idksd))
@@ -1017,14 +1018,17 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,idzrw))
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  bottom(:,:,idpcx))
 #else
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  bottom(:,:,idpcx))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,idpwc))
 #endif
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  bottom(:,:,idpcx))
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -1063,28 +1067,34 @@
      &                    bottom(:,:,izbfm),                            &
      &                    bottom(:,:,izbld),                            &
      &                    bottom(:,:,izwbl))
-# if defined BEDLOAD_VANDERA_MADSEN_UDELTA
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    bottom(:,:,idtbl),                            &
+     &                    bottom(:,:,idtbl))
+# if defined BEDLOAD_VANDERA_MADSEN_UDELTA
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,idksd),                            &
      &                    bottom(:,:,idusc))
 # endif
 # if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
      defined BEDLOAD_VANDERA_DIRECT_UDELTA
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bottom(:,:,idubl),                            &
+     &                    bottom(:,:,idzrw),                            &
+     &                    bottom(:,:,idpcx))
+# else
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    bottom(:,:,idzrw),                            &
-     &                    bottom(:,:,idubl))
-# else
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bottom(:,:,idpcx),                            &
      &                    bottom(:,:,idpwc))
 # endif
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
@@ -1785,61 +1795,70 @@
       IsLogInterp=.FALSE.
       Zr=z_r_1d(1)-z_w_1d(0)
 !
-      IF (sg_loc.ge.Zr) THEN
+      IF (Zr.le.0.0_r8) THEN
+        Ur_sg=1.0e-10_r8
+        Vr_sg=1.0e-10_r8
+        Zr_sg=1.0e-10_r8
+      ELSE
+        IF (sg_loc.ge.Zr) THEN
 !
 !  If chosen height to get near bottom-current velocity lies within any
 !  vertical level, perform logarithmic interpolation.
 !
-        DO k=2,kmax
-          z1=z_r_1d(k-1)-z_w_1d(0)
-          z2=z_r_1d(k  )-z_w_1d(0)
-          IF ( ( z1.le.sg_loc ).and.( sg_loc.lt.z2 )) THEN
-            fac=1.0_r8/LOG(z2/z1)
-            fac1=fac*LOG(z2/sg_loc)
-            fac2=fac*LOG(sg_loc/z1)
+          DO k=2,kmax
+            z1=z_r_1d(k-1)-z_w_1d(0)
+            z2=z_r_1d(k  )-z_w_1d(0)
+            IF ( ( z1.le.sg_loc ).and.( sg_loc.lt.z2 )) THEN
+              fac=1.0_r8/LOG(z2/z1)
+              fac1=fac*LOG(z2/sg_loc)
+              fac2=fac*LOG(sg_loc/z1)
 !
-            Ur_sg=fac1*u_1d(k-1)+fac2*u_1d(k)
-            Vr_sg=fac1*v_1d(k-1)+fac2*v_1d(k)
-            Zr_sg=sg_loc
-          ENDIF
-          IF ((k.eq.kmax).and.(sg_loc.ge.z2)) THEN
-            Ur_sg=u_1d(k)
-            Vr_sg=v_1d(k)
-            Zr_sg=z2
-          END IF
-        END DO
-        IsLogInterp=.TRUE.
+              Ur_sg=fac1*u_1d(k-1)+fac2*u_1d(k)
+              Vr_sg=fac1*v_1d(k-1)+fac2*v_1d(k)
+!             Zr_sg=sg_loc
+              Zr_sg=MAX(sg_loc, 1.0e-10_r8)
+            ENDIF
+            IF ((k.eq.kmax).and.(sg_loc.ge.z2)) THEN
+              Ur_sg=u_1d(k)
+              Vr_sg=v_1d(k)
+!             Zr_sg=z2
+              Zr_sg=MAX(z2, 1.0e-10_r8)
+            END IF
+          END DO
+          IsLogInterp=.TRUE.
 !
-!  Otherwise, sg_log < Zr.
+!  Otherwise, sg_loc < Zr.
 !
-      ELSE 
-        z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
-        z2=Zr
+        ELSE 
+          z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
+          z2=Zr
 !
-        IF ( sg_loc.lt.z1 ) THEN
+          IF ( sg_loc.lt.z1 ) THEN
 !
 !  If chosen height is less than the bottom roughness, perform linear
 !  interpolation.
 !
-          z1=sg_loc
-          fac=z1/z2
+            z1=sg_loc
+            fac=z1/z2
 !
-          Ur_sg=fac*u_1d(1)
-          Vr_sg=fac*v_1d(1)
-          Zr_sg=sg_loc
+            Ur_sg=fac*u_1d(1)
+            Vr_sg=fac*v_1d(1)
+            Zr_sg=MAX(sg_loc, 1.0e-10_r8)
 !
-        ELSE                                          ! sg_log .ge. z1
+          ELSE                                          ! sg_log .ge. z1
 !
 !  If chosen height is less than the bottom cell thickness, perform
 !  logarithmic interpolation with bottom roughness.
 !
-          fac=1.0_r8/LOG(z2/z1)
-          fac2=fac*LOG(sg_loc/z1)
+            fac=1.0_r8/LOG(z2/z1)
+            fac2=fac*LOG(sg_loc/z1)
 !
-          Ur_sg=fac2*u_1d(1)
-          Vr_sg=fac2*v_1d(1)
-          Zr_sg=sg_loc
-          IsLogInterp=.TRUE.
+            Ur_sg=fac2*u_1d(1)
+            Vr_sg=fac2*v_1d(1)
+            Zr_sg=MAX(sg_loc, 1.0e-10_r8)
+!           Zr_sg=sg_loc
+            IsLogInterp=.TRUE.
+          END IF
         END IF
       END IF
 !

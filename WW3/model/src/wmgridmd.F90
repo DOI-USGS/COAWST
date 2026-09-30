@@ -1673,11 +1673,11 @@ CONTAINS
             DO IDST=NX_BEG(IMPROC), NX_END(IMPROC)
               IF(MOD(IDST,250).EQ.0)THEN
                 IF(LMPIBDI)THEN
-                  WRITE(MDSE,'(4x,3(A,I5))')&
+                  WRITE(MDSE,'(4x,3(A,I10))')&
                        'processing column ',IDST,' out of ',NX, &
                        ' on processor ',IMPROC
                 ELSEIF(IMPROC.EQ.NMPERR)THEN
-                  WRITE(MDSE,'(4x,2(A,I5))')&
+                  WRITE(MDSE,'(4x,2(A,I10))')&
                        'processing column ',IDST,' out of ',NX
                 ENDIF
               ENDIF
@@ -1701,7 +1701,8 @@ CONTAINS
             DO IBND=1,NX
               IF ( (MOD(IBND,25).EQ.0) .AND. &
                    (IMPROC.EQ.NMPERR) ) THEN
-                WRITE(MDSE,'(4x,2(A,I5))') &
+!jcw            WRITE(MDSE,'(4x,2(A,I5))') &
+                WRITE(MDSE,'(4x,2(A,I10))') &
                      'bnd. point ',IBND,' out of ',NX
               ENDIF
               DO JBND=1,NY

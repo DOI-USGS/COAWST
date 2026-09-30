@@ -547,6 +547,7 @@ CONTAINS
 #ifdef W3_S
     INTEGER, SAVE           :: IENT = 0
 #endif
+    INTEGER, PARAMETER      :: ILEVTAIL=50
     REAL                    :: FACLN1, FACLN2
     REAL                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
     REAL                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
@@ -597,6 +598,8 @@ CONTAINS
     !JDM: Initializing values to zero, they shouldn't be used unless
     !set in another place, but seems to solve some bugs with certain
     !compilers.
+!jcw
+    ALPHAM=0.
     DSTAB =0.
     STRESSSTAB =0.
     STRESSSTABN =0.
@@ -944,6 +947,9 @@ CONTAINS
       J    = MAX(1 ,MIN (IALPHA-1, INT(XJ)))
       DELJ1= MAX(0.,MIN (1.      , XJ-FLOAT(J)))
       DELJ2=1. - DELJ1
+!jcw
+      DELTAIL = MAX(ALPHAM/REAL(ILEVTAIL), 0.01)
+
       IF (TTAUWSHELTER.GT.0) THEN
         XK = LEVTAIL0/ DELTAIL
         I = MIN (ILEVTAIL-1, INT(XK))
