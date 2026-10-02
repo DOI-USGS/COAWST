@@ -13,10 +13,10 @@
 fname='Lib/SCRIP_COAWST/scrip_sandy_roms_swan_3grids.nc'
 
 %2) enter number of wrf,roms,ww3,and swan grids.
-NGRIDS_ROMS=2;
-NGRIDS_SWAN=2;
+NGRIDS_ROMS=3;
+NGRIDS_SWAN=3;
 NGRIDS_WW3=0;
-NGRIDS_WRF=0;
+NGRIDS_WRF=2;
 NGRIDS_HYDRO=0;
 
 %%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
