@@ -39,14 +39,16 @@
       integer(int_kind) :: nxs, nys, nxr, nyr
       integer(int_kind) :: test1, test2, test3
       integer(int_kind) :: mw, mo, nx, ny, grdsize
+      integer(int_kind) :: k, count, INOUT, ruparent
 #ifdef MPI
       integer (kind=int_kind) :: MyError, MyRank
 #endif
 
-      real(dbl_kind) :: bf, scale
+      real(dbl_kind) :: bf, scale, PX, PY
       real(dbl_kind) :: lons, lats, lond, latd, tol, cff
       real(dbl_kind), allocatable :: zz(:)
       real(dbl_kind), allocatable :: grd(:)
+      real(dbl_kind), allocatable :: XX(:), YY(:)
 
       real(dbl_kind) :: xx2, yy2, xxend_1, yyend_1
       real(dbl_kind) :: dist1, dist_max
@@ -235,29 +237,53 @@
 !     Find the indices of child grid with respect to parent grid
 !
       do mw=2,Ngrids_swan
-        if (roms_swan_samegrid.eq.1) then
-          ngrd_sw(mw)%istr_w=ngrd_rm(mw)%istr_o
-          ngrd_sw(mw)%jstr_w=ngrd_rm(mw)%jstr_o
-          ngrd_sw(mw)%iend_w=ngrd_rm(mw)%iend_o
-          ngrd_sw(mw)%jend_w=ngrd_rm(mw)%jend_o
-          ngrd_sw(mw)%ref_fac=ngrd_rm(mw)%ref_fac
-        else
-!         first find which grid is my parent
-!         check lower left and upper right corners
-          do ii=1,mw-1
-            nxp=ngrd_sw(ii)%Numx_swan
-            nyp=ngrd_sw(ii)%Numy_swan
-            nxw=ngrd_sw(mw)%Numx_swan
-            nyw=ngrd_sw(mw)%Numy_swan
-            if ((ngrd_sw(mw)%lon_rho_w(1  ,1  ).gt.ngrd_sw(ii)%lon_rho_w(1  ,1  )).and. &
-                (ngrd_sw(mw)%lon_rho_w(nxw,nyw).lt.ngrd_sw(ii)%lon_rho_w(nxp,nyp)).and. &
-                (ngrd_sw(mw)%lat_rho_w(1  ,1  ).gt.ngrd_sw(ii)%lat_rho_w(1  ,1  )).and. &
-                (ngrd_sw(mw)%lat_rho_w(nxw,nyw).lt.ngrd_sw(ii)%lat_rho_w(nxp,nyp))) then
-               swan_parent(mw)=ii
-            end if
+        do k=1,mw-1
+!         Use PNPOLY to check if all points of the grid are inside the potential parent.
+          N=(ngrd_sw(k)%Numx_swan+ngrd_sw(k)%Numy_swan+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_sw(k)%Numy_swan+1
+            count=count+1
+            XX(count)=ngrd_sw(k)%x_full_grid(1,i)
+            YY(count)=ngrd_sw(k)%y_full_grid(1,i)
           end do
-!         now find the parent indices on the parent grid for this child
-          mp=swan_parent(mw)
+          do i=2,ngrd_sw(k)%Numx_swan+1
+            count=count+1
+            XX(count)=ngrd_sw(k)%x_full_grid(i,ngrd_sw(k)%Numy_swan+1)
+            YY(count)=ngrd_sw(k)%y_full_grid(i,ngrd_sw(k)%Numy_swan+1)
+          end do
+          do i=ngrd_sw(k)%Numy_swan,1,-1
+            count=count+1
+            XX(count)=ngrd_sw(k)%x_full_grid(ngrd_sw(k)%Numx_swan+1,i)
+            YY(count)=ngrd_sw(k)%y_full_grid(ngrd_sw(k)%Numx_swan+1,i)
+          end do
+          do i=ngrd_sw(k)%Numx_swan,2,-1
+            count=count+1
+            XX(count)=ngrd_sw(k)%x_full_grid(i,1)
+            YY(count)=ngrd_sw(k)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          ruparent=1
+          do i=1,ngrd_sw(k)%Numx_swan
+            do j=1,ngrd_sw(k)%Numy_swan
+              PX=ngrd_sw(k)%lon_rho_w(i,j)
+              PY=ngrd_sw(k)%lat_rho_w(i,j)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ruparent=ruparent*INOUT
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+          if (ruparent.eq.1) then
+            swan_parent(mw)=k
+          end if
+        end do
+!           
+!       now find the parent indices on the parent grid for this child
+        mp=swan_parent(mw)
 #ifdef MPI
         IF (MyRank.eq.0) THEN
 #endif
@@ -265,43 +291,40 @@
 #ifdef MPI
         END IF
 #endif
-          nx=ngrd_sw(mp)%Numx_swan
-          ny=ngrd_sw(mp)%Numy_swan
-          dist_max=10e6
-          xx2=ngrd_sw(mw)%lon_rho_w(2,2)
-          yy2=ngrd_sw(mw)%lat_rho_w(2,2)
+        nx=ngrd_sw(mp)%Numx_swan
+        ny=ngrd_sw(mp)%Numy_swan
 
-          do j=1,ny
-            do i=1,nx
-              dist1=sqrt((ngrd_sw(mp)%lon_rho_w(i,j)-xx2)**2+           &
-     &                   (ngrd_sw(mp)%lat_rho_w(i,j)-yy2)**2)
-              if(dist1<=dist_max)then
-                dist_max=dist1
-                ngrd_sw(mw)%istr_w=i
-                ngrd_sw(mw)%jstr_w=j
-               endif
-            enddo
+        dist_max=10e6
+        xx2=ngrd_sw(mw)%lon_rho_w(2,2)
+        yy2=ngrd_sw(mw)%lat_rho_w(2,2)
+        do j=1,ny
+          do i=1,nx
+            dist1=sqrt((ngrd_sw(mp)%lon_rho_w(i,j)-xx2)**2+             &
+     &                 (ngrd_sw(mp)%lat_rho_w(i,j)-yy2)**2)
+            if(dist1<=dist_max)then
+              dist_max=dist1
+              ngrd_sw(mw)%istr_w=i
+              ngrd_sw(mw)%jstr_w=j
+             endif
           enddo
+        enddo
 
-          dist_max=10e6
-          xxend_1=ngrd_sw(mw)%lon_rho_w(ngrd_sw(mw)%Numx_swan-1,        &
-     &                                  ngrd_sw(mw)%Numy_swan-1)
-          yyend_1=ngrd_sw(mw)%lat_rho_w(ngrd_sw(mw)%Numx_swan-1,        &
-     &                                  ngrd_sw(mw)%Numy_swan-1)
-
-          do j=1,ny
-            do i=1,nx
-              dist1=sqrt((ngrd_sw(mp)%lon_rho_w(i,j)-xxend_1)**2+       &
-     &                   (ngrd_sw(mp)%lat_rho_w(i,j)-yyend_1)**2)
-              if(dist1<=dist_max) then
-                dist_max=dist1
-                ngrd_sw(mw)%iend_w=i
-                ngrd_sw(mw)%jend_w=j
-              endif
-            enddo
+        dist_max=10e6
+        xxend_1=ngrd_sw(mw)%lon_rho_w(ngrd_sw(mw)%Numx_swan-1,          &
+     &                                ngrd_sw(mw)%Numy_swan-1)
+        yyend_1=ngrd_sw(mw)%lat_rho_w(ngrd_sw(mw)%Numx_swan-1,          &
+     &                                ngrd_sw(mw)%Numy_swan-1)
+        do j=1,ny
+          do i=1,nx
+            dist1=sqrt((ngrd_sw(mp)%lon_rho_w(i,j)-xxend_1)**2+         &
+     &                 (ngrd_sw(mp)%lat_rho_w(i,j)-yyend_1)**2)
+            if(dist1<=dist_max) then
+              dist_max=dist1
+              ngrd_sw(mw)%iend_w=i
+              ngrd_sw(mw)%jend_w=j
+            endif
           enddo
-        endif
-
+        enddo
 #ifdef MPI
         CALL mpi_comm_rank (MyComm, MyRank, MyError)
         IF (MyRank.eq.0) THEN
@@ -362,7 +385,124 @@
         end do 
       end do 
       end subroutine create_psimesh
-    
+
+!                                                                       
+         SUBROUTINE PNPOLY( PX, PY, XX, YY, N, INOUT )                     
+!
+!        https://www.ecse.rpi.edu/~wrf/Research/Short_Notes/pnpoly.html
+!        Copyright (c) 1970-2003, Wm. Randolph Franklin
+!        Permission is hereby granted, free of charge, to any person 
+!        obtaining a copy of this software and associated documentation
+!        files (the "Software"), to deal in the Software without 
+!        restriction, including without limitation the rights to use, 
+!        copy, modify, merge, publish, distribute, sublicense, and/or 
+!        sell copies of the Software, and to permit persons to whom the
+!        Software is furnished to do so, subject to the following 
+!        conditions: 
+!        1.Redistributions of source code must retain the above 
+!          copyright notice, this list of conditions and the following
+!          disclaimers. 
+!        2.Redistributions in binary form must reproduce the above
+!          copyright notice in the documentation and/or other materials
+!          provided with the distribution. 
+!        3.The name of W. Randolph Franklin may not be used to endorse
+!          or promote products derived from this Software without 
+!          specific prior written permission. 
+!
+!        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+!        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+!        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+!        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+!        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+!        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+!        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+!        OTHER DEALINGS IN THE SOFTWARE. 
+!                                                                       
+!        PURPOSE                                                        
+!           TO DETERMINE WHETHER A POINT IS INSIDE A POLYGON            
+!                                                                       
+!        USAGE                                                          
+!           CALL PNPOLY (PX, PY, XX, YY, N, INOUT )                     
+!                                                                       
+!        DESCRIPTION OF THE PARAMETERS                                  
+!           PX      - X-COORDINATE OF POINT IN QUESTION.                
+!           PY      - Y-COORDINATE OF POINT IN QUESTION.                
+!           XX      - N LONG VECTOR CONTAINING X-COORDINATES OF         
+!                     VERTICES OF POLYGON.                              
+!           YY      - N LONG VECTOR CONTAING Y-COORDINATES OF           
+!                     VERTICES OF POLYGON.                              
+!           N       - NUMBER OF VERTICES IN THE POLYGON.                
+!           INOUT   - THE SIGNAL RETURNED:                              
+!                     -1 IF THE POINT IS OUTSIDE OF THE POLYGON,        
+!                      0 IF THE POINT IS ON AN EDGE OR AT A VERTEX,     
+!                      1 IF THE POINT IS INSIDE OF THE POLYGON.         
+!                                                                       
+!        REMARKS                                                        
+!           THE VERTICES MAY BE LISTED CLOCKWISE OR ANTICLOCKWISE.      
+!           THE FIRST MAY OPTIONALLY BE REPEATED, IF SO N MAY           
+!           OPTIONALLY BE INCREASED BY 1.                               
+!           THE INPUT POLYGON MAY BE A COMPOUND POLYGON CONSISTING      
+!           OF SEVERAL SEPARATE SUBPOLYGONS. IF SO, THE FIRST VERTEX    
+!           OF EACH SUBPOLYGON MUST BE REPEATED, AND WHEN CALCULATING   
+!           N, THESE FIRST VERTICES MUST BE COUNTED TWICE.              
+!           INOUT IS THE ONLY PARAMETER WHOSE VALUE IS CHANGED.         
+!           THE SIZE OF THE ARRAYS MUST BE INCREASED IF N > MAXDIM      
+!           WRITTEN BY RANDOLPH FRANKLIN, UNIVERSITY OF OTTAWA, 7/70.   
+!                                                                       
+!        SUBROUTINES AND FUNCTION SUBPROGRAMS REQUIRED                  
+!           NONE                                                        
+!                                                                       
+!        METHOD                                                         
+!           A VERTICAL LINE IS DRAWN THRU THE POINT IN QUESTION. IF IT  
+!           CROSSES THE POLYGON AN ODD NUMBER OF TIMES, THEN THE        
+!           POINT IS INSIDE OF THE POLYGON.                             
+!                                                                       
+!        Modifications:
+!          - jcw 12Dec2015 I/O var declarations, 
+!                          allow more than 200 maxdim
+!     ..................................................................
+!                                                                       
+!     SUBROUTINE PNPOLY(PX,PY,XX,YY,N,INOUT)
+!     REAL X(200),Y(200),XX(N),YY(N)
+      implicit none
+      real(dbl_kind), intent(in) :: PX, PY, XX(1:N), YY(1:N)
+      integer, intent(in) :: N
+      integer, intent(inout) :: INOUT
+!
+      integer :: I,J
+      real(dbl_kind) :: X(N),Y(N)
+      LOGICAL MX,MY,NX,NY
+      INTEGER O, MAXDIM
+!     OUTPUT UNIT FOR PRINTED MESSAGES
+      DATA O/6/
+      MAXDIM=N+1
+      IF(N.LE.MAXDIM)GO TO 6
+      WRITE(O,7)
+7     FORMAT('0WARNING:',I5,' TOO GREAT. RESULTS INVALID')
+      RETURN
+6     DO 1 I=1,N
+        X(I)=XX(I)-PX
+1       Y(I)=YY(I)-PY
+      INOUT=-1
+      DO 2 I=1,N
+        J=1+MOD(I,N)
+        MX=X(I).GE.0.0
+        NX=X(J).GE.0.0
+        MY=Y(I).GE.0.0
+        NY=Y(J).GE.0.0
+        IF(.NOT.((MY.OR.NY).AND.(MX.OR.NX)).OR.(MX.AND.NX)) GO TO 2
+        IF(.NOT.(MY.AND.NY.AND.(MX.OR.NX).AND..NOT.(MX.AND.NX))) GO TO 3
+        INOUT=-INOUT
+        GO TO 2
+3       IF((Y(I)*X(J)-X(I)*Y(J))/(X(J)-X(I))) 2,4,5
+4       INOUT=0
+        RETURN
+5       INOUT=-INOUT
+2     CONTINUE
+      RETURN
+      END SUBROUTINE PNPOLY
+
+      
       end module read_swan
 
 !***********************************************************************

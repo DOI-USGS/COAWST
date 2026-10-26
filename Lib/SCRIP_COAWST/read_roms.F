@@ -31,7 +31,7 @@
 
       integer(int_kind), intent(in) :: MyComm
       integer(int_kind) :: i, j, iunit
-      integer(int_kind) :: nx, ny, mo 
+      integer(int_kind) :: nx, ny, mo, k, N, count, INOUT, ruparent
       integer(int_kind)  :: ncstat, nc_file_id, nc_grdsize_id,          &
      &                      nc_grdlat_id, nc_grdlon_id,                 &
      &                      nc_grdcrnrlat_id, nc_grdcrnrlon_id,         &
@@ -40,8 +40,9 @@
       integer(int_kind) :: MyRank, MyError
 #endif
       real(dbl_kind) :: xx2, yy2, xxend_1, yyend_1
-      real(dbl_kind) :: dist1, dist_max, scale
+      real(dbl_kind) :: dist1, dist_max, scale, PX, PY
       real(dbl_kind), allocatable :: lon_psi_o(:,:), lat_psi_o(:,:)
+      real(dbl_kind), allocatable :: XX(:), YY(:)
 
       integer(int_kind) :: mp, nxp, nyp, nxo, nyo
       integer(int_kind) :: checksphere_id
@@ -258,20 +259,54 @@
 !
 !     check lower left and upper right corners
 !
-          do i=1,mo-1
-            nxp=ngrd_rm(i)%xi_size
-            nyp=ngrd_rm(i)%eta_size
-            nxo=ngrd_rm(mo)%xi_size
-            nyo=ngrd_rm(mo)%eta_size
-            if ((ngrd_rm(mo)%lon_rho_o(1  ,1  ).gt.ngrd_rm(i)%lon_rho_o(1  ,1  )).and. &
-                (ngrd_rm(mo)%lon_rho_o(nxo,nyo).lt.ngrd_rm(i)%lon_rho_o(nxp,nyp)).and. &
-                (ngrd_rm(mo)%lat_rho_o(1  ,1  ).gt.ngrd_rm(i)%lat_rho_o(1  ,1  )).and. &
-                (ngrd_rm(mo)%lat_rho_o(nxo,nyo).lt.ngrd_rm(i)%lat_rho_o(nxp,nyp))) then
-               roms_parent(mo)=i
-            end if
+        do k=1,mo-1
+!
+!    Use PNPOLY to check if all points of the grid are inside the potential parent.
+!
+          N=(ngrd_rm(k)%xi_size+ngrd_rm(k)%eta_size+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_rm(k)%eta_size+1
+            count=count+1
+            XX(count)=ngrd_rm(k)%x_full_grid(1,i)
+            YY(count)=ngrd_rm(k)%y_full_grid(1,i)
           end do
-!         now find the parent indices on the parent grid for this child
-          mp=roms_parent(mo)
+          do i=2,ngrd_rm(k)%xi_size+1
+            count=count+1
+            XX(count)=ngrd_rm(k)%x_full_grid(i,ngrd_rm(k)%eta_size+1)
+            YY(count)=ngrd_rm(k)%y_full_grid(i,ngrd_rm(k)%eta_size+1)
+          end do
+          do i=ngrd_rm(k)%eta_size,1,-1
+            count=count+1
+            XX(count)=ngrd_rm(k)%x_full_grid(ngrd_rm(k)%xi_size+1,i)
+            YY(count)=ngrd_rm(k)%y_full_grid(ngrd_rm(k)%xi_size+1,i)
+          end do
+          do i=ngrd_rm(k)%xi_size,2,-1
+            count=count+1
+            XX(count)=ngrd_rm(k)%x_full_grid(i,1)
+            YY(count)=ngrd_rm(k)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          ruparent=1
+          do i=1,ngrd_rm(k)%xi_size
+            do j=1,ngrd_rm(k)%eta_size
+              PX=ngrd_rm(k)%lon_rho_o(i,j)
+              PY=ngrd_rm(k)%lat_rho_o(i,j)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ruparent=ruparent*INOUT
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+          if (ruparent.eq.1) then
+            roms_parent(mo)=k
+          end if
+        end do
+!       now find the parent indices on the parent grid for this child
+        mp=roms_parent(mo)
 #ifdef MPI
         IF (MyRank.eq.0) THEN
 #endif
@@ -279,40 +314,40 @@
 #ifdef MPI
         END IF
 #endif
-          nx=ngrd_rm(mp)%xi_size
-          ny=ngrd_rm(mp)%eta_size
-          dist_max=10e6
-          xx2=ngrd_rm(mo)%lon_rho_o(2,2)
-          yy2=ngrd_rm(mo)%lat_rho_o(2,2)
-!         lower left
-          do j=1,ny
-            do i=1,nx
-              dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xx2)**2+           &
-     &                   (ngrd_rm(mp)%lat_rho_o(i,j)-yy2)**2)
+        nx=ngrd_rm(mp)%xi_size
+        ny=ngrd_rm(mp)%eta_size
+        dist_max=10e6
+        xx2=ngrd_rm(mo)%lon_rho_o(2,2)
+        yy2=ngrd_rm(mo)%lat_rho_o(2,2)
+!       lower left
+        do j=1,ny
+          do i=1,nx
+            dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xx2)**2+             &
+     &                 (ngrd_rm(mp)%lat_rho_o(i,j)-yy2)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
               ngrd_rm(mo)%istr_o=i
               ngrd_rm(mo)%jstr_o=j
              endif
-            enddo
           enddo
-!         upper right
-          dist_max=10e6
-          xxend_1=ngrd_rm(mo)%lon_rho_o(ngrd_rm(mo)%xi_size-1,          &
-     &                                  ngrd_rm(mo)%eta_size-1)
-          yyend_1=ngrd_rm(mo)%lat_rho_o(ngrd_rm(mo)%xi_size-1,          &
-     &                                  ngrd_rm(mo)%eta_size-1)
-          do j=1,ny
-            do i=1,nx
-              dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xxend_1)**2+       &
-     &                   (ngrd_rm(mp)%lat_rho_o(i,j)-yyend_1)**2)
-              if(dist1<=dist_max)then
-                dist_max=dist1
-                ngrd_rm(mo)%iend_o=i
-                ngrd_rm(mo)%jend_o=j
-              endif
-            enddo
+        enddo
+!       upper right
+        dist_max=10e6
+        xxend_1=ngrd_rm(mo)%lon_rho_o(ngrd_rm(mo)%xi_size-1,            &
+     &                                ngrd_rm(mo)%eta_size-1)
+        yyend_1=ngrd_rm(mo)%lat_rho_o(ngrd_rm(mo)%xi_size-1,            &
+     &                                ngrd_rm(mo)%eta_size-1)
+        do j=1,ny
+          do i=1,nx
+            dist1=sqrt((ngrd_rm(mp)%lon_rho_o(i,j)-xxend_1)**2+         &
+     &                 (ngrd_rm(mp)%lat_rho_o(i,j)-yyend_1)**2)
+            if(dist1<=dist_max)then
+              dist_max=dist1
+              ngrd_rm(mo)%iend_o=i
+              ngrd_rm(mo)%jend_o=j
+            endif
           enddo
+        enddo
 #ifdef MPI
         IF (MyRank.eq.0) THEN
 #endif
@@ -326,8 +361,125 @@
 #endif
       enddo
       end subroutine load_roms_grid
+!
 !======================================================================
-
+!                                                                       
+         SUBROUTINE PNPOLY( PX, PY, XX, YY, N, INOUT )                     
+!
+!        https://www.ecse.rpi.edu/~wrf/Research/Short_Notes/pnpoly.html
+!        Copyright (c) 1970-2003, Wm. Randolph Franklin
+!        Permission is hereby granted, free of charge, to any person 
+!        obtaining a copy of this software and associated documentation
+!        files (the "Software"), to deal in the Software without 
+!        restriction, including without limitation the rights to use, 
+!        copy, modify, merge, publish, distribute, sublicense, and/or 
+!        sell copies of the Software, and to permit persons to whom the
+!        Software is furnished to do so, subject to the following 
+!        conditions: 
+!        1.Redistributions of source code must retain the above 
+!          copyright notice, this list of conditions and the following
+!          disclaimers. 
+!        2.Redistributions in binary form must reproduce the above
+!          copyright notice in the documentation and/or other materials
+!          provided with the distribution. 
+!        3.The name of W. Randolph Franklin may not be used to endorse
+!          or promote products derived from this Software without 
+!          specific prior written permission. 
+!
+!        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+!        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+!        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+!        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+!        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+!        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+!        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+!        OTHER DEALINGS IN THE SOFTWARE. 
+!                                                                       
+!        PURPOSE                                                        
+!           TO DETERMINE WHETHER A POINT IS INSIDE A POLYGON            
+!                                                                       
+!        USAGE                                                          
+!           CALL PNPOLY (PX, PY, XX, YY, N, INOUT )                     
+!                                                                       
+!        DESCRIPTION OF THE PARAMETERS                                  
+!           PX      - X-COORDINATE OF POINT IN QUESTION.                
+!           PY      - Y-COORDINATE OF POINT IN QUESTION.                
+!           XX      - N LONG VECTOR CONTAINING X-COORDINATES OF         
+!                     VERTICES OF POLYGON.                              
+!           YY      - N LONG VECTOR CONTAING Y-COORDINATES OF           
+!                     VERTICES OF POLYGON.                              
+!           N       - NUMBER OF VERTICES IN THE POLYGON.                
+!           INOUT   - THE SIGNAL RETURNED:                              
+!                     -1 IF THE POINT IS OUTSIDE OF THE POLYGON,        
+!                      0 IF THE POINT IS ON AN EDGE OR AT A VERTEX,     
+!                      1 IF THE POINT IS INSIDE OF THE POLYGON.         
+!                                                                       
+!        REMARKS                                                        
+!           THE VERTICES MAY BE LISTED CLOCKWISE OR ANTICLOCKWISE.      
+!           THE FIRST MAY OPTIONALLY BE REPEATED, IF SO N MAY           
+!           OPTIONALLY BE INCREASED BY 1.                               
+!           THE INPUT POLYGON MAY BE A COMPOUND POLYGON CONSISTING      
+!           OF SEVERAL SEPARATE SUBPOLYGONS. IF SO, THE FIRST VERTEX    
+!           OF EACH SUBPOLYGON MUST BE REPEATED, AND WHEN CALCULATING   
+!           N, THESE FIRST VERTICES MUST BE COUNTED TWICE.              
+!           INOUT IS THE ONLY PARAMETER WHOSE VALUE IS CHANGED.         
+!           THE SIZE OF THE ARRAYS MUST BE INCREASED IF N > MAXDIM      
+!           WRITTEN BY RANDOLPH FRANKLIN, UNIVERSITY OF OTTAWA, 7/70.   
+!                                                                       
+!        SUBROUTINES AND FUNCTION SUBPROGRAMS REQUIRED                  
+!           NONE                                                        
+!                                                                       
+!        METHOD                                                         
+!           A VERTICAL LINE IS DRAWN THRU THE POINT IN QUESTION. IF IT  
+!           CROSSES THE POLYGON AN ODD NUMBER OF TIMES, THEN THE        
+!           POINT IS INSIDE OF THE POLYGON.                             
+!                                                                       
+!        Modifications:
+!          - jcw 12Dec2015 I/O var declarations, 
+!                          allow more than 200 maxdim
+!     ..................................................................
+!                                                                       
+!     SUBROUTINE PNPOLY(PX,PY,XX,YY,N,INOUT)
+!     REAL X(200),Y(200),XX(N),YY(N)
+      implicit none
+      real(dbl_kind), intent(in) :: PX, PY, XX(1:N), YY(1:N)
+      integer, intent(in) :: N
+      integer, intent(inout) :: INOUT
+!
+      integer :: I,J
+      real(dbl_kind) :: X(N),Y(N)
+      LOGICAL MX,MY,NX,NY
+      INTEGER O, MAXDIM
+!     OUTPUT UNIT FOR PRINTED MESSAGES
+      DATA O/6/
+      MAXDIM=N+1
+      IF(N.LE.MAXDIM)GO TO 6
+      WRITE(O,7)
+7     FORMAT('0WARNING:',I5,' TOO GREAT. RESULTS INVALID')
+      RETURN
+6     DO 1 I=1,N
+        X(I)=XX(I)-PX
+1       Y(I)=YY(I)-PY
+      INOUT=-1
+      DO 2 I=1,N
+        J=1+MOD(I,N)
+        MX=X(I).GE.0.0
+        NX=X(J).GE.0.0
+        MY=Y(I).GE.0.0
+        NY=Y(J).GE.0.0
+        IF(.NOT.((MY.OR.NY).AND.(MX.OR.NX)).OR.(MX.AND.NX)) GO TO 2
+        IF(.NOT.(MY.AND.NY.AND.(MX.OR.NX).AND..NOT.(MX.AND.NX))) GO TO 3
+        INOUT=-INOUT
+        GO TO 2
+3       IF((Y(I)*X(J)-X(I)*Y(J))/(X(J)-X(I))) 2,4,5
+4       INOUT=0
+        RETURN
+5       INOUT=-INOUT
+2     CONTINUE
+      RETURN
+      END SUBROUTINE PNPOLY
+!======================================================================
+     
       end module read_roms 
 
 
