@@ -261,6 +261,9 @@
 #endif
   USE W3GDATMD
   USE W3WDATMD, ONLY: TIME, VA, W3NDAT, W3SETW
+#ifdef W3_CURSP
+  USE W3ADATMD, ONLY : CXTH, CYTH
+#endif
 #ifdef W3_OASIS
   USE W3WDATMD, ONLY: TIME00, TIMEEND
 #endif
@@ -354,6 +357,9 @@
 #endif
 #ifdef W3_COU
   INTEGER             :: OFL
+#endif
+#ifdef W3_CURSP
+  INTEGER             :: IK, ISEA, IX, IY
 #endif
   INTEGER             :: CLKDT1(8), CLKDT2(8)
   INTEGER             :: IERR_MPI

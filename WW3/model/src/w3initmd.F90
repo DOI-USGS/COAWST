@@ -4690,10 +4690,10 @@ CONTAINS
     !
     IF ((FLOUT(4) .OR. FLOUT(8)) .and. (.not. LPDLIB)) THEN
       IF (OARST) THEN
-#ifdef W3_COAWST_MODEL
-        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(44*NAPROC) )
+#ifdef W3_CURSP
+        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS((44 + 2*(NK-1))*NAPROC) )
 #else
-        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(34*NAPROC) )
+        ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(44*NAPROC) )
 #endif
       ELSE
         ALLOCATE ( OUTPTS(IMOD)%OUT4%IRQRS(3*NAPROC) )
@@ -4777,28 +4777,30 @@ CONTAINS
         END IF
         !
         IF ( FLOGRR( 1, 2) ) THEN
-          IH     = IH + 1
           IT     = IT0 + 5
 #ifdef W3_CURSP
           DO IK=1,NK
+            IH     = IH + 1
             CALL MPI_SEND_INIT (CXTH(IAPROC,IK), 1, WW3_FIELD_VEC, &
                  IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR)
           END DO
 #else
+          IH     = IH + 1
           CALL MPI_SEND_INIT (CX(IAPROC), 1, WW3_FIELD_VEC,   &
                IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR)
 #endif
 #ifdef W3_MPIT
           WRITE (NDST,9021) IH, 'S CX', IROOT, IT, IRQRS(IH), IERR
 #endif
-          IH     = IH + 1
           IT     = IT0 + 6
 #ifdef W3_CURSP
           DO IK=1,NK
+            IH     = IH + 1
             CALL MPI_SEND_INIT (CYTH(IAPROC,IK), 1, WW3_FIELD_VEC, &
                  IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR)
           END DO
 #else
+          IH     = IH + 1
           CALL MPI_SEND_INIT (CY(IAPROC), 1, WW3_FIELD_VEC,   &
                IROOT, IT, MPI_COMM_WAVE, IRQRS(IH), IERR)
 #endif
@@ -5174,28 +5176,30 @@ CONTAINS
             END IF
             !
             IF ( FLOGRR( 1, 2) ) THEN
-              IH     = IH + 1
               IT     = IT0 + 5
 #ifdef W3_CURSP
               DO IK=1,NK
+                IH     = IH + 1
                 CALL MPI_RECV_INIT (CXTH (I0,IK),1,WW3_FIELD_VEC, &
                      IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
               END DO
 #else
+              IH     = IH + 1
               CALL MPI_RECV_INIT (CX   (I0),1,WW3_FIELD_VEC, &
                    IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 #endif
 #ifdef W3_MPIT
               WRITE (NDST,9021) IH, 'R CX', IFROM, IT, IRQRS(IH), IERR
 #endif
-              IH     = IH + 1
               IT     = IT0 + 6
 #ifdef W3_CURSP
               DO IK=1,NK
+                IH     = IH + 1
                 CALL MPI_RECV_INIT (CYTH (I0,IK),1,WW3_FIELD_VEC, &
                      IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
               END DO
 #else
+              IH     = IH + 1
               CALL MPI_RECV_INIT (CY   (I0),1,WW3_FIELD_VEC, &
                    IFROM, IT, MPI_COMM_WAVE, IRQRS(IH), IERR )
 #endif
